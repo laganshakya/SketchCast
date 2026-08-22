@@ -27,6 +27,7 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isChangeRoomModalOpen, setIsChangeRoomModalOpen] = useState(false);
   const [isActiveAttendeesModalOpen, setIsActiveAttendeesModalOpen] = useState(false);
+  const [mobileHostQuizView, setMobileHostQuizView] = useState<'arena' | 'controls'>('arena');
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -211,7 +212,40 @@ export function App() {
         {/* TAB 1: Live Quiz Arena */}
         {activeTab === 'quiz' && (
           <div className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full h-full">
-            <div className="flex-1 flex flex-col overflow-y-auto">
+            {/* Mobile Host Switcher Bar (Screen < lg) */}
+            {userRole === 'host' && (
+              <div className="lg:hidden flex items-center justify-center p-1 bg-[#11131B] border-2 border-black font-mono text-xs font-black shrink-0 brutal-shadow-sm">
+                <button
+                  onClick={() => setMobileHostQuizView('arena')}
+                  className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    mobileHostQuizView === 'arena'
+                      ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>LIVE ARENA</span>
+                </button>
+                <button
+                  onClick={() => setMobileHostQuizView('controls')}
+                  className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    mobileHostQuizView === 'controls'
+                      ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>HOST CONTROLS</span>
+                </button>
+              </div>
+            )}
+
+            {/* Arena View */}
+            <div
+              className={`flex-1 flex flex-col overflow-y-auto ${
+                userRole === 'host' && mobileHostQuizView === 'controls' ? 'hidden lg:flex' : 'flex'
+              }`}
+            >
               <QuizArena
                 quizState={quizState}
                 timeRemaining={timeRemaining}
@@ -227,7 +261,11 @@ export function App() {
 
             {/* Host Quiz Launcher & Pack Selector (Shown if Host) */}
             {userRole === 'host' && (
-              <div className="w-full lg:w-96 shrink-0 flex flex-col h-full">
+              <div
+                className={`w-full lg:w-96 shrink-0 flex flex-col h-full ${
+                  mobileHostQuizView === 'arena' ? 'hidden lg:flex' : 'flex'
+                }`}
+              >
                 <QuizHostPanel
                   onStartQuiz={startQuizRound}
                   activeQuestionId={quizState.question?.id}
@@ -291,13 +329,13 @@ export function App() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#11131B] border-t-2 border-black px-2 flex items-center justify-around z-40">
+      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#0E1017] border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
         <button
           onClick={() => setActiveTab('quiz')}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'quiz'
-              ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm'
-              : 'text-slate-400'
+              ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
           <Zap className="w-4 h-4 mb-0.5" />
@@ -306,10 +344,10 @@ export function App() {
 
         <button
           onClick={() => setActiveTab('polls')}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'polls'
-              ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm'
-              : 'text-slate-400'
+              ? 'bg-neo-pink text-white border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
           <Vote className="w-4 h-4 mb-0.5" />
@@ -318,48 +356,42 @@ export function App() {
 
         <button
           onClick={() => setActiveTab('qa')}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer relative ${
             activeTab === 'qa'
-              ? 'bg-neo-pink text-white border-2 border-black brutal-shadow-sm'
-              : 'text-slate-400'
+              ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
           <HelpCircle className="w-4 h-4 mb-0.5" />
           <span>Q&A</span>
+          {filteredQuestions.length > 0 && (
+            <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
+          )}
         </button>
 
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'leaderboard'
-              ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm'
-              : 'text-slate-400'
+              ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
           }`}
         >
           <Trophy className="w-4 h-4 mb-0.5" />
           <span>SCORES</span>
         </button>
 
-        {userRole === 'host' ? (
+        {userRole === 'host' && (
           <button
             onClick={() => setActiveTab('rooms')}
-            className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+            className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
               activeTab === 'rooms'
-                ? 'bg-neo-purple text-white border-2 border-black brutal-shadow-sm'
-                : 'text-slate-400'
+                ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             <Layers className="w-4 h-4 mb-0.5" />
             <span>ROOMS</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsChangeRoomModalOpen(true)}
-            className="flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all text-slate-400 hover:text-neo-yellow"
-            title="Switch Arena Room"
-          >
-            <Layers className="w-4 h-4 mb-0.5" />
-            <span>ROOM</span>
           </button>
         )}
       </div>

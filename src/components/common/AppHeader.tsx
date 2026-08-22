@@ -89,33 +89,33 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       )}
 
-      <div className="h-16 px-3 sm:px-5 flex items-center justify-between gap-3">
-        {/* Left: Brand Logo & Room Passcode */}
-        <div className="flex items-center space-x-3">
+      <div className="h-14 sm:h-16 px-2 sm:px-4 md:px-5 flex items-center justify-between gap-1.5 sm:gap-3 max-w-7xl mx-auto w-full">
+        {/* Left: Brand Logo & Room Passcode (Desktop) */}
+        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0 min-w-0">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-9 h-9 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-sm -rotate-2">
-              <Zap className="w-5 h-5 fill-black stroke-black" />
+          <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
+              <Zap className="w-3.5 h-3.5 sm:w-5 sm:h-5 fill-black stroke-black" />
             </div>
             <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-base sm:text-lg font-heavy tracking-tight text-white uppercase">
+              <div className="flex items-center space-x-1">
+                <span className="text-xs sm:text-base md:text-lg font-heavy tracking-tight text-white uppercase shrink-0">
                   SKETCH<span className="text-neo-yellow">CAST</span>
                 </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 bg-neo-pink text-white font-mono text-[9px] font-extrabold uppercase border border-black brutal-shadow-sm">
+                <span className="hidden lg:inline-block px-1.5 py-0.2 bg-neo-pink text-white font-mono text-[9px] font-extrabold uppercase border border-black brutal-shadow-sm">
                   LIVE 2.0
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="h-6 w-0.5 bg-slate-800 hidden md:block" />
+          <div className="h-5 w-0.5 bg-slate-800 hidden sm:block" />
 
-          {/* Room Ticket Tag */}
-          <div className="flex items-center space-x-1">
+          {/* Desktop/Tablet Room Ticket Tag (Hidden on small screens, rendered in right cluster on mobile) */}
+          <div className="hidden sm:flex items-center space-x-1 shrink-0">
             <button
               onClick={handleCopyCode}
-              className="flex items-center space-x-1.5 px-2.5 py-1 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn"
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2 py-1 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn"
               title="Click to copy Room Code"
             >
               <span className="text-slate-400 font-bold text-[10px]">ROOM:</span>
@@ -123,9 +123,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 {room.code}
               </span>
               {copied ? (
-                <Check className="w-3.5 h-3.5 text-neo-mint" />
+                <Check className="w-3.5 h-3.5 text-neo-mint shrink-0" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-white" />
+                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-white shrink-0" />
               )}
             </button>
 
@@ -136,29 +136,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 title="Change / Switch Arena Room without logging out"
               >
                 <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
-                <span className="hidden sm:inline">SWITCH</span>
+                <span className="hidden md:inline">SWITCH</span>
               </button>
             )}
           </div>
-
-          {/* Live Indicator (Admin/Host Only) */}
-          {userRole === 'host' && (
-            <button
-              onClick={onOpenActiveAttendees}
-              className="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-neo-card-darker hover:bg-[#1C2030] hover:text-white border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-neo-mint transition-all active:translate-x-px active:translate-y-px cursor-pointer"
-              title="Click to view live participants & manage room admins"
-            >
-              <Radio className="w-3.5 h-3.5 animate-pulse text-neo-mint" />
-              <span className="text-[10px] sm:text-[11px] tracking-wide">{Math.max(1, activeViewerCount)} ONLINE</span>
-            </button>
-          )}
         </div>
 
-        {/* Center: Neo-Brutalist Navigation Tabs */}
-        <nav className="hidden md:flex items-center space-x-1.5 bg-[#090B0F] p-1 border-2 border-black brutal-shadow-sm">
+        {/* Center: Neo-Brutalist Navigation Tabs (Desktop / Tablet) */}
+        <nav className="hidden md:flex items-center space-x-1.5 bg-[#090B0F] p-1 border-2 border-black brutal-shadow-sm shrink-0">
           <button
             onClick={() => setActiveTab('quiz')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'quiz'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -170,7 +158,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('polls')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'polls'
                 ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -182,7 +170,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('qa')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'qa'
                 ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -199,7 +187,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'leaderboard'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -212,7 +200,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {userRole === 'host' && (
             <button
               onClick={() => setActiveTab('rooms')}
-              className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+              className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
                 activeTab === 'rooms'
                   ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                   : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -224,33 +212,72 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           )}
         </nav>
 
-        {/* Right: QR Code, Profile & Sign Out */}
-        <div className="flex items-center space-x-2">
+        {/* Right Controls: Room Ticket (Mobile), Online Counter, QR, Profile & Sign Out */}
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+          {/* Mobile Room & QR Combo Pill (< sm) */}
+          <div className="sm:hidden flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm shrink-0">
+            <button
+              onClick={handleCopyCode}
+              className="px-1.5 py-1 text-[10px] font-mono font-extrabold text-neo-yellow hover:text-white flex items-center gap-1 cursor-copy-btn"
+              title="Click to copy Room Code"
+            >
+              <span>{room.code}</span>
+              {copied ? (
+                <Check className="w-3 h-3 text-neo-mint" />
+              ) : (
+                <Copy className="w-3 h-3 text-slate-400" />
+              )}
+            </button>
+            <button
+              onClick={onOpenQRCode}
+              className="px-1.5 py-1 bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors cursor-zoom"
+              title="Open Mobile QR Code"
+            >
+              <QrCode className="w-3 h-3" />
+            </button>
+          </div>
+
+          {/* Desktop QR Code Button (≥ sm) */}
           <button
             onClick={onOpenQRCode}
-            className="px-2.5 py-1.5 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold flex items-center space-x-1.5 transition-all cursor-zoom"
+            className="hidden sm:flex px-2.5 py-1 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold items-center space-x-1.5 transition-all cursor-zoom shrink-0"
             title="Open Mobile Join QR Code"
           >
             <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">JOIN_QR</span>
+            <span className="hidden md:inline">JOIN_QR</span>
           </button>
 
+          {/* Live Online Indicator (Admin/Host Only) */}
+          {userRole === 'host' && (
+            <button
+              onClick={onOpenActiveAttendees}
+              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-neo-card-darker hover:bg-[#1C2030] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
+              title="Click to view live participants & manage room admins"
+            >
+              <Radio className="w-2.5 h-2.5 sm:w-3 sm:h-3 animate-pulse text-neo-mint shrink-0" />
+              <span className="text-[10px] sm:text-[11px] tracking-wide">
+                <span className="hidden md:inline">{Math.max(1, activeViewerCount)} ONLINE</span>
+                <span className="md:hidden">{Math.max(1, activeViewerCount)}</span>
+              </span>
+            </button>
+          )}
+
           {/* Role and Name Pill */}
-          <div className="flex items-center space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 py-1 text-xs font-mono">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-1.5 sm:px-2 py-1 text-xs font-mono max-w-[76px] xs:max-w-[100px] sm:max-w-[150px] shrink-0">
             <button
               onClick={handleRoleToggle}
-              className={`flex items-center gap-1 font-extrabold uppercase text-[10px] px-1.5 py-0.5 border border-black cursor-pointer ${
+              className={`flex items-center gap-0.5 font-extrabold uppercase text-[9px] sm:text-[10px] px-1 py-0.5 border border-black cursor-pointer shrink-0 ${
                 userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
               }`}
-              title={`Click to switch role (Current: ${userRole}). Hosts require verified email account.`}
+              title={`Role: ${userRole}. Click to toggle.`}
             >
-              {userRole === 'host' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
-              <span>{userRole}</span>
+              {userRole === 'host' ? <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <User className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+              <span className="hidden md:inline">{userRole}</span>
             </button>
 
             <button
               onClick={onOpenAuthModal}
-              className="text-slate-200 hover:text-neo-yellow font-bold max-w-24 truncate text-[11px] cursor-pointer"
+              className="text-slate-200 hover:text-neo-yellow font-bold truncate text-[10px] sm:text-[11px] cursor-pointer"
               title="Click to view profile & auth details"
             >
               {userName}
@@ -260,10 +287,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {/* Sign Out Button */}
           <button
             onClick={onSignOut}
-            className="p-1.5 bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
+            className="p-1 sm:p-1.5 bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer shrink-0"
             title="Sign out & return to landing page"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </button>
         </div>
       </div>

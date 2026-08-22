@@ -35,6 +35,24 @@ html, body {
   -webkit-user-select: none;
   touch-action: manipulation;
   font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Mobile Safe Area & Responsive Utilities */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ================= GLOBAL CURSOR STYLES ================= */

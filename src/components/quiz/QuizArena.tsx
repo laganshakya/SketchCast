@@ -88,22 +88,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   return (
     <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 space-y-4 font-sans">
       {/* Retro Window Top Frame Bar */}
-      <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-3.5 py-2 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="flex space-x-1.5">
-            <div className="w-3 h-3 rounded-full bg-neo-pink border border-black" />
-            <div className="w-3 h-3 rounded-full bg-neo-yellow border border-black" />
-            <div className="w-3 h-3 rounded-full bg-neo-mint border border-black" />
+      <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center space-x-2 min-w-0">
+          <div className="flex space-x-1.5 shrink-0">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-pink border border-black" />
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-yellow border border-black" />
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-mint border border-black" />
           </div>
-          <span className="font-mono text-xs font-bold text-slate-400 flex items-center gap-1 pl-2">
-            <Terminal className="w-3 h-3 text-neo-yellow" />
-            <span>SYS_ARENA // {question.category.toUpperCase().replace(/\s+/g, '_')}</span>
+          <span className="font-mono text-[11px] sm:text-xs font-bold text-slate-400 flex items-center gap-1 pl-1 sm:pl-2 truncate">
+            <Terminal className="w-3 h-3 text-neo-yellow shrink-0" />
+            <span className="truncate">SYS_ARENA // {question.category.toUpperCase().replace(/\s+/g, '_')}</span>
           </span>
         </div>
 
-        <div className="flex items-center space-x-2 font-mono">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono shrink-0">
           {userStreak > 0 && (
-            <div className="px-2 py-0.5 bg-neo-orange text-black text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
+            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-orange text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
               <Flame className="w-3 h-3 fill-black" />
               <span>{userStreak}X STREAK</span>
             </div>
@@ -111,13 +111,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
           {/* Digital Countdown Timer */}
           <div
-            className={`px-3 py-0.5 text-xs font-mono font-black border-2 border-black brutal-shadow-sm flex items-center gap-1.5 ${
+            className={`px-2 sm:px-3 py-0.5 text-[11px] sm:text-xs font-mono font-black border-2 border-black brutal-shadow-sm flex items-center gap-1 sm:gap-1.5 ${
               timeRemaining <= 5 && !isRevealed
                 ? 'bg-neo-pink text-white animate-pulse'
                 : 'bg-neo-yellow text-black'
             }`}
           >
-            <Timer className="w-3.5 h-3.5 stroke-[2.5]" />
+            <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
             <span>{isRevealed ? 'REVEALED' : `${timeRemaining} SEC`}</span>
           </div>
         </div>
@@ -125,7 +125,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Progress Bar (Retro chunky blocks) */}
       {!isRevealed && (
-        <div className="w-full h-2.5 bg-neo-card-darker border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
+        <div className="w-full h-2 sm:h-2.5 bg-neo-card-darker border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
           <div
             className={`h-full transition-all duration-300 ease-linear ${
               timeRemaining <= 5 ? 'bg-neo-pink' : 'bg-neo-yellow'
@@ -136,19 +136,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       )}
 
       {/* Question Prompt Card */}
-      <div className="bg-[#181B26] p-5 sm:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden">
+      <div className="bg-[#181B26] p-4 sm:p-5 md:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden">
         {/* Corner Tag */}
-        <div className="absolute top-0 right-0 bg-neo-yellow text-black font-mono font-bold text-[10px] uppercase px-2.5 py-0.5 border-b-2 border-l-2 border-black">
+        <div className="absolute top-0 right-0 bg-neo-yellow text-black font-mono font-bold text-[9px] sm:text-[10px] uppercase px-2 sm:px-2.5 py-0.5 border-b-2 border-l-2 border-black">
           Q_PROMPT
         </div>
 
-        <h2 className="text-lg sm:text-2xl font-heavy text-white uppercase leading-tight tracking-tight mt-1">
+        <h2 className="text-base sm:text-xl md:text-2xl font-heavy text-white uppercase leading-snug sm:leading-tight tracking-tight mt-1">
           {question.question}
         </h2>
       </div>
 
       {/* 4 Neo-Brutalist Option Cards (A, B, C, D) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
         {question.options.map((option) => {
           const voteCount = votesDistribution[option.id] || 0;
           const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
@@ -160,7 +160,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               key={option.id}
               onClick={() => onSelectOption(option.id)}
               disabled={isRevealed || userSelectedOption !== null}
-              className={`p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-24 ${getOptionButtonClass(
+              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[76px] sm:min-h-24 cursor-pointer active:translate-x-px active:translate-y-px ${getOptionButtonClass(
                 option.id
               )}`}
             >
@@ -174,33 +174,33 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 />
               )}
 
-              <div className="flex items-start justify-between relative z-10 gap-3 mb-2">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-start justify-between relative z-10 gap-2.5 mb-1.5 sm:mb-2">
+                <div className="flex items-center space-x-2.5 sm:space-x-3">
                   <span
-                    className={`w-7 h-7 font-mono text-xs flex items-center justify-center border-2 border-black brutal-shadow-sm shrink-0 font-bold ${getOptionBadgeColor(
+                    className={`w-6 h-6 sm:w-7 sm:h-7 font-mono text-xs flex items-center justify-center border-2 border-black brutal-shadow-sm shrink-0 font-bold ${getOptionBadgeColor(
                       option.id
                     )}`}
                   >
                     {option.id}
                   </span>
-                  <span className="text-sm font-bold leading-snug tracking-tight font-display">
+                  <span className="text-xs sm:text-sm font-bold leading-snug tracking-tight font-display">
                     {option.text}
                   </span>
                 </div>
 
                 {isRevealed && isAnswer && (
-                  <CheckCircle className="w-5 h-5 text-black stroke-3 shrink-0" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-black stroke-3 shrink-0" />
                 )}
                 {isRevealed && isSelected && !isAnswer && (
-                  <XCircle className="w-5 h-5 text-white stroke-3 shrink-0" />
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-3 shrink-0" />
                 )}
               </div>
 
               {/* Vote statistics */}
               {(isRevealed || isHost) && (
-                <div className="flex justify-between items-center text-xs font-mono font-bold pt-1.5 border-t border-black/30 relative z-10">
+                <div className="flex justify-between items-center text-[11px] sm:text-xs font-mono font-bold pt-1.5 border-t border-black/30 relative z-10">
                   <span>{voteCount} VOTES</span>
-                  <span className="text-[13px]">{votePct}%</span>
+                  <span className="text-xs sm:text-[13px]">{votePct}%</span>
                 </div>
               )}
             </button>
@@ -210,50 +210,50 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Retro Result & Architecture Takeaway Card */}
       {isRevealed && (
-        <div className="bg-neo-cream text-black p-5 border-2 border-black brutal-shadow-lg space-y-3 animate-fadeIn">
+        <div className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-2.5 sm:space-y-3 animate-fadeIn">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               {userSelectedOption ? (
                 isCorrect ? (
-                  <span className="px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 stroke-3" />
+                  <span className="px-2.5 sm:px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
                     <span>CORRECT! +{pointsEarned} PTS</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1 bg-neo-pink text-white font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <XCircle className="w-4 h-4 stroke-3" />
+                  <span className="px-2.5 sm:px-3 py-1 bg-neo-pink text-white font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
+                    <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
                     <span>INCORRECT ANSWER</span>
                   </span>
                 )
               ) : (
-                <span className="px-3 py-1 bg-neo-yellow text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm">
+                <span className="px-2.5 sm:px-3 py-1 bg-neo-yellow text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm">
                   ANSWER REVEALED
                 </span>
               )}
             </div>
 
-            <div className="font-mono font-black text-xs uppercase bg-black text-white px-2.5 py-1 border border-black">
+            <div className="font-mono font-black text-[11px] sm:text-xs uppercase bg-black text-white px-2 sm:px-2.5 py-1 border border-black">
               CORRECT OPTION: [{question.correctOptionId}]
             </div>
           </div>
 
-          <div className="p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">
-            <div className="flex items-center space-x-1.5 font-black uppercase text-[11px] mb-1 text-neo-pink">
-              <HelpCircle className="w-4 h-4 stroke-3" />
+          <div className="p-3 sm:p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">
+            <div className="flex items-center space-x-1.5 font-black uppercase text-[10px] sm:text-[11px] mb-1 text-neo-pink">
+              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
               <span>ARCHITECTURAL TAKEAWAY & PROOF:</span>
             </div>
-            <p className="font-medium text-slate-900">{question.explanation}</p>
+            <p className="font-medium text-slate-900 text-xs sm:text-sm">{question.explanation}</p>
           </div>
         </div>
       )}
 
       {/* Host Control Actions */}
       {isHost && (
-        <div className="flex items-center justify-end space-x-3 pt-2">
+        <div className="flex items-center justify-end flex-wrap gap-2 pt-2">
           {!isRevealed ? (
             <button
               onClick={onRevealAnswer}
-              className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5"
+              className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <Eye className="w-4 h-4" />
               <span>REVEAL CORRECT ANSWER</span>
@@ -261,13 +261,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           ) : hasNextQuestion && onNextQuestion ? (
             <button
               onClick={onNextQuestion}
-              className="px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center space-x-2"
+              className="w-full sm:w-auto px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>NEXT QUESTION</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
               <span className="px-3 py-2 bg-[#1C2030] text-neo-mint border-2 border-black font-mono text-xs font-black uppercase flex items-center space-x-1.5 brutal-shadow-sm">
                 <CheckCircle className="w-4 h-4 text-neo-mint stroke-3" />
                 <span>QUIZ COMPLETED</span>
@@ -275,7 +275,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               {onViewScores && (
                 <button
                   onClick={onViewScores}
-                  className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5"
+                  className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
                   <Trophy className="w-4 h-4" />
                   <span>VIEW LEADERBOARD</span>

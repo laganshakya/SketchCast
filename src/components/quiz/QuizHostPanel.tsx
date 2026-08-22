@@ -335,42 +335,42 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       {/* Neo-Brutalist Multi-Question Quiz Modal */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-neo-cream text-black w-full max-w-xl p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-neo-cream text-black w-full max-w-xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
-              className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
             >
-              <X className="w-5 h-5 stroke-3" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </button>
 
             {/* Modal Title */}
-            <div className="flex items-center space-x-2.5 mb-3.5">
-              <div className="w-10 h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy -rotate-2">
-                <Sparkles className="w-5 h-5 fill-black stroke-black" />
+            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 pr-8 sm:pr-10">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy -rotate-2 shrink-0">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 fill-black stroke-black" />
               </div>
               <div>
-                <h3 className="text-lg font-heavy uppercase tracking-tight text-black">
+                <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
                   CREATE QUIZ SET
                 </h3>
-                <p className="text-xs font-mono text-slate-700">
+                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
                   Add multiple questions in this quiz pack to publish or launch sequentially
                 </p>
               </div>
             </div>
 
             {/* Questions Step Navigation Strip */}
-            <div className="mb-3.5 font-mono">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-black uppercase text-slate-800">
+            <div className="mb-3 font-mono">
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 mb-1.5">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-slate-800">
                   QUIZ QUESTIONS ({draftQuestions.length}):
                 </span>
-                <span className="text-[10px] text-slate-600 font-bold">
+                <span className="text-[9px] sm:text-[10px] text-slate-600 font-bold">
                   CLICK TAB TO EDIT QUESTION
                 </span>
               </div>
 
-              <div className="flex items-center space-x-1.5 overflow-x-auto pb-1.5">
+              <div className="flex items-center space-x-1.5 overflow-x-auto pb-1">
                 {draftQuestions.map((dq, idx) => {
                   const isActive = activeQuestionIndex === idx;
                   const isFilled = dq.question.trim().length > 0 && dq.optA.trim().length > 0 && dq.optB.trim().length > 0;
@@ -380,7 +380,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => setActiveQuestionIndex(idx)}
-                        className={`px-3 py-1 text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1.5 ${
+                        className={`px-2.5 sm:px-3 py-1 text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1.5 cursor-pointer ${
                           isActive
                             ? 'bg-neo-yellow text-black brutal-shadow-sm -translate-y-0.5'
                             : 'bg-white text-slate-700 hover:bg-slate-100'
@@ -395,7 +395,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveDraftQuestion(idx)}
-                          className="p-1 hover:bg-neo-pink hover:text-white border-y-2 border-r-2 border-black bg-slate-200 text-slate-600 transition-colors"
+                          className="p-1 hover:bg-neo-pink hover:text-white border-y-2 border-r-2 border-black bg-slate-200 text-slate-600 transition-colors cursor-pointer"
                           title="Delete this question"
                         >
                           <X className="w-3 h-3" />
@@ -415,67 +415,67 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
             {/* Active Question Editor Form */}
             <form onSubmit={(e) => handleSaveQuiz(e, true)} className="space-y-3 font-mono">
-              <div className="p-3 bg-white border-2 border-black space-y-3">
-                <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
-                  <span className="text-xs font-black uppercase text-neo-pink flex items-center gap-1">
+              <div className="p-2.5 sm:p-3 bg-white border-2 border-black space-y-2.5 sm:space-y-3">
+                <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 border-b border-black/20 pb-1.5">
+                  <span className="text-[11px] sm:text-xs font-black uppercase text-neo-pink flex items-center gap-1">
                     <span>EDITING QUESTION {activeQuestionIndex + 1} OF {draftQuestions.length}</span>
                   </span>
-                  <span className="text-[10px] text-slate-500 font-bold">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold">
                     Select correct answer key below
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] font-black uppercase block mb-1">Category</label>
+                    <label className="text-[10px] sm:text-[11px] font-black uppercase block mb-1">Category</label>
                     <input
                       type="text"
                       value={currentDraft.category}
                       onChange={(e) => updateCurrentDraft('category', e.target.value)}
                       placeholder="e.g. System Design"
-                      className="w-full px-3 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                      className="w-full px-2.5 sm:px-3 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-black uppercase block mb-1">Time Limit (Sec)</label>
+                    <label className="text-[10px] sm:text-[11px] font-black uppercase block mb-1">Time Limit (Sec)</label>
                     <input
                       type="number"
                       min="10"
                       max="90"
                       value={currentDraft.timeLimitSeconds}
                       onChange={(e) => updateCurrentDraft('timeLimitSeconds', Number(e.target.value))}
-                      className="w-full px-3 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                      className="w-full px-2.5 sm:px-3 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-black uppercase block mb-1">Question Prompt</label>
+                  <label className="text-[10px] sm:text-[11px] font-black uppercase block mb-1">Question Prompt</label>
                   <textarea
                     value={currentDraft.question}
                     onChange={(e) => updateCurrentDraft('question', e.target.value)}
                     placeholder={`Type question prompt for Q${activeQuestionIndex + 1}...`}
                     rows={2}
-                    className="w-full p-2.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20 resize-none font-display"
+                    className="w-full p-2 sm:p-2.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20 resize-none font-display"
                     required
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase block">4 Options (Select correct answer key):</label>
+                  <label className="text-[10px] sm:text-[11px] font-black uppercase block">4 Options (Select correct answer key):</label>
                   {[
                     { id: 'A' as const, field: 'optA' as const, val: currentDraft.optA },
                     { id: 'B' as const, field: 'optB' as const, val: currentDraft.optB },
                     { id: 'C' as const, field: 'optC' as const, val: currentDraft.optC },
                     { id: 'D' as const, field: 'optD' as const, val: currentDraft.optD },
                   ].map(({ id, field, val }) => (
-                    <div key={id} className="flex items-center space-x-2">
+                    <div key={id} className="flex items-center space-x-1.5 sm:space-x-2">
                       <button
                         type="button"
                         onClick={() => updateCurrentDraft('correctOpt', id)}
-                        className={`w-7 h-7 font-mono font-bold text-xs flex items-center justify-center border-2 border-black transition-all ${
+                        className={`w-7 h-7 font-mono font-bold text-xs flex items-center justify-center border-2 border-black transition-all shrink-0 cursor-pointer ${
                           currentDraft.correctOpt === id
-                            ? 'bg-neo-mint text-black brutal-shadow-sm'
+                            ? 'bg-neo-mint text-black brutal-shadow-sm font-black'
                             : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                         }`}
                         title="Click to designate as correct answer"
@@ -487,7 +487,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         value={val}
                         onChange={(e) => updateCurrentDraft(field, e.target.value)}
                         placeholder={`Option ${id}...`}
-                        className="flex-1 px-3 py-1 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                        className="flex-1 px-2.5 sm:px-3 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
                         required={id === 'A' || id === 'B'}
                       />
                     </div>
@@ -495,7 +495,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-black uppercase block mb-1">Architecture Explanation</label>
+                  <label className="text-[10px] sm:text-[11px] font-black uppercase block mb-1">Architecture Explanation</label>
                   <textarea
                     value={currentDraft.explanation}
                     onChange={(e) => updateCurrentDraft('explanation', e.target.value)}
@@ -507,33 +507,33 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               </div>
 
               {/* Add Next Question Button */}
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 pt-1">
                 <button
                   type="button"
                   onClick={handleAddQuestionToDraft}
-                  className="px-3 py-1.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5"
+                  className="w-full xs:w-auto px-3 py-1.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-3" />
                   <span>+ ADD ANOTHER QUESTION</span>
                 </button>
-                <span className="text-[11px] font-bold text-slate-600">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 text-center xs:text-right shrink-0">
                   {validQuestionsCount} / {draftQuestions.length} complete
                 </span>
               </div>
 
               {/* Action Buttons: Cancel, Publish to Queue, Publish & Launch Now */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t-2 border-black/20">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-end gap-2 pt-2.5 border-t-2 border-black/20">
                 <button
                   type="button"
                   onClick={() => setShowCustomModal(false)}
-                  className="px-3.5 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black order-3 sm:order-1"
+                  className="w-full xs:w-auto px-3.5 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black order-3 xs:order-1 cursor-pointer text-center"
                 >
                   CANCEL
                 </button>
                 <button
                   type="button"
                   onClick={(e) => handleSaveQuiz(e, false)}
-                  className="px-4 py-2 bg-neo-cyan hover:bg-[#33F3FF] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 order-2"
+                  className="w-full xs:w-auto px-4 py-2 bg-neo-cyan hover:bg-[#33F3FF] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 order-2 cursor-pointer"
                   title="Save all questions to Host queue to launch later"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-3" />
@@ -542,7 +542,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <button
                   type="button"
                   onClick={(e) => handleSaveQuiz(e, true)}
-                  className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 order-1 sm:order-3"
+                  className="w-full xs:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 order-1 xs:order-3 cursor-pointer"
                   title="Publish all questions and immediately start Question 1 live"
                 >
                   <Play className="w-3.5 h-3.5 fill-black" />

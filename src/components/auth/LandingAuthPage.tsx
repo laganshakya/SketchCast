@@ -215,28 +215,28 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         </div>
 
         {/* Right Neo-Brutalist Auth Box */}
-        <div className="w-full max-w-md bg-neo-cream text-black p-6 sm:p-7 border-4 border-black brutal-shadow-lg relative">
+        <div className="w-full max-w-md bg-neo-cream text-black p-4 sm:p-6 md:p-7 border-4 border-black brutal-shadow-lg relative">
           {/* Header */}
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-11 h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
-              <Shield className="w-6 h-6 stroke-[2.5]" />
+          <div className="flex items-center space-x-3 mb-3.5 sm:mb-4">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
             </div>
             <div>
-              <h2 className="text-xl font-heavy uppercase tracking-tight text-black">
+              <h2 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black">
                 ENTER ARENA
               </h2>
-              <p className="text-xs font-mono text-slate-700">
+              <p className="text-[11px] sm:text-xs font-mono text-slate-700">
                 {tab === 'guest' ? 'Attendee Fast Guest Join' : 'Host / Attendee Account Access'}
               </p>
             </div>
           </div>
 
           {/* Tab Switcher */}
-          <div className="grid grid-cols-3 gap-1 p-1 bg-black border-2 border-black mb-4 font-mono text-xs">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
             <button
               type="button"
               onClick={() => handleTabChange('guest')}
-              className={`py-1.5 font-black uppercase transition-all ${
+              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
                 tab === 'guest'
                   ? 'bg-neo-mint text-black border border-black brutal-shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -248,7 +248,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             <button
               type="button"
               onClick={() => handleTabChange('signin')}
-              className={`py-1.5 font-black uppercase transition-all ${
+              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
                 tab === 'signin'
                   ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -259,7 +259,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             <button
               type="button"
               onClick={() => handleTabChange('signup')}
-              className={`py-1.5 font-black uppercase transition-all ${
+              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
                 tab === 'signup'
                   ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -447,7 +447,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 transition-all ${
+                className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                   tab === 'signin'
                     ? 'bg-neo-yellow hover:bg-[#FFF04D]'
                     : tab === 'signup'
@@ -473,13 +473,13 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-neo-cream text-black w-full max-w-xs p-6 border-4 border-black brutal-shadow-lg relative text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-neo-cream text-black w-full max-w-xs p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative text-center max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowQRPreview(false)}
-              className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer"
             >
-              <X className="w-5 h-5 stroke-3" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
             </button>
 
             <div className="flex flex-col items-center mb-3">

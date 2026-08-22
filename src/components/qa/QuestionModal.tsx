@@ -34,33 +34,34 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-neo-cream text-black w-full max-w-lg p-6 border-4 border-black brutal-shadow-lg relative font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-neo-cream text-black w-full max-w-lg p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+          title="Close modal"
         >
-          <X className="w-5 h-5 stroke-3" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
         </button>
 
         {/* Header */}
-        <div className="flex items-center space-x-2.5 mb-4">
-          <div className="w-10 h-10 bg-neo-pink text-white border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
-            <Sparkles className="w-5 h-5 fill-white stroke-white" />
+        <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-pink text-white border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 fill-white stroke-white" />
           </div>
           <div>
-            <h3 className="text-lg font-heavy uppercase tracking-tight text-black">
+            <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
               SUBMIT ARCHITECTURE QUESTION
             </h3>
-            <p className="text-xs font-mono text-slate-700">
+            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
               Posting as <span className="font-extrabold text-black bg-neo-yellow px-1 border border-black">{userName}</span>
             </p>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5 font-mono">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5 font-mono">
           <div>
             <textarea
               value={content}
@@ -68,19 +69,19 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
               placeholder="Ask an architecture question or challenge the speaker with a system design problem..."
               rows={3}
               maxLength={280}
-              className="w-full p-3 bg-white border-2 border-black text-xs font-bold text-black placeholder-slate-500 focus:outline-none focus:bg-neo-yellow/15 resize-none font-display"
+              className="w-full p-2.5 sm:p-3 bg-white border-2 border-black text-xs font-bold text-black placeholder-slate-500 focus:outline-none focus:bg-neo-yellow/15 resize-none font-display"
               autoFocus
             />
-            <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 mt-1">
-              <span>Audience upvotes will rank your question to the top stage!</span>
+            <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-bold text-slate-600 mt-1 flex-wrap gap-1">
+              <span>Audience upvotes will rank your question!</span>
               <span>{content.length}/280</span>
             </div>
           </div>
 
           {/* Quick Idea Starters */}
-          <div className="bg-[#F4EFE0] p-3 border-2 border-black">
-            <div className="flex items-center space-x-1 text-[11px] font-black uppercase text-black mb-1.5">
-              <HelpCircle className="w-3.5 h-3.5 text-neo-pink" />
+          <div className="bg-[#F4EFE0] p-2.5 sm:p-3 border-2 border-black">
+            <div className="flex items-center space-x-1 text-[10px] sm:text-[11px] font-black uppercase text-black mb-1">
+              <HelpCircle className="w-3.5 h-3.5 text-neo-pink shrink-0" />
               <span>Prompt Ideas (Tap to fill):</span>
             </div>
             <div className="space-y-1">
@@ -89,7 +90,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                   key={i}
                   type="button"
                   onClick={() => setContent(prompt)}
-                  className="w-full text-left text-[11px] font-medium text-slate-800 hover:text-black hover:bg-neo-yellow p-1 border border-transparent hover:border-black transition-colors truncate block"
+                  className="w-full text-left text-[10px] sm:text-[11px] font-medium text-slate-800 hover:text-black hover:bg-neo-yellow p-1 border border-transparent hover:border-black transition-colors truncate block cursor-pointer"
                 >
                   &ldquo;{prompt}&rdquo;
                 </button>
@@ -98,18 +99,18 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end space-x-2 pt-1">
+          <div className="flex flex-col-reverse xs:flex-row items-center justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black"
+              className="w-full xs:w-auto px-4 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
             >
               CANCEL
             </button>
             <button
               type="submit"
               disabled={!content.trim()}
-              className="px-5 py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center space-x-1.5"
+              className="w-full xs:w-auto px-5 py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>SUBMIT QUESTION</span>

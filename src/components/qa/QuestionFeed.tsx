@@ -39,21 +39,21 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans">
       {/* Top Feed Bar */}
-      <div className="p-3.5 border-b-2 border-black bg-neo-card">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="p-3 sm:p-3.5 border-b-2 border-black bg-neo-card">
+        <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3 flex-wrap">
           <div className="flex items-center space-x-2">
-            <span className="text-base font-heavy tracking-tight text-white uppercase flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-neo-yellow" />
+            <span className="text-sm sm:text-base font-heavy tracking-tight text-white uppercase flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neo-yellow" />
               <span>LIVE Q&A FEED</span>
             </span>
-            <span className="text-xs font-mono font-black px-2 py-0.5 bg-neo-yellow text-black border border-black brutal-shadow-sm">
+            <span className="text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.2 sm:py-0.5 bg-neo-yellow text-black border border-black brutal-shadow-sm">
               {questions.length}
             </span>
           </div>
 
           <button
             onClick={onOpenAskModal}
-            className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1"
+            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-[11px] sm:text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-3" />
             <span>ASK QUESTION</span>
