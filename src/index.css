@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neo-yellow: #FFE600;
+  --color-neo-pink: #FF2A6D;
+  --color-neo-cyan: #00F0FF;
+  --color-neo-mint: #00F59B;
+  --color-neo-orange: #FF6B35;
+  --color-neo-purple: #9B5DE5;
+  --color-neo-cream: #FFFDF5;
+  --color-neo-dark: #0D0F15;
+  --color-neo-card: #151822;
+  --color-neo-card-darker: #0E1017;
+  --color-neo-border: #2B3042;
+  --color-neo-border-hard: #000000;
+
+  --font-sans: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Syne', sans-serif;
+  --font-heavy: 'Archivo Black', sans-serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #0D0F15;
+  color: #F8FAFC;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  font-family: var(--font-sans);
+}
+
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+  font-family: var(--font-mono);
+}
+
+/* Retro Grid Background */
+.bg-retro-grid {
+  background-color: #0D0F15;
+  background-image: radial-gradient(rgba(255, 230, 0, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.bg-retro-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 0);
+  background-size: 16px 16px;
+}
+
+/* Neo-Brutalist Hard Shadow & Border Utilities */
+.brutal-card {
+  background-color: #151822;
+  border: 2px solid #2B3042;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.brutal-card-pop {
+  background-color: #1A1E2B;
+  border: 2.5px solid #FFE600;
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.brutal-card-cream {
+  background-color: #FFFDF5;
+  color: #000000;
+  border: 2.5px solid #000000;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.brutal-shadow-sm {
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.brutal-shadow {
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.brutal-shadow-lg {
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.brutal-shadow-yellow {
+  box-shadow: 4px 4px 0px #FFE600;
+}
+
+.brutal-shadow-pink {
+  box-shadow: 4px 4px 0px #FF2A6D;
+}
+
+.brutal-shadow-cyan {
+  box-shadow: 4px 4px 0px #00F0FF;
+}
+
+.brutal-shadow-green {
+  box-shadow: 4px 4px 0px #00F59B;
+}
+
+/* Tactile Mechanical Button Feedback */
+.brutal-btn {
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.brutal-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+/* Specific Neo-Brutalist Color Buttons */
+.btn-neo-yellow {
+  background-color: #FFE600;
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 700;
+}
+
+.btn-neo-yellow:hover {
+  background-color: #FFF04D;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn-neo-yellow:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.btn-neo-pink {
+  background-color: #FF2A6D;
+  color: #FFFFFF;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 700;
+}
+
+.btn-neo-pink:hover {
+  background-color: #FF4782;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn-neo-pink:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.btn-neo-cyan {
+  background-color: #00F0FF;
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 700;
+}
+
+.btn-neo-cyan:hover {
+  background-color: #33F3FF;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn-neo-cyan:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.btn-neo-mint {
+  background-color: #00F59B;
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 700;
+}
+
+.btn-neo-mint:hover {
+  background-color: #26F7A9;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn-neo-mint:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.btn-neo-dark {
+  background-color: #1A1E2B;
+  color: #F8FAFC;
+  border: 2px solid #2B3042;
+  box-shadow: 3px 3px 0px #000000;
+  font-weight: 600;
+}
+
+.btn-neo-dark:hover {
+  background-color: #222738;
+  border-color: #FFE600;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.btn-neo-dark:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+/* Retro Diagonal Hazard Striped Border */
+.hazard-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    #FFE600,
+    #FFE600 10px,
+    #000000 10px,
+    #000000 20px
+  );
+}
+
+.hazard-stripes-pink {
+  background: repeating-linear-gradient(
+    45deg,
+    #FF2A6D,
+    #FF2A6D 10px,
+    #000000 10px,
+    #000000 20px
+  );
+}
+
+/* Retro Vintage Sticker Badge */
+.retro-sticker {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border: 1.5px solid #000;
+  box-shadow: 2px 2px 0px #000;
+  border-radius: 4px;
+}
+
+/* Custom modern scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0E1017;
+  border-left: 1px solid #1E2330;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FFE600;
+  border: 1px solid #000000;
+  box-shadow: 1px 1px 0px #000000;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FF2A6D;
+}
