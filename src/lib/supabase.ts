@@ -56,6 +56,25 @@ export async function signInAnonymously(displayName?: string) {
   return { user: data.user, session: data.session, error };
 }
 
+export async function resendVerificationEmail(email: string) {
+  if (!supabase) return { error: new Error('Supabase not configured') };
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+  });
+  return { error };
+}
+
+export function isEmailVerified(user: User | null): boolean {
+  if (!user) return false;
+  // If registered via third-party OAuth, it is verified
+  if (user.app_metadata?.provider && user.app_metadata.provider !== 'email') {
+    return true;
+  }
+  // Check if email has been verified
+  return Boolean(user.email_confirmed_at || user.confirmed_at);
+}
+
 export async function signOutUser() {
   if (!supabase) return { error: null };
   const { error } = await supabase.auth.signOut();

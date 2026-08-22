@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 const SESSION_KEY = 'sketchcast_session_id';
@@ -139,10 +139,10 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Supabase Auth Listener (Auto-auth on active Supabase session)
+  // Supabase Auth Listener (Auto-auth on active Supabase session with verified email)
   useEffect(() => {
     getCurrentUser().then((user) => {
-      if (user) {
+      if (user && isEmailVerified(user)) {
         setCurrentUser(user);
         setIsAuthenticated(true);
         sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
@@ -152,12 +152,19 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           setUserNameState(name);
           sessionStorage.setItem(NAME_KEY, name);
         }
+      } else {
+        if (user && !isEmailVerified(user)) {
+          signOutUser();
+        }
+        setIsAuthenticated(false);
+        sessionStorage.removeItem(AUTH_FLAG_KEY);
+        localStorage.removeItem(AUTH_FLAG_KEY);
       }
     });
 
     const unsubscribe = onAuthChange((user) => {
-      setCurrentUser(user);
-      if (user) {
+      if (user && isEmailVerified(user)) {
+        setCurrentUser(user);
         setIsAuthenticated(true);
         sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
         localStorage.setItem(AUTH_FLAG_KEY, 'true');
@@ -166,6 +173,11 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           sessionStorage.setItem(NAME_KEY, name);
           setUserNameState(name);
         }
+      } else {
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+        sessionStorage.removeItem(AUTH_FLAG_KEY);
+        localStorage.removeItem(AUTH_FLAG_KEY);
       }
     });
 

@@ -13,15 +13,22 @@ import {
   CheckCircle,
   AlertCircle,
   Flame,
-  Info,
   Crown,
   Key,
   QrCode,
   RefreshCw,
-  X
+  X,
+  Send,
+  Check
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { signInWithEmail, signUpWithEmail, signInAnonymously } from '../../lib/supabase';
+import {
+  signInWithEmail,
+  signUpWithEmail,
+  resendVerificationEmail,
+  isEmailVerified,
+  signOutUser
+} from '../../lib/supabase';
 
 interface LandingAuthPageProps {
   onAuthenticated: (name: string, role: 'host' | 'attendee', roomCode?: string) => void;
@@ -32,7 +39,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   onAuthenticated,
   roomCode,
 }) => {
-  const [tab, setTab] = useState<'signin' | 'signup' | 'guest'>('guest');
+  const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -42,6 +49,11 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Email verification pending state
+  const [verificationSentEmail, setVerificationSentEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   // Check URL query param for room on load
   useEffect(() => {
@@ -54,22 +66,21 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
     }
   }, []);
 
-  const handleTabChange = (nextTab: 'signin' | 'signup' | 'guest') => {
+  // Countdown timer for resending verification email
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleTabChange = (nextTab: 'signin' | 'signup') => {
     setTab(nextTab);
     setErrorMessage(null);
     setSuccessMessage(null);
-    if (nextTab === 'guest') {
-      setRole('attendee');
-    }
-  };
-
-  const handleRoleSelect = (selectedRole: 'host' | 'attendee') => {
-    if (tab === 'guest' && selectedRole === 'host') {
-      setErrorMessage('Guest access is attendee-only. Please Sign In or Register to access Host/Admin controls.');
-      return;
-    }
-    setRole(selectedRole);
-    setErrorMessage(null);
+    setVerificationSentEmail(null);
+    setResendStatus(null);
   };
 
   const generateRandomRoomKey = () => {
@@ -83,46 +94,74 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
     ? `${window.location.origin}${window.location.pathname}?room=${roomKey.trim().toUpperCase() || 'SKT-789'}`
     : `https://sketchcast.live/?room=${roomKey.trim().toUpperCase() || 'SKT-789'}`;
 
+  const handleResendVerification = async (targetEmail: string) => {
+    if (resendCooldown > 0 || !targetEmail) return;
+    setResendStatus('Sending verification email...');
+    try {
+      const { error } = await resendVerificationEmail(targetEmail);
+      if (error) {
+        setResendStatus(`Failed: ${error.message}`);
+      } else {
+        setResendStatus(`Verification email sent to ${targetEmail}!`);
+        setResendCooldown(60);
+      }
+    } catch {
+      setResendStatus('Failed to send email. Please check your address.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setResendStatus(null);
 
     const cleanRoomKey = roomKey.trim().toUpperCase();
-
     if (!cleanRoomKey) {
       setErrorMessage('Please enter a Room Key / Passcode to join or host a room.');
       setIsLoading(false);
       return;
     }
 
-    const finalRole: 'host' | 'attendee' = tab === 'guest' ? 'attendee' : role;
-
     try {
       if (tab === 'signin') {
-        const { user, error } = await signInWithEmail(email, password);
+        const { user, session, error } = await signInWithEmail(email, password);
         if (error) {
-          setErrorMessage(error.message);
+          const errMsg = error.message.toLowerCase();
+          if (errMsg.includes('email not confirmed') || errMsg.includes('not verified') || errMsg.includes('unconfirmed')) {
+            setVerificationSentEmail(email);
+            setErrorMessage('Your email address is not verified yet. Please check your inbox.');
+          } else {
+            setErrorMessage(error.message);
+          }
         } else if (user) {
-          const name = user.user_metadata?.display_name || user.email?.split('@')[0] || (finalRole === 'host' ? 'Host Admin' : 'TechAttendee');
-          setSuccessMessage(`Welcome, ${name}! Entering Room [${cleanRoomKey}] as ${finalRole.toUpperCase()}...`);
-          setTimeout(() => onAuthenticated(name, finalRole, cleanRoomKey), 500);
+          // Strictly verify email confirmation status
+          if (!isEmailVerified(user) && !session) {
+            await signOutUser();
+            setVerificationSentEmail(email);
+            setErrorMessage('Your email is not verified yet. Please check your inbox.');
+          } else {
+            const name = user.user_metadata?.display_name || user.email?.split('@')[0] || (role === 'host' ? 'Host Admin' : 'TechAttendee');
+            setSuccessMessage(`Welcome, ${name}! Entering Room [${cleanRoomKey}] as ${role.toUpperCase()}...`);
+            setTimeout(() => onAuthenticated(name, role, cleanRoomKey), 500);
+          }
         }
       } else if (tab === 'signup') {
-        const name = displayName.trim() || (finalRole === 'host' ? 'Host Admin' : 'TechAttendee');
-        const { user, error } = await signUpWithEmail(email, password, name);
+        const name = displayName.trim() || (role === 'host' ? 'Host Admin' : 'TechAttendee');
+        const { user, session, error } = await signUpWithEmail(email, password, name);
         if (error) {
           setErrorMessage(error.message);
         } else if (user) {
-          setSuccessMessage(`Account created! Entering Room [${cleanRoomKey}] as ${finalRole.toUpperCase()}...`);
-          setTimeout(() => onAuthenticated(name, finalRole, cleanRoomKey), 500);
+          if (!isEmailVerified(user) && !session) {
+            // Require user to check inbox and verify email
+            setVerificationSentEmail(email);
+            setResendCooldown(60);
+          } else {
+            setSuccessMessage(`Account verified & created! Entering Room [${cleanRoomKey}]...`);
+            setTimeout(() => onAuthenticated(name, role, cleanRoomKey), 500);
+          }
         }
-      } else if (tab === 'guest') {
-        const name = displayName.trim() || 'Guest ' + Math.floor(100 + Math.random() * 900);
-        await signInAnonymously(name);
-        setSuccessMessage(`Joining Room [${cleanRoomKey}] as Attendee: ${name}...`);
-        setTimeout(() => onAuthenticated(name, 'attendee', cleanRoomKey), 400);
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Authentication failed. Please try again.');
@@ -202,7 +241,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             <button
               type="button"
               onClick={() => setShowQRPreview(true)}
-              className="px-3.5 py-2 bg-neo-card-darker hover:bg-[#1A1D29] text-slate-200 border-2 border-black font-mono text-xs font-bold brutal-shadow-sm transition-all flex items-center space-x-2"
+              className="px-3.5 py-2 bg-neo-card-darker hover:bg-[#1A1D29] text-slate-200 border-2 border-black font-mono text-xs font-bold brutal-shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
             >
               <QrCode className="w-4 h-4 text-neo-yellow" />
               <span>SHOW ROOM QR CODE</span>
@@ -215,7 +254,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         </div>
 
         {/* Right Neo-Brutalist Auth Box */}
-        <div className="w-full max-w-md bg-neo-cream text-black p-4 sm:p-6 md:p-7 border-4 border-black brutal-shadow-lg relative">
+        <div className="w-full max-w-md bg-neo-cream text-black p-4 sm:p-6 md:p-7 border-4 border-black brutal-shadow-lg relative font-sans">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-3.5 sm:mb-4">
             <div className="w-10 h-10 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
@@ -223,152 +262,217 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black">
-                ENTER ARENA
+                {verificationSentEmail ? 'EMAIL VERIFICATION' : 'ENTER ARENA'}
               </h2>
               <p className="text-[11px] sm:text-xs font-mono text-slate-700">
-                {tab === 'guest' ? 'Attendee Fast Guest Join' : 'Host / Attendee Account Access'}
+                {verificationSentEmail
+                  ? 'Confirm your email to activate account'
+                  : 'Host & Attendee Verified Access'}
               </p>
             </div>
           </div>
 
-          {/* Tab Switcher */}
-          <div className="grid grid-cols-3 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
-            <button
-              type="button"
-              onClick={() => handleTabChange('guest')}
-              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
-                tab === 'guest'
-                  ? 'bg-neo-mint text-black border border-black brutal-shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              title="Attendee Quick Guest Access"
-            >
-              GUEST
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('signin')}
-              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
-                tab === 'signin'
-                  ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              SIGN IN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('signup')}
-              className={`py-1.5 font-black uppercase transition-all cursor-pointer ${
-                tab === 'signup'
-                  ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              REGISTER
-            </button>
-          </div>
-
-          {/* Feedback Banners */}
-          {errorMessage && (
-            <div className="p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-          {successMessage && (
-            <div className="p-2.5 bg-neo-mint text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 shrink-0 stroke-3" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {/* Guest Notice Banner */}
-          {tab === 'guest' && (
-            <div className="p-2 bg-[#E2F9F0] border-2 border-black font-mono text-[11px] font-bold text-slate-800 mb-3 flex items-center space-x-1.5">
-              <Info className="w-3.5 h-3.5 text-[#00A86B] shrink-0" />
-              <span>Guest mode is exclusively for <strong>Attendees</strong>. Hosts must sign in.</span>
-            </div>
-          )}
-
-          {/* Auth Form */}
-          <form onSubmit={handleSubmit} className="space-y-3 font-mono">
-            {/* ROOM KEY / PASSCODE FIELD */}
-            <div className="p-3 bg-amber-50 border-2 border-black">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-black uppercase flex items-center gap-1.5 text-black">
-                  <Key className="w-3.5 h-3.5 text-amber-600" />
-                  <span>
-                    {role === 'host' && tab !== 'guest'
-                      ? 'HOST ROOM KEY (AUTO-ASSIGNED):'
-                      : 'ROOM KEY / PASSCODE TO JOIN:'}
-                  </span>
-                </label>
-                {role === 'host' && tab !== 'guest' ? (
-                  <button
-                    type="button"
-                    onClick={generateRandomRoomKey}
-                    className="text-[10px] bg-black text-white hover:bg-neo-pink px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors"
-                    title="Shuffle unique room key"
-                  >
-                    <RefreshCw className="w-3 h-3" /> SHUFFLE KEY
-                  </button>
-                ) : (
-                  <span className="text-[10px] text-slate-500 font-bold uppercase">
-                    REQUIRED
-                  </span>
-                )}
+          {/* Verification Pending Screen */}
+          {verificationSentEmail ? (
+            <div className="space-y-4 font-mono">
+              <div className="p-4 bg-amber-50 border-2 border-black space-y-3">
+                <div className="flex items-center space-x-2 text-amber-900 font-heavy text-sm">
+                  <Mail className="w-5 h-5 text-amber-600 animate-bounce shrink-0" />
+                  <span>CONFIRMATION LINK SENT!</span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  We've sent a verification link to:
+                  <br />
+                  <strong className="text-black bg-neo-yellow px-1 border border-black break-all text-xs">
+                    {verificationSentEmail}
+                  </strong>
+                </p>
+                <div className="text-[11px] text-slate-600 space-y-1 bg-white p-2.5 border border-black">
+                  <div className="font-black text-black">NEXT STEPS:</div>
+                  <div>1. Check your email inbox (and Spam/Junk folder).</div>
+                  <div>2. Click the confirmation link to activate your account.</div>
+                  <div>3. Return here and sign in with your password.</div>
+                </div>
               </div>
 
-              {role === 'host' && tab !== 'guest' ? (
-                <div className="flex items-center bg-white border-2 border-black px-3 py-2">
-                  <Lock className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                  <span className="text-base font-black tracking-widest text-black flex-1 select-all">
-                    {roomKey}
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-neo-mint text-black border border-black">
-                    UNIQUE KEY
-                  </span>
+              {resendStatus && (
+                <div className={`p-2.5 text-xs font-bold border-2 border-black flex items-center space-x-2 ${
+                  resendStatus.includes('sent')
+                    ? 'bg-neo-mint text-black'
+                    : 'bg-neo-pink text-white'
+                }`}>
+                  {resendStatus.includes('sent') ? <Check className="w-4 h-4 shrink-0 stroke-3" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{resendStatus}</span>
                 </div>
-              ) : (
-                <input
-                  type="text"
-                  value={roomKey}
-                  onChange={(e) => setRoomKey(e.target.value.toUpperCase())}
-                  placeholder="e.g. SKT-789 or ARCH-101"
-                  className="w-full px-3 py-1.5 text-sm bg-white border-2 border-black text-black font-black tracking-wider focus:outline-none focus:bg-neo-yellow/20"
-                  required
-                />
               )}
 
-              <p className="text-[10px] text-slate-600 font-bold mt-1.5">
-                {role === 'host' && tab !== 'guest'
-                  ? 'Auto-generated collision-free room code. Attendees will use this key to enter your live session.'
-                  : 'Enter the Room Key provided by your Host or loaded from the QR code.'}
-              </p>
-            </div>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleResendVerification(verificationSentEmail)}
+                  disabled={resendCooldown > 0}
+                  className="w-full py-2.5 bg-neo-cyan hover:bg-[#33F3FF] disabled:bg-slate-200 disabled:text-slate-500 text-black text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>
+                    {resendCooldown > 0
+                      ? `RESEND AVAILABLE IN ${resendCooldown}S`
+                      : 'RESEND VERIFICATION EMAIL'}
+                  </span>
+                </button>
 
-            {(tab === 'signup' || tab === 'guest') && (
-              <div>
-                <label className="text-xs font-black uppercase block mb-1">
-                  {tab === 'guest' ? 'Guest Attendee Alias' : 'Your Display Name'}
-                </label>
-                <div className="relative">
-                  <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder={tab === 'guest' ? 'e.g. CodeNinja_42' : 'e.g. Elena Rostova'}
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                    required
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerificationSentEmail(null);
+                    setTab('signin');
+                  }}
+                  className="w-full py-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <span>I'VE CONFIRMED MY EMAIL ➔ SIGN IN</span>
+                  <ArrowRight className="w-4 h-4 stroke-3" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerificationSentEmail(null);
+                    setEmail('');
+                    setPassword('');
+                  }}
+                  className="w-full py-2 text-center text-xs font-bold text-slate-600 hover:text-black uppercase cursor-pointer"
+                >
+                  Use a different email address
+                </button>
               </div>
-            )}
+            </div>
+          ) : (
+            <>
+              {/* Tab Switcher */}
+              <div className="grid grid-cols-2 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('signin')}
+                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
+                    tab === 'signin'
+                      ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  SIGN IN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('signup')}
+                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
+                    tab === 'signup'
+                      ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  CREATE ACCOUNT
+                </button>
+              </div>
 
-            {tab !== 'guest' && (
-              <>
+              {/* Feedback Banners */}
+              {errorMessage && (
+                <div className="p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-start space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div>{errorMessage}</div>
+                    {errorMessage.toLowerCase().includes('not verified') && email && (
+                      <button
+                        type="button"
+                        onClick={() => handleResendVerification(email)}
+                        className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
+                      >
+                        Resend Verification Email
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {successMessage && (
+                <div className="p-2.5 bg-neo-mint text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 shrink-0 stroke-3" />
+                  <span>{successMessage}</span>
+                </div>
+              )}
+
+              {/* Auth Form */}
+              <form onSubmit={handleSubmit} className="space-y-3 font-mono">
+                {/* ROOM KEY / PASSCODE FIELD */}
+                <div className="p-2.5 sm:p-3 bg-amber-50 border-2 border-black">
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                    <label className="text-xs font-black uppercase flex items-center gap-1.5 text-black">
+                      <Key className="w-3.5 h-3.5 text-amber-600" />
+                      <span>
+                        {role === 'host'
+                          ? 'HOST ROOM KEY (AUTO-ASSIGNED):'
+                          : 'ROOM KEY / PASSCODE TO JOIN:'}
+                      </span>
+                    </label>
+                    {role === 'host' ? (
+                      <button
+                        type="button"
+                        onClick={generateRandomRoomKey}
+                        className="text-[9px] sm:text-[10px] bg-black text-white hover:bg-neo-pink px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors cursor-pointer"
+                        title="Shuffle unique room key"
+                      >
+                        <RefreshCw className="w-3 h-3" /> SHUFFLE
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">
+                        REQUIRED
+                      </span>
+                    )}
+                  </div>
+
+                  {role === 'host' ? (
+                    <div className="flex items-center bg-white border-2 border-black px-2.5 sm:px-3 py-1.5 sm:py-2">
+                      <Lock className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+                      <span className="text-sm sm:text-base font-black tracking-widest text-black flex-1 select-all">
+                        {roomKey}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase px-1.5 sm:px-2 py-0.5 bg-neo-mint text-black border border-black">
+                        UNIQUE
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={roomKey}
+                      onChange={(e) => setRoomKey(e.target.value.toUpperCase())}
+                      placeholder="e.g. SKT-789 or ARCH-101"
+                      className="w-full px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-white border-2 border-black text-black font-black tracking-wider focus:outline-none focus:bg-neo-yellow/20"
+                      required
+                    />
+                  )}
+
+                  <p className="text-[9px] sm:text-[10px] text-slate-600 font-bold mt-1">
+                    {role === 'host'
+                      ? 'Auto-generated collision-free room code for your live session.'
+                      : 'Enter the Room Key provided by your Host or loaded from the QR code.'}
+                  </p>
+                </div>
+
+                {tab === 'signup' && (
+                  <div>
+                    <label className="text-xs font-black uppercase block mb-1">Your Display Name</label>
+                    <div className="relative">
+                      <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="e.g. Elena Rostova"
+                        className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-xs font-black uppercase block mb-1">Email Address</label>
                   <div className="relative">
@@ -378,7 +482,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@company.com"
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                      className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                       required
                     />
                   </div>
@@ -393,87 +497,74 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                      className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                       required
                       minLength={6}
                     />
                   </div>
                 </div>
-              </>
-            )}
 
-            {/* Role Selection (Only shown for Sign In & Register; Guest is locked to Attendee) */}
-            {tab !== 'guest' ? (
-              <div>
-                <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
-                <div className="grid grid-cols-2 gap-2">
+                {/* Role Selection */}
+                <div>
+                  <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRole('attendee')}
+                      className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                        role === 'attendee'
+                          ? 'bg-neo-mint text-black brutal-shadow-sm'
+                          : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                      }`}
+                    >
+                      <UserIcon className="w-3.5 h-3.5" />
+                      <span>ATTENDEE</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole('host')}
+                      className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                        role === 'host'
+                          ? 'bg-neo-yellow text-black brutal-shadow-sm'
+                          : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                      }`}
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>HOST / ADMIN</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-2">
                   <button
-                    type="button"
-                    onClick={() => handleRoleSelect('attendee')}
-                    className={`py-1.5 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 ${
-                      role === 'attendee'
-                        ? 'bg-neo-mint text-black brutal-shadow-sm'
-                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                      tab === 'signin'
+                        ? 'bg-neo-yellow hover:bg-[#FFF04D]'
+                        : 'bg-neo-cyan hover:bg-[#33F3FF]'
                     }`}
                   >
-                    <UserIcon className="w-3.5 h-3.5" />
-                    <span>ATTENDEE</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('host')}
-                    className={`py-1.5 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 ${
-                      role === 'host'
-                        ? 'bg-neo-yellow text-black brutal-shadow-sm'
-                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                    }`}
-                  >
-                    <Crown className="w-3.5 h-3.5" />
-                    <span>HOST / ADMIN</span>
+                    <span>
+                      {isLoading
+                        ? 'VERIFYING & CONNECTING...'
+                        : tab === 'signin'
+                        ? `LOG IN & JOIN [${roomKey.toUpperCase() || 'ROOM'}]`
+                        : `REGISTER & SEND VERIFICATION EMAIL`}
+                    </span>
+                    <ArrowRight className="w-4 h-4 stroke-3" />
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="p-2 bg-slate-100 border-2 border-black text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>ASSIGNED ROLE:</span>
-                <span className="px-2 py-0.5 bg-neo-mint text-black font-black uppercase border border-black text-[10px]">
-                  ATTENDEE
-                </span>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 transition-all cursor-pointer ${
-                  tab === 'signin'
-                    ? 'bg-neo-yellow hover:bg-[#FFF04D]'
-                    : tab === 'signup'
-                    ? 'bg-neo-cyan hover:bg-[#33F3FF]'
-                    : 'bg-neo-mint hover:bg-[#26F7A9]'
-                }`}
-              >
-                <span>
-                  {isLoading
-                    ? 'CONNECTING TO ROOM...'
-                    : tab === 'signin'
-                    ? `LOG IN & JOIN [${roomKey.toUpperCase() || 'ROOM'}]`
-                    : tab === 'signup'
-                    ? `REGISTER & ENTER [${roomKey.toUpperCase() || 'ROOM'}]`
-                    : `JOIN ROOM [${roomKey.toUpperCase() || 'ROOM'}] AS GUEST`}
-                </span>
-                <ArrowRight className="w-4 h-4 stroke-3" />
-              </button>
-            </div>
-          </form>
+              </form>
+            </>
+          )}
         </div>
       </div>
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
           <div className="bg-neo-cream text-black w-full max-w-xs p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative text-center max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowQRPreview(false)}
