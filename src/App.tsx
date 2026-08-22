@@ -208,7 +208,7 @@ export function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-20 md:pb-5">
+      <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-24 sm:pb-28 md:pb-6">
         {/* TAB 1: Live Quiz Arena */}
         {activeTab === 'quiz' && (
           <div className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full h-full">

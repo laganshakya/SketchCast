@@ -86,7 +86,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const timerPercentage = Math.max(0, (timeRemaining / (quizState.totalSeconds || 25)) * 100);
 
   return (
-    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 space-y-4 font-sans">
+    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans">
       {/* Retro Window Top Frame Bar */}
       <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 min-w-0">

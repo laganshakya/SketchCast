@@ -45,7 +45,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 space-y-4 font-sans">
+    <div className="flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans">
       {/* Header */}
       <div className="bg-neo-card p-3.5 sm:p-4 border-2 border-black brutal-shadow flex items-center justify-between flex-wrap gap-2.5">
         <div>

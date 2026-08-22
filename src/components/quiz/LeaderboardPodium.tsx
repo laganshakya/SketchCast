@@ -43,7 +43,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto w-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans">
+    <div className="flex flex-col max-w-4xl mx-auto w-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans mb-24 md:mb-6">
       {/* Header */}
       <div className="p-3.5 sm:p-4 border-b-2 border-black bg-neo-card flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 sm:space-x-2.5">
@@ -123,7 +123,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
       )}
 
       {/* Leaderboard Table */}
-      <div className="p-2.5 sm:p-3.5 space-y-1.5 sm:space-y-2 max-h-96 overflow-y-auto font-mono">
+      <div className="p-2.5 sm:p-3.5 space-y-1.5 sm:space-y-2 max-h-96 overflow-y-auto font-mono pb-20 md:pb-4">
         {leaderboard.map((entry, index) => (
           <div
             key={entry.session_id}

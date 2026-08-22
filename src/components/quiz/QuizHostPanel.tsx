@@ -226,7 +226,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       </div>
 
       {/* Host Quiz Question Queue */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 pb-24 sm:pb-28 md:pb-4">
         {hostQuestions.length === 0 ? (
           <div className="p-6 bg-[#161924] border-2 border-black brutal-shadow-sm text-center space-y-3">
             <Sparkles className="w-6 h-6 text-neo-yellow mx-auto" />

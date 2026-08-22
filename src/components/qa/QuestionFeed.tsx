@@ -125,7 +125,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
       </div>
 
       {/* Feed List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 pb-24 sm:pb-28 md:pb-4">
         {filtered.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-slate-500 font-mono">
             <Sparkles className="w-8 h-8 text-slate-600 mb-2 opacity-60" />

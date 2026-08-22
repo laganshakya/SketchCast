@@ -174,7 +174,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-5 font-sans">
+    <div className="max-w-6xl mx-auto w-full space-y-5 font-sans pb-24 sm:pb-28 md:pb-6">
       {/* Top Header Card */}
       <div className="bg-neo-card p-5 sm:p-6 border-2 border-black brutal-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3.5">
