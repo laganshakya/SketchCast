@@ -23,14 +23,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     switch (question.status) {
       case 'spotlight':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 font-mono text-[10px] font-black uppercase bg-[#FF2A6D] text-white border border-black brutal-shadow-sm animate-pulse">
+          <span className="inline-flex items-center space-x-1 px-2 py-0.5 font-mono text-[10px] font-black uppercase bg-neo-pink text-white border border-black brutal-shadow-sm animate-pulse">
             <Sparkles className="w-3 h-3 fill-white" />
             <span>★ ON STAGE ★</span>
           </span>
         );
       case 'answered':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 font-mono text-[10px] font-black uppercase bg-[#00F59B] text-black border border-black brutal-shadow-sm">
+          <span className="inline-flex items-center space-x-1 px-2 py-0.5 font-mono text-[10px] font-black uppercase bg-neo-mint text-black border border-black brutal-shadow-sm">
             <CheckCircle className="w-3 h-3 stroke-[2.5]" />
             <span>ANSWERED</span>
           </span>
@@ -62,22 +62,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     <div
       className={`border-2 border-black transition-all font-sans relative ${
         question.status === 'spotlight'
-          ? 'bg-[#1D2030] border-[#FF2A6D] brutal-shadow-pink'
-          : 'bg-[#151822] hover:bg-[#1A1E2B] brutal-shadow-sm'
+          ? 'bg-[#1D2030] border-neo-pink brutal-shadow-pink'
+          : 'bg-neo-card hover:bg-[#1A1E2B] brutal-shadow-sm'
       } ${compact ? 'p-3' : 'p-4'}`}
     >
       <div className="flex items-start space-x-3">
         {/* Chunky Upvote Button */}
         <button
           onClick={() => onToggleUpvote(question.id)}
-          className={`flex flex-col items-center justify-center p-2 min-w-[46px] border-2 border-black transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none ${
+          className={`flex flex-col items-center justify-center p-2 min-w-12 border-2 border-black transition-all active:translate-x-px active:translate-y-px active:shadow-none ${
             isUpvoted
-              ? 'bg-[#00F59B] text-black brutal-shadow-sm font-black'
+              ? 'bg-neo-mint text-black brutal-shadow-sm font-black'
               : 'bg-[#10121A] text-slate-300 hover:text-white hover:bg-[#1E2332] brutal-shadow-sm'
           }`}
           title="Vote to rank this question"
         >
-          <ChevronUp className={`w-5 h-5 stroke-[3] transition-transform ${isUpvoted ? 'scale-110' : ''}`} />
+          <ChevronUp className={`w-5 h-5 stroke-3 transition-transform ${isUpvoted ? 'scale-110' : ''}`} />
           <span className="text-xs font-mono font-black mt-0.5">
             {question.upvotes_count}
           </span>
@@ -86,7 +86,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5 font-mono">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-black text-[#FFE600] truncate max-w-[140px] uppercase">
+              <span className="text-xs font-black text-neo-yellow truncate max-w-36 uppercase">
                 {question.author_name}
               </span>
               <span className="text-[10px] text-slate-500 font-bold">
@@ -107,7 +107,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {question.status !== 'spotlight' && (
                   <button
                     onClick={() => onStatusChange(question.id, 'spotlight')}
-                    className="px-2 py-0.5 text-[11px] font-black uppercase text-white bg-[#FF2A6D] hover:bg-[#FF4782] border border-black brutal-shadow-sm flex items-center space-x-1"
+                    className="px-2 py-0.5 text-[11px] font-black uppercase text-white bg-neo-pink hover:bg-[#FF4782] border border-black brutal-shadow-sm flex items-center space-x-1"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>SPOTLIGHT</span>
@@ -116,7 +116,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {question.status !== 'answered' && (
                   <button
                     onClick={() => onStatusChange(question.id, 'answered')}
-                    className="px-2 py-0.5 text-[11px] font-black uppercase text-black bg-[#00F59B] hover:bg-[#26F7A9] border border-black brutal-shadow-sm flex items-center space-x-1"
+                    className="px-2 py-0.5 text-[11px] font-black uppercase text-black bg-neo-mint hover:bg-[#26F7A9] border border-black brutal-shadow-sm flex items-center space-x-1"
                   >
                     <CheckCircle className="w-3 h-3" />
                     <span>ANSWER</span>
@@ -135,7 +135,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               {question.status !== 'dismissed' && (
                 <button
                   onClick={() => onStatusChange(question.id, 'dismissed')}
-                  className="p-1 text-slate-500 hover:text-[#FF2A6D] transition-colors"
+                  className="p-1 text-slate-500 hover:text-neo-pink transition-colors"
                   title="Dismiss Question"
                 >
                   <XCircle className="w-4 h-4" />

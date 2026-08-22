@@ -86,22 +86,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-[#FFFDF5] text-black w-full max-w-md p-6 border-4 border-black brutal-shadow-lg relative font-sans">
+      <div className="bg-neo-cream text-black w-full max-w-md p-6 border-4 border-black brutal-shadow-lg relative font-sans">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-[#FF2A6D] transition-colors border-2 border-black"
+          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
         >
-          <X className="w-5 h-5 stroke-[3]" />
+          <X className="w-5 h-5 stroke-3" />
         </button>
 
         {/* Header */}
         <div className="flex items-center space-x-3 mb-4">
-          <div className="w-11 h-11 bg-[#FFE600] text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
+          <div className="w-11 h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
             <Shield className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
-            <h3 className="text-lg font-heavy uppercase font-display tracking-tight text-black">
+            <h3 className="text-lg font-heavy uppercase tracking-tight text-black">
               SUPABASE AUTH & PROFILE
             </h3>
             <p className="text-xs font-mono text-slate-700">
@@ -116,7 +116,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="p-4 bg-[#F4EFE0] border-2 border-black space-y-2">
               <div className="flex items-center justify-between text-xs font-bold">
                 <span className="text-slate-600">SESSION STATUS:</span>
-                <span className="bg-[#00F59B] text-black px-2 py-0.5 border border-black uppercase text-[10px]">
+                <span className="bg-neo-mint text-black px-2 py-0.5 border border-black uppercase text-[10px]">
                   AUTHENTICATED
                 </span>
               </div>
@@ -124,7 +124,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {currentUser.email || 'Anonymous Guest Session'}
               </div>
               <div className="text-xs text-slate-700">
-                Display Name: <span className="font-black text-black bg-[#FFE600] px-1 border border-black">{userName}</span>
+                Display Name: <span className="font-black text-black bg-neo-yellow px-1 border border-black">{userName}</span>
               </div>
             </div>
 
@@ -140,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="button"
                 onClick={handleSignOut}
                 disabled={isLoading}
-                className="px-4 py-2 bg-[#FF2A6D] hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center space-x-1.5"
+                className="px-4 py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center space-x-1.5"
               >
                 <LogOut className="w-4 h-4" />
                 <span>SIGN OUT</span>
@@ -156,7 +156,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => { setTab('signin'); setErrorMessage(null); }}
                 className={`py-1.5 font-black uppercase transition-all ${
                   tab === 'signin'
-                    ? 'bg-[#FFE600] text-black border border-black brutal-shadow-sm'
+                    ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -167,7 +167,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => { setTab('signup'); setErrorMessage(null); }}
                 className={`py-1.5 font-black uppercase transition-all ${
                   tab === 'signup'
-                    ? 'bg-[#00F0FF] text-black border border-black brutal-shadow-sm'
+                    ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -178,7 +178,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={() => { setTab('anon'); setErrorMessage(null); }}
                 className={`py-1.5 font-black uppercase transition-all ${
                   tab === 'anon'
-                    ? 'bg-[#00F59B] text-black border border-black brutal-shadow-sm'
+                    ? 'bg-neo-mint text-black border border-black brutal-shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
                 title="Attendee Guest Only"
@@ -189,21 +189,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {/* Error / Success Feedback */}
             {errorMessage && (
-              <div className="p-2.5 bg-[#FF2A6D] text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
             {successMessage && (
-              <div className="p-2.5 bg-[#00F59B] text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 flex-shrink-0 stroke-[3]" />
+              <div className="p-2.5 bg-neo-mint text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 shrink-0 stroke-3" />
                 <span>{successMessage}</span>
               </div>
             )}
 
             {tab === 'anon' && (
               <div className="p-2 bg-[#E2F9F0] border-2 border-black font-mono text-[11px] font-bold text-slate-800 mb-3 flex items-center space-x-1.5">
-                <Info className="w-3.5 h-3.5 text-[#00A86B] flex-shrink-0" />
+                <Info className="w-3.5 h-3.5 text-[#00A86B] shrink-0" />
                 <span>Guest auth is for <strong>Attendees only</strong>. Hosts require email login.</span>
               </div>
             )}
@@ -222,7 +222,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. Alex Chen"
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-[#FFE600]/15"
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                       required
                     />
                   </div>
@@ -240,7 +240,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@company.com"
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-[#FFE600]/15"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                         required
                       />
                     </div>
@@ -255,7 +255,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-[#FFE600]/15"
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                         required
                         minLength={6}
                       />
@@ -275,12 +275,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`px-5 py-2 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center space-x-1.5 ${
+                  className={`px-5 py-2 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center space-x-1.5 ${
                     tab === 'signin'
-                      ? 'bg-[#FFE600] hover:bg-[#FFF04D]'
+                      ? 'bg-neo-yellow hover:bg-[#FFF04D]'
                       : tab === 'signup'
-                      ? 'bg-[#00F0FF] hover:bg-[#33F3FF]'
-                      : 'bg-[#00F59B] hover:bg-[#26F7A9]'
+                      ? 'bg-neo-cyan hover:bg-[#33F3FF]'
+                      : 'bg-neo-mint hover:bg-[#26F7A9]'
                   }`}
                 >
                   <Sparkles className="w-4 h-4" />

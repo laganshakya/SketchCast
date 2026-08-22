@@ -1,5 +1,5 @@
 import React from 'react';
-import { Timer, CheckCircle, XCircle, Sparkles, HelpCircle, ArrowRight, Eye, Flame, Terminal } from 'lucide-react';
+import { Timer, CheckCircle, XCircle, Sparkles, HelpCircle, ArrowRight, Eye, Flame, Terminal, Trophy } from 'lucide-react';
 import type { QuizRoundState } from '../../types';
 
 interface QuizArenaProps {
@@ -9,6 +9,8 @@ interface QuizArenaProps {
   onSelectOption: (optionId: string) => void;
   onRevealAnswer: () => void;
   onNextQuestion?: () => void;
+  hasNextQuestion?: boolean;
+  onViewScores?: () => void;
   isHost: boolean;
 }
 
@@ -19,6 +21,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   onSelectOption,
   onRevealAnswer,
   onNextQuestion,
+  hasNextQuestion = false,
+  onViewScores,
   isHost,
 }) => {
   const { question, isRevealed, userSelectedOption, isCorrect, pointsEarned, votesDistribution } = quizState;
@@ -26,13 +30,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   if (!question) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-retro-dots">
-        <div className="w-16 h-16 bg-[#FFE600] text-black border-2 border-black brutal-shadow flex items-center justify-center mb-4 rotate-[-3deg]">
+        <div className="w-16 h-16 bg-neo-yellow text-black border-2 border-black brutal-shadow flex items-center justify-center mb-4 -rotate-3">
           <Sparkles className="w-8 h-8 stroke-black" />
         </div>
-        <h3 className="text-2xl font-heavy text-white uppercase font-display tracking-tight mb-2">
+        <h3 className="text-2xl font-heavy text-white uppercase tracking-tight mb-2">
           NO ACTIVE QUIZ ROUND
         </h3>
-        <p className="text-xs font-mono text-slate-400 max-w-md bg-[#151822] p-3 border-2 border-black brutal-shadow-sm">
+        <p className="text-xs font-mono text-slate-400 max-w-md bg-neo-card p-3 border-2 border-black brutal-shadow-sm">
           {isHost
             ? '> Launch a technical question from the host control panel to start live round.'
             : '> Stand by. The host is queuing the next architecture challenge...'}
@@ -49,31 +53,31 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     if (isRevealed) {
       if (isAnswer) {
-        return 'bg-[#00F59B] text-black border-2 border-black brutal-shadow-green font-bold ring-2 ring-[#00F59B]';
+        return 'bg-neo-mint text-black border-2 border-black brutal-shadow-green font-bold ring-2 ring-[#00F59B]';
       }
       if (isSelected && !isAnswer) {
-        return 'bg-[#FF2A6D] text-white border-2 border-black brutal-shadow-pink font-bold';
+        return 'bg-neo-pink text-white border-2 border-black brutal-shadow-pink font-bold';
       }
-      return 'bg-[#151822] text-slate-500 border-2 border-slate-800 opacity-60';
+      return 'bg-neo-card text-slate-500 border-2 border-slate-800 opacity-60';
     }
 
     if (isSelected) {
-      return 'bg-[#FFE600] text-black border-2 border-black brutal-shadow-yellow font-bold translate-x-[1px] translate-y-[1px]';
+      return 'bg-neo-yellow text-black border-2 border-black brutal-shadow-yellow font-bold translate-x-px translate-y-px';
     }
 
-    return 'bg-[#151822] hover:bg-[#1C202E] text-slate-200 hover:text-white border-2 border-black brutal-shadow hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none';
+    return 'bg-neo-card hover:bg-[#1C202E] text-slate-200 hover:text-white border-2 border-black brutal-shadow hover:-translate-x-px hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none';
   };
 
   const getOptionBadgeColor = (optionId: string) => {
     switch (optionId) {
       case 'A':
-        return 'bg-[#FF6B35] text-black';
+        return 'bg-neo-orange text-black';
       case 'B':
-        return 'bg-[#00F0FF] text-black';
+        return 'bg-neo-cyan text-black';
       case 'C':
-        return 'bg-[#9B5DE5] text-white';
+        return 'bg-neo-purple text-white';
       case 'D':
-        return 'bg-[#FFE600] text-black';
+        return 'bg-neo-yellow text-black';
       default:
         return 'bg-white text-black';
     }
@@ -84,22 +88,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   return (
     <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 space-y-4 font-sans">
       {/* Retro Window Top Frame Bar */}
-      <div className="bg-[#151822] border-2 border-black brutal-shadow-sm px-3.5 py-2 flex items-center justify-between">
+      <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-3.5 py-2 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className="flex space-x-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#FF2A6D] border border-black" />
-            <div className="w-3 h-3 rounded-full bg-[#FFE600] border border-black" />
-            <div className="w-3 h-3 rounded-full bg-[#00F59B] border border-black" />
+            <div className="w-3 h-3 rounded-full bg-neo-pink border border-black" />
+            <div className="w-3 h-3 rounded-full bg-neo-yellow border border-black" />
+            <div className="w-3 h-3 rounded-full bg-neo-mint border border-black" />
           </div>
           <span className="font-mono text-xs font-bold text-slate-400 flex items-center gap-1 pl-2">
-            <Terminal className="w-3 h-3 text-[#FFE600]" />
+            <Terminal className="w-3 h-3 text-neo-yellow" />
             <span>SYS_ARENA // {question.category.toUpperCase().replace(/\s+/g, '_')}</span>
           </span>
         </div>
 
         <div className="flex items-center space-x-2 font-mono">
           {userStreak > 0 && (
-            <div className="px-2 py-0.5 bg-[#FF6B35] text-black text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
+            <div className="px-2 py-0.5 bg-neo-orange text-black text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
               <Flame className="w-3 h-3 fill-black" />
               <span>{userStreak}X STREAK</span>
             </div>
@@ -109,8 +113,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           <div
             className={`px-3 py-0.5 text-xs font-mono font-black border-2 border-black brutal-shadow-sm flex items-center gap-1.5 ${
               timeRemaining <= 5 && !isRevealed
-                ? 'bg-[#FF2A6D] text-white animate-pulse'
-                : 'bg-[#FFE600] text-black'
+                ? 'bg-neo-pink text-white animate-pulse'
+                : 'bg-neo-yellow text-black'
             }`}
           >
             <Timer className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -121,10 +125,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Progress Bar (Retro chunky blocks) */}
       {!isRevealed && (
-        <div className="w-full h-2.5 bg-[#0E1017] border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
+        <div className="w-full h-2.5 bg-neo-card-darker border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
           <div
             className={`h-full transition-all duration-300 ease-linear ${
-              timeRemaining <= 5 ? 'bg-[#FF2A6D]' : 'bg-[#FFE600]'
+              timeRemaining <= 5 ? 'bg-neo-pink' : 'bg-neo-yellow'
             }`}
             style={{ width: `${timerPercentage}%` }}
           />
@@ -134,11 +138,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       {/* Question Prompt Card */}
       <div className="bg-[#181B26] p-5 sm:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden">
         {/* Corner Tag */}
-        <div className="absolute top-0 right-0 bg-[#FFE600] text-black font-mono font-bold text-[10px] uppercase px-2.5 py-0.5 border-b-2 border-l-2 border-black">
+        <div className="absolute top-0 right-0 bg-neo-yellow text-black font-mono font-bold text-[10px] uppercase px-2.5 py-0.5 border-b-2 border-l-2 border-black">
           Q_PROMPT
         </div>
 
-        <h2 className="text-lg sm:text-2xl font-heavy text-white uppercase font-display leading-tight tracking-tight mt-1">
+        <h2 className="text-lg sm:text-2xl font-heavy text-white uppercase leading-tight tracking-tight mt-1">
           {question.question}
         </h2>
       </div>
@@ -156,7 +160,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               key={option.id}
               onClick={() => onSelectOption(option.id)}
               disabled={isRevealed || userSelectedOption !== null}
-              className={`p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[92px] ${getOptionButtonClass(
+              className={`p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-24 ${getOptionButtonClass(
                 option.id
               )}`}
             >
@@ -173,7 +177,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <div className="flex items-start justify-between relative z-10 gap-3 mb-2">
                 <div className="flex items-center space-x-3">
                   <span
-                    className={`w-7 h-7 font-mono font-heavy text-xs flex items-center justify-center border-2 border-black brutal-shadow-sm flex-shrink-0 ${getOptionBadgeColor(
+                    className={`w-7 h-7 font-mono text-xs flex items-center justify-center border-2 border-black brutal-shadow-sm shrink-0 font-bold ${getOptionBadgeColor(
                       option.id
                     )}`}
                   >
@@ -185,10 +189,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 </div>
 
                 {isRevealed && isAnswer && (
-                  <CheckCircle className="w-5 h-5 text-black stroke-[3] flex-shrink-0" />
+                  <CheckCircle className="w-5 h-5 text-black stroke-3 shrink-0" />
                 )}
                 {isRevealed && isSelected && !isAnswer && (
-                  <XCircle className="w-5 h-5 text-white stroke-[3] flex-shrink-0" />
+                  <XCircle className="w-5 h-5 text-white stroke-3 shrink-0" />
                 )}
               </div>
 
@@ -206,23 +210,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Retro Result & Architecture Takeaway Card */}
       {isRevealed && (
-        <div className="bg-[#FFFDF5] text-black p-5 border-2 border-black brutal-shadow-lg space-y-3 animate-fadeIn">
+        <div className="bg-neo-cream text-black p-5 border-2 border-black brutal-shadow-lg space-y-3 animate-fadeIn">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               {userSelectedOption ? (
                 isCorrect ? (
-                  <span className="px-3 py-1 bg-[#00F59B] text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 stroke-[3]" />
+                  <span className="px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 stroke-3" />
                     <span>CORRECT! +{pointsEarned} PTS</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1 bg-[#FF2A6D] text-white font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <XCircle className="w-4 h-4 stroke-[3]" />
+                  <span className="px-3 py-1 bg-neo-pink text-white font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
+                    <XCircle className="w-4 h-4 stroke-3" />
                     <span>INCORRECT ANSWER</span>
                   </span>
                 )
               ) : (
-                <span className="px-3 py-1 bg-[#FFE600] text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm">
+                <span className="px-3 py-1 bg-neo-yellow text-black font-mono font-extrabold text-xs uppercase border-2 border-black brutal-shadow-sm">
                   ANSWER REVEALED
                 </span>
               )}
@@ -234,8 +238,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           </div>
 
           <div className="p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">
-            <div className="flex items-center space-x-1.5 font-black uppercase text-[11px] mb-1 text-[#FF2A6D]">
-              <HelpCircle className="w-4 h-4 stroke-[3]" />
+            <div className="flex items-center space-x-1.5 font-black uppercase text-[11px] mb-1 text-neo-pink">
+              <HelpCircle className="w-4 h-4 stroke-3" />
               <span>ARCHITECTURAL TAKEAWAY & PROOF:</span>
             </div>
             <p className="font-medium text-slate-900">{question.explanation}</p>
@@ -249,21 +253,35 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {!isRevealed ? (
             <button
               onClick={onRevealAnswer}
-              className="px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5"
+              className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5"
             >
               <Eye className="w-4 h-4" />
               <span>REVEAL CORRECT ANSWER</span>
             </button>
+          ) : hasNextQuestion && onNextQuestion ? (
+            <button
+              onClick={onNextQuestion}
+              className="px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center space-x-2"
+            >
+              <span>NEXT QUESTION</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           ) : (
-            onNextQuestion && (
-              <button
-                onClick={onNextQuestion}
-                className="px-5 py-2.5 bg-[#00F59B] hover:bg-[#26F7A9] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center space-x-2"
-              >
-                <span>NEXT QUESTION</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )
+            <div className="flex items-center space-x-2">
+              <span className="px-3 py-2 bg-[#1C2030] text-neo-mint border-2 border-black font-mono text-xs font-black uppercase flex items-center space-x-1.5 brutal-shadow-sm">
+                <CheckCircle className="w-4 h-4 text-neo-mint stroke-3" />
+                <span>QUIZ COMPLETED</span>
+              </span>
+              {onViewScores && (
+                <button
+                  onClick={onViewScores}
+                  className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5"
+                >
+                  <Trophy className="w-4 h-4" />
+                  <span>VIEW LEADERBOARD</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -35,26 +35,26 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-[#FFFDF5] text-black w-full max-w-lg p-6 border-4 border-black brutal-shadow-lg relative font-sans">
+      <div className="bg-neo-cream text-black w-full max-w-lg p-6 border-4 border-black brutal-shadow-lg relative font-sans">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-[#FF2A6D] transition-colors border-2 border-black"
+          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
         >
-          <X className="w-5 h-5 stroke-[3]" />
+          <X className="w-5 h-5 stroke-3" />
         </button>
 
         {/* Header */}
         <div className="flex items-center space-x-2.5 mb-4">
-          <div className="w-10 h-10 bg-[#FF2A6D] text-white border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
+          <div className="w-10 h-10 bg-neo-pink text-white border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
             <Sparkles className="w-5 h-5 fill-white stroke-white" />
           </div>
           <div>
-            <h3 className="text-lg font-heavy uppercase font-display tracking-tight text-black">
+            <h3 className="text-lg font-heavy uppercase tracking-tight text-black">
               SUBMIT ARCHITECTURE QUESTION
             </h3>
             <p className="text-xs font-mono text-slate-700">
-              Posting as <span className="font-extrabold text-black bg-[#FFE600] px-1 border border-black">{userName}</span>
+              Posting as <span className="font-extrabold text-black bg-neo-yellow px-1 border border-black">{userName}</span>
             </p>
           </div>
         </div>
@@ -68,7 +68,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
               placeholder="Ask an architecture question or challenge the speaker with a system design problem..."
               rows={3}
               maxLength={280}
-              className="w-full p-3 bg-white border-2 border-black text-xs font-bold text-black placeholder-slate-500 focus:outline-none focus:bg-[#FFE600]/15 resize-none font-display"
+              className="w-full p-3 bg-white border-2 border-black text-xs font-bold text-black placeholder-slate-500 focus:outline-none focus:bg-neo-yellow/15 resize-none font-display"
               autoFocus
             />
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 mt-1">
@@ -80,7 +80,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           {/* Quick Idea Starters */}
           <div className="bg-[#F4EFE0] p-3 border-2 border-black">
             <div className="flex items-center space-x-1 text-[11px] font-black uppercase text-black mb-1.5">
-              <HelpCircle className="w-3.5 h-3.5 text-[#FF2A6D]" />
+              <HelpCircle className="w-3.5 h-3.5 text-neo-pink" />
               <span>Prompt Ideas (Tap to fill):</span>
             </div>
             <div className="space-y-1">
@@ -89,7 +89,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                   key={i}
                   type="button"
                   onClick={() => setContent(prompt)}
-                  className="w-full text-left text-[11px] font-medium text-slate-800 hover:text-black hover:bg-[#FFE600] p-1 border border-transparent hover:border-black transition-colors truncate block"
+                  className="w-full text-left text-[11px] font-medium text-slate-800 hover:text-black hover:bg-neo-yellow p-1 border border-transparent hover:border-black transition-colors truncate block"
                 >
                   &ldquo;{prompt}&rdquo;
                 </button>
@@ -109,7 +109,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
             <button
               type="submit"
               disabled={!content.trim()}
-              className="px-5 py-2 bg-[#FF2A6D] hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex items-center space-x-1.5"
+              className="px-5 py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center space-x-1.5"
             >
               <Send className="w-3.5 h-3.5" />
               <span>SUBMIT QUESTION</span>

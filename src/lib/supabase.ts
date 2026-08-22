@@ -307,6 +307,15 @@ export async function dbUpdatePoll(poll: LivePoll) {
   }
 }
 
+export async function dbDeletePoll(pollId: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from('polls').delete().eq('id', pollId);
+  } catch {
+    // fallback
+  }
+}
+
 // ================= LEADERBOARD =================
 export async function dbFetchLeaderboard(roomId: string): Promise<LeaderboardEntry[]> {
   if (!supabase) return [];

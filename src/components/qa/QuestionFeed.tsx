@@ -39,23 +39,23 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans">
       {/* Top Feed Bar */}
-      <div className="p-3.5 border-b-2 border-black bg-[#151822]">
+      <div className="p-3.5 border-b-2 border-black bg-neo-card">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center space-x-2">
-            <span className="text-base font-heavy tracking-tight text-white uppercase flex items-center gap-1.5 font-display">
-              <Sparkles className="w-4 h-4 text-[#FFE600]" />
+            <span className="text-base font-heavy tracking-tight text-white uppercase flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-neo-yellow" />
               <span>LIVE Q&A FEED</span>
             </span>
-            <span className="text-xs font-mono font-black px-2 py-0.5 bg-[#FFE600] text-black border border-black brutal-shadow-sm">
+            <span className="text-xs font-mono font-black px-2 py-0.5 bg-neo-yellow text-black border border-black brutal-shadow-sm">
               {questions.length}
             </span>
           </div>
 
           <button
             onClick={onOpenAskModal}
-            className="px-3 py-1.5 bg-[#FF2A6D] hover:bg-[#FF4782] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1"
+            className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1"
           >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <Plus className="w-3.5 h-3.5 stroke-3" />
             <span>ASK QUESTION</span>
           </button>
         </div>
@@ -66,7 +66,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             onClick={() => setActiveTab('top')}
             className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
               activeTab === 'top'
-                ? 'bg-[#FFE600] text-black border-black brutal-shadow-sm'
+                ? 'bg-neo-yellow text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
@@ -78,7 +78,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             onClick={() => setActiveTab('recent')}
             className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
               activeTab === 'recent'
-                ? 'bg-[#00F0FF] text-black border-black brutal-shadow-sm'
+                ? 'bg-neo-cyan text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
@@ -90,7 +90,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             onClick={() => setActiveTab('spotlight')}
             className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
               activeTab === 'spotlight'
-                ? 'bg-[#FF2A6D] text-white border-black brutal-shadow-sm'
+                ? 'bg-neo-pink text-white border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
@@ -102,7 +102,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             onClick={() => setActiveTab('answered')}
             className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
               activeTab === 'answered'
-                ? 'bg-[#00F59B] text-black border-black brutal-shadow-sm'
+                ? 'bg-neo-mint text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
             }`}
           >
@@ -119,7 +119,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             placeholder="Search questions or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#0E1017] border-2 border-black text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#FFE600] font-mono"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-neo-card-darker border-2 border-black text-slate-200 placeholder-slate-500 focus:outline-none focus:border-neo-yellow font-mono"
           />
         </div>
       </div>

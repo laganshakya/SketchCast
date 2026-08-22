@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { LivePoll } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { dbFetchPolls, dbInsertPoll, dbUpdatePoll } from '../lib/supabase';
+import { dbFetchPolls, dbInsertPoll, dbUpdatePoll, dbDeletePoll } from '../lib/supabase';
 
 export function usePollsEngine({
   channelManager,
@@ -38,44 +38,58 @@ export function usePollsEngine({
 
   // Load from Supabase DB on initialization & roomCode change
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem(pollStorageKey);
+      if (stored) {
+        setPolls(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+
     dbFetchPolls(currentRoomKey).then((remotePolls) => {
       if (remotePolls) {
         setPolls(remotePolls);
+        try {
+          localStorage.setItem(pollStorageKey, JSON.stringify(remotePolls));
+        } catch {
+          // ignore
+        }
       }
     });
-  }, [currentRoomKey]);
+  }, [currentRoomKey, pollStorageKey]);
 
-  // Listen to remote poll updates
+  // Listen to remote poll updates and resets
   useEffect(() => {
     if (!channelManager) return;
 
     const unPolls = channelManager.on('poll_update', (updatedPolls) => {
       setPolls(updatedPolls);
+      try {
+        localStorage.setItem(pollStorageKey, JSON.stringify(updatedPolls));
+      } catch {
+        // ignore
+      }
     });
 
-    const unVote = channelManager.on('poll_vote', ({ pollId, optionId }) => {
-      setPolls((prev) =>
-        prev.map((poll) => {
-          if (poll.id === pollId) {
-            const updatedOptions = poll.options.map((opt) =>
-              opt.id === optionId ? { ...opt, votesCount: opt.votesCount + 1 } : opt
-            );
-            return {
-              ...poll,
-              totalVotes: poll.totalVotes + 1,
-              options: updatedOptions,
-            };
-          }
-          return poll;
-        })
-      );
+    const unReset = channelManager.on('poll_reset', ({ pollId }) => {
+      setUserVotes((prev) => {
+        const next = { ...prev };
+        delete next[pollId];
+        try {
+          localStorage.setItem(voteStorageKey, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
     });
 
     return () => {
       unPolls();
-      unVote();
+      unReset();
     };
-  }, [channelManager]);
+  }, [channelManager, pollStorageKey, voteStorageKey]);
 
   const persistPolls = (newPolls: LivePoll[]) => {
     setPolls(newPolls);
@@ -124,13 +138,18 @@ export function usePollsEngine({
         channelManager.broadcast('poll_update', nextPolls);
       }
     },
-    [polls, userName, channelManager, currentRoomKey]
+    [polls, userName, channelManager, currentRoomKey, pollStorageKey]
   );
 
-  // Vote on a Poll Option
+  // Vote on a Poll Option (Protected against duplicate votes on the same option)
   const voteOnPoll = useCallback(
     (pollId: string, optionId: string) => {
       const currentVotedOption = userVotes[pollId];
+
+      // If user already selected this exact same option, ignore redundant clicks
+      if (currentVotedOption === optionId) {
+        return;
+      }
 
       const nextVotes = { ...userVotes, [pollId]: optionId };
       persistUserVotes(nextVotes);
@@ -140,6 +159,11 @@ export function usePollsEngine({
       const nextPolls = polls.map((poll) => {
         if (poll.id === pollId) {
           let updatedTotal = poll.totalVotes;
+          if (!currentVotedOption) {
+            // First time voting on this poll
+            updatedTotal += 1;
+          }
+
           const updatedOptions = poll.options.map((opt) => {
             if (opt.id === optionId) {
               return { ...opt, votesCount: opt.votesCount + 1 };
@@ -149,10 +173,6 @@ export function usePollsEngine({
             }
             return opt;
           });
-
-          if (!currentVotedOption) {
-            updatedTotal += 1;
-          }
 
           const updated: LivePoll = {
             ...poll,
@@ -173,14 +193,67 @@ export function usePollsEngine({
 
       if (channelManager) {
         channelManager.broadcast('poll_update', nextPolls);
-        channelManager.broadcast('poll_vote', {
-          pollId,
-          optionId,
-          voterSession: sessionId,
-        });
       }
     },
-    [polls, userVotes, sessionId, channelManager]
+    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
+  );
+
+  // Admin: Reset all votes for a poll back to 0 so attendees can vote again
+  const resetPoll = useCallback(
+    (pollId: string) => {
+      let targetUpdatedPoll: LivePoll | null = null;
+
+      const nextPolls = polls.map((poll) => {
+        if (poll.id === pollId) {
+          const resetOptions = poll.options.map((opt) => ({ ...opt, votesCount: 0 }));
+          const updated: LivePoll = {
+            ...poll,
+            totalVotes: 0,
+            options: resetOptions,
+          };
+          targetUpdatedPoll = updated;
+          return updated;
+        }
+        return poll;
+      });
+
+      persistPolls(nextPolls);
+
+      // Clear local user vote for this poll
+      const nextVotes = { ...userVotes };
+      delete nextVotes[pollId];
+      persistUserVotes(nextVotes);
+
+      if (targetUpdatedPoll) {
+        dbUpdatePoll(targetUpdatedPoll);
+      }
+
+      if (channelManager) {
+        channelManager.broadcast('poll_update', nextPolls);
+        channelManager.broadcast('poll_reset', { pollId });
+      }
+    },
+    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
+  );
+
+  // Admin: Delete a poll completely
+  const deletePoll = useCallback(
+    (pollId: string) => {
+      const nextPolls = polls.filter((poll) => poll.id !== pollId);
+      persistPolls(nextPolls);
+
+      const nextVotes = { ...userVotes };
+      delete nextVotes[pollId];
+      persistUserVotes(nextVotes);
+
+      dbDeletePoll(pollId);
+
+      if (channelManager) {
+        channelManager.broadcast('poll_update', nextPolls);
+        channelManager.broadcast('poll_reset', { pollId });
+      }
+    },
+    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
   );
 
   return {
@@ -188,5 +261,7 @@ export function usePollsEngine({
     userVotes,
     createPoll,
     voteOnPoll,
+    resetPoll,
+    deletePoll,
   };
 }

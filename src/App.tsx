@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
@@ -15,6 +15,7 @@ import { QuestionModal } from './components/qa/QuestionModal';
 import { QRCodeModal } from './components/common/QRCodeModal';
 import { AuthModal } from './components/common/AuthModal';
 import { RoomsAdminView } from './components/rooms/RoomsAdminView';
+import { ChangeRoomModal } from './components/rooms/ChangeRoomModal';
 import { Zap, Vote, HelpCircle, Trophy, Layers } from 'lucide-react';
 
 export function App() {
@@ -23,6 +24,7 @@ export function App() {
   const [isAskModalOpen, setIsAskModalOpen] = useState(false);
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isChangeRoomModalOpen, setIsChangeRoomModalOpen] = useState(false);
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -65,6 +67,8 @@ export function App() {
     userVotes,
     createPoll,
     voteOnPoll,
+    resetPoll,
+    deletePoll,
   } = usePollsEngine({
     channelManager,
     sessionId,
@@ -102,6 +106,49 @@ export function App() {
     setIsQRModalOpen(true);
   };
 
+  // Host action: Launch next queued question in sequence
+  const handleNextQuestion = () => {
+    try {
+      const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
+      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      if (stored) {
+        const queue = JSON.parse(stored);
+        if (queue && Array.isArray(queue) && queue.length > 0) {
+          const currentId = quizState.question?.id;
+          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
+          if (currentIndex >= 0 && currentIndex + 1 < queue.length) {
+            startQuizRound(queue[currentIndex + 1]);
+            return;
+          }
+          if (currentIndex === -1) {
+            startQuizRound(queue[0]);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Check if there is a subsequent queued question
+  const hasNextQuestion = useMemo(() => {
+    try {
+      const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
+      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      if (stored) {
+        const queue = JSON.parse(stored);
+        if (Array.isArray(queue) && queue.length > 0) {
+          const currentId = quizState.question?.id;
+          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
+          return currentIndex >= 0 && currentIndex + 1 < queue.length;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }, [room.code, quizState.question?.id]);
+
   // If user is not authenticated, show the Landing / Auth Page
   if (!isAuthenticated) {
     return (
@@ -131,6 +178,7 @@ export function App() {
           setIsQRModalOpen(true);
         }}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
@@ -147,17 +195,21 @@ export function App() {
                 userStreak={userStreak}
                 onSelectOption={selectOption}
                 onRevealAnswer={revealAnswer}
-                onNextQuestion={() => {}}
+                onNextQuestion={handleNextQuestion}
+                hasNextQuestion={hasNextQuestion}
+                onViewScores={() => setActiveTab('leaderboard')}
                 isHost={userRole === 'host'}
               />
             </div>
 
             {/* Host Quiz Launcher & Pack Selector (Shown if Host) */}
             {userRole === 'host' && (
-              <div className="w-full lg:w-96 flex-shrink-0 flex flex-col h-full">
+              <div className="w-full lg:w-96 shrink-0 flex flex-col h-full">
                 <QuizHostPanel
                   onStartQuiz={startQuizRound}
                   activeQuestionId={quizState.question?.id}
+                  isRevealed={quizState.isRevealed}
+                  roomCode={room.code}
                 />
               </div>
             )}
@@ -172,6 +224,8 @@ export function App() {
               userVotes={userVotes}
               onVote={voteOnPoll}
               onOpenCreatePoll={() => setIsCreatePollModalOpen(true)}
+              onResetPoll={resetPoll}
+              onDeletePoll={deletePoll}
               isHost={userRole === 'host'}
             />
           </div>
@@ -219,7 +273,7 @@ export function App() {
           onClick={() => setActiveTab('quiz')}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
             activeTab === 'quiz'
-              ? 'bg-[#FFE600] text-black border-2 border-black brutal-shadow-sm'
+              ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm'
               : 'text-slate-400'
           }`}
         >
@@ -231,7 +285,7 @@ export function App() {
           onClick={() => setActiveTab('polls')}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
             activeTab === 'polls'
-              ? 'bg-[#00F0FF] text-black border-2 border-black brutal-shadow-sm'
+              ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm'
               : 'text-slate-400'
           }`}
         >
@@ -243,7 +297,7 @@ export function App() {
           onClick={() => setActiveTab('qa')}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
             activeTab === 'qa'
-              ? 'bg-[#FF2A6D] text-white border-2 border-black brutal-shadow-sm'
+              ? 'bg-neo-pink text-white border-2 border-black brutal-shadow-sm'
               : 'text-slate-400'
           }`}
         >
@@ -255,7 +309,7 @@ export function App() {
           onClick={() => setActiveTab('leaderboard')}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
             activeTab === 'leaderboard'
-              ? 'bg-[#00F59B] text-black border-2 border-black brutal-shadow-sm'
+              ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm'
               : 'text-slate-400'
           }`}
         >
@@ -263,17 +317,26 @@ export function App() {
           <span>SCORES</span>
         </button>
 
-        {userRole === 'host' && (
+        {userRole === 'host' ? (
           <button
             onClick={() => setActiveTab('rooms')}
             className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
               activeTab === 'rooms'
-                ? 'bg-[#9B5DE5] text-white border-2 border-black brutal-shadow-sm'
+                ? 'bg-neo-purple text-white border-2 border-black brutal-shadow-sm'
                 : 'text-slate-400'
             }`}
           >
             <Layers className="w-4 h-4 mb-0.5" />
             <span>ROOMS</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsChangeRoomModalOpen(true)}
+            className="flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all text-slate-400 hover:text-neo-yellow"
+            title="Switch Arena Room"
+          >
+            <Layers className="w-4 h-4 mb-0.5" />
+            <span>ROOM</span>
           </button>
         )}
       </div>
@@ -309,6 +372,13 @@ export function App() {
         currentUser={currentUser}
         userName={userName}
         setUserName={setUserName}
+      />
+
+      <ChangeRoomModal
+        isOpen={isChangeRoomModalOpen}
+        onClose={() => setIsChangeRoomModalOpen(false)}
+        onSwitchRoom={handleSwitchRoom}
+        currentRoomCode={room.code}
       />
     </div>
   );

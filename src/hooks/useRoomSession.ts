@@ -12,20 +12,35 @@ const ACTIVE_TAB_KEY = 'sketchcast_active_tab';
 const ROOM_CODE_KEY = 'sketchcast_room_code';
 
 export function getOrCreateSessionId(): string {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = 'user_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
-    localStorage.setItem(SESSION_KEY, id);
+  if (typeof window !== 'undefined') {
+    let id = sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = 'user_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+      sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
   }
-  return id;
+  return 'user_' + Math.random().toString(36).substring(2, 10);
 }
 
 export function getStoredUserName(): string {
-  return localStorage.getItem(NAME_KEY) || 'TechAttendee ' + Math.floor(100 + Math.random() * 900);
+  if (typeof window !== 'undefined') {
+    const sessionName = sessionStorage.getItem(NAME_KEY);
+    if (sessionName && sessionName.trim()) return sessionName;
+    const localName = localStorage.getItem(NAME_KEY);
+    if (localName && localName.trim()) return localName;
+  }
+  return 'TechAttendee ' + Math.floor(100 + Math.random() * 900);
 }
 
 export function getStoredUserRole(): 'host' | 'attendee' {
-  return (localStorage.getItem(ROLE_KEY) as 'host' | 'attendee') || 'attendee';
+  if (typeof window !== 'undefined') {
+    const sessionRole = sessionStorage.getItem(ROLE_KEY);
+    if (sessionRole === 'host' || sessionRole === 'attendee') return sessionRole;
+    const localRole = localStorage.getItem(ROLE_KEY);
+    if (localRole === 'host' || localRole === 'attendee') return localRole;
+  }
+  return 'attendee';
 }
 
 export function getStoredRoomCode(fallback: string = 'SKT-789'): string {
@@ -34,12 +49,17 @@ export function getStoredRoomCode(fallback: string = 'SKT-789'): string {
     const roomParam = params.get('room');
     if (roomParam && roomParam.trim()) {
       const code = roomParam.trim().toUpperCase();
+      sessionStorage.setItem(ROOM_CODE_KEY, code);
       localStorage.setItem(ROOM_CODE_KEY, code);
       return code;
     }
-    const stored = localStorage.getItem(ROOM_CODE_KEY);
-    if (stored && stored.trim()) {
-      return stored.trim().toUpperCase();
+    const sessionStored = sessionStorage.getItem(ROOM_CODE_KEY);
+    if (sessionStored && sessionStored.trim()) {
+      return sessionStored.trim().toUpperCase();
+    }
+    const localStored = localStorage.getItem(ROOM_CODE_KEY);
+    if (localStored && localStored.trim()) {
+      return localStored.trim().toUpperCase();
     }
   }
   return fallback;
@@ -48,11 +68,11 @@ export function getStoredRoomCode(fallback: string = 'SKT-789'): string {
 export function getInitialActiveTab(): ActiveTabType {
   if (typeof window !== 'undefined') {
     const hash = window.location.hash.replace('#', '') as ActiveTabType;
-    if (['quiz', 'polls', 'qa', 'leaderboard'].includes(hash)) {
+    if (['quiz', 'polls', 'qa', 'leaderboard', 'rooms'].includes(hash)) {
       return hash;
     }
-    const stored = localStorage.getItem(ACTIVE_TAB_KEY) as ActiveTabType;
-    if (['quiz', 'polls', 'qa', 'leaderboard'].includes(stored)) {
+    const stored = (sessionStorage.getItem(ACTIVE_TAB_KEY) || localStorage.getItem(ACTIVE_TAB_KEY)) as ActiveTabType;
+    if (['quiz', 'polls', 'qa', 'leaderboard', 'rooms'].includes(stored)) {
       return stored;
     }
   }
@@ -78,16 +98,20 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   const [attendees, setAttendees] = useState<AttendeePresence[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [channelManager, setChannelManager] = useState<RealtimeChannelManager | null>(() => {
-    return RealtimeChannelManager.getInstance(getStoredRoomCode(initialRoomCode));
+    return RealtimeChannelManager.getInstance(getStoredRoomCode(initialRoomCode), getOrCreateSessionId());
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(AUTH_FLAG_KEY) === 'true' || localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+    }
+    return false;
   });
 
-  // Sync activeTab with URL Hash & LocalStorage
+  // Sync activeTab with URL Hash & Storage
   const setActiveTab = (tab: ActiveTabType) => {
     setActiveTabState(tab);
     try {
+      sessionStorage.setItem(ACTIVE_TAB_KEY, tab);
       localStorage.setItem(ACTIVE_TAB_KEY, tab);
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
@@ -104,9 +128,9 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as ActiveTabType;
-      if (['quiz', 'polls', 'qa', 'leaderboard'].includes(hash)) {
+      if (['quiz', 'polls', 'qa', 'leaderboard', 'rooms'].includes(hash)) {
         setActiveTabState(hash);
-        localStorage.setItem(ACTIVE_TAB_KEY, hash);
+        sessionStorage.setItem(ACTIVE_TAB_KEY, hash);
       }
     };
 
@@ -120,9 +144,13 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       if (user) {
         setCurrentUser(user);
         setIsAuthenticated(true);
+        sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
         localStorage.setItem(AUTH_FLAG_KEY, 'true');
         const name = user.user_metadata?.display_name || user.email?.split('@')[0];
-        if (name) setUserNameState(name);
+        if (name) {
+          setUserNameState(name);
+          sessionStorage.setItem(NAME_KEY, name);
+        }
       }
     });
 
@@ -130,16 +158,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       setCurrentUser(user);
       if (user) {
         setIsAuthenticated(true);
+        sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
         localStorage.setItem(AUTH_FLAG_KEY, 'true');
         const name = user.user_metadata?.display_name || user.email?.split('@')[0];
         if (name) {
-          localStorage.setItem(NAME_KEY, name);
+          sessionStorage.setItem(NAME_KEY, name);
           setUserNameState(name);
-        }
-      } else {
-        if (localStorage.getItem(AUTH_FLAG_KEY) === 'supabase') {
-          setIsAuthenticated(false);
-          localStorage.removeItem(AUTH_FLAG_KEY);
         }
       }
     });
@@ -149,18 +173,29 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
   // Realtime Channel & Presence setup
   useEffect(() => {
-    const manager = RealtimeChannelManager.getInstance(activeRoomCode);
+    const manager = RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
     setChannelManager(manager);
 
     const unPresence = manager.on('presence_sync', (presenceList) => {
       setAttendees(presenceList);
     });
 
+    // Track presence immediately on room connection
+    const initialPresence: AttendeePresence = {
+      session_id: sessionId,
+      name: userName,
+      role: userRole,
+      joined_at: Date.now(),
+      last_active: Date.now(),
+    };
+    manager.trackPresence(initialPresence);
+
     return () => {
       unPresence();
     };
-  }, [activeRoomCode]);
+  }, [activeRoomCode, sessionId]);
 
+  // Keep presence updated when name or role changes
   useEffect(() => {
     if (channelManager) {
       const myPresence: AttendeePresence = {
@@ -175,11 +210,13 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   }, [channelManager, sessionId, userName, userRole]);
 
   const setUserName = (name: string) => {
+    sessionStorage.setItem(NAME_KEY, name);
     localStorage.setItem(NAME_KEY, name);
     setUserNameState(name);
   };
 
   const setUserRole = (role: 'host' | 'attendee') => {
+    sessionStorage.setItem(ROLE_KEY, role);
     localStorage.setItem(ROLE_KEY, role);
     setUserRoleState(role);
   };
@@ -197,6 +234,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       title: `NextGen Arena // ${targetRoomCode}`,
     }));
     
+    sessionStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
+    sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
     localStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
     localStorage.setItem(AUTH_FLAG_KEY, 'true');
     setIsAuthenticated(true);
@@ -212,6 +251,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     await signOutUser();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    sessionStorage.removeItem(AUTH_FLAG_KEY);
     localStorage.removeItem(AUTH_FLAG_KEY);
   };
 

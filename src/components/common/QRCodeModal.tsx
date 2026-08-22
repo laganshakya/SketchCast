@@ -33,22 +33,22 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-[#FFFDF5] text-black w-full max-w-sm p-6 border-4 border-black brutal-shadow-lg relative text-center">
+      <div className="bg-neo-cream text-black w-full max-w-sm p-6 border-4 border-black brutal-shadow-lg relative text-center">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-[#FF2A6D] transition-colors border-2 border-black"
+          className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
         >
-          <X className="w-5 h-5 stroke-[3]" />
+          <X className="w-5 h-5 stroke-3" />
         </button>
 
         <div className="flex flex-col items-center mb-3">
-          <div className="w-12 h-12 bg-[#FFE600] text-black border-2 border-black brutal-shadow-sm flex items-center justify-center mb-2 rotate-[-3deg]">
+          <div className="w-12 h-12 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center mb-2 -rotate-3">
             <QrCode className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h3 className="text-xl font-heavy uppercase font-display tracking-tight text-black">
+          <h3 className="text-xl font-heavy uppercase tracking-tight text-black">
             SCAN TO JOIN
           </h3>
-          <p className="text-xs font-mono font-bold text-slate-700 truncate max-w-[260px]">
+          <p className="text-xs font-mono font-bold text-slate-700 truncate max-w-64">
             {roomTitle}
           </p>
           <p className="text-[10px] font-mono font-semibold text-slate-600 mt-0.5">
@@ -67,22 +67,22 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           />
         </div>
 
-        <div className="bg-[#0E1017] text-white p-2.5 border-2 border-black mb-3.5 font-mono">
-          <div className="text-[10px] font-extrabold text-[#FFE600] uppercase mb-0.5">
+        <div className="bg-neo-card-darker text-white p-2.5 border-2 border-black mb-3.5 font-mono">
+          <div className="text-[10px] font-extrabold text-neo-yellow uppercase mb-0.5">
             ROOM PASSCODE
           </div>
-          <div className="text-2xl font-black tracking-widest text-[#00F0FF]">
+          <div className="text-2xl font-black tracking-widest text-neo-cyan">
             {roomCode}
           </div>
         </div>
 
         <button
           onClick={handleCopyLink}
-          className="w-full py-2.5 px-4 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-2"
+          className="w-full py-2.5 px-4 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-2"
         >
           {copied ? (
             <>
-              <Check className="w-4 h-4 text-black stroke-[3]" />
+              <Check className="w-4 h-4 text-black stroke-3" />
               <span>LINK COPIED!</span>
             </>
           ) : (

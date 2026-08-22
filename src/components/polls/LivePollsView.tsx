@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, CheckCircle2, Users, Clock, Sparkles, Vote } from 'lucide-react';
+import { Plus, CheckCircle2, Users, Clock, Sparkles, Vote, RotateCcw, Trash2 } from 'lucide-react';
 import type { LivePoll } from '../../types';
 
 interface LivePollsViewProps {
@@ -7,6 +7,8 @@ interface LivePollsViewProps {
   userVotes: Record<string, string>;
   onVote: (pollId: string, optionId: string) => void;
   onOpenCreatePoll: () => void;
+  onResetPoll?: (pollId: string) => void;
+  onDeletePoll?: (pollId: string) => void;
   isHost?: boolean;
 }
 
@@ -15,6 +17,8 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   userVotes,
   onVote,
   onOpenCreatePoll,
+  onResetPoll,
+  onDeletePoll,
   isHost = false,
 }) => {
   const timeAgo = (dateStr: string) => {
@@ -25,33 +29,33 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   };
 
   const getOptionFillColor = (idx: number, isVoted: boolean) => {
-    if (isVoted) return 'bg-[#FFE600]';
+    if (isVoted) return 'bg-neo-yellow';
     switch (idx % 4) {
       case 0:
-        return 'bg-[#00F0FF]';
+        return 'bg-neo-cyan';
       case 1:
-        return 'bg-[#00F59B]';
+        return 'bg-neo-mint';
       case 2:
-        return 'bg-[#9B5DE5]';
+        return 'bg-neo-purple';
       case 3:
-        return 'bg-[#FF6B35]';
+        return 'bg-neo-orange';
       default:
-        return 'bg-[#FFE600]';
+        return 'bg-neo-yellow';
     }
   };
 
   return (
     <div className="flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 space-y-4 font-sans">
       {/* Header */}
-      <div className="bg-[#151822] p-4 border-2 border-black brutal-shadow flex items-center justify-between gap-3">
+      <div className="bg-neo-card p-4 border-2 border-black brutal-shadow flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2 py-0.5 bg-[#00F0FF] text-black font-mono font-black text-[10px] uppercase border border-black brutal-shadow-sm">
+            <span className="px-2 py-0.5 bg-neo-cyan text-black font-mono font-black text-[10px] uppercase border border-black brutal-shadow-sm">
               LIVE_VOTING // V2.0
             </span>
             <span className="font-mono text-xs font-bold text-slate-400">REAL-TIME CONSENSUS</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-heavy text-white uppercase font-display tracking-tight mt-1">
+          <h2 className="text-xl sm:text-2xl font-heavy text-white uppercase tracking-tight mt-1">
             COMMUNITY ARCHITECTURE POLLS
           </h2>
         </div>
@@ -60,13 +64,13 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
         {isHost ? (
           <button
             onClick={onOpenCreatePoll}
-            className="px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center space-x-1.5 transition-all flex-shrink-0"
+            className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center space-x-1.5 transition-all shrink-0"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
+            <Plus className="w-4 h-4 stroke-3" />
             <span>NEW POLL</span>
           </button>
         ) : (
-          <div className="px-3 py-1.5 bg-[#1A1E2B] border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-[#00F59B] flex items-center space-x-1.5 flex-shrink-0">
+          <div className="px-3 py-1.5 bg-[#1A1E2B] border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-neo-mint flex items-center space-x-1.5 shrink-0">
             <Vote className="w-4 h-4" />
             <span className="hidden sm:inline">VOTING ACTIVE</span>
           </div>
@@ -76,9 +80,9 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
       {/* Polls List */}
       <div className="space-y-4">
         {polls.length === 0 ? (
-          <div className="bg-[#151822] p-8 border-2 border-black brutal-shadow text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-[#FFE600] mx-auto" />
-            <h3 className="text-lg font-heavy uppercase text-white font-display">
+          <div className="bg-neo-card p-8 border-2 border-black brutal-shadow text-center space-y-3">
+            <Sparkles className="w-8 h-8 text-neo-yellow mx-auto" />
+            <h3 className="text-lg font-heavy uppercase text-white">
               NO ACTIVE COMMUNITY POLLS
             </h3>
             <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
@@ -89,9 +93,9 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
             {isHost && (
               <button
                 onClick={onOpenCreatePoll}
-                className="mt-2 px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5"
+                className="mt-2 px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
+                <Plus className="w-4 h-4 stroke-3" />
                 <span>CREATE FIRST POLL</span>
               </button>
             )}
@@ -109,19 +113,19 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-400 mb-1">
-                      <span className="font-bold text-[#FFE600] uppercase">BY {poll.author_name}</span>
+                      <span className="font-bold text-neo-yellow uppercase">BY {poll.author_name}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1 font-semibold">
                         <Clock className="w-3 h-3 text-slate-500" />
                         {timeAgo(poll.created_at)}
                       </span>
                     </div>
-                    <h3 className="text-base sm:text-lg font-heavy text-white uppercase font-display leading-tight">
+                    <h3 className="text-base sm:text-lg font-heavy text-white uppercase leading-tight">
                       {poll.question}
                     </h3>
                   </div>
 
-                  <span className="flex items-center space-x-1 px-2.5 py-1 bg-black text-[#FFE600] border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex-shrink-0">
+                  <span className="flex items-center space-x-1 px-2.5 py-1 bg-black text-neo-yellow border-2 border-black brutal-shadow-sm text-xs font-mono font-black shrink-0">
                     <Users className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>{poll.totalVotes} VOTES</span>
                   </span>
@@ -139,11 +143,12 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                     return (
                       <button
                         key={option.id}
-                        onClick={() => onVote(poll.id, option.id)}
+                        onClick={() => !isVoted && onVote(poll.id, option.id)}
+                        disabled={isVoted}
                         className={`w-full p-3 border-2 border-black text-left transition-all relative overflow-hidden flex items-center justify-between group ${
                           isVoted
-                            ? 'bg-[#1C2030] border-[#FFE600] brutal-shadow-yellow text-white'
-                            : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
+                            ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow text-white cursor-default'
+                            : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none cursor-pointer'
                         }`}
                       >
                         {/* Animated Percentage Fill Bar */}
@@ -158,12 +163,12 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                         {/* Content */}
                         <div className="flex items-center space-x-2.5 relative z-10 min-w-0 pr-3">
                           <div
-                            className={`w-6 h-6 border-2 border-black flex items-center justify-center font-heavy text-xs flex-shrink-0 ${
-                              isVoted ? 'bg-[#FFE600] text-black' : 'bg-slate-800 text-slate-300'
+                            className={`w-6 h-6 border-2 border-black flex items-center justify-center font-heavy text-xs shrink-0 ${
+                              isVoted ? 'bg-neo-yellow text-black' : 'bg-slate-800 text-slate-300'
                             }`}
                           >
                             {isVoted ? (
-                              <CheckCircle2 className="w-4 h-4 text-black stroke-[3]" />
+                              <CheckCircle2 className="w-4 h-4 text-black stroke-3" />
                             ) : (
                               option.id.replace('opt-', '')
                             )}
@@ -174,8 +179,8 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                         </div>
 
                         {/* Stats */}
-                        <div className="flex items-center space-x-1.5 relative z-10 flex-shrink-0 font-mono text-xs font-black">
-                          <span className="text-[#FFE600] text-sm">{percentage}%</span>
+                        <div className="flex items-center space-x-1.5 relative z-10 shrink-0 font-mono text-xs font-black">
+                          <span className="text-neo-yellow text-sm">{percentage}%</span>
                           <span className="text-slate-500 hidden sm:inline">
                             ({option.votesCount})
                           </span>
@@ -184,6 +189,36 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Host Control Actions */}
+                {isHost && (
+                  <div className="flex items-center justify-end space-x-2 pt-2 border-t border-[#23283A]">
+                    {onResetPoll && (
+                      <button
+                        onClick={() => onResetPoll(poll.id)}
+                        className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-yellow hover:text-black text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px"
+                        title="Reset all votes to zero and allow attendees to vote again"
+                      >
+                        <RotateCcw className="w-3 h-3 stroke-[2.5]" />
+                        <span>RESET VOTES</span>
+                      </button>
+                    )}
+                    {onDeletePoll && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Delete poll "${poll.question}"?`)) {
+                            onDeletePoll(poll.id);
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-pink hover:text-white text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px"
+                        title="Delete this poll"
+                      >
+                        <Trash2 className="w-3 h-3 stroke-[2.5]" />
+                        <span>DELETE POLL</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })
