@@ -133,7 +133,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
               {getRankBadge(index)}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap">
-                  <span className="text-xs font-bold text-white truncate uppercase font-display max-w-[120px] sm:max-w-none">
+                  <span className="text-xs font-bold text-white truncate uppercase font-display max-w-30 sm:max-w-none">
                     {entry.name}
                   </span>
                   {entry.streak > 1 && (

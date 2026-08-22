@@ -108,7 +108,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap">
-                      <span className="text-xs font-black text-black truncate max-w-[130px] sm:max-w-none">
+                      <span className="text-xs font-black text-black truncate max-w-32.5 sm:max-w-none">
                         {attendee.name}
                       </span>
                       {isSelf && (

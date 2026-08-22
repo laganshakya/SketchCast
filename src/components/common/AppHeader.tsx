@@ -263,7 +263,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           )}
 
           {/* Role and Name Pill */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-1.5 sm:px-2 py-1 text-xs font-mono max-w-[76px] xs:max-w-[100px] sm:max-w-[150px] shrink-0">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-1.5 sm:px-2 py-1 text-xs font-mono max-w-19 xs:max-w-25 sm:max-w-37.5 shrink-0">
             <button
               onClick={handleRoleToggle}
               className={`flex items-center gap-0.5 font-extrabold uppercase text-[9px] sm:text-[10px] px-1 py-0.5 border border-black cursor-pointer shrink-0 ${

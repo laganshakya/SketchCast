@@ -270,7 +270,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     >
                       Q{idx + 1}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[110px]" title={q.category}>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-27.5" title={q.category}>
                       {q.category}
                     </span>
                     <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5 shrink-0">

@@ -329,7 +329,7 @@ export function App() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#0E1017] border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
+      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-neo-card-darker border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
         <button
           onClick={() => setActiveTab('quiz')}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${

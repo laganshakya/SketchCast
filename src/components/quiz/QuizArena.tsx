@@ -160,7 +160,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               key={option.id}
               onClick={() => onSelectOption(option.id)}
               disabled={isRevealed || userSelectedOption !== null}
-              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[76px] sm:min-h-24 cursor-pointer active:translate-x-px active:translate-y-px ${getOptionButtonClass(
+              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-19 sm:min-h-24 cursor-pointer active:translate-x-px active:translate-y-px ${getOptionButtonClass(
                 option.id
               )}`}
             >
