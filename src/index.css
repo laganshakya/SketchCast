@@ -37,10 +37,70 @@ html, body {
   font-family: var(--font-sans);
 }
 
+/* ================= GLOBAL CURSOR STYLES ================= */
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+button[disabled],
+input:disabled,
+[aria-disabled="true"],
+.disabled {
+  cursor: not-allowed !important;
+}
+
+/* Custom Semantic Cursor Utility Classes */
+.cursor-action {
+  cursor: pointer;
+}
+
+.cursor-copy-btn,
+[data-action="copy"],
+.btn-copy {
+  cursor: copy !important;
+}
+
+.cursor-help-tip,
+[data-tooltip],
+.badge-help {
+  cursor: help;
+}
+
+.cursor-drag-item,
+.draggable-card {
+  cursor: grab;
+}
+
+.cursor-drag-item:active,
+.draggable-card:active {
+  cursor: grabbing;
+}
+
+.cursor-zoom,
+[data-action="qr"],
+[data-action="inspect"] {
+  cursor: zoom-in;
+}
+
+.cursor-crosshair-tool,
+.canvas-tool {
+  cursor: crosshair;
+}
+
 input, textarea {
   user-select: text;
   -webkit-user-select: text;
   font-family: var(--font-mono);
+  cursor: text;
 }
 
 /* Retro Grid Background */

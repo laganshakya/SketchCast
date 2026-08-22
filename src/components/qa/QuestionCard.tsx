@@ -96,7 +96,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {getStatusBadge()}
           </div>
 
-          <p className="text-sm text-slate-100 font-semibold leading-relaxed break-words font-display">
+          <p className="text-sm text-slate-100 font-semibold leading-relaxed wrap-break-word font-display">
             {question.content}
           </p>
 

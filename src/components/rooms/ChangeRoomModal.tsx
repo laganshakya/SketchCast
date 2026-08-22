@@ -69,7 +69,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
         </div>
 
         {/* Current Room Tag */}
-        <div className="mb-4 p-2.5 bg-[#151822] text-white border-2 border-black font-mono flex items-center justify-between">
+        <div className="mb-4 p-2.5 bg-neo-card text-white border-2 border-black font-mono flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-[10px] text-slate-400 font-bold uppercase">CURRENT ROOM:</span>
             <span className="px-2 py-0.5 bg-neo-yellow text-black font-black text-xs border border-black">

@@ -115,7 +115,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <div className="flex items-center space-x-1">
             <button
               onClick={handleCopyCode}
-              className="flex items-center space-x-1.5 px-2.5 py-1 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group"
+              className="flex items-center space-x-1.5 px-2.5 py-1 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn"
               title="Click to copy Room Code"
             >
               <span className="text-slate-400 font-bold text-[10px]">ROOM:</span>
@@ -132,7 +132,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {onOpenChangeRoom && userRole === 'attendee' && (
               <button
                 onClick={onOpenChangeRoom}
-                className="flex items-center space-x-1 px-2 py-1 bg-[#151822] hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px"
+                className="flex items-center space-x-1 px-2 py-1 bg-neo-card hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px cursor-pointer"
                 title="Change / Switch Arena Room without logging out"
               >
                 <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
@@ -158,60 +158,64 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <nav className="hidden md:flex items-center space-x-1.5 bg-[#090B0F] p-1 border-2 border-black brutal-shadow-sm">
           <button
             onClick={() => setActiveTab('quiz')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 ${
+            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'quiz'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Zap className={`w-3.5 h-3.5 ${activeTab === 'quiz' ? 'fill-black' : ''}`} />
-            <span>QUIZ ARENA</span>
+            <Zap className="w-3.5 h-3.5" />
+            <span>QUIZ</span>
           </button>
 
           <button
             onClick={() => setActiveTab('polls')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 ${
+            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'polls'
-                ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+                ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Vote className="w-3.5 h-3.5" />
-            <span>LIVE POLLS</span>
+            <span>POLLS</span>
           </button>
 
           <button
             onClick={() => setActiveTab('qa')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 ${
+            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'qa'
-                ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+                ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>Q&A ({questionsCount})</span>
+            <span>Q&A</span>
+            {questionsCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 bg-black text-white text-[10px] font-black rounded-full">
+                {questionsCount}
+              </span>
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 ${
+            className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'leaderboard'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Trophy className="w-3.5 h-3.5" />
             <span>SCORES</span>
           </button>
 
-          {/* Admin / Host Exclusive: ROOMS TAB */}
           {userRole === 'host' && (
             <button
               onClick={() => setActiveTab('rooms')}
-              className={`px-3 py-1.5 text-xs font-mono font-black uppercase transition-all flex items-center space-x-1.5 border-2 ${
+              className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
                 activeTab === 'rooms'
-                  ? 'bg-neo-purple text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                  : 'bg-transparent text-purple-300 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+                  ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                  : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -224,7 +228,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="flex items-center space-x-2">
           <button
             onClick={onOpenQRCode}
-            className="px-2.5 py-1.5 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold flex items-center space-x-1.5 transition-all"
+            className="px-2.5 py-1.5 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold flex items-center space-x-1.5 transition-all cursor-zoom"
             title="Open Mobile Join QR Code"
           >
             <QrCode className="w-3.5 h-3.5" />
@@ -235,7 +239,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <div className="flex items-center space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 py-1 text-xs font-mono">
             <button
               onClick={handleRoleToggle}
-              className={`flex items-center gap-1 font-extrabold uppercase text-[10px] px-1.5 py-0.5 border border-black ${
+              className={`flex items-center gap-1 font-extrabold uppercase text-[10px] px-1.5 py-0.5 border border-black cursor-pointer ${
                 userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
               }`}
               title={`Click to switch role (Current: ${userRole}). Hosts require verified email account.`}
@@ -246,7 +250,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
             <button
               onClick={onOpenAuthModal}
-              className="text-slate-200 hover:text-neo-yellow font-bold max-w-24 truncate text-[11px]"
+              className="text-slate-200 hover:text-neo-yellow font-bold max-w-24 truncate text-[11px] cursor-pointer"
               title="Click to view profile & auth details"
             >
               {userName}
@@ -256,7 +260,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {/* Sign Out Button */}
           <button
             onClick={onSignOut}
-            className="p-1.5 bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all"
+            className="p-1.5 bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer"
             title="Sign out & return to landing page"
           >
             <LogOut className="w-4 h-4" />

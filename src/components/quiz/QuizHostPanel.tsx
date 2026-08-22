@@ -264,21 +264,18 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-1.5 mb-1 font-mono">
                     <span
-                      className={`text-[9px] font-extrabold px-1.5 py-0.2 border border-black ${
+                      className={`text-[9px] font-extrabold px-1.5 py-0.2 border border-black shrink-0 ${
                         isCompleted ? 'bg-slate-700 text-slate-200' : 'bg-neo-yellow text-black'
                       }`}
                     >
                       Q{idx + 1}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">{q.category}</span>
-                    <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[110px]" title={q.category}>
+                      {q.category}
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5 shrink-0">
                       <Clock className="w-2.5 h-2.5" /> {q.timeLimitSeconds}S
                     </span>
-                    {isCompleted && (
-                      <span className="text-[9px] font-black text-neo-mint uppercase px-1 bg-neo-mint/10 border border-neo-mint/30">
-                        COMPLETED
-                      </span>
-                    )}
                   </div>
                   <p
                     className={`text-xs font-bold line-clamp-2 leading-snug font-display ${
@@ -293,20 +290,20 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   {isLive ? (
                     <button
                       onClick={() => onStartQuiz(q)}
-                      className="px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 bg-neo-mint text-black brutal-shadow-sm animate-pulse"
+                      className="px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 bg-neo-mint text-black brutal-shadow-sm animate-pulse cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-black" />
                       <span>LIVE</span>
                     </button>
                   ) : isCompleted ? (
                     <div className="flex items-center space-x-1">
-                      <span className="px-2.5 py-1 text-[11px] font-black uppercase border-2 border-slate-700 bg-slate-800 text-neo-mint flex items-center space-x-1">
-                        <CheckCircle className="w-3 h-3 stroke-[2.5] text-neo-mint" />
+                      <span className="px-2 py-1 text-[10px] font-black uppercase border border-neo-mint/40 bg-neo-mint/10 text-neo-mint flex items-center space-x-1">
+                        <CheckCircle className="w-3 h-3 text-neo-mint" />
                         <span>DONE</span>
                       </span>
                       <button
                         onClick={() => onStartQuiz(q)}
-                        className="p-1 text-slate-500 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+                        className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
                         title="Relaunch question"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
