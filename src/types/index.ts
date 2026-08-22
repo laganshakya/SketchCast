@@ -1,10 +1,10 @@
 // Core Domain Types for SketchCast Live Voting & Quizzing
 
-export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard';
+export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard' | 'rooms';
 
 export interface Room {
   id: string;
-  code: string; // 6-digit room passcode (e.g. "SKT-789")
+  code: string; // Room passcode (e.g. "SKT-789")
   title: string;
   host_id: string;
   host_name: string;

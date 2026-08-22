@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, CheckCircle2, Users, Clock, Sparkles } from 'lucide-react';
+import { Plus, CheckCircle2, Users, Clock, Sparkles, Vote } from 'lucide-react';
 import type { LivePoll } from '../../types';
 
 interface LivePollsViewProps {
@@ -15,6 +15,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   userVotes,
   onVote,
   onOpenCreatePoll,
+  isHost = false,
 }) => {
   const timeAgo = (dateStr: string) => {
     const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60));
@@ -55,13 +56,21 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
           </h2>
         </div>
 
-        <button
-          onClick={onOpenCreatePoll}
-          className="px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center space-x-1.5 transition-all flex-shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          <span>NEW POLL</span>
-        </button>
+        {/* Host only can create new polls */}
+        {isHost ? (
+          <button
+            onClick={onOpenCreatePoll}
+            className="px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center space-x-1.5 transition-all flex-shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>NEW POLL</span>
+          </button>
+        ) : (
+          <div className="px-3 py-1.5 bg-[#1A1E2B] border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-[#00F59B] flex items-center space-x-1.5 flex-shrink-0">
+            <Vote className="w-4 h-4" />
+            <span className="hidden sm:inline">VOTING ACTIVE</span>
+          </div>
+        )}
       </div>
 
       {/* Polls List */}
@@ -69,8 +78,23 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
         {polls.length === 0 ? (
           <div className="bg-[#151822] p-8 border-2 border-black brutal-shadow text-center space-y-3">
             <Sparkles className="w-8 h-8 text-[#FFE600] mx-auto" />
-            <h3 className="text-lg font-heavy uppercase text-white font-display">NO ACTIVE COMMUNITY POLLS</h3>
-            <p className="text-xs font-mono text-slate-400">Launch a poll to gather instant architecture consensus!</p>
+            <h3 className="text-lg font-heavy uppercase text-white font-display">
+              NO ACTIVE COMMUNITY POLLS
+            </h3>
+            <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
+              {isHost
+                ? 'Launch a poll from the button above to gather real-time consensus from your attendees!'
+                : 'Stand by. The Host will broadcast community architecture polls during the live session.'}
+            </p>
+            {isHost && (
+              <button
+                onClick={onOpenCreatePoll}
+                className="mt-2 px-4 py-2 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>CREATE FIRST POLL</span>
+              </button>
+            )}
           </div>
         ) : (
           polls.map((poll) => {

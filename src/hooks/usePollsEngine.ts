@@ -1,34 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { LivePoll } from '../types';
-import { INITIAL_LIVE_POLLS } from '../lib/quizBank';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
+import { dbFetchPolls, dbInsertPoll, dbUpdatePoll } from '../lib/supabase';
 
 export function usePollsEngine({
   channelManager,
   sessionId,
   userName,
+  roomCode,
 }: {
   channelManager: RealtimeChannelManager | null;
   sessionId: string;
   userName: string;
+  roomCode: string;
 }) {
+  const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
+  const pollStorageKey = `sketchcast_polls_${currentRoomKey}`;
+  const voteStorageKey = `sketchcast_poll_votes_${sessionId}_${currentRoomKey}`;
+
   const [polls, setPolls] = useState<LivePoll[]>(() => {
     try {
-      const stored = localStorage.getItem('sketchcast_polls');
-      return stored ? JSON.parse(stored) : INITIAL_LIVE_POLLS;
+      const stored = localStorage.getItem(pollStorageKey);
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return INITIAL_LIVE_POLLS;
+      return [];
     }
   });
 
   const [userVotes, setUserVotes] = useState<Record<string, string>>(() => {
     try {
-      const stored = localStorage.getItem(`sketchcast_poll_votes_${sessionId}`);
+      const stored = localStorage.getItem(voteStorageKey);
       return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
     }
   });
+
+  // Load from Supabase DB on initialization & roomCode change
+  useEffect(() => {
+    dbFetchPolls(currentRoomKey).then((remotePolls) => {
+      if (remotePolls) {
+        setPolls(remotePolls);
+      }
+    });
+  }, [currentRoomKey]);
 
   // Listen to remote poll updates
   useEffect(() => {
@@ -62,34 +77,32 @@ export function usePollsEngine({
     };
   }, [channelManager]);
 
-  // Persist polls
   const persistPolls = (newPolls: LivePoll[]) => {
     setPolls(newPolls);
     try {
-      localStorage.setItem('sketchcast_polls', JSON.stringify(newPolls));
+      localStorage.setItem(pollStorageKey, JSON.stringify(newPolls));
     } catch {
       // ignore
     }
   };
 
-  // Persist user votes
   const persistUserVotes = (votes: Record<string, string>) => {
     setUserVotes(votes);
     try {
-      localStorage.setItem(`sketchcast_poll_votes_${sessionId}`, JSON.stringify(votes));
+      localStorage.setItem(voteStorageKey, JSON.stringify(votes));
     } catch {
       // ignore
     }
   };
 
-  // Host Action: Create a new Live Poll
+  // Create a new Live Poll for this room
   const createPoll = useCallback(
     (question: string, optionsText: string[]) => {
       if (!question.trim() || optionsText.filter((t) => t.trim()).length < 2) return;
 
       const newPoll: LivePoll = {
         id: 'poll_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now(),
-        room_id: 'room-demo-101',
+        room_id: currentRoomKey,
         question: question.trim(),
         author_name: userName,
         created_at: new Date().toISOString(),
@@ -105,21 +118,24 @@ export function usePollsEngine({
 
       const nextPolls = [newPoll, ...polls];
       persistPolls(nextPolls);
+      dbInsertPoll(newPoll);
 
       if (channelManager) {
         channelManager.broadcast('poll_update', nextPolls);
       }
     },
-    [polls, userName, channelManager]
+    [polls, userName, channelManager, currentRoomKey]
   );
 
-  // Attendee Action: Vote on a Poll Option
+  // Vote on a Poll Option
   const voteOnPoll = useCallback(
     (pollId: string, optionId: string) => {
       const currentVotedOption = userVotes[pollId];
 
       const nextVotes = { ...userVotes, [pollId]: optionId };
       persistUserVotes(nextVotes);
+
+      let targetUpdatedPoll: LivePoll | null = null;
 
       const nextPolls = polls.map((poll) => {
         if (poll.id === pollId) {
@@ -138,16 +154,22 @@ export function usePollsEngine({
             updatedTotal += 1;
           }
 
-          return {
+          const updated: LivePoll = {
             ...poll,
             totalVotes: updatedTotal,
             options: updatedOptions,
           };
+          targetUpdatedPoll = updated;
+          return updated;
         }
         return poll;
       });
 
       persistPolls(nextPolls);
+
+      if (targetUpdatedPoll) {
+        dbUpdatePoll(targetUpdatedPoll);
+      }
 
       if (channelManager) {
         channelManager.broadcast('poll_update', nextPolls);

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Plus, Sparkles, Clock, X, Terminal } from 'lucide-react';
-import { QUIZ_PACKS } from '../../lib/quizBank';
+import { Play, Plus, Sparkles, Clock, X, Terminal, Trash2 } from 'lucide-react';
 import type { QuizQuestion } from '../../types';
 
 interface QuizHostPanelProps {
@@ -12,8 +11,15 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   onStartQuiz,
   activeQuestionId,
 }) => {
-  const [selectedPackId, setSelectedPackId] = useState<string>('system-design');
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
+  const [hostQuestions, setHostQuestions] = useState<QuizQuestion[]>(() => {
+    try {
+      const stored = localStorage.getItem('sketchcast_host_quiz_queue');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Custom Form State
   const [customCategory, setCustomCategory] = useState('System Design');
@@ -26,7 +32,14 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const [customExplanation, setCustomExplanation] = useState('');
   const [customDuration, setCustomDuration] = useState(25);
 
-  const currentPack = QUIZ_PACKS.find((p) => p.id === selectedPackId) || QUIZ_PACKS[0];
+  const persistQuestions = (questions: QuizQuestion[]) => {
+    setHostQuestions(questions);
+    try {
+      localStorage.setItem('sketchcast_host_quiz_queue', JSON.stringify(questions));
+    } catch {
+      // ignore
+    }
+  };
 
   const handleCreateCustomQuiz = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +60,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       timeLimitSeconds: customDuration,
     };
 
+    const updated = [newQuestion, ...hostQuestions];
+    persistQuestions(updated);
     onStartQuiz(newQuestion);
     setShowCustomModal(false);
 
@@ -59,6 +74,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     setCustomExplanation('');
   };
 
+  const handleDeleteQuestion = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const filtered = hostQuestions.filter((q) => q.id !== id);
+    persistQuestions(filtered);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#12141D] border-2 border-black brutal-shadow-lg p-4 space-y-3.5 font-sans">
       {/* Header */}
@@ -66,7 +87,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
         <div className="flex items-center space-x-2">
           <Terminal className="w-4 h-4 text-[#FFE600]" />
           <h3 className="text-sm font-heavy text-white uppercase font-display tracking-tight">
-            HOST CONSOLE
+            HOST QUIZ CONTROLS
           </h3>
         </div>
         <button
@@ -78,73 +99,83 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
         </button>
       </div>
 
-      {/* Retro Cartridge Selector Buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        {QUIZ_PACKS.map((pack) => (
-          <button
-            key={pack.id}
-            onClick={() => setSelectedPackId(pack.id)}
-            className={`p-2.5 border-2 border-black text-left transition-all font-mono ${
-              selectedPackId === pack.id
-                ? 'bg-[#FFE600] text-black brutal-shadow-sm translate-x-[-1px] translate-y-[-1px]'
-                : 'bg-[#181B26] text-slate-400 hover:text-white hover:bg-[#202534]'
-            }`}
-          >
-            <div className="text-sm mb-0.5">{pack.icon}</div>
-            <div className="text-[11px] font-extrabold truncate uppercase">{pack.name}</div>
-            <div className="text-[9px] text-slate-500 font-bold">{pack.questions.length} CARDS</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Question List in Selected Pack */}
+      {/* Host Quiz Question Queue */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {currentPack.questions.map((q, idx) => {
-          const isLive = activeQuestionId === q.id;
-          return (
-            <div
-              key={q.id}
-              className={`p-3 border-2 border-black transition-all flex items-center justify-between gap-2.5 ${
-                isLive
-                  ? 'bg-[#1C2030] border-[#FFE600] brutal-shadow-yellow'
-                  : 'bg-[#151822] hover:bg-[#1A1E2B] brutal-shadow-sm'
-              }`}
+        {hostQuestions.length === 0 ? (
+          <div className="p-6 bg-[#161924] border-2 border-black brutal-shadow-sm text-center space-y-3">
+            <Sparkles className="w-6 h-6 text-[#FFE600] mx-auto" />
+            <h4 className="text-xs font-heavy uppercase text-white font-display">
+              NO QUESTIONS QUEUED
+            </h4>
+            <p className="text-[11px] font-mono text-slate-400">
+              Create a custom quiz question to broadcast to all live participants.
+            </p>
+            <button
+              onClick={() => setShowCustomModal(true)}
+              className="mt-2 px-3 py-1.5 bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1"
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center space-x-1.5 mb-1 font-mono">
-                  <span className="text-[9px] font-extrabold bg-[#FFE600] text-black px-1.5 py-0.2 border border-black">
-                    Q{idx + 1}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">{q.category}</span>
-                  <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5">
-                    <Clock className="w-2.5 h-2.5" /> {q.timeLimitSeconds}S
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug font-display">
-                  {q.question}
-                </p>
-              </div>
-
-              <button
-                onClick={() => onStartQuiz(q)}
-                className={`px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 flex-shrink-0 ${
+              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <span>CREATE QUESTION</span>
+            </button>
+          </div>
+        ) : (
+          hostQuestions.map((q, idx) => {
+            const isLive = activeQuestionId === q.id;
+            return (
+              <div
+                key={q.id}
+                className={`p-3 border-2 border-black transition-all flex items-center justify-between gap-2.5 ${
                   isLive
-                    ? 'bg-[#00F59B] text-black brutal-shadow-sm'
-                    : 'bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black brutal-shadow-sm'
+                    ? 'bg-[#1C2030] border-[#FFE600] brutal-shadow-yellow'
+                    : 'bg-[#151822] hover:bg-[#1A1E2B] brutal-shadow-sm'
                 }`}
               >
-                <Play className="w-3 h-3 fill-black" />
-                <span>{isLive ? 'LIVE' : 'LAUNCH'}</span>
-              </button>
-            </div>
-          );
-        })}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-1.5 mb-1 font-mono">
+                    <span className="text-[9px] font-extrabold bg-[#FFE600] text-black px-1.5 py-0.2 border border-black">
+                      Q{idx + 1}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">{q.category}</span>
+                    <span className="text-[9px] text-slate-500 font-bold flex items-center gap-0.5">
+                      <Clock className="w-2.5 h-2.5" /> {q.timeLimitSeconds}S
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug font-display">
+                    {q.question}
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => onStartQuiz(q)}
+                    className={`px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 ${
+                      isLive
+                        ? 'bg-[#00F59B] text-black brutal-shadow-sm'
+                        : 'bg-[#FFE600] hover:bg-[#FFF04D] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-black brutal-shadow-sm'
+                    }`}
+                  >
+                    <Play className="w-3 h-3 fill-black" />
+                    <span>{isLive ? 'LIVE' : 'LAUNCH'}</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => handleDeleteQuestion(q.id, e)}
+                    className="p-1.5 text-slate-500 hover:text-[#FF2A6D] hover:bg-black/30 transition-colors"
+                    title="Delete question from queue"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Neo-Brutalist Custom Quiz Modal */}
       {showCustomModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#FFFDF5] text-black w-full max-w-lg p-6 border-4 border-black brutal-shadow-lg relative font-sans">
+          <div className="bg-[#FFFDF5] text-black w-full max-w-lg p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
               className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-[#FF2A6D] transition-colors border-2 border-black"
@@ -158,7 +189,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-heavy uppercase font-display tracking-tight text-black">
-                  CREATE CUSTOM ARCHITECTURE QUESTION
+                  CREATE QUIZ QUESTION
                 </h3>
                 <p className="text-xs font-mono text-slate-700">Publish immediate live quiz to all participants</p>
               </div>
@@ -172,7 +203,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     type="text"
                     value={customCategory}
                     onChange={(e) => setCustomCategory(e.target.value)}
-                    placeholder="e.g. Distributed Systems"
+                    placeholder="e.g. System Design"
                     className="w-full px-3 py-1.5 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-[#FFE600]/20"
                   />
                 </div>
@@ -239,7 +270,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <textarea
                   value={customExplanation}
                   onChange={(e) => setCustomExplanation(e.target.value)}
-                  placeholder="Explain why this architecture option is right..."
+                  placeholder="Explain why this option is correct..."
                   rows={2}
                   className="w-full p-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-[#FFE600]/20 resize-none"
                 />

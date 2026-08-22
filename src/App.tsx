@@ -3,6 +3,7 @@ import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
 import { useQAFeed } from './hooks/useQAFeed';
+import { LandingAuthPage } from './components/auth/LandingAuthPage';
 import { AppHeader } from './components/common/AppHeader';
 import { QuizArena } from './components/quiz/QuizArena';
 import { QuizHostPanel } from './components/quiz/QuizHostPanel';
@@ -12,14 +13,18 @@ import { CreatePollModal } from './components/polls/CreatePollModal';
 import { QuestionFeed } from './components/qa/QuestionFeed';
 import { QuestionModal } from './components/qa/QuestionModal';
 import { QRCodeModal } from './components/common/QRCodeModal';
-import { Zap, Vote, HelpCircle, Trophy } from 'lucide-react';
+import { AuthModal } from './components/common/AuthModal';
+import { RoomsAdminView } from './components/rooms/RoomsAdminView';
+import { Zap, Vote, HelpCircle, Trophy, Layers } from 'lucide-react';
 
 export function App() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrRoomData, setQrRoomData] = useState<{ code: string; title: string } | null>(null);
   const [isAskModalOpen, setIsAskModalOpen] = useState(false);
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // 1. Room Session & Presence
+  // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
     sessionId,
     userName,
@@ -30,10 +35,14 @@ export function App() {
     activeTab,
     setActiveTab,
     attendees,
+    currentUser,
+    isAuthenticated,
+    handleAuthenticated,
+    handleSignOut,
     channelManager,
   } = useRoomSession('SKT-789');
 
-  // 2. Live Quiz Engine
+  // 2. Live Quiz Engine (Isolated to room.code)
   const {
     quizState,
     leaderboard,
@@ -47,9 +56,10 @@ export function App() {
     sessionId,
     userName,
     userRole,
+    roomCode: room.code,
   });
 
-  // 3. Live Polls Engine
+  // 3. Live Polls Engine (Isolated to room.code)
   const {
     polls,
     userVotes,
@@ -59,9 +69,10 @@ export function App() {
     channelManager,
     sessionId,
     userName,
+    roomCode: room.code,
   });
 
-  // 4. Live Q&A Feed Engine
+  // 4. Live Q&A Feed Engine (Isolated to room.code)
   const {
     filteredQuestions,
     upvotedIds,
@@ -75,10 +86,33 @@ export function App() {
     sessionId,
     userName,
     userRole,
+    roomCode: room.code,
   });
 
   const activeViewerCount = Math.max(1, attendees.length);
 
+  // Handle switching rooms from Rooms Admin Hub
+  const handleSwitchRoom = (newCode: string, _newTitle?: string) => {
+    handleAuthenticated(userName, userRole, newCode);
+    setActiveTab('quiz');
+  };
+
+  const handleOpenQRForRoom = (code: string, title: string) => {
+    setQrRoomData({ code, title });
+    setIsQRModalOpen(true);
+  };
+
+  // If user is not authenticated, show the Landing / Auth Page
+  if (!isAuthenticated) {
+    return (
+      <LandingAuthPage
+        onAuthenticated={handleAuthenticated}
+        roomCode={room.code}
+      />
+    );
+  }
+
+  // Once authenticated (or signed in as guest), show the Live Arena
   return (
     <div className="h-screen w-screen flex flex-col bg-retro-grid text-slate-100 overflow-hidden font-sans select-none">
       {/* Top Header */}
@@ -92,7 +126,13 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         questionsCount={filteredQuestions.length}
-        onOpenQRCode={() => setIsQRModalOpen(true)}
+        onOpenQRCode={() => {
+          setQrRoomData({ code: room.code, title: room.title });
+          setIsQRModalOpen(true);
+        }}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
+        currentUser={currentUser}
       />
 
       {/* Main Content Area */}
@@ -159,6 +199,18 @@ export function App() {
             <LeaderboardPodium leaderboard={leaderboard} />
           </div>
         )}
+
+        {/* TAB 5: Rooms Admin Management (Host Only) */}
+        {activeTab === 'rooms' && userRole === 'host' && (
+          <div className="flex-1 flex flex-col overflow-y-auto">
+            <RoomsAdminView
+              currentRoomCode={room.code}
+              onSwitchRoom={handleSwitchRoom}
+              onOpenQRCodeForRoom={handleOpenQRForRoom}
+              userName={userName}
+            />
+          </div>
+        )}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
@@ -210,14 +262,31 @@ export function App() {
           <Trophy className="w-4 h-4 mb-0.5" />
           <span>SCORES</span>
         </button>
+
+        {userRole === 'host' && (
+          <button
+            onClick={() => setActiveTab('rooms')}
+            className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[10px] font-black uppercase transition-all ${
+              activeTab === 'rooms'
+                ? 'bg-[#9B5DE5] text-white border-2 border-black brutal-shadow-sm'
+                : 'text-slate-400'
+            }`}
+          >
+            <Layers className="w-4 h-4 mb-0.5" />
+            <span>ROOMS</span>
+          </button>
+        )}
       </div>
 
       {/* Modals */}
       <QRCodeModal
         isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        roomCode={room.code}
-        roomTitle={room.title}
+        onClose={() => {
+          setIsQRModalOpen(false);
+          setQrRoomData(null);
+        }}
+        roomCode={qrRoomData?.code || room.code}
+        roomTitle={qrRoomData?.title || room.title}
         activeViewerCount={activeViewerCount}
       />
 
@@ -232,6 +301,14 @@ export function App() {
         onClose={() => setIsAskModalOpen(false)}
         onSubmit={submitQuestion}
         userName={userName}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        userName={userName}
+        setUserName={setUserName}
       />
     </div>
   );

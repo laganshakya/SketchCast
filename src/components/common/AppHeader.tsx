@@ -9,9 +9,13 @@ import {
   Trophy,
   HelpCircle,
   Zap,
-  Radio
+  Radio,
+  LogOut,
+  ShieldAlert,
+  Layers
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface AppHeaderProps {
   room: Room;
@@ -24,12 +28,14 @@ interface AppHeaderProps {
   setActiveTab: (tab: ActiveTabType) => void;
   questionsCount: number;
   onOpenQRCode: () => void;
+  onOpenAuthModal: () => void;
+  onSignOut: () => void;
+  currentUser: SupabaseUser | null;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   room,
   userName,
-  setUserName,
   userRole,
   setUserRole,
   activeViewerCount,
@@ -37,10 +43,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   setActiveTab,
   questionsCount,
   onOpenQRCode,
+  onOpenAuthModal,
+  onSignOut,
+  currentUser,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(userName);
+  const [showHostNotice, setShowHostNotice] = useState(false);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code);
@@ -48,18 +56,33 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveName = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tempName.trim()) {
-      setUserName(tempName.trim());
+  const handleRoleToggle = () => {
+    if (userRole === 'host') {
+      setUserRole('attendee');
+    } else {
+      // Switching to host requires email authenticated session
+      if (!currentUser || currentUser.is_anonymous) {
+        setShowHostNotice(true);
+        setTimeout(() => setShowHostNotice(false), 3000);
+        onOpenAuthModal();
+      } else {
+        setUserRole('host');
+      }
     }
-    setIsEditingName(false);
   };
 
   return (
-    <header className="flex flex-col bg-[#11131B] border-b-2 border-black z-40 select-none flex-shrink-0">
+    <header className="flex flex-col bg-[#11131B] border-b-2 border-black z-40 select-none flex-shrink-0 font-sans relative">
       {/* Top Retro Hazard Line */}
       <div className="h-1.5 w-full hazard-stripes" />
+
+      {/* Host Requirement Notice Toast */}
+      {showHostNotice && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 px-3 py-1.5 bg-[#FF2A6D] text-white border-2 border-black font-mono text-xs font-bold brutal-shadow flex items-center space-x-2 animate-bounce">
+          <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+          <span>Host / Admin privileges require email sign in. Opening auth...</span>
+        </div>
+      )}
 
       <div className="h-16 px-3 sm:px-5 flex items-center justify-between gap-3">
         {/* Left: Brand Logo & Room Passcode */}
@@ -156,9 +179,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Trophy className="w-3.5 h-3.5" />
             <span>SCORES</span>
           </button>
+
+          {/* Admin / Host Exclusive: ROOMS TAB */}
+          {userRole === 'host' && (
+            <button
+              onClick={() => setActiveTab('rooms')}
+              className={`px-3 py-1.5 text-xs font-mono font-black uppercase transition-all flex items-center space-x-1.5 border-2 ${
+                activeTab === 'rooms'
+                  ? 'bg-[#9B5DE5] text-white border-black brutal-shadow-sm translate-x-[-1px] translate-y-[-1px]'
+                  : 'bg-transparent text-purple-300 border-transparent hover:text-white hover:bg-[#1A1E2B]'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>ROOMS</span>
+            </button>
+          )}
         </nav>
 
-        {/* Right: QR Code & User Profile */}
+        {/* Right: QR Code, Profile & Sign Out */}
         <div className="flex items-center space-x-2">
           <button
             onClick={onOpenQRCode}
@@ -169,42 +207,36 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <span className="hidden sm:inline">JOIN_QR</span>
           </button>
 
-          {isEditingName ? (
-            <form onSubmit={handleSaveName} className="flex items-center">
-              <input
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                onBlur={() => setIsEditingName(false)}
-                className="px-2 py-1 text-xs font-mono bg-black border-2 border-[#FFE600] text-white focus:outline-none w-28"
-                autoFocus
-              />
-            </form>
-          ) : (
-            <div className="flex items-center space-x-1.5 bg-[#151822] border-2 border-black brutal-shadow-sm px-2.5 py-1 text-xs font-mono">
-              <button
-                onClick={() => setUserRole(userRole === 'host' ? 'attendee' : 'host')}
-                className={`flex items-center gap-1 font-extrabold uppercase text-[10px] px-1.5 py-0.5 border border-black ${
-                  userRole === 'host' ? 'bg-[#FFE600] text-black' : 'bg-slate-700 text-slate-200'
-                }`}
-                title={`Click to switch role (Current: ${userRole})`}
-              >
-                {userRole === 'host' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                <span>{userRole}</span>
-              </button>
+          {/* Role and Name Pill */}
+          <div className="flex items-center space-x-1.5 bg-[#151822] border-2 border-black brutal-shadow-sm px-2.5 py-1 text-xs font-mono">
+            <button
+              onClick={handleRoleToggle}
+              className={`flex items-center gap-1 font-extrabold uppercase text-[10px] px-1.5 py-0.5 border border-black ${
+                userRole === 'host' ? 'bg-[#FFE600] text-black' : 'bg-slate-700 text-slate-200'
+              }`}
+              title={`Click to switch role (Current: ${userRole}). Hosts require verified email account.`}
+            >
+              {userRole === 'host' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
+              <span>{userRole}</span>
+            </button>
 
-              <button
-                onClick={() => {
-                  setTempName(userName);
-                  setIsEditingName(true);
-                }}
-                className="text-slate-200 hover:text-[#FFE600] font-bold max-w-[90px] truncate text-[11px]"
-                title="Click to change your username"
-              >
-                {userName}
-              </button>
-            </div>
-          )}
+            <button
+              onClick={onOpenAuthModal}
+              className="text-slate-200 hover:text-[#FFE600] font-bold max-w-[85px] truncate text-[11px]"
+              title="Click to view profile & auth details"
+            >
+              {userName}
+            </button>
+          </div>
+
+          {/* Sign Out Button */}
+          <button
+            onClick={onSignOut}
+            className="p-1.5 bg-[#151822] hover:bg-[#FF2A6D] text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+            title="Sign out & return to landing page"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

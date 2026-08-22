@@ -1,73 +1,70 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Question, QuestionStatus } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-
-const INITIAL_QUESTIONS: Question[] = [
-  {
-    id: 'q-1',
-    room_id: 'room-demo-101',
-    author_name: 'Sarah (Infra Eng)',
-    author_session_id: 'user_sarah_1',
-    content: 'How do you handle multi-region cache invalidation with sub-millisecond p99 latency without thundering herds?',
-    upvotes_count: 42,
-    status: 'spotlight',
-    created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-  },
-  {
-    id: 'q-2',
-    room_id: 'room-demo-101',
-    author_name: 'Marcus DEV',
-    author_session_id: 'user_marcus_2',
-    content: 'Can you sketch the consensus flow for Raft vs Paxos when a leader network partition occurs?',
-    upvotes_count: 38,
-    status: 'pending',
-    created_at: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
-  },
-  {
-    id: 'q-3',
-    room_id: 'room-demo-101',
-    author_name: 'Elena Rostova',
-    author_session_id: 'user_elena_3',
-    content: 'What is the trade-off between LSM-Trees and B-Trees in write-heavy time-series telemetry databases?',
-    upvotes_count: 27,
-    status: 'pending',
-    created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-  },
-  {
-    id: 'q-4',
-    room_id: 'room-demo-101',
-    author_name: 'Dave (SecOps)',
-    author_session_id: 'user_dave_4',
-    content: 'How do zero-trust service meshes implement mTLS rotation without dropping active streaming TCP connections?',
-    upvotes_count: 19,
-    status: 'answered',
-    created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-  }
-];
+import {
+  dbFetchQuestions,
+  dbInsertQuestion,
+  dbUpdateQuestionUpvotes,
+  dbUpdateQuestionStatus,
+} from '../lib/supabase';
 
 export function useQAFeed({
   channelManager,
   sessionId,
   userName,
   userRole,
+  roomCode,
 }: {
   channelManager: RealtimeChannelManager | null;
   sessionId: string;
   userName: string;
   userRole: 'host' | 'attendee';
+  roomCode: string;
 }) {
-  const [questions, setQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
+  const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
+  const qaTabKey = `sketchcast_qa_active_tab_${currentRoomKey}`;
+
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem(`sketchcast_upvotes_${sessionId}`);
+      const stored = localStorage.getItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'top' | 'recent' | 'answered' | 'spotlight'>('top');
+  const [activeTab, setActiveTabState] = useState<'top' | 'recent' | 'answered' | 'spotlight'>(() => {
+    try {
+      const stored = localStorage.getItem(qaTabKey) as 'top' | 'recent' | 'answered' | 'spotlight';
+      if (['top', 'recent', 'answered', 'spotlight'].includes(stored)) {
+        return stored;
+      }
+    } catch {
+      // ignore
+    }
+    return 'top';
+  });
 
+  const setActiveTab = (tab: 'top' | 'recent' | 'answered' | 'spotlight') => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem(qaTabKey, tab);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Load from Supabase DB on initialization & roomCode change
+  useEffect(() => {
+    dbFetchQuestions(currentRoomKey).then((remoteQuestions) => {
+      if (remoteQuestions) {
+        setQuestions(remoteQuestions);
+      }
+    });
+  }, [currentRoomKey]);
+
+  // Realtime synchronization
   useEffect(() => {
     if (!channelManager) return;
 
@@ -90,7 +87,7 @@ export function useQAFeed({
   const persistUpvotes = (ids: Set<string>) => {
     setUpvotedIds(ids);
     try {
-      localStorage.setItem(`sketchcast_upvotes_${sessionId}`, JSON.stringify(Array.from(ids)));
+      localStorage.setItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`, JSON.stringify(Array.from(ids)));
     } catch {
       // ignore
     }
@@ -112,6 +109,7 @@ export function useQAFeed({
         const next = prev.map((q) => {
           if (q.id === questionId) {
             const newCount = hasUpvoted ? Math.max(0, q.upvotes_count - 1) : q.upvotes_count + 1;
+            dbUpdateQuestionUpvotes(questionId, newCount);
             if (channelManager) {
               channelManager.broadcast('question_upvote', {
                 questionId,
@@ -139,7 +137,7 @@ export function useQAFeed({
 
       const newQ: Question = {
         id: 'q_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now(),
-        room_id: 'room-demo-101',
+        room_id: currentRoomKey,
         author_name: userName,
         author_session_id: sessionId,
         content: content.trim(),
@@ -152,6 +150,8 @@ export function useQAFeed({
       nextUpvoted.add(newQ.id);
       persistUpvotes(nextUpvoted);
 
+      dbInsertQuestion(newQ);
+
       setQuestions((prev) => {
         const next = [newQ, ...prev];
         if (channelManager) {
@@ -160,11 +160,13 @@ export function useQAFeed({
         return next;
       });
     },
-    [userName, sessionId, upvotedIds, channelManager]
+    [userName, sessionId, upvotedIds, channelManager, currentRoomKey]
   );
 
   const updateQuestionStatus = useCallback(
     (questionId: string, status: QuestionStatus) => {
+      dbUpdateQuestionStatus(questionId, status);
+
       setQuestions((prev) => {
         const next = prev.map((q) => {
           if (status === 'spotlight') {
