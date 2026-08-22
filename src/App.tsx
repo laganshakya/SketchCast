@@ -323,6 +323,7 @@ export function App() {
               onSwitchRoom={handleSwitchRoom}
               onOpenQRCodeForRoom={handleOpenQRForRoom}
               userName={userName}
+              currentUser={currentUser}
             />
           </div>
         )}

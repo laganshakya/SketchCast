@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 const SESSION_KEY = 'sketchcast_session_id';
@@ -186,19 +186,21 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
   const [promotionToast, setPromotionToast] = useState<string | null>(null);
 
-  // Check if current user is pre-authorized in the room's admins list
+  // Check if current user is pre-authorized as owner or co-admin for the active room
   useEffect(() => {
     dbFetchRooms().then((rooms) => {
       const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
       if (current) {
         setRoom(current);
-        if (current.admins && current.admins.some((a) => a.toLowerCase() === userName.toLowerCase())) {
+        const isAdmin = isUserRoomAdmin(current, currentUser, userName);
+        if (isAdmin) {
           setUserRoleState('host');
           sessionStorage.setItem(ROLE_KEY, 'host');
+          localStorage.setItem(ROLE_KEY, 'host');
         }
       }
     });
-  }, [activeRoomCode, userName]);
+  }, [activeRoomCode, userName, currentUser]);
 
   // Realtime Channel & Presence setup
   useEffect(() => {

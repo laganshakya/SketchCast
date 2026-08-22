@@ -15,16 +15,19 @@ import {
   Lock,
   Crown,
   UserPlus,
-  UserX
+  UserX,
+  Shield
 } from 'lucide-react';
 import type { Room } from '../../types';
-import { dbFetchRooms, dbCreateRoom, dbDeleteRoom, dbUpdateRoomAdmins } from '../../lib/supabase';
+import type { User } from '@supabase/supabase-js';
+import { dbFetchRooms, dbCreateRoom, dbDeleteRoom, dbUpdateRoomAdmins, isUserRoomAdmin } from '../../lib/supabase';
 
 interface RoomsAdminViewProps {
   currentRoomCode: string;
   onSwitchRoom: (roomCode: string, roomTitle?: string) => void;
   onOpenQRCodeForRoom: (roomCode: string, roomTitle: string) => void;
   userName: string;
+  currentUser?: User | null;
 }
 
 export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
@@ -32,6 +35,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   onSwitchRoom,
   onOpenQRCodeForRoom,
   userName,
+  currentUser,
 }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -46,26 +50,17 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   const loadRooms = async () => {
     const remoteRooms = await dbFetchRooms();
     if (remoteRooms && remoteRooms.length > 0) {
-      setRooms(remoteRooms);
+      // Strictly filter to ONLY rooms owned by or co-managed by this host
+      const myRooms = remoteRooms.filter((r) => isUserRoomAdmin(r, currentUser, userName));
+      setRooms(myRooms);
     } else {
-      // Default fallback room if DB is empty
-      setRooms([
-        {
-          id: 'room-SKT-789',
-          code: 'SKT-789',
-          title: 'Main Arena — Live Voting & Quizzing',
-          host_id: 'host-root-1',
-          host_name: userName || 'Host Admin',
-          admins: [],
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      setRooms([]);
     }
   };
 
   useEffect(() => {
     loadRooms();
-  }, []);
+  }, [currentUser, userName]);
 
   const generateUniqueCode = (existingRoomsList: Room[] = rooms): string => {
     const prefixes = ['SKT', 'ARENA', 'DEV', 'TECH', 'ARCH', 'CYBER', 'NODE', 'FLOW', 'VOTE', 'PULSE', 'STAGE', 'LAB'];
@@ -92,7 +87,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Fetch latest rooms to guarantee zero collision
+    // Fetch latest rooms to guarantee zero collision across all global rooms
     const remoteRooms = await dbFetchRooms();
     let finalCode = newRoomCode.trim().toUpperCase();
     if (!finalCode || (remoteRooms && remoteRooms.some(r => r.code.toUpperCase() === finalCode))) {
@@ -100,14 +95,17 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
     }
 
     const cleanTitle = newRoomTitle.trim() || `Tech Arena // ${finalCode}`;
+    const hostEmail = currentUser?.email || undefined;
+    const hostId = currentUser?.id || `host_${Date.now()}`;
 
     const newRoom: Room = {
       id: `room-${finalCode}`,
       code: finalCode,
       title: cleanTitle,
-      host_id: `host_${Date.now()}`,
+      host_id: hostId,
       host_name: userName || 'Host Admin',
-      admins: [userName],
+      host_email: hostEmail,
+      admins: hostEmail ? [hostEmail, userName] : [userName],
       created_at: new Date().toISOString(),
     };
 
@@ -205,35 +203,68 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
         </button>
       </div>
 
-      {/* Rooms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rooms.map((r) => {
-          const isActive = r.code.toUpperCase() === currentRoomCode.toUpperCase();
-          const adminList = r.admins || [];
+      {/* Rooms Grid / Empty State */}
+      {rooms.length === 0 ? (
+        <div className="bg-neo-card p-8 border-2 border-black brutal-shadow text-center space-y-3">
+          <Sparkles className="w-8 h-8 text-neo-yellow mx-auto" />
+          <h3 className="text-lg font-heavy uppercase text-white">
+            NO PRIVATE ROOMS ACCESSIBLE
+          </h3>
+          <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
+            You currently do not own or co-manage any rooms. Create a private arena session or have another host add you as a co-admin.
+          </p>
+          <button
+            onClick={handleOpenCreateModal}
+            className="mt-2 px-5 py-2.5 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-3" />
+            <span>CREATE FIRST ROOM</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rooms.map((r) => {
+            const isActive = r.code.toUpperCase() === currentRoomCode.toUpperCase();
+            const adminList = r.admins || [];
+            const isOwner =
+              Boolean(currentUser?.id && r.host_id === currentUser.id) ||
+              Boolean(currentUser?.email && r.host_email && r.host_email.toLowerCase() === currentUser.email.toLowerCase()) ||
+              Boolean(r.host_name && r.host_name.toLowerCase() === userName.toLowerCase());
 
-          return (
-            <div
-              key={r.id || r.code}
-              className={`p-5 border-2 border-black flex flex-col justify-between space-y-4 transition-all ${
-                isActive
-                  ? 'bg-[#1C2030] border-neo-mint brutal-shadow-green'
-                  : 'bg-neo-card hover:bg-[#1A1E2B] brutal-shadow-sm'
-              }`}
-            >
-              <div className="space-y-2.5">
-                {/* Header Badge */}
-                <div className="flex items-center justify-between gap-2 mb-2 font-mono">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="px-2.5 py-1 bg-neo-yellow text-black font-black text-xs border border-black tracking-wider">
-                      {r.code}
-                    </span>
-                    {isActive && (
-                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-neo-mint text-black text-[10px] font-black border border-black uppercase">
-                        <Radio className="w-3 h-3 animate-pulse" />
-                        <span>ACTIVE</span>
+            return (
+              <div
+                key={r.id || r.code}
+                className={`p-5 border-2 border-black flex flex-col justify-between space-y-4 transition-all ${
+                  isActive
+                    ? 'bg-[#1C2030] border-neo-mint brutal-shadow-green'
+                    : 'bg-neo-card hover:bg-[#1A1E2B] brutal-shadow-sm'
+                }`}
+              >
+                <div className="space-y-2.5">
+                  {/* Header Badge */}
+                  <div className="flex items-center justify-between gap-2 mb-2 font-mono">
+                    <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                      <span className="px-2.5 py-1 bg-neo-yellow text-black font-black text-xs border border-black tracking-wider">
+                        {r.code}
                       </span>
-                    )}
-                  </div>
+                      {isOwner ? (
+                        <span className="px-1.5 py-0.5 bg-neo-yellow text-black font-mono text-[9px] font-black uppercase border border-black flex items-center gap-0.5 brutal-shadow-sm">
+                          <Crown className="w-2.5 h-2.5 fill-black" />
+                          <span>OWNER</span>
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 bg-neo-cyan text-black font-mono text-[9px] font-black uppercase border border-black flex items-center gap-0.5 brutal-shadow-sm">
+                          <Shield className="w-2.5 h-2.5" />
+                          <span>CO-ADMIN</span>
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-neo-mint text-black text-[10px] font-black border border-black uppercase">
+                          <Radio className="w-3 h-3 animate-pulse" />
+                          <span>ACTIVE</span>
+                        </span>
+                      )}
+                    </div>
 
                   <div className="flex items-center space-x-1">
                     <button
@@ -329,6 +360,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* Neo-Brutalist Create Room Modal */}
       {isCreateModalOpen && (

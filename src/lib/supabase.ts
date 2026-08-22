@@ -95,7 +95,33 @@ export function onAuthChange(callback: (user: User | null, session: Session | nu
   return () => data.subscription.unsubscribe();
 }
 
-// ================= ROOMS MANAGEMENT =================
+// ================= ROOMS MANAGEMENT & ISOLATION =================
+export function isUserRoomAdmin(room: Room, user?: User | null, userName?: string): boolean {
+  if (!room) return false;
+  const cleanName = (userName || '').trim().toLowerCase();
+  const cleanEmail = (user?.email || '').trim().toLowerCase();
+  const userId = user?.id;
+
+  // 1. Direct creator / owner match (User ID, Email, or Display Name)
+  if (userId && room.host_id === userId) return true;
+  if (cleanEmail && room.host_email && room.host_email.trim().toLowerCase() === cleanEmail) return true;
+  if (cleanName && room.host_name && room.host_name.trim().toLowerCase() === cleanName) return true;
+
+  // 2. Co-admin membership in room.admins array
+  const admins = room.admins || [];
+  if (admins.length > 0) {
+    return admins.some((adminIdentifier) => {
+      const cleanAdmin = (adminIdentifier || '').trim().toLowerCase();
+      if (userId && (adminIdentifier === userId || cleanAdmin === userId.toLowerCase())) return true;
+      if (cleanEmail && cleanAdmin === cleanEmail) return true;
+      if (cleanName && cleanAdmin === cleanName) return true;
+      return false;
+    });
+  }
+
+  return false;
+}
+
 export async function dbFetchRooms(): Promise<Room[]> {
   let localRooms: Room[] = [];
   try {
@@ -133,6 +159,11 @@ export async function dbFetchRooms(): Promise<Room[]> {
   }
 }
 
+export async function dbFetchMyRooms(user?: User | null, userName?: string): Promise<Room[]> {
+  const allRooms = await dbFetchRooms();
+  return allRooms.filter((r) => isUserRoomAdmin(r, user, userName));
+}
+
 export async function dbCreateRoom(room: Room) {
   const targetKey = room.code.toUpperCase().trim();
   try {
@@ -151,6 +182,7 @@ export async function dbCreateRoom(room: Room) {
       title: room.title.trim(),
       host_id: room.host_id,
       host_name: room.host_name,
+      host_email: room.host_email || null,
       admins: room.admins || [],
       created_at: room.created_at,
     });

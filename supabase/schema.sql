@@ -3,15 +3,21 @@
 -- Real-Time Interactive Live Voting, Tech Quizzing, and Q&A Arena
 -- ==============================================================================
 
--- 1. Rooms Table
+-- 1. Rooms Table with Creator Ownership & Multi-Admin Permissions
 create table if not exists public.rooms (
   id text primary key,
   code text unique not null,
   title text not null,
   host_id text,
   host_name text,
+  host_email text,
+  admins text[] default array[]::text[],
   created_at timestamptz default now()
 );
+
+-- Migration safety for existing installations
+alter table if exists public.rooms add column if not exists host_email text;
+alter table if exists public.rooms add column if not exists admins text[] default array[]::text[];
 
 -- 2. Questions Table (Live Q&A Upvote Feed)
 create table if not exists public.questions (
@@ -95,9 +101,9 @@ create policy "Allow public insert/update to leaderboard" on public.leaderboard 
 -- Default Seed Data & Storage Bucket
 -- ==============================================================================
 
--- Initial Default Room
-insert into public.rooms (id, code, title, host_id, host_name)
-values ('room-demo-101', 'SKT-789', 'NextGen Tech Arena — Live Voting & Quizzing', 'host-root-1', 'Alex Chen (Host)')
+-- Initial Default Demo Room
+insert into public.rooms (id, code, title, host_id, host_name, host_email, admins)
+values ('room-demo-101', 'SKT-789', 'NextGen Tech Arena — Live Voting & Quizzing', 'host-root-1', 'Alex Chen (Host)', 'host@sketchcast.live', array['Alex Chen (Host)', 'host@sketchcast.live'])
 on conflict (id) do update set title = excluded.title;
 
 -- Public Storage Bucket for Asset Uploads
