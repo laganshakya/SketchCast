@@ -12,10 +12,13 @@ import {
   X,
   RefreshCw,
   Key,
-  Lock
+  Lock,
+  Crown,
+  UserPlus,
+  UserX
 } from 'lucide-react';
 import type { Room } from '../../types';
-import { dbFetchRooms, dbCreateRoom, dbDeleteRoom } from '../../lib/supabase';
+import { dbFetchRooms, dbCreateRoom, dbDeleteRoom, dbUpdateRoomAdmins } from '../../lib/supabase';
 
 interface RoomsAdminViewProps {
   currentRoomCode: string;
@@ -36,6 +39,10 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   const [newRoomTitle, setNewRoomTitle] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  // Manage Admins Modal State
+  const [editingAdminsRoom, setEditingAdminsRoom] = useState<Room | null>(null);
+  const [newAdminInput, setNewAdminInput] = useState('');
+
   const loadRooms = async () => {
     const remoteRooms = await dbFetchRooms();
     if (remoteRooms && remoteRooms.length > 0) {
@@ -49,6 +56,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
           title: 'Main Arena — Live Voting & Quizzing',
           host_id: 'host-root-1',
           host_name: userName || 'Host Admin',
+          admins: [],
           created_at: new Date().toISOString(),
         },
       ]);
@@ -99,6 +107,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
       title: cleanTitle,
       host_id: `host_${Date.now()}`,
       host_name: userName || 'Host Admin',
+      admins: [userName],
       created_at: new Date().toISOString(),
     };
 
@@ -128,6 +137,42 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  // Add a co-admin to a room
+  const handleAddCoAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAdminsRoom || !newAdminInput.trim()) return;
+
+    const adminToAdd = newAdminInput.trim();
+    const currentAdmins = editingAdminsRoom.admins || [];
+    if (currentAdmins.some((a) => a.toLowerCase() === adminToAdd.toLowerCase())) {
+      setNewAdminInput('');
+      return;
+    }
+
+    const updatedAdmins = [...currentAdmins, adminToAdd];
+    await dbUpdateRoomAdmins(editingAdminsRoom.code, updatedAdmins);
+    
+    setEditingAdminsRoom((prev) => (prev ? { ...prev, admins: updatedAdmins } : null));
+    setRooms((prev) =>
+      prev.map((r) => (r.code === editingAdminsRoom.code ? { ...r, admins: updatedAdmins } : r))
+    );
+    setNewAdminInput('');
+  };
+
+  // Remove a co-admin from a room
+  const handleRemoveCoAdmin = async (adminToRemove: string) => {
+    if (!editingAdminsRoom) return;
+
+    const currentAdmins = editingAdminsRoom.admins || [];
+    const updatedAdmins = currentAdmins.filter((a) => a.toLowerCase() !== adminToRemove.toLowerCase());
+    await dbUpdateRoomAdmins(editingAdminsRoom.code, updatedAdmins);
+
+    setEditingAdminsRoom((prev) => (prev ? { ...prev, admins: updatedAdmins } : null));
+    setRooms((prev) =>
+      prev.map((r) => (r.code === editingAdminsRoom.code ? { ...r, admins: updatedAdmins } : r))
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto w-full space-y-5 font-sans">
       {/* Top Header Card */}
@@ -139,14 +184,14 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-xl sm:text-2xl font-heavy text-white uppercase tracking-tight">
-                ROOMS MANAGEMENT
+                ROOMS & ADMINS MANAGEMENT
               </h2>
               <span className="px-2 py-0.5 bg-neo-yellow text-black font-mono text-[10px] font-black border border-black uppercase">
                 ADMIN HUB
               </span>
             </div>
             <p className="text-xs font-mono text-slate-400">
-              Create and switch between multiple live event rooms without logging out.
+              Create rooms, switch active sessions, and assign multiple co-admins per room.
             </p>
           </div>
         </div>
@@ -164,6 +209,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {rooms.map((r) => {
           const isActive = r.code.toUpperCase() === currentRoomCode.toUpperCase();
+          const adminList = r.admins || [];
 
           return (
             <div
@@ -174,7 +220,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                   : 'bg-neo-card hover:bg-[#1A1E2B] brutal-shadow-sm'
               }`}
             >
-              <div>
+              <div className="space-y-2.5">
                 {/* Header Badge */}
                 <div className="flex items-center justify-between gap-2 mb-2 font-mono">
                   <div className="flex items-center space-x-1.5">
@@ -224,9 +270,42 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                 <h3 className="text-base font-heavy text-white uppercase leading-snug">
                   {r.title}
                 </h3>
-                <p className="text-[11px] font-mono text-slate-400 mt-1">
-                  Host: <strong className="text-slate-200">{r.host_name || 'Alex Chen'}</strong>
+                
+                <p className="text-[11px] font-mono text-slate-400">
+                  Primary Host: <strong className="text-slate-200">{r.host_name || 'Host'}</strong>
                 </p>
+
+                {/* Co-Admins Management Strip */}
+                <div className="p-2.5 bg-[#12141D] border border-slate-800 font-mono space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-bold">
+                    <span className="text-neo-yellow flex items-center gap-1 uppercase font-black">
+                      <Crown className="w-3 h-3 text-neo-yellow" />
+                      <span>CO-ADMINS ({adminList.length})</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingAdminsRoom(r)}
+                      className="text-[10px] bg-slate-800 hover:bg-neo-yellow hover:text-black text-slate-300 px-1.5 py-0.5 border border-slate-700 font-black uppercase transition-colors flex items-center gap-0.5"
+                    >
+                      <UserPlus className="w-2.5 h-2.5" />
+                      <span>+ ADD</span>
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                    {adminList.length === 0 ? (
+                      <span className="text-[10px] text-slate-500 italic">No additional admins assigned</span>
+                    ) : (
+                      adminList.map((adm) => (
+                        <span
+                          key={adm}
+                          className="px-1.5 py-0.2 bg-[#1A1E2B] text-slate-200 text-[10px] border border-slate-700 font-bold flex items-center gap-1"
+                        >
+                          <span>{adm}</span>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Action */}
@@ -336,6 +415,111 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Co-Admins Modal */}
+      {editingAdminsRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-neo-cream text-black w-full max-w-md p-6 border-4 border-black brutal-shadow-lg relative font-sans">
+            <button
+              onClick={() => setEditingAdminsRoom(null)}
+              className="absolute top-4 right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black"
+            >
+              <X className="w-5 h-5 stroke-3" />
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-11 h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy">
+                <Crown className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <h3 className="text-xl font-heavy uppercase tracking-tight text-black">
+                    MANAGE ROOM ADMINS
+                  </h3>
+                </div>
+                <p className="text-xs font-mono text-slate-700">
+                  Room: <strong>[{editingAdminsRoom.code}] {editingAdminsRoom.title}</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Add Admin Form */}
+            <form onSubmit={handleAddCoAdmin} className="space-y-3 mb-4 font-mono">
+              <div>
+                <label className="text-xs font-black uppercase block mb-1">
+                  Add Co-Admin (Display Name or Email):
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={newAdminInput}
+                    onChange={(e) => setNewAdminInput(e.target.value)}
+                    placeholder="e.g. Alex_CoHost or sarah@company.com"
+                    className="flex-1 px-3 py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-neo-mint hover:bg-[#26F7A9] text-black text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1 shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-3" />
+                    <span>ADD</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-600 font-bold mt-1">
+                  Users matching this name/email automatically receive full Host powers in this room.
+                </p>
+              </div>
+            </form>
+
+            {/* Current Co-Admins List */}
+            <div className="space-y-2 font-mono">
+              <label className="text-xs font-black uppercase block text-slate-800">
+                CURRENT AUTHORIZED ADMINS ({editingAdminsRoom.admins?.length || 0}):
+              </label>
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {(editingAdminsRoom.admins || []).length === 0 ? (
+                  <div className="p-3 bg-white border-2 border-black text-center text-xs text-slate-500 italic">
+                    No co-admins added yet. Add one above or promote live attendees in-session.
+                  </div>
+                ) : (
+                  (editingAdminsRoom.admins || []).map((adminName) => (
+                    <div
+                      key={adminName}
+                      className="p-2.5 bg-white border-2 border-black flex items-center justify-between gap-2 text-xs font-bold"
+                    >
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <Crown className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="truncate text-black font-black">{adminName}</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCoAdmin(adminName)}
+                        className="p-1 text-slate-500 hover:text-neo-pink hover:bg-slate-100 transition-colors"
+                        title="Remove co-admin"
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4 mt-4 border-t-2 border-black/20 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setEditingAdminsRoom(null)}
+                className="px-5 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow"
+              >
+                DONE
+              </button>
+            </div>
           </div>
         </div>
       )}

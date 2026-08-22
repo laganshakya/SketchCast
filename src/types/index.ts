@@ -8,6 +8,7 @@ export interface Room {
   title: string;
   host_id: string;
   host_name: string;
+  admins?: string[]; // List of co-host / admin display names or emails
   created_at: string;
 }
 

@@ -20,6 +20,7 @@ export type RealtimeEventMap = {
   poll_reset: { pollId: string };
   question_list: Question[];
   question_upvote: { questionId: string; upvotesCount: number; voterSession: string };
+  room_admin_promoted: { roomId: string; targetSessionId: string; targetName: string; action: 'promote' | 'demote' };
   presence_sync: AttendeePresence[];
   presence_ping: AttendeePresence;
   presence_pong: AttendeePresence;
@@ -122,6 +123,7 @@ export class RealtimeChannelManager {
       'poll_reset',
       'question_list',
       'question_upvote',
+      'room_admin_promoted',
     ];
 
     broadcastEvents.forEach((ev) => {

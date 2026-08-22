@@ -78,31 +78,79 @@ export function onAuthChange(callback: (user: User | null, session: Session | nu
 
 // ================= ROOMS MANAGEMENT =================
 export async function dbFetchRooms(): Promise<Room[]> {
-  if (!supabase) return [];
+  let localRooms: Room[] = [];
+  try {
+    const stored = localStorage.getItem('sketchcast_local_rooms');
+    if (stored) localRooms = JSON.parse(stored);
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return localRooms;
   try {
     const { data, error } = await supabase
       .from('rooms')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data) return [];
-    return data as Room[];
+    if (error || !data) return localRooms;
+    return data.map((r: any) => {
+      let admins = r.admins || [];
+      if (!admins || admins.length === 0) {
+        try {
+          const localAdmins = localStorage.getItem(`sketchcast_room_admins_${r.code?.toUpperCase().trim()}`);
+          if (localAdmins) admins = JSON.parse(localAdmins);
+        } catch {
+          // ignore
+        }
+      }
+      return {
+        ...r,
+        admins,
+      };
+    }) as Room[];
   } catch {
-    return [];
+    return localRooms;
   }
 }
 
 export async function dbCreateRoom(room: Room) {
+  const targetKey = room.code.toUpperCase().trim();
+  try {
+    if (room.admins && room.admins.length > 0) {
+      localStorage.setItem(`sketchcast_room_admins_${targetKey}`, JSON.stringify(room.admins));
+    }
+  } catch {
+    // ignore
+  }
+
   if (!supabase) return;
   try {
     await supabase.from('rooms').upsert({
       id: room.id,
-      code: room.code.toUpperCase().trim(),
+      code: targetKey,
       title: room.title.trim(),
       host_id: room.host_id,
       host_name: room.host_name,
+      admins: room.admins || [],
       created_at: room.created_at,
     });
+  } catch {
+    // fallback
+  }
+}
+
+export async function dbUpdateRoomAdmins(roomCode: string, admins: string[]) {
+  const targetKey = roomCode.toUpperCase().trim();
+  try {
+    localStorage.setItem(`sketchcast_room_admins_${targetKey}`, JSON.stringify(admins));
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return;
+  try {
+    await supabase.from('rooms').update({ admins }).or(`code.eq.${targetKey},id.eq.room-${targetKey}`);
   } catch {
     // fallback
   }

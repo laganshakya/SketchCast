@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 const SESSION_KEY = 'sketchcast_session_id';
@@ -171,6 +172,22 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return () => unsubscribe();
   }, []);
 
+  const [promotionToast, setPromotionToast] = useState<string | null>(null);
+
+  // Check if current user is pre-authorized in the room's admins list
+  useEffect(() => {
+    dbFetchRooms().then((rooms) => {
+      const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
+      if (current) {
+        setRoom(current);
+        if (current.admins && current.admins.some((a) => a.toLowerCase() === userName.toLowerCase())) {
+          setUserRoleState('host');
+          sessionStorage.setItem(ROLE_KEY, 'host');
+        }
+      }
+    });
+  }, [activeRoomCode, userName]);
+
   // Realtime Channel & Presence setup
   useEffect(() => {
     const manager = RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
@@ -178,6 +195,35 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
     const unPresence = manager.on('presence_sync', (presenceList) => {
       setAttendees(presenceList);
+    });
+
+    const unAdminPromote = manager.on('room_admin_promoted', (event) => {
+      if (event.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        const isTarget = event.targetSessionId === sessionId || event.targetName.toLowerCase() === userName.toLowerCase();
+        if (isTarget) {
+          if (event.action === 'promote') {
+            setUserRoleState('host');
+            sessionStorage.setItem(ROLE_KEY, 'host');
+            localStorage.setItem(ROLE_KEY, 'host');
+            setPromotionToast(`🎉 You have been promoted to Room Admin! Host controls unlocked.`);
+            try {
+              confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.5 },
+                colors: ['#FFE600', '#00F59B', '#00F0FF', '#FF2A6D'],
+              });
+            } catch {
+              // ignore
+            }
+          } else if (event.action === 'demote') {
+            setUserRoleState('attendee');
+            sessionStorage.setItem(ROLE_KEY, 'attendee');
+            localStorage.setItem(ROLE_KEY, 'attendee');
+            setPromotionToast(`Your admin permissions for this room were updated.`);
+          }
+        }
+      }
     });
 
     // Track presence immediately on room connection
@@ -192,8 +238,9 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
     return () => {
       unPresence();
+      unAdminPromote();
     };
-  }, [activeRoomCode, sessionId]);
+  }, [activeRoomCode, sessionId, userName]);
 
   // Keep presence updated when name or role changes
   useEffect(() => {
@@ -219,6 +266,44 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     sessionStorage.setItem(ROLE_KEY, role);
     localStorage.setItem(ROLE_KEY, role);
     setUserRoleState(role);
+  };
+
+  const promoteToAdmin = async (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('room_admin_promoted', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        action: 'promote',
+      });
+    }
+
+    const rooms = await dbFetchRooms();
+    const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
+    const existingAdmins = current?.admins || [];
+    if (!existingAdmins.some((a) => a.toLowerCase() === targetName.toLowerCase())) {
+      const updatedAdmins = [...existingAdmins, targetName];
+      await dbUpdateRoomAdmins(activeRoomCode, updatedAdmins);
+      setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
+    }
+  };
+
+  const demoteFromAdmin = async (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('room_admin_promoted', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        action: 'demote',
+      });
+    }
+
+    const rooms = await dbFetchRooms();
+    const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
+    const existingAdmins = current?.admins || [];
+    const updatedAdmins = existingAdmins.filter((a) => a.toLowerCase() !== targetName.toLowerCase());
+    await dbUpdateRoomAdmins(activeRoomCode, updatedAdmins);
+    setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
   };
 
   const handleAuthenticated = (name: string, role: 'host' | 'attendee', customRoomCode?: string) => {
@@ -271,5 +356,9 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     handleAuthenticated,
     handleSignOut,
     channelManager,
+    promotionToast,
+    setPromotionToast,
+    promoteToAdmin,
+    demoteFromAdmin,
   };
 }

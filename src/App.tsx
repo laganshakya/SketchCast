@@ -16,7 +16,8 @@ import { QRCodeModal } from './components/common/QRCodeModal';
 import { AuthModal } from './components/common/AuthModal';
 import { RoomsAdminView } from './components/rooms/RoomsAdminView';
 import { ChangeRoomModal } from './components/rooms/ChangeRoomModal';
-import { Zap, Vote, HelpCircle, Trophy, Layers } from 'lucide-react';
+import { ActiveAttendeesModal } from './components/common/ActiveAttendeesModal';
+import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X } from 'lucide-react';
 
 export function App() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -25,6 +26,7 @@ export function App() {
   const [isCreatePollModalOpen, setIsCreatePollModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isChangeRoomModalOpen, setIsChangeRoomModalOpen] = useState(false);
+  const [isActiveAttendeesModalOpen, setIsActiveAttendeesModalOpen] = useState(false);
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -42,6 +44,10 @@ export function App() {
     handleAuthenticated,
     handleSignOut,
     channelManager,
+    promotionToast,
+    setPromotionToast,
+    promoteToAdmin,
+    demoteFromAdmin,
   } = useRoomSession('SKT-789');
 
   // 2. Live Quiz Engine (Isolated to room.code)
@@ -179,9 +185,26 @@ export function App() {
         }}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
+        onOpenActiveAttendees={() => setIsActiveAttendeesModalOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
+
+      {/* Floating Promotion Toast Notification */}
+      {promotionToast && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 animate-bounce">
+          <div className="bg-neo-yellow text-black font-mono font-black text-xs px-4 py-2 border-3 border-black brutal-shadow-lg flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 fill-black shrink-0" />
+            <span>{promotionToast}</span>
+            <button
+              onClick={() => setPromotionToast(null)}
+              className="p-1 hover:bg-black hover:text-white transition-colors border border-black ml-2"
+            >
+              <X className="w-3 h-3 stroke-3" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-20 md:pb-5">
@@ -379,6 +402,17 @@ export function App() {
         onClose={() => setIsChangeRoomModalOpen(false)}
         onSwitchRoom={handleSwitchRoom}
         currentRoomCode={room.code}
+      />
+
+      <ActiveAttendeesModal
+        isOpen={isActiveAttendeesModalOpen}
+        onClose={() => setIsActiveAttendeesModalOpen(false)}
+        attendees={attendees}
+        currentSessionId={sessionId}
+        isHost={userRole === 'host'}
+        roomCode={room.code}
+        onPromoteToAdmin={promoteToAdmin}
+        onDemoteFromAdmin={demoteFromAdmin}
       />
     </div>
   );

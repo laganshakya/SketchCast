@@ -31,6 +31,7 @@ interface AppHeaderProps {
   onOpenQRCode: () => void;
   onOpenAuthModal: () => void;
   onOpenChangeRoom?: () => void;
+  onOpenActiveAttendees?: () => void;
   onSignOut: () => void;
   currentUser: SupabaseUser | null;
 }
@@ -47,6 +48,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenQRCode,
   onOpenAuthModal,
   onOpenChangeRoom,
+  onOpenActiveAttendees,
   onSignOut,
   currentUser,
 }) => {
@@ -139,11 +141,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </div>
 
-          {/* Live Indicator */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-neo-card-darker border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-neo-mint">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-neo-mint" />
-            <span className="text-[10px] sm:text-[11px] tracking-wide">{Math.max(1, activeViewerCount)} ONLINE</span>
-          </div>
+          {/* Live Indicator (Admin/Host Only) */}
+          {userRole === 'host' && (
+            <button
+              onClick={onOpenActiveAttendees}
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 bg-neo-card-darker hover:bg-[#1C2030] hover:text-white border-2 border-black brutal-shadow-sm text-xs font-mono font-bold text-neo-mint transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+              title="Click to view live participants & manage room admins"
+            >
+              <Radio className="w-3.5 h-3.5 animate-pulse text-neo-mint" />
+              <span className="text-[10px] sm:text-[11px] tracking-wide">{Math.max(1, activeViewerCount)} ONLINE</span>
+            </button>
+          )}
         </div>
 
         {/* Center: Neo-Brutalist Navigation Tabs */}
