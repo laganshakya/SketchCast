@@ -45,6 +45,7 @@ export interface QuizRoundState {
   isCorrect: boolean | null;
   pointsEarned: number;
   votesDistribution: Record<string, number>; // { 'A': 12, 'B': 4, ... }
+  updatedAt?: number;
 }
 
 // --- Live Poll Types ---

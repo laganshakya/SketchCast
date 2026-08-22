@@ -152,6 +152,7 @@ export class RealtimeChannelManager {
               isCorrect: null,
               pointsEarned: 0,
               votesDistribution: round.votes_distribution || { A: 0, B: 0, C: 0, D: 0 },
+              updatedAt: round.created_at ? new Date(round.created_at).getTime() : Date.now(),
             };
             this.emitLocal('quiz_round_state', state);
           }
@@ -252,26 +253,29 @@ export class RealtimeChannelManager {
   // Adaptive sync loop for current room
   private startAdaptiveSyncLoop() {
     if (typeof window !== 'undefined') {
-      const performSync = async () => {
+      const performSync = async (force: boolean = false) => {
         try {
-          const activeRound = await dbFetchActiveQuizRound(this.roomId);
-          if (activeRound && activeRound.question) {
-            this.emitLocal('quiz_round_state', activeRound);
-          }
-
-          const polls = await dbFetchPolls(this.roomId);
-          if (polls) {
-            this.emitLocal('poll_update', polls);
-          }
-
-          const questions = await dbFetchQuestions(this.roomId);
-          if (questions) {
-            this.emitLocal('question_list', questions);
-          }
-
-          // Ping presence
+          // Track presence heartbeat
           if (this.myPresence) {
             this.trackPresence(this.myPresence);
+          }
+
+          // Only do database fallback poll if not subscribed to realtime WebSocket, or forced on window focus
+          if (!this.isSubscribed || force) {
+            const activeRound = await dbFetchActiveQuizRound(this.roomId);
+            if (activeRound && activeRound.question) {
+              this.emitLocal('quiz_round_state', activeRound);
+            }
+
+            const polls = await dbFetchPolls(this.roomId);
+            if (polls) {
+              this.emitLocal('poll_update', polls);
+            }
+
+            const questions = await dbFetchQuestions(this.roomId);
+            if (questions) {
+              this.emitLocal('question_list', questions);
+            }
           }
         } catch {
           // silent fallback
@@ -280,17 +284,17 @@ export class RealtimeChannelManager {
 
       const onVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
-          performSync();
+          performSync(true);
         }
       };
-      window.addEventListener('focus', performSync);
+      window.addEventListener('focus', () => performSync(true));
       document.addEventListener('visibilitychange', onVisibilityChange);
 
       this.syncTimer = window.setInterval(() => {
         if (document.visibilityState === 'visible') {
-          performSync();
+          performSync(false);
         }
-      }, 2500);
+      }, 5000);
     }
   }
 

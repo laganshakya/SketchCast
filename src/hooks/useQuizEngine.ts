@@ -100,23 +100,35 @@ export function useQuizEngine({
     if (!channelManager) return;
 
     const unQuizState = channelManager.on('quiz_round_state', (remoteState) => {
-      setQuizState((prev) => ({
-        ...remoteState,
-        userSelectedOption: prev.question?.id === remoteState.question?.id ? prev.userSelectedOption : null,
-        isCorrect: prev.question?.id === remoteState.question?.id ? prev.isCorrect : null,
-        pointsEarned: prev.question?.id === remoteState.question?.id ? prev.pointsEarned : 0,
-      }));
+      setQuizState((prev) => {
+        // Prevent stale / out-of-order race conditions from DB polling or lagged messages
+        if (prev.updatedAt && remoteState.updatedAt && remoteState.updatedAt < prev.updatedAt) {
+          return prev;
+        }
+        if (prev.question?.id === remoteState.question?.id && prev.isRevealed && !remoteState.isRevealed) {
+          return prev;
+        }
 
-      try {
-        localStorage.setItem(quizStorageKey, JSON.stringify(remoteState));
-      } catch {
-        // ignore
-      }
+        const next = {
+          ...remoteState,
+          userSelectedOption: prev.question?.id === remoteState.question?.id ? prev.userSelectedOption : null,
+          isCorrect: prev.question?.id === remoteState.question?.id ? prev.isCorrect : null,
+          pointsEarned: prev.question?.id === remoteState.question?.id ? prev.pointsEarned : 0,
+        };
 
-      if (remoteState.endTime) {
-        const remaining = Math.max(0, Math.ceil((remoteState.endTime - Date.now()) / 1000));
-        setTimeRemaining(remaining);
-      }
+        try {
+          localStorage.setItem(quizStorageKey, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+
+        if (next.endTime) {
+          const remaining = Math.max(0, Math.ceil((next.endTime - Date.now()) / 1000));
+          setTimeRemaining(remaining);
+        }
+
+        return next;
+      });
     });
 
     const unQuizVote = channelManager.on('quiz_vote', ({ optionId, userId, points }) => {
@@ -223,6 +235,7 @@ export function useQuizEngine({
         isCorrect: null,
         pointsEarned: 0,
         votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        updatedAt: Date.now(),
       };
 
       setQuizState(nextState);
@@ -247,7 +260,7 @@ export function useQuizEngine({
 
   const revealAnswer = useCallback(() => {
     setQuizState((prev) => {
-      const updated = { ...prev, isRevealed: true };
+      const updated = { ...prev, isRevealed: true, updatedAt: Date.now() };
       try {
         localStorage.setItem(quizStorageKey, JSON.stringify(updated));
       } catch {
