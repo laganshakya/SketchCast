@@ -131,7 +131,13 @@ export function useQuizEngine({
       });
     });
 
-    const unQuizVote = channelManager.on('quiz_vote', ({ optionId, userId, points }) => {
+    const unLeaderboard = channelManager.on('leaderboard_update', (remoteBoard) => {
+      if (remoteBoard && Array.isArray(remoteBoard)) {
+        setLeaderboard(remoteBoard);
+      }
+    });
+
+    const unQuizVote = channelManager.on('quiz_vote', ({ optionId }) => {
       setQuizState((prev) => {
         const nextVotes = {
           ...prev.votesDistribution,
@@ -149,41 +155,20 @@ export function useQuizEngine({
         return updated;
       });
 
-      if (points > 0) {
-        setLeaderboard((prev) => {
-          const exists = prev.find((u) => u.session_id === userId);
-          if (exists) {
-            const updatedEntry = {
-              ...exists,
-              score: exists.score + points,
-              correct_quizzes: exists.correct_quizzes + 1,
-              streak: exists.streak + 1,
-            };
-            dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
-            return prev
-              .map((u) => (u.session_id === userId ? updatedEntry : u))
-              .sort((a, b) => b.score - a.score);
-          }
-          const newEntry: LeaderboardEntry = {
-            session_id: userId,
-            name: userName,
-            score: points,
-            correct_quizzes: 1,
-            polls_voted: 0,
-            streak: 1,
-            avatar_color: '#FFE600',
-          };
-          dbUpsertLeaderboardEntry(newEntry, currentRoomKey);
-          return [...prev, newEntry].sort((a, b) => b.score - a.score);
-        });
-      }
+      // Refetch latest leaderboard from database to sync all players
+      dbFetchLeaderboard(currentRoomKey).then((remoteBoard) => {
+        if (remoteBoard && remoteBoard.length > 0) {
+          setLeaderboard(remoteBoard);
+        }
+      });
     });
 
     return () => {
       unQuizState();
       unQuizVote();
+      unLeaderboard();
     };
-  }, [channelManager, userName, currentRoomKey, quizStorageKey]);
+  }, [channelManager, currentRoomKey, quizStorageKey]);
 
   const revealAnswer = useCallback(() => {
     setQuizState((prev) => {
@@ -292,34 +277,43 @@ export function useQuizEngine({
         const streakMultiplier = userStreak >= 3 ? 2.0 : userStreak >= 1 ? 1.5 : 1.0;
         points = Math.round((100 + timeRatio * 150) * streakMultiplier);
 
-        setUserStreak((prev) => prev + 1);
+        const nextStreak = userStreak + 1;
+        setUserStreak(nextStreak);
         triggerConfetti();
 
         setLeaderboard((prev) => {
           const exists = prev.find((u) => u.session_id === sessionId);
+          let updatedBoard: LeaderboardEntry[];
+          let updatedEntry: LeaderboardEntry;
           if (exists) {
-            const updatedEntry = {
+            updatedEntry = {
               ...exists,
+              name: userName,
               score: exists.score + points,
               correct_quizzes: exists.correct_quizzes + 1,
-              streak: exists.streak + 1,
+              streak: nextStreak,
+              avatar_color: userRole === 'host' ? '#FFE600' : exists.avatar_color || '#FF2A6D',
             };
-            dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
-            return prev
+            updatedBoard = prev
               .map((u) => (u.session_id === sessionId ? updatedEntry : u))
               .sort((a, b) => b.score - a.score);
+          } else {
+            updatedEntry = {
+              session_id: sessionId,
+              name: userName,
+              score: points,
+              correct_quizzes: 1,
+              polls_voted: 0,
+              streak: nextStreak,
+              avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
+            };
+            updatedBoard = [...prev, updatedEntry].sort((a, b) => b.score - a.score);
           }
-          const newEntry: LeaderboardEntry = {
-            session_id: sessionId,
-            name: userName,
-            score: points,
-            correct_quizzes: 1,
-            polls_voted: 0,
-            streak: 1,
-            avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
-          };
-          dbUpsertLeaderboardEntry(newEntry, currentRoomKey);
-          return [...prev, newEntry].sort((a, b) => b.score - a.score);
+          dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
+          if (channelManager) {
+            channelManager.broadcast('leaderboard_update', updatedBoard);
+          }
+          return updatedBoard;
         });
       } else {
         setUserStreak(0);

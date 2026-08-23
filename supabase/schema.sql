@@ -93,6 +93,7 @@ create table if not exists public.leaderboard (
 -- ==============================================================================
 
 create index if not exists idx_rooms_code on public.rooms (code);
+create index if not exists idx_rooms_host_id on public.rooms (host_id);
 create index if not exists idx_rooms_host_email on public.rooms (host_email);
 
 create index if not exists idx_questions_room_created on public.questions (room_id, created_at desc);
@@ -151,5 +152,7 @@ insert into storage.buckets (id, name, public)
 values ('sketchcast-assets', 'sketchcast-assets', true)
 on conflict (id) do nothing;
 
-create policy "Public Access to sketchcast-assets" on storage.objects for select using (bucket_id = 'sketchcast-assets');
-create policy "Public Upload to sketchcast-assets" on storage.objects for insert with check (bucket_id = 'sketchcast-assets');
+create policy "sketchcast_storage_read" on storage.objects for select using (bucket_id = 'sketchcast-assets');
+create policy "sketchcast_storage_insert" on storage.objects for insert with check (bucket_id = 'sketchcast-assets');
+create policy "sketchcast_storage_update" on storage.objects for update using (bucket_id = 'sketchcast-assets') with check (bucket_id = 'sketchcast-assets');
+create policy "sketchcast_storage_delete" on storage.objects for delete using (bucket_id = 'sketchcast-assets');

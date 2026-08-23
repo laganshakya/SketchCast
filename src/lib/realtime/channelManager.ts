@@ -4,17 +4,20 @@ import {
   dbFetchPolls,
   dbFetchQuestions,
   dbFetchActiveQuizRound,
+  dbFetchLeaderboard,
 } from '../supabase';
 import type {
   AttendeePresence,
   Question,
   LivePoll,
-  QuizRoundState
+  QuizRoundState,
+  LeaderboardEntry,
 } from '../../types';
 
 export type RealtimeEventMap = {
   quiz_round_state: QuizRoundState;
   quiz_vote: { optionId: string; userId: string; points: number };
+  leaderboard_update: LeaderboardEntry[];
   poll_update: LivePoll[];
   poll_vote: { pollId: string; optionId: string; voterSession: string };
   poll_reset: { pollId: string };
@@ -74,28 +77,7 @@ export class RealtimeChannelManager {
         this.localChannel = new BroadcastChannel(`sketchcast_room_${this.roomId}`);
         this.localChannel.onmessage = (event) => {
           const { type, payload } = event.data;
-          if (type === 'presence_ping') {
-            const senderPresence = payload as AttendeePresence;
-            if (senderPresence && senderPresence.session_id) {
-              this.presenceList.set(senderPresence.session_id, senderPresence);
-              this.emitPresenceSync();
-              // Reply back with our own presence
-              if (this.myPresence && this.localChannel && senderPresence.session_id !== this.myPresence.session_id) {
-                this.localChannel.postMessage({
-                  type: 'presence_pong',
-                  payload: this.myPresence,
-                });
-              }
-            }
-          } else if (type === 'presence_pong') {
-            const senderPresence = payload as AttendeePresence;
-            if (senderPresence && senderPresence.session_id) {
-              this.presenceList.set(senderPresence.session_id, senderPresence);
-              this.emitPresenceSync();
-            }
-          } else {
-            this.emitLocal(type as EventKey, payload);
-          }
+          this.emitLocal(type as EventKey, payload);
         };
       } catch {
         // BroadcastChannel unavailable
@@ -114,16 +96,19 @@ export class RealtimeChannelManager {
       },
     });
 
-    // 1. WebSocket Broadcast Listeners
+    // 1. WebSocket Broadcast Listeners (Including realtime presence discovery ping/pong)
     const broadcastEvents: EventKey[] = [
       'quiz_round_state',
       'quiz_vote',
+      'leaderboard_update',
       'poll_update',
       'poll_vote',
       'poll_reset',
       'question_list',
       'question_upvote',
       'room_admin_promoted',
+      'presence_ping',
+      'presence_pong',
     ];
 
     broadcastEvents.forEach((ev) => {
@@ -179,51 +164,55 @@ export class RealtimeChannelManager {
             if (questions) this.emitLocal('question_list', questions);
           }
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'leaderboard' },
+        async (payload: any) => {
+          if (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) {
+            const board = await dbFetchLeaderboard(this.roomId);
+            if (board) this.emitLocal('leaderboard_update', board);
+          }
+        }
       );
 
     // 3. Presence synchronization handlers
     const handlePresenceState = () => {
       if (!this.supabaseChannel) return;
       const state = this.supabaseChannel.presenceState();
+      const nextMap = new Map<string, AttendeePresence>();
       
       for (const key in state) {
-        const presences = state[key] as AttendeePresence[];
+        const presences = state[key] as any[];
         if (presences && Array.isArray(presences)) {
           presences.forEach((p) => {
-            if (p && p.session_id) {
-              this.presenceList.set(p.session_id, p);
+            if (p) {
+              const sid = p.session_id || key;
+              const presenceObj: AttendeePresence = {
+                session_id: sid,
+                name: p.name || 'Attendee',
+                role: p.role || 'attendee',
+                joined_at: p.joined_at || Date.now(),
+                last_active: p.last_active || Date.now(),
+              };
+              nextMap.set(sid, presenceObj);
             }
           });
         }
       }
 
       if (this.myPresence) {
-        this.presenceList.set(this.myPresence.session_id, this.myPresence);
+        nextMap.set(this.myPresence.session_id, this.myPresence);
       }
 
+      this.presenceList = nextMap;
       this.emitPresenceSync();
     };
 
     this.supabaseChannel
       .on('presence', { event: 'sync' }, handlePresenceState)
-      .on('presence', { event: 'join' }, ({ newPresences }: { newPresences: AttendeePresence[] }) => {
-        if (newPresences && Array.isArray(newPresences)) {
-          newPresences.forEach((p) => {
-            if (p && p.session_id) this.presenceList.set(p.session_id, p);
-          });
-          this.emitPresenceSync();
-        }
-      })
-      .on('presence', { event: 'leave' }, ({ leftPresences }: { leftPresences: AttendeePresence[] }) => {
-        if (leftPresences && Array.isArray(leftPresences)) {
-          leftPresences.forEach((p) => {
-            if (p && p.session_id && p.session_id !== this.myPresence?.session_id) {
-              this.presenceList.delete(p.session_id);
-            }
-          });
-          this.emitPresenceSync();
-        }
-      })
+      .on('presence', { event: 'join' }, handlePresenceState)
+      .on('presence', { event: 'leave' }, handlePresenceState)
       .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
           this.isSubscribed = true;
@@ -239,7 +228,12 @@ export class RealtimeChannelManager {
             }
           }
           if (this.myPresence) {
-            await this.supabaseChannel.track(this.myPresence);
+            try {
+              await this.supabaseChannel.track(this.myPresence);
+              this.broadcast('presence_ping', this.myPresence);
+            } catch {
+              // ignore
+            }
           }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           this.isSubscribed = false;
@@ -257,7 +251,7 @@ export class RealtimeChannelManager {
     if (typeof window !== 'undefined') {
       const performSync = async (force: boolean = false) => {
         try {
-          // Track presence heartbeat
+          // Track presence heartbeat in Supabase and local channel
           if (this.myPresence) {
             this.trackPresence(this.myPresence);
           }
@@ -277,6 +271,11 @@ export class RealtimeChannelManager {
             const questions = await dbFetchQuestions(this.roomId);
             if (questions) {
               this.emitLocal('question_list', questions);
+            }
+
+            const board = await dbFetchLeaderboard(this.roomId);
+            if (board && board.length > 0) {
+              this.emitLocal('leaderboard_update', board);
             }
           }
         } catch {
@@ -306,6 +305,18 @@ export class RealtimeChannelManager {
     }
     this.listeners.get(event)!.add(callback);
 
+    // Immediately dispatch existing presence state if registering for presence_sync
+    if (event === 'presence_sync') {
+      const users = Array.from(this.presenceList.values());
+      if (users.length > 0) {
+        try {
+          (callback as EventCallback<'presence_sync'>)(users);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     return () => {
       this.listeners.get(event)?.delete(callback);
     };
@@ -321,7 +332,24 @@ export class RealtimeChannelManager {
       if (this.myPresence) {
         this.presenceList.set(this.myPresence.session_id, this.myPresence);
       }
+    } else if (event === 'presence_ping') {
+      const senderPresence = payload as AttendeePresence;
+      if (senderPresence && senderPresence.session_id) {
+        this.presenceList.set(senderPresence.session_id, senderPresence);
+        this.emitPresenceSync();
+        // Reply with pong if sender is not our own session
+        if (this.myPresence && senderPresence.session_id !== this.myPresence.session_id) {
+          this.broadcast('presence_pong', this.myPresence);
+        }
+      }
+    } else if (event === 'presence_pong') {
+      const senderPresence = payload as AttendeePresence;
+      if (senderPresence && senderPresence.session_id) {
+        this.presenceList.set(senderPresence.session_id, senderPresence);
+        this.emitPresenceSync();
+      }
     }
+
     const handlers = this.listeners.get(event);
     if (handlers) {
       handlers.forEach((fn) => {
@@ -367,16 +395,8 @@ export class RealtimeChannelManager {
     this.presenceList.set(presence.session_id, presence);
     this.emitPresenceSync();
 
-    if (this.localChannel) {
-      try {
-        this.localChannel.postMessage({
-          type: 'presence_ping',
-          payload: presence,
-        });
-      } catch {
-        // ignore
-      }
-    }
+    // Broadcast presence ping across local BroadcastChannel AND Supabase WebSocket Broadcast
+    this.broadcast('presence_ping', presence);
 
     if (this.supabaseChannel && isSupabaseConfigured && this.isSubscribed) {
       try {
@@ -384,6 +404,12 @@ export class RealtimeChannelManager {
       } catch {
         // ignore
       }
+    }
+  }
+
+  public pingPresence() {
+    if (this.myPresence) {
+      this.trackPresence(this.myPresence);
     }
   }
 

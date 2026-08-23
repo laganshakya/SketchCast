@@ -340,8 +340,8 @@ export function App() {
           </div>
         )}
 
-        {/* TAB 5: Rooms Admin Management (Host Only) */}
-        {activeTab === 'rooms' && userRole === 'host' && (
+        {/* TAB 5: Rooms Admin Management */}
+        {activeTab === 'rooms' && (
           <div className="flex-1 flex flex-col overflow-y-auto">
             <RoomsAdminView
               currentRoomCode={room.code}
@@ -463,6 +463,9 @@ export function App() {
         onClose={() => setIsChangeRoomModalOpen(false)}
         onSwitchRoom={handleSwitchRoom}
         currentRoomCode={room.code}
+        currentUser={currentUser}
+        userName={userName}
+        onOpenRoomsHub={() => setActiveTab('rooms')}
       />
 
       <ActiveAttendeesModal
@@ -474,6 +477,7 @@ export function App() {
         roomCode={room.code}
         onPromoteToAdmin={promoteToAdmin}
         onDemoteFromAdmin={demoteFromAdmin}
+        onRefresh={() => channelManager?.pingPresence()}
       />
 
       <AISettingsModal

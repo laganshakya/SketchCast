@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 
 const SESSION_KEY = 'sketchcast_session_id';
@@ -197,12 +197,22 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           setUserRoleState('host');
           sessionStorage.setItem(ROLE_KEY, 'host');
           localStorage.setItem(ROLE_KEY, 'host');
+        } else {
+          // Strictly force attendee role if not authorized in this room
+          setUserRoleState('attendee');
+          sessionStorage.setItem(ROLE_KEY, 'attendee');
+          localStorage.setItem(ROLE_KEY, 'attendee');
         }
+      } else {
+        // Room not in DB yet
+        setUserRoleState('attendee');
+        sessionStorage.setItem(ROLE_KEY, 'attendee');
+        localStorage.setItem(ROLE_KEY, 'attendee');
       }
     });
   }, [activeRoomCode, userName, currentUser]);
 
-  // Realtime Channel & Presence setup
+  // Realtime Channel & Presence setup (Only re-instantiate when room changes)
   useEffect(() => {
     const manager = RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
     setChannelManager(manager);
@@ -240,23 +250,14 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       }
     });
 
-    // Track presence immediately on room connection
-    const initialPresence: AttendeePresence = {
-      session_id: sessionId,
-      name: userName,
-      role: userRole,
-      joined_at: Date.now(),
-      last_active: Date.now(),
-    };
-    manager.trackPresence(initialPresence);
-
     return () => {
       unPresence();
       unAdminPromote();
+      manager.destroy();
     };
   }, [activeRoomCode, sessionId, userName]);
 
-  // Keep presence updated when name or role changes
+  // Keep presence updated whenever name or role changes
   useEffect(() => {
     if (channelManager) {
       const myPresence: AttendeePresence = {
@@ -320,18 +321,40 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
   };
 
-  const handleAuthenticated = (name: string, role: 'host' | 'attendee', customRoomCode?: string) => {
+  const handleAuthenticated = async (name: string, requestedRole: 'host' | 'attendee', customRoomCode?: string) => {
     const targetRoomCode = (customRoomCode || activeRoomCode || 'SKT-789').toUpperCase().trim();
     
     setUserName(name);
-    setUserRole(role);
+
+    // Fetch rooms to determine real permissions for this specific room
+    const allRooms = await dbFetchRooms();
+    let currentRoom = allRooms.find((r) => r.code.toUpperCase() === targetRoomCode);
+    let effectiveRole: 'host' | 'attendee' = 'attendee';
+
+    if (currentRoom) {
+      const isAuthorized = isUserRoomAdmin(currentRoom, currentUser, name);
+      effectiveRole = isAuthorized ? 'host' : 'attendee';
+      setRoom(currentRoom);
+    } else {
+      if (requestedRole === 'host') {
+        currentRoom = await dbEnsureRoomExists(targetRoomCode, currentUser, name);
+        effectiveRole = 'host';
+        setRoom(currentRoom);
+      } else {
+        effectiveRole = 'attendee';
+        setRoom({
+          id: `room-${targetRoomCode}`,
+          code: targetRoomCode,
+          title: `Tech Arena // ${targetRoomCode}`,
+          host_id: 'host-external',
+          host_name: 'Room Host',
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    setUserRole(effectiveRole);
     setActiveRoomCode(targetRoomCode);
-    setRoom((prev) => ({
-      ...prev,
-      id: `room-${targetRoomCode}`,
-      code: targetRoomCode,
-      title: `NextGen Arena // ${targetRoomCode}`,
-    }));
     
     sessionStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
     sessionStorage.setItem(AUTH_FLAG_KEY, 'true');

@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Crown, User, Radio, Sparkles, UserX } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw } from 'lucide-react';
 import type { AttendeePresence } from '../../types';
 
 interface ActiveAttendeesModalProps {
@@ -11,6 +11,7 @@ interface ActiveAttendeesModalProps {
   roomCode: string;
   onPromoteToAdmin?: (sessionId: string, name: string) => void;
   onDemoteFromAdmin?: (sessionId: string, name: string) => void;
+  onRefresh?: () => void;
 }
 
 export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
@@ -22,12 +23,23 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   roomCode,
   onPromoteToAdmin,
   onDemoteFromAdmin,
+  onRefresh,
 }) => {
+  useEffect(() => {
+    if (isOpen && onRefresh) {
+      onRefresh();
+    }
+  }, [isOpen, onRefresh]);
+
   if (!isOpen) return null;
 
-  // Deduplicate attendees by session_id or name
+  // Deduplicate attendees strictly by session_id
   const uniqueAttendees = Array.from(
-    new Map(attendees.map((a) => [a.session_id || a.name, a])).values()
+    new Map(
+      attendees
+        .filter((a) => Boolean(a && a.session_id))
+        .map((a) => [a.session_id, a])
+    ).values()
   );
 
   const totalOnline = Math.max(1, uniqueAttendees.length);
@@ -35,7 +47,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   const attendeeCount = Math.max(0, totalOnline - adminCount);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
       <div className="bg-neo-cream text-black w-full max-w-lg p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] flex flex-col">
         {/* Close Button */}
         <button
@@ -47,23 +59,36 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3 sm:mb-4 pr-8 sm:pr-10">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-mint text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy -rotate-2 shrink-0">
-            <Radio className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] animate-pulse" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <h3 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black leading-tight">
-                ACTIVE PARTICIPANTS
-              </h3>
-              <span className="px-1.5 sm:px-2 py-0.2 bg-black text-neo-yellow font-mono text-[9px] sm:text-[10px] font-black border border-black uppercase shrink-0">
-                ROOM {roomCode}
-              </span>
+        <div className="flex items-start justify-between mb-3 sm:mb-4 pr-8 sm:pr-10">
+          <div className="flex items-start space-x-2.5 sm:space-x-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-mint text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy -rotate-2 shrink-0">
+              <Radio className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] animate-pulse" />
             </div>
-            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5 leading-snug">
-              Live connected users and room admin management
-            </p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black leading-tight">
+                  ACTIVE PARTICIPANTS
+                </h3>
+                <span className="px-1.5 sm:px-2 py-0.2 bg-black text-neo-yellow font-mono text-[9px] sm:text-[10px] font-black border border-black uppercase shrink-0">
+                  ROOM {roomCode}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5 leading-snug">
+                Live connected users and room admin management
+              </p>
+            </div>
           </div>
+
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="p-1.5 bg-white hover:bg-neo-yellow text-black border-2 border-black font-mono text-xs font-black flex items-center gap-1 cursor-pointer brutal-shadow-sm active:translate-x-px active:translate-y-px transition-all shrink-0"
+              title="Refresh live participant presence"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline text-[10px]">SYNC</span>
+            </button>
+          )}
         </div>
 
         {/* Counter Metric Summary Badges */}

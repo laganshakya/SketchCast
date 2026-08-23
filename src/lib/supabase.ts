@@ -96,22 +96,27 @@ export function onAuthChange(callback: (user: User | null, session: Session | nu
 }
 
 // ================= ROOMS MANAGEMENT & ISOLATION =================
-export function isUserRoomAdmin(room: Room, user?: User | null, userName?: string): boolean {
+export function isUserRoomAdmin(room: Room | null | undefined, user?: User | null, userName?: string): boolean {
   if (!room) return false;
   const cleanName = (userName || '').trim().toLowerCase();
   const cleanEmail = (user?.email || '').trim().toLowerCase();
   const userId = user?.id;
 
-  // 1. Direct creator / owner match (User ID, Email, or Display Name)
-  if (userId && room.host_id === userId) return true;
+  // 1. Direct Owner / Creator Match (Strict ID & Email matching)
+  if (userId && room.host_id && room.host_id === userId) return true;
   if (cleanEmail && room.host_email && room.host_email.trim().toLowerCase() === cleanEmail) return true;
-  if (cleanName && room.host_name && room.host_name.trim().toLowerCase() === cleanName) return true;
 
-  // 2. Co-admin membership in room.admins array
+  // Fallback for legacy room with no host_id/host_email configured
+  if (!room.host_id && !room.host_email && cleanName && room.host_name && room.host_name.trim().toLowerCase() === cleanName) {
+    return true;
+  }
+
+  // 2. Co-Admin match in room.admins array
   const admins = room.admins || [];
   if (admins.length > 0) {
     return admins.some((adminIdentifier) => {
-      const cleanAdmin = (adminIdentifier || '').trim().toLowerCase();
+      if (!adminIdentifier) return false;
+      const cleanAdmin = adminIdentifier.trim().toLowerCase();
       if (userId && (adminIdentifier === userId || cleanAdmin === userId.toLowerCase())) return true;
       if (cleanEmail && cleanAdmin === cleanEmail) return true;
       if (cleanName && cleanAdmin === cleanName) return true;
@@ -120,6 +125,33 @@ export function isUserRoomAdmin(room: Room, user?: User | null, userName?: strin
   }
 
   return false;
+}
+
+export async function dbEnsureRoomExists(roomCode: string, user?: User | null, userName?: string): Promise<Room> {
+  const targetKey = (roomCode || 'SKT-789').toUpperCase().trim();
+  const allRooms = await dbFetchRooms();
+  const existing = allRooms.find((r) => r.code.toUpperCase() === targetKey);
+  if (existing) {
+    return existing;
+  }
+
+  const hostEmail = user?.email || undefined;
+  const hostId = user?.id || `host_${Date.now()}`;
+  const hostName = userName || user?.user_metadata?.display_name || 'Host Admin';
+
+  const newRoom: Room = {
+    id: `room-${targetKey}`,
+    code: targetKey,
+    title: `Tech Arena // ${targetKey}`,
+    host_id: hostId,
+    host_name: hostName,
+    host_email: hostEmail,
+    admins: hostEmail ? [hostEmail, hostName] : [hostName],
+    created_at: new Date().toISOString(),
+  };
+
+  await dbCreateRoom(newRoom);
+  return newRoom;
 }
 
 export async function dbFetchRooms(): Promise<Room[]> {
