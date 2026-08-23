@@ -17,6 +17,8 @@ import { AuthModal } from './components/common/AuthModal';
 import { RoomsAdminView } from './components/rooms/RoomsAdminView';
 import { ChangeRoomModal } from './components/rooms/ChangeRoomModal';
 import { ActiveAttendeesModal } from './components/common/ActiveAttendeesModal';
+import { AISettingsModal } from './components/common/AISettingsModal';
+import { AISessionReportModal } from './components/common/AISessionReportModal';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X } from 'lucide-react';
 
 export function App() {
@@ -27,6 +29,8 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isChangeRoomModalOpen, setIsChangeRoomModalOpen] = useState(false);
   const [isActiveAttendeesModalOpen, setIsActiveAttendeesModalOpen] = useState(false);
+  const [isAISettingsModalOpen, setIsAISettingsModalOpen] = useState(false);
+  const [isAISessionReportModalOpen, setIsAISessionReportModalOpen] = useState(false);
   const [mobileHostQuizView, setMobileHostQuizView] = useState<'arena' | 'controls'>('arena');
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
@@ -76,6 +80,7 @@ export function App() {
     voteOnPoll,
     resetPoll,
     deletePoll,
+    updatePollAIConsensus,
   } = usePollsEngine({
     channelManager,
     sessionId,
@@ -85,6 +90,7 @@ export function App() {
 
   // 4. Live Q&A Feed Engine (Isolated to room.code)
   const {
+    questions,
     filteredQuestions,
     upvotedIds,
     activeTab: qaFilterTab,
@@ -92,6 +98,7 @@ export function App() {
     toggleUpvote,
     submitQuestion,
     updateQuestionStatus,
+    updateQuestionTalkingPoints,
   } = useQAFeed({
     channelManager,
     sessionId,
@@ -101,6 +108,17 @@ export function App() {
   });
 
   const activeViewerCount = Math.max(1, attendees.length);
+
+  // Host quiz queue for AI report export
+  const queuedQuizzes = useMemo(() => {
+    try {
+      const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
+      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }, [room.code]);
 
   // Handle switching rooms from Rooms Admin Hub
   const handleSwitchRoom = (newCode: string, _newTitle?: string) => {
@@ -187,6 +205,8 @@ export function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
         onOpenActiveAttendees={() => setIsActiveAttendeesModalOpen(true)}
+        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+        onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
@@ -199,7 +219,7 @@ export function App() {
             <span>{promotionToast}</span>
             <button
               onClick={() => setPromotionToast(null)}
-              className="p-1 hover:bg-black hover:text-white transition-colors border border-black ml-2"
+              className="p-1 hover:bg-black hover:text-white transition-colors border border-black ml-2 cursor-pointer"
             >
               <X className="w-3 h-3 stroke-3" />
             </button>
@@ -271,6 +291,7 @@ export function App() {
                   activeQuestionId={quizState.question?.id}
                   isRevealed={quizState.isRevealed}
                   roomCode={room.code}
+                  onOpenAISettings={() => setIsAISettingsModalOpen(true)}
                 />
               </div>
             )}
@@ -287,6 +308,8 @@ export function App() {
               onOpenCreatePoll={() => setIsCreatePollModalOpen(true)}
               onResetPoll={resetPoll}
               onDeletePoll={deletePoll}
+              onUpdateAIConsensus={updatePollAIConsensus}
+              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
               isHost={userRole === 'host'}
             />
           </div>
@@ -300,6 +323,8 @@ export function App() {
               upvotedIds={upvotedIds}
               onToggleUpvote={toggleUpvote}
               onStatusChange={updateQuestionStatus}
+              onUpdateTalkingPoints={updateQuestionTalkingPoints}
+              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
               activeTab={qaFilterTab}
               setActiveTab={setQAFilterTab}
               onOpenAskModal={() => setIsAskModalOpen(true)}
@@ -322,6 +347,8 @@ export function App() {
               currentRoomCode={room.code}
               onSwitchRoom={handleSwitchRoom}
               onOpenQRCodeForRoom={handleOpenQRForRoom}
+              onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
+              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
               userName={userName}
               currentUser={currentUser}
             />
@@ -413,6 +440,7 @@ export function App() {
         isOpen={isCreatePollModalOpen}
         onClose={() => setIsCreatePollModalOpen(false)}
         onCreatePoll={createPoll}
+        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
       />
 
       <QuestionModal
@@ -446,6 +474,24 @@ export function App() {
         roomCode={room.code}
         onPromoteToAdmin={promoteToAdmin}
         onDemoteFromAdmin={demoteFromAdmin}
+      />
+
+      <AISettingsModal
+        isOpen={isAISettingsModalOpen}
+        onClose={() => setIsAISettingsModalOpen(false)}
+      />
+
+      <AISessionReportModal
+        isOpen={isAISessionReportModalOpen}
+        onClose={() => setIsAISessionReportModalOpen(false)}
+        roomTitle={room.title}
+        roomCode={room.code}
+        totalAttendees={activeViewerCount}
+        quizzes={queuedQuizzes}
+        polls={polls}
+        questions={questions}
+        leaderboard={leaderboard}
+        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
       />
     </div>
   );

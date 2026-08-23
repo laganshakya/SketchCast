@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   QrCode,
   Copy,
@@ -13,7 +13,12 @@ import {
   LogOut,
   ShieldAlert,
   Layers,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Sparkles,
+  FileText,
+  MoreVertical,
+  X,
+  Bot
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -32,6 +37,8 @@ interface AppHeaderProps {
   onOpenAuthModal: () => void;
   onOpenChangeRoom?: () => void;
   onOpenActiveAttendees?: () => void;
+  onOpenAISettings?: () => void;
+  onOpenAISummary?: () => void;
   onSignOut: () => void;
   currentUser: SupabaseUser | null;
 }
@@ -49,11 +56,30 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenAuthModal,
   onOpenChangeRoom,
   onOpenActiveAttendees,
+  onOpenAISettings,
+  onOpenAISummary,
   onSignOut,
   currentUser,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showHostNotice, setShowHostNotice] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code);
@@ -77,7 +103,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <header className="flex flex-col bg-[#11131B] border-b-2 border-black z-40 select-none shrink-0 font-sans relative">
+    <header className="flex flex-col bg-[#11131B] border-b-2 border-black z-40 select-none shrink-0 font-sans relative w-full">
       {/* Top Retro Hazard Line */}
       <div className="h-1.5 w-full hazard-stripes" />
 
@@ -89,33 +115,31 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       )}
 
-      <div className="h-14 sm:h-16 px-2 sm:px-4 md:px-5 flex items-center justify-between gap-1.5 sm:gap-3 max-w-7xl mx-auto w-full">
-        {/* Left: Brand Logo & Room Passcode (Desktop) */}
-        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0 min-w-0">
+      <div className="h-14 sm:h-15 px-2 sm:px-3 md:px-4 flex items-center justify-between gap-1.5 sm:gap-2.5 w-full relative">
+        {/* Left: Brand Logo & Room Passcode */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 min-w-0">
           {/* Logo */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
-            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
-              <Zap className="w-3.5 h-3.5 sm:w-5 sm:h-5 fill-black stroke-black" />
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
+              <Zap className="w-4 h-4 fill-black stroke-black" />
             </div>
-            <div>
-              <div className="flex items-center space-x-1">
-                <span className="text-xs sm:text-base md:text-lg font-heavy tracking-tight text-white uppercase shrink-0">
-                  SKETCH<span className="text-neo-yellow">CAST</span>
-                </span>
-                <span className="hidden lg:inline-block px-1.5 py-0.2 bg-neo-pink text-white font-mono text-[9px] font-extrabold uppercase border border-black brutal-shadow-sm">
-                  LIVE 2.0
-                </span>
-              </div>
+            <div className="flex items-center space-x-1">
+              <span className="text-xs sm:text-sm md:text-base font-heavy tracking-tight text-white uppercase shrink-0">
+                SKETCH<span className="text-neo-yellow">CAST</span>
+              </span>
+              <span className="hidden xl:inline-block px-1.5 py-0.2 bg-neo-pink text-white font-mono text-[9px] font-extrabold uppercase border border-black brutal-shadow-sm">
+                LIVE 2.0
+              </span>
             </div>
           </div>
 
-          <div className="h-5 w-0.5 bg-slate-800 hidden sm:block" />
+          <div className="h-5 w-0.5 bg-slate-800 hidden sm:block shrink-0" />
 
-          {/* Desktop/Tablet Room Ticket Tag (Hidden on small screens, rendered in right cluster on mobile) */}
+          {/* Desktop/Tablet Room Ticket Tag */}
           <div className="hidden sm:flex items-center space-x-1 shrink-0">
             <button
               onClick={handleCopyCode}
-              className="flex items-center space-x-1 sm:space-x-1.5 px-2 py-1 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn"
+              className="h-8 flex items-center space-x-1.5 px-2 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn active:translate-x-px active:translate-y-px"
               title="Click to copy Room Code"
             >
               <span className="text-slate-400 font-bold text-[10px]">ROOM:</span>
@@ -132,21 +156,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {onOpenChangeRoom && userRole === 'attendee' && (
               <button
                 onClick={onOpenChangeRoom}
-                className="flex items-center space-x-1 px-2 py-1 bg-neo-card hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px cursor-pointer"
+                className="h-8 flex items-center space-x-1 px-2 bg-neo-card hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px cursor-pointer"
                 title="Change / Switch Arena Room without logging out"
               >
                 <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
-                <span className="hidden md:inline">SWITCH</span>
+                <span className="hidden lg:inline">SWITCH</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Center: Neo-Brutalist Navigation Tabs (Desktop / Tablet) */}
-        <nav className="hidden md:flex items-center space-x-1.5 bg-[#090B0F] p-1 border-2 border-black brutal-shadow-sm shrink-0">
+        <nav className="hidden md:flex items-center space-x-1 bg-[#090B0F] p-0.5 border-2 border-black brutal-shadow-sm shrink-0">
           <button
             onClick={() => setActiveTab('quiz')}
-            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
               activeTab === 'quiz'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -158,7 +182,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('polls')}
-            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
               activeTab === 'polls'
                 ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -170,7 +194,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('qa')}
-            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
               activeTab === 'qa'
                 ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -179,7 +203,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Q&A</span>
             {questionsCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 bg-black text-white text-[10px] font-black rounded-full">
+              <span className="ml-0.5 px-1 py-0.1 bg-black text-white text-[9px] font-black rounded-full">
                 {questionsCount}
               </span>
             )}
@@ -187,7 +211,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
               activeTab === 'leaderboard'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -200,10 +224,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {userRole === 'host' && (
             <button
               onClick={() => setActiveTab('rooms')}
-              className={`px-2.5 lg:px-3 py-1.5 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
+              className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
                 activeTab === 'rooms'
                   ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                  : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -212,13 +236,99 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           )}
         </nav>
 
-        {/* Right Controls: Room Ticket (Mobile), Online Counter, QR, Profile & Sign Out */}
-        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
-          {/* Mobile Room & QR Combo Pill (< sm) */}
-          <div className="sm:hidden flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm shrink-0">
+        {/* ================= DESKTOP / TABLET CONTROLS (≥ md) ================= */}
+        <div className="hidden md:flex items-center space-x-1.5 shrink-0 min-w-0">
+          {/* Desktop QR Code Button */}
+          <button
+            onClick={onOpenQRCode}
+            className="h-8 px-2 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold flex items-center space-x-1 transition-all cursor-zoom shrink-0"
+            title="Open Mobile Join QR Code"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">JOIN_QR</span>
+          </button>
+
+          {/* Host AI Tools Group */}
+          {userRole === 'host' && (
+            <div className="flex items-center space-x-1 shrink-0">
+              {onOpenAISettings && (
+                <button
+                  onClick={onOpenAISettings}
+                  className="h-8 px-2 bg-neo-pink hover:bg-[#FF4782] text-white border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+                  title="Configure Mesh AI key and models"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">AI</span>
+                </button>
+              )}
+
+              {onOpenAISummary && (
+                <button
+                  onClick={onOpenAISummary}
+                  className="h-8 px-2 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+                  title="Generate Masterclass Summary Report with Mesh AI"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">REPORT</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Live Online Indicator (Admin/Host Only) */}
+          {userRole === 'host' && (
+            <button
+              onClick={onOpenActiveAttendees}
+              className="h-8 flex items-center space-x-1 px-2 bg-neo-card-darker hover:bg-[#1C2030] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
+              title="Click to view live participants & manage room admins"
+            >
+              <Radio className="w-3 h-3 animate-pulse text-neo-mint shrink-0" />
+              <span className="text-[11px] tracking-wide whitespace-nowrap">
+                <span className="hidden lg:inline">{Math.max(1, activeViewerCount)} ONLINE</span>
+                <span className="lg:hidden">{Math.max(1, activeViewerCount)}</span>
+              </span>
+            </button>
+          )}
+
+          {/* Role and Name Pill */}
+          <div className="h-8 flex items-center space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-2 text-xs font-mono shrink min-w-0 max-w-37.5 lg:max-w-50">
+            <button
+              onClick={handleRoleToggle}
+              className={`flex items-center gap-0.5 font-extrabold uppercase text-[10px] px-1 py-0.5 border border-black cursor-pointer shrink-0 ${
+                userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
+              }`}
+              title={`Role: ${userRole}. Click to toggle.`}
+            >
+              {userRole === 'host' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
+              <span className="hidden xl:inline">{userRole}</span>
+            </button>
+
+            <button
+              onClick={onOpenAuthModal}
+              className="text-slate-200 hover:text-neo-yellow font-bold truncate text-[11px] cursor-pointer min-w-0"
+              title={`Profile: ${userName}. Click to view details.`}
+            >
+              {userName}
+            </button>
+          </div>
+
+          {/* Sign Out Button */}
+          <button
+            onClick={onSignOut}
+            className="h-8 w-8 flex items-center justify-center bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer shrink-0"
+            title="Sign out & return to landing page"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* ================= COMPACT MOBILE CONTROLS (< md) ================= */}
+        <div className="md:hidden flex items-center space-x-1 shrink-0 min-w-0" ref={menuRef}>
+          {/* Mobile Room & QR Combo Pill */}
+          <div className="flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0">
             <button
               onClick={handleCopyCode}
-              className="px-1.5 py-1 text-[10px] font-mono font-extrabold text-neo-yellow hover:text-white flex items-center gap-1 cursor-copy-btn"
+              className="px-1.5 h-full text-[10px] font-mono font-extrabold text-neo-yellow hover:text-white flex items-center gap-1 cursor-copy-btn"
               title="Click to copy Room Code"
             >
               <span>{room.code}</span>
@@ -230,68 +340,157 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
             <button
               onClick={onOpenQRCode}
-              className="px-1.5 py-1 bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors cursor-zoom"
+              className="px-1.5 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors cursor-zoom flex items-center"
               title="Open Mobile QR Code"
             >
               <QrCode className="w-3 h-3" />
             </button>
           </div>
 
-          {/* Desktop QR Code Button (≥ sm) */}
+          {/* Mobile User Profile Pill */}
           <button
-            onClick={onOpenQRCode}
-            className="hidden sm:flex px-2.5 py-1 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold items-center space-x-1.5 transition-all cursor-zoom shrink-0"
-            title="Open Mobile Join QR Code"
+            onClick={onOpenAuthModal}
+            className="h-8 flex items-center space-x-1 bg-neo-card border-2 border-black brutal-shadow-sm px-1.5 text-[10px] font-mono shrink min-w-0 max-w-22.5 xs:max-w-27.5 cursor-pointer"
+            title="View Profile / Account Settings"
           >
-            <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">JOIN_QR</span>
-          </button>
-
-          {/* Live Online Indicator (Admin/Host Only) */}
-          {userRole === 'host' && (
-            <button
-              onClick={onOpenActiveAttendees}
-              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-neo-card-darker hover:bg-[#1C2030] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
-              title="Click to view live participants & manage room admins"
-            >
-              <Radio className="w-2.5 h-2.5 sm:w-3 sm:h-3 animate-pulse text-neo-mint shrink-0" />
-              <span className="text-[10px] sm:text-[11px] tracking-wide">
-                <span className="hidden md:inline">{Math.max(1, activeViewerCount)} ONLINE</span>
-                <span className="md:hidden">{Math.max(1, activeViewerCount)}</span>
-              </span>
-            </button>
-          )}
-
-          {/* Role and Name Pill */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-1.5 sm:px-2 py-1 text-xs font-mono max-w-19 xs:max-w-25 sm:max-w-37.5 shrink-0">
-            <button
-              onClick={handleRoleToggle}
-              className={`flex items-center gap-0.5 font-extrabold uppercase text-[9px] sm:text-[10px] px-1 py-0.5 border border-black cursor-pointer shrink-0 ${
+            <span
+              className={`p-0.5 border border-black shrink-0 ${
                 userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
               }`}
-              title={`Role: ${userRole}. Click to toggle.`}
             >
-              {userRole === 'host' ? <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <User className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
-              <span className="hidden md:inline">{userRole}</span>
-            </button>
-
-            <button
-              onClick={onOpenAuthModal}
-              className="text-slate-200 hover:text-neo-yellow font-bold truncate text-[10px] sm:text-[11px] cursor-pointer"
-              title="Click to view profile & auth details"
-            >
-              {userName}
-            </button>
-          </div>
-
-          {/* Sign Out Button */}
-          <button
-            onClick={onSignOut}
-            className="p-1 sm:p-1.5 bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer shrink-0"
-            title="Sign out & return to landing page"
-          >
-            <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              {userRole === 'host' ? <Crown className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+            </span>
+            <span className="text-slate-200 truncate font-bold">{userName}</span>
           </button>
+
+          {/* Mobile Host Quick Menu Trigger Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`h-8 px-2 border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0 ${
+              isMobileMenuOpen
+                ? 'bg-neo-yellow text-black'
+                : userRole === 'host'
+                ? 'bg-neo-yellow hover:bg-[#FFF04D] text-black'
+                : 'bg-neo-card hover:bg-[#1E2230] text-slate-300'
+            }`}
+            title="Open Quick Actions Menu"
+          >
+            {userRole === 'host' ? (
+              <>
+                <Zap className="w-3.5 h-3.5 fill-black" />
+                <span className="text-[10px] font-black uppercase">MENU</span>
+              </>
+            ) : (
+              <MoreVertical className="w-3.5 h-3.5" />
+            )}
+          </button>
+
+          {/* Mobile Quick-Menu Dropdown Popover */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-13 right-2 w-64 bg-neo-dark border-3 border-black brutal-shadow-lg p-2.5 space-y-2 z-50 font-mono text-xs animate-fadeIn">
+              {/* Dropdown Header Info */}
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div className="flex items-center space-x-1.5 min-w-0">
+                  <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase border border-black ${
+                    userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                  }`}>
+                    {userRole.toUpperCase()}
+                  </span>
+                  <span className="text-slate-300 font-bold text-[11px] truncate">
+                    ROOM: {room.code}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-0.5 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Host Quick Actions */}
+              {userRole === 'host' && (
+                <div className="space-y-1.5">
+                  {onOpenAISettings && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onOpenAISettings();
+                      }}
+                      className="w-full py-2 px-2.5 bg-neo-pink hover:bg-[#FF4782] text-white border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    >
+                      <Bot className="w-4 h-4 shrink-0" />
+                      <span>AI ENGINE SETTINGS</span>
+                    </button>
+                  )}
+
+                  {onOpenAISummary && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onOpenAISummary();
+                      }}
+                      className="w-full py-2 px-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    >
+                      <FileText className="w-4 h-4 shrink-0" />
+                      <span>MASTERCLASS REPORT</span>
+                    </button>
+                  )}
+
+                  {onOpenActiveAttendees && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onOpenActiveAttendees();
+                      }}
+                      className="w-full py-2 px-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    >
+                      <Radio className="w-4 h-4 shrink-0" />
+                      <span>ACTIVE PLAYERS ({activeViewerCount})</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Attendee / General Actions */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-800">
+                {onOpenChangeRoom && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onOpenChangeRoom();
+                    }}
+                    className="w-full py-1.5 px-2.5 bg-[#1A1E2B] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black font-bold flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+                    <span>SWITCH ARENA ROOM</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenAuthModal();
+                  }}
+                  className="w-full py-1.5 px-2.5 bg-[#1A1E2B] hover:bg-slate-700 text-slate-200 border-2 border-black font-bold flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                >
+                  <User className="w-3.5 h-3.5 shrink-0" />
+                  <span>PROFILE & AUTH ({userName})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onSignOut();
+                  }}
+                  className="w-full py-1.5 px-2.5 bg-red-600 hover:bg-red-700 text-white border-2 border-black font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5 shrink-0" />
+                  <span>SIGN OUT & EXIT</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

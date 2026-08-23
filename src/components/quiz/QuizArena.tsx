@@ -1,5 +1,16 @@
 import React from 'react';
-import { Timer, CheckCircle, XCircle, Sparkles, HelpCircle, ArrowRight, Eye, Flame, Terminal, Trophy } from 'lucide-react';
+import {
+  Timer,
+  CheckCircle,
+  XCircle,
+  Sparkles,
+  HelpCircle,
+  ArrowRight,
+  Eye,
+  Flame,
+  Terminal,
+  Trophy
+} from 'lucide-react';
 import type { QuizRoundState } from '../../types';
 
 interface QuizArenaProps {
@@ -210,7 +221,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Retro Result & Architecture Takeaway Card */}
       {isRevealed && (
-        <div className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-2.5 sm:space-y-3 animate-fadeIn">
+        <div className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-3 animate-fadeIn">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               {userSelectedOption ? (
@@ -237,10 +248,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           </div>
 
+          {/* Standard Explanation */}
           <div className="p-3 sm:p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">
             <div className="flex items-center space-x-1.5 font-black uppercase text-[10px] sm:text-[11px] mb-1 text-neo-pink">
               <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
-              <span>ARCHITECTURAL TAKEAWAY & PROOF:</span>
+              <span>ARCHITECTURAL TAKEAWAY:</span>
             </div>
             <p className="font-medium text-slate-900 text-xs sm:text-sm">{question.explanation}</p>
           </div>

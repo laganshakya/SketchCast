@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Layers,
   Plus,
@@ -16,7 +16,9 @@ import {
   Crown,
   UserPlus,
   UserX,
-  Shield
+  Shield,
+  Bot,
+  FileText
 } from 'lucide-react';
 import type { Room } from '../../types';
 import type { User } from '@supabase/supabase-js';
@@ -26,6 +28,8 @@ interface RoomsAdminViewProps {
   currentRoomCode: string;
   onSwitchRoom: (roomCode: string, roomTitle?: string) => void;
   onOpenQRCodeForRoom: (roomCode: string, roomTitle: string) => void;
+  onOpenAISummary?: () => void;
+  onOpenAISettings?: () => void;
   userName: string;
   currentUser?: User | null;
 }
@@ -34,6 +38,8 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   currentRoomCode,
   onSwitchRoom,
   onOpenQRCodeForRoom,
+  onOpenAISummary,
+  onOpenAISettings,
   userName,
   currentUser,
 }) => {
@@ -47,7 +53,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   const [editingAdminsRoom, setEditingAdminsRoom] = useState<Room | null>(null);
   const [newAdminInput, setNewAdminInput] = useState('');
 
-  const loadRooms = async () => {
+  const loadRooms = useCallback(async () => {
     const remoteRooms = await dbFetchRooms();
     if (remoteRooms && remoteRooms.length > 0) {
       // Strictly filter to ONLY rooms owned by or co-managed by this host
@@ -56,11 +62,11 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
     } else {
       setRooms([]);
     }
-  };
+  }, [currentUser, userName]);
 
   useEffect(() => {
     loadRooms();
-  }, [currentUser, userName]);
+  }, [loadRooms]);
 
   const generateUniqueCode = (existingRoomsList: Room[] = rooms): string => {
     const prefixes = ['SKT', 'ARENA', 'DEV', 'TECH', 'ARCH', 'CYBER', 'NODE', 'FLOW', 'VOTE', 'PULSE', 'STAGE', 'LAB'];
@@ -194,13 +200,35 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-2 shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-3" />
-          <span>CREATE NEW ROOM</span>
-        </button>
+        <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+          {onOpenAISettings && (
+            <button
+              onClick={onOpenAISettings}
+              className="px-3.5 py-2.5 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Bot className="w-4 h-4" />
+              <span>AI SETTINGS</span>
+            </button>
+          )}
+
+          {onOpenAISummary && (
+            <button
+              onClick={onOpenAISummary}
+              className="px-3.5 py-2.5 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>AI SUMMARY REPORT</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleOpenCreateModal}
+            className="px-4 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-2 shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-3" />
+            <span>CREATE NEW ROOM</span>
+          </button>
+        </div>
       </div>
 
       {/* Rooms Grid / Empty State */}

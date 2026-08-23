@@ -306,7 +306,17 @@ export async function dbFetchQuestions(roomId: string): Promise<Question[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data as Question[];
+    return data.map((q: any) => ({
+      id: q.id,
+      room_id: q.room_id,
+      author_name: q.author_name,
+      author_session_id: q.author_session_id,
+      content: q.content,
+      upvotes_count: q.upvotes_count,
+      status: q.status,
+      created_at: q.created_at,
+      aiTalkingPoints: q.ai_talking_points || q.aiTalkingPoints || undefined,
+    })) as Question[];
   } catch {
     return [];
   }
@@ -315,7 +325,7 @@ export async function dbFetchQuestions(roomId: string): Promise<Question[]> {
 export async function dbInsertQuestion(question: Question) {
   if (!supabase) return;
   try {
-    await supabase.from('questions').insert({
+    const payload: any = {
       id: question.id,
       room_id: question.room_id.toUpperCase().trim(),
       author_name: question.author_name,
@@ -324,7 +334,11 @@ export async function dbInsertQuestion(question: Question) {
       upvotes_count: question.upvotes_count,
       status: question.status,
       created_at: question.created_at,
-    });
+    };
+    if (question.aiTalkingPoints) {
+      payload.ai_talking_points = question.aiTalkingPoints;
+    }
+    await supabase.from('questions').insert(payload);
   } catch {
     // fallback to local
   }
@@ -343,6 +357,15 @@ export async function dbUpdateQuestionStatus(questionId: string, status: string)
   if (!supabase) return;
   try {
     await supabase.from('questions').update({ status }).eq('id', questionId);
+  } catch {
+    // ignore
+  }
+}
+
+export async function dbUpdateQuestionTalkingPoints(questionId: string, points: string[]) {
+  if (!supabase) return;
+  try {
+    await supabase.from('questions').update({ ai_talking_points: points }).eq('id', questionId);
   } catch {
     // ignore
   }
@@ -368,6 +391,7 @@ export async function dbFetchPolls(roomId: string): Promise<LivePoll[]> {
       totalVotes: d.total_votes,
       author_name: d.author_name,
       created_at: d.created_at,
+      aiConsensusNote: d.ai_consensus_note || d.aiConsensusNote || undefined,
     }));
   } catch {
     return [];
@@ -377,7 +401,7 @@ export async function dbFetchPolls(roomId: string): Promise<LivePoll[]> {
 export async function dbInsertPoll(poll: LivePoll) {
   if (!supabase) return;
   try {
-    await supabase.from('polls').insert({
+    const payload: any = {
       id: poll.id,
       room_id: poll.room_id.toUpperCase().trim(),
       question: poll.question,
@@ -385,7 +409,11 @@ export async function dbInsertPoll(poll: LivePoll) {
       total_votes: poll.totalVotes,
       author_name: poll.author_name,
       created_at: poll.created_at,
-    });
+    };
+    if (poll.aiConsensusNote) {
+      payload.ai_consensus_note = poll.aiConsensusNote;
+    }
+    await supabase.from('polls').insert(payload);
   } catch {
     // fallback
   }
@@ -394,12 +422,16 @@ export async function dbInsertPoll(poll: LivePoll) {
 export async function dbUpdatePoll(poll: LivePoll) {
   if (!supabase) return;
   try {
+    const payload: any = {
+      options: poll.options,
+      total_votes: poll.totalVotes,
+    };
+    if (poll.aiConsensusNote) {
+      payload.ai_consensus_note = poll.aiConsensusNote;
+    }
     await supabase
       .from('polls')
-      .update({
-        options: poll.options,
-        total_votes: poll.totalVotes,
-      })
+      .update(payload)
       .eq('id', poll.id);
   } catch {
     // fallback

@@ -1,12 +1,22 @@
-import React from 'react';
-import { ChevronUp, CheckCircle, Sparkles, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ChevronUp,
+  CheckCircle,
+  Sparkles,
+  XCircle,
+  Mic,
+  AlertCircle
+} from 'lucide-react';
 import type { Question, QuestionStatus } from '../../types';
+import { generateSpeakerTalkingPoints, getStoredMeshKey } from '../../lib/meshApi';
 
 interface QuestionCardProps {
   question: Question;
   isUpvoted: boolean;
   onToggleUpvote: (id: string) => void;
   onStatusChange?: (id: string, status: QuestionStatus) => void;
+  onUpdateTalkingPoints?: (id: string, points: string[]) => void;
+  onOpenAISettings?: () => void;
   isHost?: boolean;
   compact?: boolean;
 }
@@ -16,9 +26,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   isUpvoted,
   onToggleUpvote,
   onStatusChange,
+  onUpdateTalkingPoints,
+  onOpenAISettings,
   isHost = false,
   compact = false,
 }) => {
+  const [isGeneratingPoints, setIsGeneratingPoints] = useState(false);
+  const [localPoints, setLocalPoints] = useState<string[] | null>(null);
+  const [pointsError, setPointsError] = useState<string | null>(null);
+
+  const effectivePoints = question.aiTalkingPoints || localPoints;
+
   const getStatusBadge = () => {
     switch (question.status) {
       case 'spotlight':
@@ -56,6 +74,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (mins < 1) return 'JUST NOW';
     if (mins < 60) return `${mins}M AGO`;
     return `${Math.floor(mins / 60)}H AGO`;
+  };
+
+  const handleGenerateTalkingPoints = async () => {
+    if (!isHost) return;
+
+    const hasKey = Boolean(getStoredMeshKey());
+    if (!hasKey) {
+      setPointsError('Mesh API Key missing. Please open AI Settings in header.');
+      return;
+    }
+
+    setIsGeneratingPoints(true);
+    setPointsError(null);
+
+    try {
+      const points = await generateSpeakerTalkingPoints(
+        question.content,
+        question.author_name
+      );
+
+      setLocalPoints(points);
+      if (onUpdateTalkingPoints) {
+        onUpdateTalkingPoints(question.id, points);
+      }
+    } catch (err: any) {
+      setPointsError(err?.message || 'Failed to generate talking points.');
+    } finally {
+      setIsGeneratingPoints(false);
+    }
   };
 
   return (
@@ -99,6 +146,74 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <p className="text-xs sm:text-sm text-slate-100 font-semibold leading-relaxed wrap-break-word font-display">
             {question.content}
           </p>
+
+          {/* AI Speaker Talking Points (Host Private Assistant Card) */}
+          {isHost && question.status === 'spotlight' && (
+            <div className="mt-2.5 p-2.5 sm:p-3 bg-[#11131C] border border-neo-yellow/70 brutal-shadow-sm font-mono space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-neo-yellow flex items-center gap-1.5">
+                  <Mic className="w-3.5 h-3.5 text-neo-yellow" />
+                  <span>HOST CO-PILOT // SPEAKER TALKING POINTS</span>
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 bg-black text-neo-yellow border border-neo-yellow font-black">
+                  HOST PRIVATE
+                </span>
+              </div>
+
+              {effectivePoints && effectivePoints.length > 0 ? (
+                <div className="space-y-1.5 pt-1">
+                  {effectivePoints.map((pt, idx) => (
+                    <div key={idx} className="flex items-start space-x-1.5 text-[11px] text-slate-200">
+                      <span className="text-neo-yellow font-black shrink-0">▸</span>
+                      <span className="leading-snug">{pt}</span>
+                    </div>
+                  ))}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={handleGenerateTalkingPoints}
+                      disabled={isGeneratingPoints}
+                      className="px-2 py-0.5 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-300 text-[10px] font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
+                      title="Re-generate talking points"
+                    >
+                      <Sparkles className="w-3 h-3 shrink-0" />
+                      <span>{isGeneratingPoints ? 'GENERATING...' : 'REFRESH POINTS'}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleGenerateTalkingPoints}
+                    disabled={isGeneratingPoints}
+                    className="px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[10px] sm:text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    <span>{isGeneratingPoints ? 'GENERATING...' : 'AI TALKING POINTS'}</span>
+                  </button>
+                </div>
+              )}
+
+              {pointsError && (
+                <div className="p-1.5 bg-neo-pink text-white text-[10px] font-bold border border-black flex items-start space-x-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span>{pointsError}</span>
+                    {onOpenAISettings && pointsError.includes('AI Settings') && (
+                      <button
+                        type="button"
+                        onClick={onOpenAISettings}
+                        className="ml-1 underline font-black text-black bg-white px-1"
+                      >
+                        Settings
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Host Moderation Toolbar */}
           {isHost && onStatusChange && (

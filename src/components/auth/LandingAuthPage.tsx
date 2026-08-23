@@ -609,7 +609,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
       )}
 
       {/* Bottom Retro Footer */}
-      <footer className="h-10 border-t-2 border-black bg-[#11131B] px-4 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0">
+      <footer className="border-t-2 border-black bg-[#11131B] px-3 sm:px-4 py-2 sm:h-10 flex items-center justify-between flex-wrap gap-2 text-[10px] sm:text-[11px] font-mono text-slate-400 shrink-0">
         <div>SKETCHCAST // SUPABASE REALTIME V2.6</div>
         <div className="flex items-center gap-1">
           <Flame className="w-3.5 h-3.5 text-neo-yellow" />

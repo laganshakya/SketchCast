@@ -185,6 +185,26 @@ export function useQuizEngine({
     };
   }, [channelManager, userName, currentRoomKey, quizStorageKey]);
 
+  const revealAnswer = useCallback(() => {
+    setQuizState((prev) => {
+      const updated = { ...prev, isRevealed: true, updatedAt: Date.now() };
+      try {
+        localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+
+      if (prev.question) {
+        dbUpdateQuizRoundReveal(prev.question.id);
+      }
+
+      if (channelManager) {
+        channelManager.broadcast('quiz_round_state', updated);
+      }
+      return updated;
+    });
+  }, [channelManager, quizStorageKey]);
+
   // Round countdown timer loop
   useEffect(() => {
     if (quizState.isActive && quizState.endTime && !quizState.isRevealed) {
@@ -205,7 +225,7 @@ export function useQuizEngine({
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [quizState.isActive, quizState.endTime, quizState.isRevealed]);
+  }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer]);
 
   const triggerConfetti = () => {
     try {
@@ -257,26 +277,6 @@ export function useQuizEngine({
     },
     [channelManager, currentRoomKey, quizStorageKey]
   );
-
-  const revealAnswer = useCallback(() => {
-    setQuizState((prev) => {
-      const updated = { ...prev, isRevealed: true, updatedAt: Date.now() };
-      try {
-        localStorage.setItem(quizStorageKey, JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-
-      if (prev.question) {
-        dbUpdateQuizRoundReveal(prev.question.id);
-      }
-
-      if (channelManager) {
-        channelManager.broadcast('quiz_round_state', updated);
-      }
-      return updated;
-    });
-  }, [channelManager, quizStorageKey]);
 
   const selectOption = useCallback(
     (optionId: string) => {
@@ -376,6 +376,24 @@ export function useQuizEngine({
     ]
   );
 
+  const updateAIDeepDive = useCallback(
+    (deepDive: string) => {
+      setQuizState((prev) => {
+        const updated = { ...prev, aiDeepDive: deepDive, updatedAt: Date.now() };
+        try {
+          localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        if (channelManager) {
+          channelManager.broadcast('quiz_round_state', updated);
+        }
+        return updated;
+      });
+    },
+    [channelManager, quizStorageKey]
+  );
+
   return {
     quizState,
     leaderboard,
@@ -384,5 +402,6 @@ export function useQuizEngine({
     startQuizRound,
     revealAnswer,
     selectOption,
+    updateAIDeepDive,
   };
 }

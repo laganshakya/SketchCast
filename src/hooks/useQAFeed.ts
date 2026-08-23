@@ -6,6 +6,7 @@ import {
   dbInsertQuestion,
   dbUpdateQuestionUpvotes,
   dbUpdateQuestionStatus,
+  dbUpdateQuestionTalkingPoints,
 } from '../lib/supabase';
 
 export function useQAFeed({
@@ -55,21 +56,44 @@ export function useQAFeed({
     }
   };
 
+  const hostPointsKey = `sketchcast_host_qa_points_${currentRoomKey}`;
+
+  const getStoredPoints = useCallback((): Record<string, string[]> => {
+    try {
+      const raw = localStorage.getItem(hostPointsKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }, [hostPointsKey]);
+
   // Load from Supabase DB on initialization & roomCode change
   useEffect(() => {
     dbFetchQuestions(currentRoomKey).then((remoteQuestions) => {
       if (remoteQuestions) {
-        setQuestions(remoteQuestions);
+        const storedPoints = getStoredPoints();
+        setQuestions(
+          remoteQuestions.map((q) => ({
+            ...q,
+            aiTalkingPoints: q.aiTalkingPoints || storedPoints[q.id],
+          }))
+        );
       }
     });
-  }, [currentRoomKey]);
+  }, [currentRoomKey, getStoredPoints]);
 
   // Realtime synchronization
   useEffect(() => {
     if (!channelManager) return;
 
     const unQuestions = channelManager.on('question_list', (updatedQuestions) => {
-      setQuestions(updatedQuestions);
+      const storedPoints = getStoredPoints();
+      setQuestions(
+        updatedQuestions.map((q) => ({
+          ...q,
+          aiTalkingPoints: q.aiTalkingPoints || storedPoints[q.id],
+        }))
+      );
     });
 
     const unUpvote = channelManager.on('question_upvote', ({ questionId, upvotesCount }) => {
@@ -82,16 +106,16 @@ export function useQAFeed({
       unQuestions();
       unUpvote();
     };
-  }, [channelManager]);
+  }, [channelManager, getStoredPoints]);
 
-  const persistUpvotes = (ids: Set<string>) => {
+  const persistUpvotes = useCallback((ids: Set<string>) => {
     setUpvotedIds(ids);
     try {
       localStorage.setItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`, JSON.stringify(Array.from(ids)));
     } catch {
       // ignore
     }
-  };
+  }, [sessionId, currentRoomKey]);
 
   const toggleUpvote = useCallback(
     (questionId: string) => {
@@ -128,7 +152,7 @@ export function useQAFeed({
         return next;
       });
     },
-    [upvotedIds, channelManager, sessionId]
+    [upvotedIds, channelManager, sessionId, persistUpvotes]
   );
 
   const submitQuestion = useCallback(
@@ -160,7 +184,7 @@ export function useQAFeed({
         return next;
       });
     },
-    [userName, sessionId, upvotedIds, channelManager, currentRoomKey]
+    [userName, sessionId, upvotedIds, channelManager, currentRoomKey, persistUpvotes]
   );
 
   const updateQuestionStatus = useCallback(
@@ -185,6 +209,29 @@ export function useQAFeed({
       });
     },
     [channelManager]
+  );
+
+  // Host only: update AI speaker talking points on a question
+  const updateQuestionTalkingPoints = useCallback(
+    (questionId: string, points: string[]) => {
+      try {
+        const stored = getStoredPoints();
+        stored[questionId] = points;
+        localStorage.setItem(hostPointsKey, JSON.stringify(stored));
+      } catch {
+        // ignore
+      }
+
+      dbUpdateQuestionTalkingPoints(questionId, points);
+
+      setQuestions((prev) => {
+        const next = prev.map((q) =>
+          q.id === questionId ? { ...q, aiTalkingPoints: points } : q
+        );
+        return next;
+      });
+    },
+    [getStoredPoints, hostPointsKey]
   );
 
   const spotlightNextInQueue = useCallback(() => {
@@ -250,6 +297,7 @@ export function useQAFeed({
     toggleUpvote,
     submitQuestion,
     updateQuestionStatus,
+    updateQuestionTalkingPoints,
     spotlightNextInQueue,
   };
 }

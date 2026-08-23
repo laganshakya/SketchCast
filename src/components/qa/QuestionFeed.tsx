@@ -8,6 +8,8 @@ interface QuestionFeedProps {
   upvotedIds: Set<string>;
   onToggleUpvote: (id: string) => void;
   onStatusChange?: (id: string, status: QuestionStatus) => void;
+  onUpdateTalkingPoints?: (id: string, points: string[]) => void;
+  onOpenAISettings?: () => void;
   activeTab: 'top' | 'recent' | 'answered' | 'spotlight';
   setActiveTab: (tab: 'top' | 'recent' | 'answered' | 'spotlight') => void;
   onOpenAskModal: () => void;
@@ -20,6 +22,8 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
   upvotedIds,
   onToggleUpvote,
   onStatusChange,
+  onUpdateTalkingPoints,
+  onOpenAISettings,
   activeTab,
   setActiveTab,
   onOpenAskModal,
@@ -142,6 +146,8 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               isUpvoted={upvotedIds.has(q.id)}
               onToggleUpvote={onToggleUpvote}
               onStatusChange={onStatusChange}
+              onUpdateTalkingPoints={onUpdateTalkingPoints}
+              onOpenAISettings={onOpenAISettings}
               isHost={isHost}
               compact={compact}
             />

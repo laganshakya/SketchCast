@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Plus, Sparkles, Clock, X, Terminal, Trash2, CheckCircle, RotateCcw } from 'lucide-react';
+import {
+  Play,
+  Plus,
+  Sparkles,
+  Clock,
+  X,
+  Terminal,
+  Trash2,
+  CheckCircle,
+  RotateCcw,
+  Bot,
+  Zap,
+  Sliders,
+  AlertCircle
+} from 'lucide-react';
 import type { QuizQuestion } from '../../types';
+import { generateAIQuizQuestions, getStoredMeshKey } from '../../lib/meshApi';
 
 interface QuizHostPanelProps {
   onStartQuiz: (question: QuizQuestion) => void;
   activeQuestionId?: string;
   isRevealed?: boolean;
   roomCode?: string;
+  onOpenAISettings?: () => void;
 }
 
 interface DraftQuestion {
@@ -40,11 +56,13 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   activeQuestionId,
   isRevealed = false,
   roomCode = 'SKT-789',
+  onOpenAISettings,
 }) => {
   const queueStorageKey = `sketchcast_host_quiz_queue_${(roomCode || 'SKT-789').toUpperCase().trim()}`;
   const completedStorageKey = `sketchcast_completed_quiz_ids_${(roomCode || 'SKT-789').toUpperCase().trim()}`;
 
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
+  const [modalTab, setModalTab] = useState<'editor' | 'ai'>('ai');
   const [hostQuestions, setHostQuestions] = useState<QuizQuestion[]>(() => {
     try {
       const stored = localStorage.getItem(queueStorageKey) || localStorage.getItem('sketchcast_host_quiz_queue');
@@ -62,6 +80,20 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       return [];
     }
   });
+
+  // Multi-question drafting state
+  const [draftQuestions, setDraftQuestions] = useState<DraftQuestion[]>([
+    createBlankDraftQuestion(1),
+  ]);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // AI Quiz Generation form state
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiCount, setAiCount] = useState<number>(3);
+  const [aiDifficulty, setAiDifficulty] = useState<'Junior' | 'Mid' | 'Senior' | 'Principal'>('Senior');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiSuccessNote, setAiSuccessNote] = useState<string | null>(null);
 
   // Track completed questions when revealed
   useEffect(() => {
@@ -98,13 +130,6 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     }
   }, [queueStorageKey, completedStorageKey]);
 
-  // Multi-question drafting state
-  const [draftQuestions, setDraftQuestions] = useState<DraftQuestion[]>([
-    createBlankDraftQuestion(1),
-  ]);
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const persistQuestions = (questions: QuizQuestion[]) => {
     setHostQuestions(questions);
     try {
@@ -115,10 +140,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     }
   };
 
-  const handleOpenModal = () => {
+  const handleOpenModal = (defaultTab: 'editor' | 'ai' = 'ai') => {
     setDraftQuestions([createBlankDraftQuestion(1)]);
     setActiveQuestionIndex(0);
     setErrorMessage(null);
+    setAiSuccessNote(null);
+    setModalTab(defaultTab);
     setShowCustomModal(true);
   };
 
@@ -146,6 +173,55 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   };
 
   const currentDraft = draftQuestions[activeQuestionIndex] || draftQuestions[0];
+
+  // AI Generation Trigger
+  const handleGenerateAI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiTopic.trim()) {
+      setErrorMessage('Please provide a technical topic (e.g. Distributed Cache Invalidation or Raft Consensus).');
+      return;
+    }
+
+    const hasKey = Boolean(getStoredMeshKey());
+    if (!hasKey) {
+      setErrorMessage('Mesh API Key missing. Please configure your key in AI Settings.');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    setErrorMessage(null);
+    setAiSuccessNote(null);
+
+    try {
+      const generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
+      if (!generated || generated.length === 0) {
+        throw new Error('No questions returned by AI model.');
+      }
+
+      const timestamp = Date.now();
+      const newDrafts: DraftQuestion[] = generated.map((g, idx) => ({
+        id: `ai-draft-${timestamp}-${idx}`,
+        category: g.category || aiTopic.trim(),
+        question: g.question,
+        optA: g.optA,
+        optB: g.optB,
+        optC: g.optC,
+        optD: g.optD,
+        correctOpt: g.correctOpt,
+        explanation: g.explanation,
+        timeLimitSeconds: g.timeLimitSeconds || 25,
+      }));
+
+      setDraftQuestions(newDrafts);
+      setActiveQuestionIndex(0);
+      setModalTab('editor');
+      setAiSuccessNote(`✨ Generated ${newDrafts.length} questions! Review, edit, or launch below.`);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to generate quiz questions via Mesh API.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const handleSaveQuiz = (e: React.SyntheticEvent, launchImmediately: boolean = false) => {
     e.preventDefault();
@@ -216,13 +292,23 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             HOST QUIZ CONTROLS
           </h3>
         </div>
-        <button
-          onClick={handleOpenModal}
-          className="px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-1"
-        >
-          <Plus className="w-3.5 h-3.5 stroke-3" />
-          <span>NEW QUIZ</span>
-        </button>
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <button
+            onClick={() => handleOpenModal('ai')}
+            className="h-8 px-2.5 sm:px-3 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
+            title="Generate quiz with Mesh AI"
+          >
+            <Bot className="w-3.5 h-3.5 shrink-0" />
+            <span>AI QUIZ</span>
+          </button>
+          <button
+            onClick={() => handleOpenModal('editor')}
+            className="h-8 px-2.5 sm:px-3 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-3 shrink-0" />
+            <span>NEW</span>
+          </button>
+        </div>
       </div>
 
       {/* Host Quiz Question Queue */}
@@ -234,15 +320,24 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               NO QUESTIONS QUEUED
             </h4>
             <p className="text-[11px] font-mono text-slate-400">
-              Create single or multi-question quiz sets to stage or launch live.
+              Use Mesh AI to generate senior architecture quiz packs or create questions manually.
             </p>
-            <button
-              onClick={handleOpenModal}
-              className="mt-2 px-3 py-1.5 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-3" />
-              <span>CREATE QUIZ</span>
-            </button>
+            <div className="flex items-center justify-center space-x-2 pt-1">
+              <button
+                onClick={() => handleOpenModal('ai')}
+                className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1 cursor-pointer"
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>AI GENERATE</span>
+              </button>
+              <button
+                onClick={() => handleOpenModal('editor')}
+                className="px-3 py-1.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-3" />
+                <span>MANUAL DRAFT</span>
+              </button>
+            </div>
           </div>
         ) : (
           hostQuestions.map((q, idx) => {
@@ -335,7 +430,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       {/* Neo-Brutalist Multi-Question Quiz Modal */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
           <div className="bg-neo-cream text-black w-full max-w-xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
@@ -354,10 +449,138 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   CREATE QUIZ SET
                 </h3>
                 <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-                  Add multiple questions in this quiz pack to publish or launch sequentially
+                  Generate with Mesh AI or manually construct question packs
                 </p>
               </div>
             </div>
+
+            {/* Modal Mode Selector: AI Generator vs Manual Editor */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-black border-2 border-black mb-3.5 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setModalTab('ai')}
+                className={`py-1.5 font-black uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                  modalTab === 'ai'
+                    ? 'bg-neo-pink text-white border border-black brutal-shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5" />
+                <span>⚡ AI GENERATOR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab('editor')}
+                className={`py-1.5 font-black uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                  modalTab === 'editor'
+                    ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>MANUAL EDITOR ({draftQuestions.length} Q)</span>
+              </button>
+            </div>
+
+            {/* AI Generator Tab */}
+            {modalTab === 'ai' && (
+              <form onSubmit={handleGenerateAI} className="space-y-3 font-mono p-3 bg-white border-2 border-black mb-3">
+                <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
+                  <span className="text-xs font-black uppercase text-neo-pink flex items-center gap-1">
+                    <Bot className="w-4 h-4" />
+                    <span>INSTANT AI QUIZ BUILDER (MESH API)</span>
+                  </span>
+                  {onOpenAISettings && (
+                    <button
+                      type="button"
+                      onClick={onOpenAISettings}
+                      className="text-[10px] text-slate-600 hover:text-black underline font-bold"
+                    >
+                      AI Settings
+                    </button>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-black uppercase block mb-1">
+                    Topic / Concept Prompt:
+                  </label>
+                  <input
+                    type="text"
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    placeholder="e.g. Distributed Cache Invalidation, PostgreSQL VACUUM & Indexes, Raft Consensus"
+                    className="w-full px-3 py-1.5 sm:py-2 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-black uppercase block mb-1">Difficulty:</label>
+                    <select
+                      value={aiDifficulty}
+                      onChange={(e) => setAiDifficulty(e.target.value as any)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                    >
+                      <option value="Junior">Junior Engineer</option>
+                      <option value="Mid">Mid-Level</option>
+                      <option value="Senior">Senior Architect</option>
+                      <option value="Principal">Principal / Staff</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black uppercase block mb-1">Number of Questions:</label>
+                    <select
+                      value={aiCount}
+                      onChange={(e) => setAiCount(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                    >
+                      <option value={1}>1 Question</option>
+                      <option value={2}>2 Questions</option>
+                      <option value={3}>3 Questions</option>
+                      <option value={4}>4 Questions</option>
+                      <option value={5}>5 Questions</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isGeneratingAI}
+                  className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] disabled:bg-slate-200 text-white text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>{isGeneratingAI ? 'GENERATING WITH MESH AI...' : `⚡ GENERATE ${aiCount} ${aiDifficulty.toUpperCase()} QUESTIONS`}</span>
+                </button>
+              </form>
+            )}
+
+            {/* Success & Error Banners */}
+            {aiSuccessNote && (
+              <div className="p-2.5 mb-3 bg-neo-mint text-black font-mono text-xs font-black border-2 border-black flex items-center space-x-1.5">
+                <CheckCircle className="w-4 h-4 stroke-3 shrink-0" />
+                <span>{aiSuccessNote}</span>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="p-2.5 mb-3 bg-neo-pink text-white font-mono text-xs font-bold border-2 border-black flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div>{errorMessage}</div>
+                  {errorMessage.includes('AI Settings') && onOpenAISettings && (
+                    <button
+                      type="button"
+                      onClick={onOpenAISettings}
+                      className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
+                    >
+                      Open AI Settings
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Questions Step Navigation Strip */}
             <div className="mb-3 font-mono">
@@ -379,9 +602,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     <div key={dq.id} className="flex items-center shrink-0">
                       <button
                         type="button"
-                        onClick={() => setActiveQuestionIndex(idx)}
+                        onClick={() => {
+                          setActiveQuestionIndex(idx);
+                          setModalTab('editor');
+                        }}
                         className={`px-2.5 sm:px-3 py-1 text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1.5 cursor-pointer ${
-                          isActive
+                          isActive && modalTab === 'editor'
                             ? 'bg-neo-yellow text-black brutal-shadow-sm -translate-y-0.5'
                             : 'bg-white text-slate-700 hover:bg-slate-100'
                         }`}
@@ -406,12 +632,6 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 })}
               </div>
             </div>
-
-            {errorMessage && (
-              <div className="p-2 mb-3 bg-neo-pink text-white font-mono text-xs font-bold border-2 border-black">
-                {errorMessage}
-              </div>
-            )}
 
             {/* Active Question Editor Form */}
             <form onSubmit={(e) => handleSaveQuiz(e, true)} className="space-y-3 font-mono">
@@ -521,7 +741,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </span>
               </div>
 
-              {/* Action Buttons: Cancel, Publish to Queue, Publish & Launch Now */}
+              {/* Action Buttons */}
               <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-end gap-2 pt-2.5 border-t-2 border-black/20">
                 <button
                   type="button"

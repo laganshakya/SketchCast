@@ -27,6 +27,7 @@ export interface QuizQuestion {
   correctOptionId: string; // 'A', 'B', 'C', 'D'
   explanation: string;
   timeLimitSeconds: number;
+  aiDeepDive?: string;
 }
 
 export interface QuizPack {
@@ -47,6 +48,7 @@ export interface QuizRoundState {
   isCorrect: boolean | null;
   pointsEarned: number;
   votesDistribution: Record<string, number>; // { 'A': 12, 'B': 4, ... }
+  aiDeepDive?: string | null;
   updatedAt?: number;
 }
 
@@ -66,6 +68,7 @@ export interface LivePoll {
   author_name: string;
   created_at: string;
   userVotedOptionId?: string | null;
+  aiConsensusNote?: string | null;
 }
 
 // --- Q&A Types ---
@@ -81,6 +84,7 @@ export interface Question {
   status: QuestionStatus;
   created_at: string;
   is_upvoted_by_me?: boolean;
+  aiTalkingPoints?: string[];
 }
 
 // --- Leaderboard & Presence ---

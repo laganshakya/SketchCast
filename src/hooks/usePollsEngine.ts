@@ -48,13 +48,22 @@ export function usePollsEngine({
     }
 
     dbFetchPolls(currentRoomKey).then((remotePolls) => {
-      if (remotePolls) {
-        setPolls(remotePolls);
-        try {
-          localStorage.setItem(pollStorageKey, JSON.stringify(remotePolls));
-        } catch {
-          // ignore
-        }
+      if (remotePolls && remotePolls.length > 0) {
+        setPolls((currentPolls) => {
+          const merged = remotePolls.map((rp) => {
+            const current = currentPolls.find((cp) => cp.id === rp.id);
+            return {
+              ...rp,
+              aiConsensusNote: rp.aiConsensusNote || current?.aiConsensusNote || undefined,
+            };
+          });
+          try {
+            localStorage.setItem(pollStorageKey, JSON.stringify(merged));
+          } catch {
+            // ignore
+          }
+          return merged;
+        });
       }
     });
   }, [currentRoomKey, pollStorageKey]);
@@ -64,12 +73,21 @@ export function usePollsEngine({
     if (!channelManager) return;
 
     const unPolls = channelManager.on('poll_update', (updatedPolls) => {
-      setPolls(updatedPolls);
-      try {
-        localStorage.setItem(pollStorageKey, JSON.stringify(updatedPolls));
-      } catch {
-        // ignore
-      }
+      setPolls((currentPolls) => {
+        const merged = updatedPolls.map((up: LivePoll) => {
+          const current = currentPolls.find((cp) => cp.id === up.id);
+          return {
+            ...up,
+            aiConsensusNote: up.aiConsensusNote || current?.aiConsensusNote || undefined,
+          };
+        });
+        try {
+          localStorage.setItem(pollStorageKey, JSON.stringify(merged));
+        } catch {
+          // ignore
+        }
+        return merged;
+      });
     });
 
     const unReset = channelManager.on('poll_reset', ({ pollId }) => {
@@ -256,6 +274,42 @@ export function usePollsEngine({
     [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
   );
 
+  // Admin: Update AI Consensus summary on a poll
+  const updatePollAIConsensus = useCallback(
+    (pollId: string, consensusNote: string) => {
+      setPolls((currentPolls) => {
+        let targetUpdatedPoll: LivePoll | null = null;
+        const nextPolls = currentPolls.map((poll) => {
+          if (poll.id === pollId) {
+            const updated: LivePoll = {
+              ...poll,
+              aiConsensusNote: consensusNote,
+            };
+            targetUpdatedPoll = updated;
+            return updated;
+          }
+          return poll;
+        });
+
+        try {
+          localStorage.setItem(pollStorageKey, JSON.stringify(nextPolls));
+        } catch {
+          // ignore
+        }
+
+        if (targetUpdatedPoll) {
+          dbUpdatePoll(targetUpdatedPoll);
+        }
+        if (channelManager) {
+          channelManager.broadcast('poll_update', nextPolls);
+        }
+
+        return nextPolls;
+      });
+    },
+    [channelManager, pollStorageKey]
+  );
+
   return {
     polls,
     userVotes,
@@ -263,5 +317,6 @@ export function usePollsEngine({
     voteOnPoll,
     resetPoll,
     deletePoll,
+    updatePollAIConsensus,
   };
 }
