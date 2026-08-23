@@ -11,7 +11,8 @@ import {
   Shield,
   Send,
   ArrowRight,
-  Check
+  Check,
+  ArrowRightLeft,
 } from 'lucide-react';
 import {
   signUpWithEmail,
@@ -28,6 +29,8 @@ interface AuthModalProps {
   currentUser: User | null;
   userName: string;
   setUserName: (name: string) => void;
+  roomCode?: string;
+  onOpenChangeRoom?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -36,6 +39,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   userName,
   setUserName,
+  roomCode,
+  onOpenChangeRoom,
 }) => {
   const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -192,6 +197,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
+            {/* Arena Room Switcher in Settings */}
+            {onOpenChangeRoom && (
+              <div className="p-3 bg-white border-2 border-black space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-600 font-mono">CURRENT ARENA ROOM:</span>
+                  <span className="font-extrabold text-black font-mono bg-neo-yellow px-1.5 py-0.5 border border-black text-xs">
+                    {roomCode || 'SKT-789'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenChangeRoom();
+                  }}
+                  className="w-full py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer active:translate-x-px active:translate-y-px transition-all"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  <span>CHANGE / SWITCH ARENA ROOM</span>
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-1">
               <button
                 type="button"
@@ -296,6 +324,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 CREATE ACCOUNT
               </button>
             </div>
+
+            {/* Quick Room Switcher */}
+            {onOpenChangeRoom && (
+              <div className="mb-3.5 p-2 bg-[#1A1E2B] border-2 border-black flex items-center justify-between gap-2 text-xs font-mono">
+                <div className="flex items-center space-x-1.5 min-w-0">
+                  <span className="text-slate-400 font-bold text-[10px]">CURRENT ROOM:</span>
+                  <span className="font-extrabold text-neo-yellow text-xs">{roomCode || 'SKT-789'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenChangeRoom();
+                  }}
+                  className="px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[10px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer active:translate-x-px active:translate-y-px transition-all"
+                >
+                  <ArrowRightLeft className="w-3 h-3" />
+                  <span>SWITCH ROOM</span>
+                </button>
+              </div>
+            )}
 
             {/* Error / Success Feedback */}
             {errorMessage && (

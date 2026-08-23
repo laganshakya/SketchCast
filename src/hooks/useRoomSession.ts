@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
@@ -212,6 +212,11 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     });
   }, [activeRoomCode, userName, currentUser]);
 
+  const userNameRef = useRef(userName);
+  useEffect(() => {
+    userNameRef.current = userName;
+  }, [userName]);
+
   // Realtime Channel & Presence setup (Only re-instantiate when room changes)
   useEffect(() => {
     const manager = RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
@@ -223,7 +228,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
     const unAdminPromote = manager.on('room_admin_promoted', (event) => {
       if (event.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
-        const isTarget = event.targetSessionId === sessionId || event.targetName.toLowerCase() === userName.toLowerCase();
+        const currentName = userNameRef.current;
+        const isTarget = event.targetSessionId === sessionId || event.targetName.toLowerCase() === currentName.toLowerCase();
         if (isTarget) {
           if (event.action === 'promote') {
             setUserRoleState('host');
@@ -253,9 +259,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return () => {
       unPresence();
       unAdminPromote();
-      manager.destroy();
     };
-  }, [activeRoomCode, sessionId, userName]);
+  }, [activeRoomCode, sessionId]);
 
   // Keep presence updated whenever name or role changes
   useEffect(() => {

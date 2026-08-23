@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw } from 'lucide-react';
-import type { AttendeePresence } from '../../types';
+import type { AttendeePresence, Room } from '../../types';
+import { isUserRoomAdmin } from '../../lib/supabase';
 
 interface ActiveAttendeesModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ActiveAttendeesModalProps {
   currentSessionId: string;
   isHost: boolean;
   roomCode: string;
+  room?: Room | null;
   onPromoteToAdmin?: (sessionId: string, name: string) => void;
   onDemoteFromAdmin?: (sessionId: string, name: string) => void;
   onRefresh?: () => void;
@@ -21,6 +23,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   currentSessionId,
   isHost,
   roomCode,
+  room,
   onPromoteToAdmin,
   onDemoteFromAdmin,
   onRefresh,
@@ -42,8 +45,28 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
     ).values()
   );
 
-  const totalOnline = Math.max(1, uniqueAttendees.length);
-  const adminCount = uniqueAttendees.filter((a) => a.role === 'host').length;
+  const isAttendeeAdmin = (att: AttendeePresence) => {
+    if (att.role === 'host') return true;
+    if (room && isUserRoomAdmin(room, null, att.name)) return true;
+    return false;
+  };
+
+  const isAttendeeOwner = (att: AttendeePresence) => {
+    if (!room || !room.host_name) return false;
+    return att.name.trim().toLowerCase() === room.host_name.trim().toLowerCase();
+  };
+
+  // Sort: Host & Admins first, then alphabetically
+  const sortedAttendees = [...uniqueAttendees].sort((a, b) => {
+    const aAdmin = isAttendeeAdmin(a);
+    const bAdmin = isAttendeeAdmin(b);
+    if (aAdmin && !bAdmin) return -1;
+    if (!aAdmin && bAdmin) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const totalOnline = Math.max(1, sortedAttendees.length);
+  const adminCount = sortedAttendees.filter(isAttendeeAdmin).length;
   const attendeeCount = Math.max(0, totalOnline - adminCount);
 
   return (
@@ -109,15 +132,16 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
 
         {/* Attendees List */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono">
-          {uniqueAttendees.map((attendee) => {
+          {sortedAttendees.map((attendee) => {
             const isSelf = attendee.session_id === currentSessionId;
-            const isMemberHost = attendee.role === 'host';
+            const isMemberAdmin = isAttendeeAdmin(attendee);
+            const isOwner = isAttendeeOwner(attendee);
 
             return (
               <div
                 key={attendee.session_id}
                 className={`p-2.5 sm:p-3 border-2 border-black transition-all flex flex-col xs:flex-row xs:items-center justify-between gap-2 ${
-                  isMemberHost
+                  isMemberAdmin
                     ? 'bg-amber-100/70 border-black brutal-shadow-sm'
                     : 'bg-white hover:bg-slate-50'
                 }`}
@@ -125,10 +149,10 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                 <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
                   <div
                     className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center border-2 border-black shrink-0 font-black text-xs ${
-                      isMemberHost ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                      isMemberAdmin ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
                     }`}
                   >
-                    {isMemberHost ? <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                    {isMemberAdmin ? <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -145,10 +169,14 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                     <div className="flex items-center space-x-1.5 sm:space-x-2 text-[9px] sm:text-[10px] text-slate-500 font-bold mt-0.5 flex-wrap">
                       <span
                         className={`px-1.5 py-0.2 uppercase border border-black shrink-0 ${
-                          isMemberHost ? 'bg-neo-yellow text-black' : 'bg-neo-mint text-black'
+                          isOwner
+                            ? 'bg-neo-yellow text-black font-black'
+                            : isMemberAdmin
+                            ? 'bg-amber-300 text-black font-black'
+                            : 'bg-neo-mint text-black font-bold'
                         }`}
                       >
-                        {isMemberHost ? 'ADMIN' : 'ATTENDEE'}
+                        {isOwner ? '👑 HOST OWNER' : isMemberAdmin ? '👑 CO-ADMIN' : 'ATTENDEE'}
                       </span>
                       <span className="shrink-0">ACTIVE NOW</span>
                     </div>
@@ -156,9 +184,9 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                 </div>
 
                 {/* Host Control Actions (Promote / Demote) */}
-                {isHost && !isSelf && (
+                {isHost && !isSelf && !isOwner && (
                   <div className="shrink-0 flex items-center justify-end">
-                    {!isMemberHost ? (
+                    {!isMemberAdmin ? (
                       <button
                         type="button"
                         onClick={() => onPromoteToAdmin && onPromoteToAdmin(attendee.session_id, attendee.name)}

@@ -325,10 +325,11 @@ export class RealtimeChannelManager {
   private emitLocal<K extends EventKey>(event: K, payload: RealtimeEventMap[K]) {
     if (event === 'presence_sync') {
       const list = payload as AttendeePresence[];
-      this.presenceList.clear();
-      list.forEach((p) => {
-        if (p && p.session_id) this.presenceList.set(p.session_id, p);
-      });
+      if (Array.isArray(list)) {
+        list.forEach((p) => {
+          if (p && p.session_id) this.presenceList.set(p.session_id, p);
+        });
+      }
       if (this.myPresence) {
         this.presenceList.set(this.myPresence.session_id, this.myPresence);
       }
@@ -336,7 +337,6 @@ export class RealtimeChannelManager {
       const senderPresence = payload as AttendeePresence;
       if (senderPresence && senderPresence.session_id) {
         this.presenceList.set(senderPresence.session_id, senderPresence);
-        this.emitPresenceSync();
         // Reply with pong if sender is not our own session
         if (this.myPresence && senderPresence.session_id !== this.myPresence.session_id) {
           this.broadcast('presence_pong', this.myPresence);
@@ -346,15 +346,15 @@ export class RealtimeChannelManager {
       const senderPresence = payload as AttendeePresence;
       if (senderPresence && senderPresence.session_id) {
         this.presenceList.set(senderPresence.session_id, senderPresence);
-        this.emitPresenceSync();
       }
     }
 
     const handlers = this.listeners.get(event);
     if (handlers) {
+      const dispatchPayload = event === 'presence_sync' ? Array.from(this.presenceList.values()) : payload;
       handlers.forEach((fn) => {
         try {
-          fn(payload);
+          fn(dispatchPayload as any);
         } catch {
           // ignore
         }

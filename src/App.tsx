@@ -456,6 +456,8 @@ export function App() {
         currentUser={currentUser}
         userName={userName}
         setUserName={setUserName}
+        roomCode={room.code}
+        onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
       />
 
       <ChangeRoomModal
@@ -475,6 +477,7 @@ export function App() {
         currentSessionId={sessionId}
         isHost={userRole === 'host'}
         roomCode={room.code}
+        room={room}
         onPromoteToAdmin={promoteToAdmin}
         onDemoteFromAdmin={demoteFromAdmin}
         onRefresh={() => channelManager?.pingPresence()}

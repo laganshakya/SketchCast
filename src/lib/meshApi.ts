@@ -321,15 +321,24 @@ export interface SuggestedAIPoll {
 }
 
 export async function generateAIPollSuggestions(topic: string): Promise<SuggestedAIPoll[]> {
-  const systemPrompt = `You are an interactive tech keynote facilitator.
-Generate 3 provocative, highly engaging audience polls about the topic: "${topic}".
-Polls should uncover architectural preferences, technology debates (e.g. REST vs gRPC, Monolith vs Microservices), or real-world deployment challenges.
+  const cleanTopic = topic.trim();
+  const systemPrompt = `You are an expert interactive audience poll and live survey designer.
+Your mission is to generate 3 tailored, creative, and highly engaging audience polls specifically focused on the user's topic: "${cleanTopic}".
 
-Return ONLY a JSON object:
+CORE RULES:
+1. Every poll question must be unique, insightful, and directly centered on "${cleanTopic}".
+2. Provide 2 to 5 distinct, concise, realistic, and mutually exclusive option choices for each poll.
+3. Align directly with the user's specific context:
+   - If the user asks for ratings/feedback/reviews (e.g. "Rate this app", "Event feedback"), provide satisfaction levels, favorite features, and areas of improvement.
+   - If the user gives a technology comparison (e.g. "PostgreSQL vs MongoDB", "React vs Svelte"), explore genuine real-world trade-offs and team preferences.
+   - If the user provides a business, team, cultural, or fun topic (e.g. "Remote Work vs RTO", "Favorite Sci-Fi Movie"), provide lively, highly pertinent questions and choices.
+   - NEVER default to generic software architecture questions (like monolith vs microservices or REST vs gRPC) unless the topic explicitly requests it.
+
+Return ONLY a valid JSON object matching this schema:
 {
   "polls": [
     {
-      "question": "Poll question text...",
+      "question": "Clear, engaging question specific to ${cleanTopic}?",
       "options": ["Option 1", "Option 2", "Option 3", "Option 4"]
     }
   ]
@@ -338,17 +347,21 @@ Return ONLY a JSON object:
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate 3 interactive polls on "${topic}".` },
+      { role: 'user', content: `Generate 3 interactive live audience polls specifically about: "${cleanTopic}". Ensure all 3 polls are distinct and directly tailored to this exact subject.` },
     ],
-    { jsonMode: true, temperature: 0.8 }
+    { jsonMode: true, temperature: 0.85 }
   );
 
   try {
     const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
     const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed.polls) ? parsed.polls : [];
+    const list = Array.isArray(parsed.polls) ? parsed.polls : Array.isArray(parsed) ? parsed : [];
+    return list.map((p: any) => ({
+      question: p.question || `Poll about ${cleanTopic}`,
+      options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
+    }));
   } catch {
-    throw new Error('Failed to parse AI Poll suggestions.');
+    throw new Error('Failed to parse AI Poll suggestions. Please try again.');
   }
 }
 

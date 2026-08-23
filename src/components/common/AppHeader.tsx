@@ -163,7 +163,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               )}
             </button>
 
-            {onOpenChangeRoom && userRole === 'attendee' && (
+            {onOpenChangeRoom && (
               <button
                 onClick={onOpenChangeRoom}
                 className="h-8 flex items-center space-x-1 px-2 bg-neo-card hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px cursor-pointer"

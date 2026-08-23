@@ -59,6 +59,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
     setIsGeneratingAI(true);
     setAiError(null);
+    setAiSuggestions([]);
 
     try {
       const suggestions = await generateAIPollSuggestions(aiTopic.trim());
@@ -98,23 +99,25 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
         <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
           <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-cyan text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
-            <Vote className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            <Vote className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
                 CREATE LIVE AUDIENCE POLL
               </h3>
-              <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase">
+              <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase border border-black">
                 HOST ONLY
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">Survey attendees on architecture decisions</p>
+            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
+              Survey attendees on architecture decisions, feedback, or debates
+            </p>
           </div>
         </div>
 
-        {/* AI Suggestions Toggle Button */}
-        <div className="mb-3">
+        {/* AI Assistant Toggle Button */}
+        <div className="mb-3.5">
           <button
             type="button"
             onClick={() => setShowAIAssistant(!showAIAssistant)}
@@ -133,7 +136,13 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                 type="text"
                 value={aiTopic}
                 onChange={(e) => setAiTopic(e.target.value)}
-                placeholder="Topic: e.g. Monolith vs Microservices or GraphQL"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleFetchAISuggestions();
+                  }
+                }}
+                placeholder="Topic: e.g. Rate this Web App, PostgreSQL vs Redis..."
                 className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
               />
               <button
