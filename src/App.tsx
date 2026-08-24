@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
@@ -19,6 +20,12 @@ import { ChangeRoomModal } from './components/rooms/ChangeRoomModal';
 import { ActiveAttendeesModal } from './components/common/ActiveAttendeesModal';
 import { AISettingsModal } from './components/common/AISettingsModal';
 import { AISessionReportModal } from './components/common/AISessionReportModal';
+import { SpotlightRouletteModal } from './components/common/SpotlightRouletteModal';
+import { SpotlightCelebrationModal } from './components/common/SpotlightCelebrationModal';
+import { ChampionSocialCardModal } from './components/quiz/ChampionSocialCardModal';
+import { playFanfare } from './lib/soundFx';
+import { calculateUserBadges } from './lib/badgeSystem';
+import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X } from 'lucide-react';
 
 export function App() {
@@ -31,6 +38,12 @@ export function App() {
   const [isActiveAttendeesModalOpen, setIsActiveAttendeesModalOpen] = useState(false);
   const [isAISettingsModalOpen, setIsAISettingsModalOpen] = useState(false);
   const [isAISessionReportModalOpen, setIsAISessionReportModalOpen] = useState(false);
+  const [isSpotlightModalOpen, setIsSpotlightModalOpen] = useState(false);
+  const [isSpotlightCelebrationOpen, setIsSpotlightCelebrationOpen] = useState(false);
+  const [celebrationWinner, setCelebrationWinner] = useState<SpotlightWinner | null>(null);
+  const [isSocialCardModalOpen, setIsSocialCardModalOpen] = useState(false);
+  const [socialCardData, setSocialCardData] = useState<ChampionSocialCardData | null>(null);
+  const [spotlightBanner, setSpotlightBanner] = useState<SpotlightWinner | null>(null);
   const [mobileHostQuizView, setMobileHostQuizView] = useState<'arena' | 'controls'>('arena');
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
@@ -61,6 +74,10 @@ export function App() {
     leaderboard,
     timeRemaining,
     userStreak,
+    powerUpInventory,
+    activePowerUp,
+    eliminatedOptionIds,
+    activatePowerUp,
     startQuizRound,
     revealAnswer,
     selectOption,
@@ -70,6 +87,7 @@ export function App() {
     userName,
     userRole,
     roomCode: room.code,
+    appActiveTab: activeTab,
   });
 
   // 3. Live Polls Engine (Isolated to room.code)
@@ -86,6 +104,7 @@ export function App() {
     sessionId,
     userName,
     roomCode: room.code,
+    activeTab,
   });
 
   // 4. Live Q&A Feed Engine (Isolated to room.code)
@@ -105,6 +124,7 @@ export function App() {
     userName,
     userRole,
     roomCode: room.code,
+    appActiveTab: activeTab,
   });
 
   const activeViewerCount = Math.max(1, attendees.length);
@@ -174,6 +194,77 @@ export function App() {
     return false;
   }, [room.code, quizState.question?.id]);
 
+  // Listen for live Spotlight Winner broadcasts
+  useEffect(() => {
+    if (!channelManager) return;
+    const unSpotlight = channelManager.on('attendee_spotlight', (winner) => {
+      setSpotlightBanner(winner);
+      setCelebrationWinner(winner);
+
+      if (winner.targetSessionId === sessionId) {
+        setIsSpotlightCelebrationOpen(true);
+        playFanfare();
+        try {
+          confetti({
+            particleCount: 180,
+            spread: 100,
+            origin: { y: 0.4 },
+            colors: ['#FFE600', '#FF2A6D', '#00F0FF', '#00F59B', '#9B5DE5'],
+          });
+        } catch {
+          // ignore
+        }
+      }
+      setTimeout(() => {
+        setSpotlightBanner(null);
+      }, 10000);
+    });
+
+    return () => {
+      unSpotlight();
+    };
+  }, [channelManager, sessionId]);
+
+  const handleSelectSpotlightWinner = (winner: SpotlightWinner) => {
+    setSpotlightBanner(winner);
+    setCelebrationWinner(winner);
+    if (winner.targetSessionId === sessionId) {
+      setIsSpotlightCelebrationOpen(true);
+    }
+    if (channelManager) {
+      channelManager.broadcast('attendee_spotlight', winner);
+    }
+  };
+
+  const handleOpenSocialCard = (entry: LeaderboardEntry, rank: number) => {
+    const earnedBadges = calculateUserBadges({
+      correctQuizzes: entry.correct_quizzes,
+      streak: entry.streak,
+      rank,
+      pollsVoted: entry.polls_voted,
+      isSpotlightWinner: celebrationWinner?.targetSessionId === entry.session_id,
+    });
+
+    setSocialCardData({
+      playerName: entry.name,
+      rank,
+      score: entry.score,
+      correctQuizzes: entry.correct_quizzes,
+      totalQuizzes: queuedQuizzes.length || entry.correct_quizzes,
+      pollsVoted: entry.polls_voted,
+      maxStreak: entry.streak,
+      roomCode: room.code,
+      roomTitle: room.title,
+      badges: earnedBadges.map((b) => ({
+        icon: b.icon,
+        name: b.name,
+        desc: b.desc,
+        rarity: b.rarity,
+      })),
+    });
+    setIsSocialCardModalOpen(true);
+  };
+
   // If user is not authenticated, show the Landing / Auth Page
   if (!isAuthenticated) {
     return (
@@ -207,9 +298,39 @@ export function App() {
         onOpenActiveAttendees={() => setIsActiveAttendeesModalOpen(true)}
         onOpenAISettings={() => setIsAISettingsModalOpen(true)}
         onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
+        onOpenSpotlightRoulette={() => setIsSpotlightModalOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
+
+      {/* Floating Realtime Spotlight Winner Celebration Banner */}
+      {spotlightBanner && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-lg bg-neo-yellow text-black border-4 border-black brutal-shadow-lg p-2.5 sm:p-3 animate-bounce flex items-center justify-between font-mono gap-2">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <span className="text-xl sm:text-2xl shrink-0">{spotlightBanner.rewardIcon || '🎰'}</span>
+            <div className="min-w-0">
+              <div className="text-[9px] sm:text-[10px] font-black uppercase text-slate-900 tracking-wider">
+                STAGE SPOTLIGHT WINNER SELECTED!
+              </div>
+              <div className="text-xs sm:text-sm font-heavy truncate text-black">
+                👑 {spotlightBanner.targetName} {spotlightBanner.targetSessionId === sessionId ? '(YOU!)' : ''}
+              </div>
+              {spotlightBanner.rewardPerk && (
+                <div className="text-[10px] font-black text-slate-900 truncate">
+                  🎁 Perk: {spotlightBanner.rewardPerk}
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setSpotlightBanner(null)}
+            className="p-1 bg-black text-white hover:bg-neo-pink border border-black cursor-pointer shrink-0"
+            title="Dismiss notification"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Floating Promotion Toast Notification */}
       {promotionToast && (
@@ -276,6 +397,10 @@ export function App() {
                 hasNextQuestion={hasNextQuestion}
                 onViewScores={() => setActiveTab('leaderboard')}
                 isHost={userRole === 'host'}
+                powerUpInventory={powerUpInventory}
+                activePowerUp={activePowerUp}
+                eliminatedOptionIds={eliminatedOptionIds}
+                onActivatePowerUp={activatePowerUp}
               />
             </div>
 
@@ -336,7 +461,11 @@ export function App() {
         {/* TAB 4: Leaderboard Podium */}
         {activeTab === 'leaderboard' && (
           <div className="flex-1 flex flex-col overflow-y-auto">
-            <LeaderboardPodium leaderboard={leaderboard} />
+            <LeaderboardPodium
+              leaderboard={leaderboard}
+              currentUserSessionId={sessionId}
+              onExportCard={handleOpenSocialCard}
+            />
           </div>
         )}
 
@@ -474,6 +603,7 @@ export function App() {
         isOpen={isActiveAttendeesModalOpen}
         onClose={() => setIsActiveAttendeesModalOpen(false)}
         attendees={attendees}
+        leaderboard={leaderboard}
         currentSessionId={sessionId}
         isHost={userRole === 'host'}
         roomCode={room.code}
@@ -500,6 +630,33 @@ export function App() {
         leaderboard={leaderboard}
         onOpenAISettings={() => setIsAISettingsModalOpen(true)}
       />
+
+      {/* Host Attendee Spotlight Roulette Wheel Modal */}
+      <SpotlightRouletteModal
+        isOpen={isSpotlightModalOpen}
+        onClose={() => setIsSpotlightModalOpen(false)}
+        attendees={attendees}
+        leaderboard={leaderboard}
+        currentUserName={userName}
+        onSelectWinner={handleSelectSpotlightWinner}
+      />
+
+      {/* Realtime Spotlight Winner Celebration Modal (Shown on Winner screen) */}
+      <SpotlightCelebrationModal
+        isOpen={isSpotlightCelebrationOpen}
+        onClose={() => setIsSpotlightCelebrationOpen(false)}
+        winner={celebrationWinner}
+        isMe={celebrationWinner?.targetSessionId === sessionId}
+      />
+
+      {/* Champion High-DPI Social Card Export Modal */}
+      {socialCardData && (
+        <ChampionSocialCardModal
+          isOpen={isSocialCardModalOpen}
+          onClose={() => setIsSocialCardModalOpen(false)}
+          cardData={socialCardData}
+        />
+      )}
     </div>
   );
 }

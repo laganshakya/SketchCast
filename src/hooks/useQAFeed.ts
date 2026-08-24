@@ -15,12 +15,14 @@ export function useQAFeed({
   userName,
   userRole,
   roomCode,
+  appActiveTab,
 }: {
   channelManager: RealtimeChannelManager | null;
   sessionId: string;
   userName: string;
   userRole: 'host' | 'attendee';
   roomCode: string;
+  appActiveTab?: string;
 }) {
   const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
   const qaTabKey = `sketchcast_qa_active_tab_${currentRoomKey}`;
@@ -28,8 +30,10 @@ export function useQAFeed({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      const primary = localStorage.getItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`);
+      if (primary) return new Set(JSON.parse(primary));
+      const fallback = localStorage.getItem(`sketchcast_upvotes_name_${encodeURIComponent(userName)}_${currentRoomKey}`);
+      return fallback ? new Set(JSON.parse(fallback)) : new Set();
     } catch {
       return new Set();
     }
@@ -67,8 +71,7 @@ export function useQAFeed({
     }
   }, [hostPointsKey]);
 
-  // Load from Supabase DB on initialization & roomCode change
-  useEffect(() => {
+  const syncQuestionsFromDB = useCallback(() => {
     dbFetchQuestions(currentRoomKey).then((remoteQuestions) => {
       if (remoteQuestions) {
         const storedPoints = getStoredPoints();
@@ -81,6 +84,11 @@ export function useQAFeed({
       }
     });
   }, [currentRoomKey, getStoredPoints]);
+
+  // Load from Supabase DB on initialization, roomCode change, and tab switch to 'qa'
+  useEffect(() => {
+    syncQuestionsFromDB();
+  }, [currentRoomKey, appActiveTab, syncQuestionsFromDB]);
 
   // Realtime synchronization
   useEffect(() => {
@@ -111,11 +119,13 @@ export function useQAFeed({
   const persistUpvotes = useCallback((ids: Set<string>) => {
     setUpvotedIds(ids);
     try {
-      localStorage.setItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`, JSON.stringify(Array.from(ids)));
+      const arr = JSON.stringify(Array.from(ids));
+      localStorage.setItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`, arr);
+      localStorage.setItem(`sketchcast_upvotes_name_${encodeURIComponent(userName)}_${currentRoomKey}`, arr);
     } catch {
       // ignore
     }
-  }, [sessionId, currentRoomKey]);
+  }, [sessionId, userName, currentRoomKey]);
 
   const toggleUpvote = useCallback(
     (questionId: string) => {

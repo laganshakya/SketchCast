@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js';
-import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room } from '../types';
+import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
@@ -326,6 +326,20 @@ export async function dbUpdateQuizVotes(roundId: string, votesDistribution: Reco
   }
 }
 
+export async function dbIncrementQuizVote(roundId: string, optionId: string): Promise<Record<string, number> | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('increment_quiz_vote', {
+      p_round_id: roundId,
+      p_option_id: optionId,
+    });
+    if (error || !data) return null;
+    return data as Record<string, number>;
+  } catch {
+    return null;
+  }
+}
+
 // ================= QUESTIONS =================
 export async function dbFetchQuestions(roomId: string): Promise<Question[]> {
   if (!supabase) return [];
@@ -491,7 +505,27 @@ export async function dbFetchLeaderboard(roomId: string): Promise<LeaderboardEnt
       .order('score', { ascending: false });
 
     if (error || !data) return [];
-    return data as LeaderboardEntry[];
+
+    // Deduplicate any rows by lowercase user name per room
+    const seen = new Set<string>();
+    const deduplicated: LeaderboardEntry[] = [];
+    data.forEach((row: any) => {
+      const nameKey = (row.name || '').trim().toLowerCase();
+      if (nameKey && !seen.has(nameKey)) {
+        seen.add(nameKey);
+        deduplicated.push({
+          session_id: row.session_id,
+          name: row.name,
+          score: row.score || 0,
+          correct_quizzes: row.correct_quizzes || 0,
+          polls_voted: row.polls_voted || 0,
+          streak: row.streak || 0,
+          avatar_color: row.avatar_color || '#FF2A6D',
+        });
+      }
+    });
+
+    return deduplicated;
   } catch {
     return [];
   }
@@ -501,10 +535,24 @@ export async function dbUpsertLeaderboardEntry(entry: LeaderboardEntry, roomId: 
   if (!supabase) return;
   try {
     const targetKey = roomId.toUpperCase().trim();
+    const cleanName = entry.name.trim();
+
+    // Check if an existing row with this name exists in this room
+    const { data: existingRows } = await supabase
+      .from('leaderboard')
+      .select('session_id')
+      .eq('room_id', targetKey)
+      .ilike('name', cleanName)
+      .limit(1);
+
+    const targetSessionId = (existingRows && existingRows.length > 0)
+      ? existingRows[0].session_id
+      : entry.session_id;
+
     await supabase.from('leaderboard').upsert({
-      session_id: entry.session_id,
+      session_id: targetSessionId,
       room_id: targetKey,
-      name: entry.name,
+      name: cleanName,
       score: entry.score,
       correct_quizzes: entry.correct_quizzes,
       polls_voted: entry.polls_voted,
@@ -517,26 +565,77 @@ export async function dbUpsertLeaderboardEntry(entry: LeaderboardEntry, roomId: 
   }
 }
 
-// ================= STORAGE BUCKET HELPERS =================
-export async function uploadAsset(file: File, path?: string): Promise<string | null> {
-  if (!supabase) return null;
+// ================= LIVE ROOM ATTENDEES PRESENCE =================
+export async function dbUpsertAttendeePresence(
+  roomCode: string,
+  sessionId: string,
+  userName: string,
+  userRole: 'host' | 'attendee' = 'attendee'
+) {
+  if (!supabase) return;
   try {
-    const filePath = path || `uploads/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-    const { error } = await supabase.storage
-      .from('sketchcast-assets')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
-    if (error) return null;
-
-    const { data } = supabase.storage
-      .from('sketchcast-assets')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
+    const code = roomCode.toUpperCase().trim();
+    await supabase.from('room_attendees').upsert({
+      id: sessionId,
+      room_code: code,
+      user_name: userName,
+      user_role: userRole,
+      last_active: new Date().toISOString(),
+    });
   } catch {
-    return null;
+    // silent catch
+  }
+}
+
+export async function dbFetchActiveRoomAttendees(
+  roomCode: string,
+  thresholdSeconds: number = 20
+): Promise<AttendeePresence[]> {
+  if (!supabase) return [];
+  try {
+    const code = roomCode.toUpperCase().trim();
+    const cutoffTime = new Date(Date.now() - thresholdSeconds * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from('room_attendees')
+      .select('*')
+      .eq('room_code', code)
+      .gte('last_active', cutoffTime)
+      .order('last_active', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((row: any) => ({
+      session_id: row.id,
+      name: row.user_name || 'Attendee',
+      role: row.user_role || 'attendee',
+      joined_at: row.joined_at ? new Date(row.joined_at).getTime() : Date.now(),
+      last_active: row.last_active ? new Date(row.last_active).getTime() : Date.now(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function dbRemoveAttendeePresence(sessionId: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from('room_attendees').delete().eq('id', sessionId);
+  } catch {
+    // silent catch
+  }
+}
+
+export async function dbCleanupStaleAttendees(roomCode?: string) {
+  if (!supabase) return;
+  try {
+    const cutoffTime = new Date(Date.now() - 3 * 60 * 1000).toISOString(); // 3 minutes
+    let query = supabase.from('room_attendees').delete().lt('last_active', cutoffTime);
+    if (roomCode) {
+      query = query.eq('room_code', roomCode.toUpperCase().trim());
+    }
+    await query;
+  } catch {
+    // silent catch
   }
 }

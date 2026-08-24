@@ -105,3 +105,65 @@ export interface AttendeePresence {
   joined_at: number;
   last_active: number;
 }
+
+// --- Gamification & Power-Ups ---
+export type PowerUpType = '50-50' | 'double-down' | 'streak-shield' | 'time-freeze';
+
+export interface PowerUpInventory {
+  '50-50': number;
+  'double-down': number;
+  'streak-shield': number;
+  'time-freeze': number;
+}
+
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface AchievementBadge {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  rarity: BadgeRarity;
+  unlockedAt?: number;
+}
+
+export type BadgeType =
+  | 'speed_demon'
+  | 'on_fire'
+  | 'podium_champ'
+  | 'democracy_hero'
+  | 'flawless_architect'
+  | 'keynote_influencer'
+  | 'spotlight_star'
+  | 'tactician';
+
+export interface SpotlightRewardPerk {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  color: string;
+}
+
+export interface SpotlightWinner {
+  targetSessionId: string;
+  targetName: string;
+  spunBy: string;
+  rewardPerk?: string;
+  rewardIcon?: string;
+  rewardDesc?: string;
+  timestamp: number;
+}
+
+export interface ChampionSocialCardData {
+  playerName: string;
+  rank: number;
+  score: number;
+  correctQuizzes: number;
+  totalQuizzes: number;
+  pollsVoted: number;
+  maxStreak: number;
+  roomCode: string;
+  roomTitle?: string;
+  badges: { icon: string; name: string; desc: string; rarity?: BadgeRarity }[];
+}

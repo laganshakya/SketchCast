@@ -7,11 +7,13 @@ import {
   HelpCircle,
   ArrowRight,
   Eye,
+  Trophy,
   Flame,
-  Terminal,
-  Trophy
+  Clock,
+  Shield,
 } from 'lucide-react';
-import type { QuizRoundState } from '../../types';
+import type { QuizRoundState, PowerUpType, PowerUpInventory } from '../../types';
+import { QuizPowerUpsBar } from './QuizPowerUpsBar';
 
 interface QuizArenaProps {
   quizState: QuizRoundState;
@@ -23,6 +25,10 @@ interface QuizArenaProps {
   hasNextQuestion?: boolean;
   onViewScores?: () => void;
   isHost: boolean;
+  powerUpInventory?: PowerUpInventory;
+  activePowerUp?: PowerUpType | null;
+  eliminatedOptionIds?: string[];
+  onActivatePowerUp?: (type: PowerUpType) => void;
 }
 
 export const QuizArena: React.FC<QuizArenaProps> = ({
@@ -35,6 +41,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   hasNextQuestion = false,
   onViewScores,
   isHost,
+  powerUpInventory,
+  activePowerUp = null,
+  eliminatedOptionIds = [],
+  onActivatePowerUp,
 }) => {
   const { question, isRevealed, userSelectedOption, isCorrect, pointsEarned, votesDistribution } = quizState;
 
@@ -61,6 +71,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const getOptionButtonClass = (optionId: string) => {
     const isSelected = userSelectedOption === optionId;
     const isAnswer = question.correctOptionId === optionId;
+    const isEliminated = eliminatedOptionIds.includes(optionId);
 
     if (isRevealed) {
       if (isAnswer) {
@@ -72,6 +83,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       return 'bg-neo-card text-slate-500 border-2 border-slate-800 opacity-60';
     }
 
+    if (isEliminated) {
+      return 'bg-black/40 text-slate-600 border-2 border-red-900/40 opacity-40 cursor-not-allowed line-through';
+    }
+
     if (isSelected) {
       return 'bg-neo-yellow text-black border-2 border-black brutal-shadow-yellow font-bold translate-x-px translate-y-px';
     }
@@ -80,6 +95,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   };
 
   const getOptionBadgeColor = (optionId: string) => {
+    if (eliminatedOptionIds.includes(optionId)) {
+      return 'bg-slate-800 text-slate-600 border-slate-700';
+    }
     switch (optionId) {
       case 'A':
         return 'bg-neo-orange text-black';
@@ -97,7 +115,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const timerPercentage = Math.max(0, (timeRemaining / (quizState.totalSeconds || 25)) * 100);
 
   return (
-    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans">
+    <div className={`flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans ${
+      activePowerUp === 'double-down'
+        ? 'ring-4 ring-neo-orange/80 rounded-sm'
+        : activePowerUp === 'streak-shield'
+        ? 'ring-4 ring-neo-purple/80 rounded-sm'
+        : activePowerUp === 'time-freeze'
+        ? 'ring-4 ring-neo-mint/80 rounded-sm'
+        : ''
+    }`}>
       {/* Retro Window Top Frame Bar */}
       <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 min-w-0">
@@ -107,14 +133,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-mint border border-black" />
           </div>
           <span className="font-mono text-[11px] sm:text-xs font-bold text-slate-400 flex items-center gap-1 pl-1 sm:pl-2 truncate">
-            <Terminal className="w-3 h-3 text-neo-yellow shrink-0" />
-            <span className="truncate">SYS_ARENA // {question.category.toUpperCase().replace(/\s+/g, '_')}</span>
+            <span className="text-neo-yellow">SYS_ARENA //</span>
+            <span className="truncate">{question.category.toUpperCase().replace(/\s+/g, '_')}</span>
           </span>
         </div>
 
-        <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono shrink-0">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono shrink-0 flex-wrap">
+          {/* Active Power-Up Buff Badge */}
+          {activePowerUp === 'double-down' && (
+            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-orange text-black text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1 animate-pulse">
+              <Flame className="w-3 h-3 fill-black" />
+              <span>2X DOUBLE ACTIVE!</span>
+            </div>
+          )}
+          {activePowerUp === 'streak-shield' && (
+            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-purple text-white text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1">
+              <Shield className="w-3 h-3" />
+              <span>SHIELD ACTIVE</span>
+            </div>
+          )}
+          {activePowerUp === 'time-freeze' && (
+            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-mint text-black text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>FROZEN +5S</span>
+            </div>
+          )}
+
           {userStreak > 0 && (
-            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-orange text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
+            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-yellow text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
               <Flame className="w-3 h-3 fill-black" />
               <span>{userStreak}X STREAK</span>
             </div>
@@ -165,13 +211,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
           const isSelected = userSelectedOption === option.id;
           const isAnswer = question.correctOptionId === option.id;
+          const isEliminated = eliminatedOptionIds.includes(option.id);
 
           return (
             <button
               key={option.id}
               onClick={() => onSelectOption(option.id)}
-              disabled={isRevealed || userSelectedOption !== null}
-              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-19 sm:min-h-24 cursor-pointer active:translate-x-px active:translate-y-px ${getOptionButtonClass(
+              disabled={isRevealed || userSelectedOption !== null || isEliminated}
+              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-19 sm:min-h-24 ${
+                isEliminated ? 'cursor-not-allowed' : 'cursor-pointer active:translate-x-px active:translate-y-px'
+              } ${getOptionButtonClass(
                 option.id
               )}`}
             >
@@ -194,11 +243,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   >
                     {option.id}
                   </span>
-                  <span className="text-xs sm:text-sm font-bold leading-snug tracking-tight font-display">
+                  <span className={`text-xs sm:text-sm font-bold leading-snug tracking-tight font-display ${
+                    isEliminated ? 'line-through text-slate-500' : ''
+                  }`}>
                     {option.text}
                   </span>
                 </div>
 
+                {isEliminated && (
+                  <span className="px-1.5 py-0.5 bg-red-950 text-red-400 border border-red-800 font-mono text-[9px] font-black uppercase shrink-0">
+                    PRUNED
+                  </span>
+                )}
                 {isRevealed && isAnswer && (
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-black stroke-3 shrink-0" />
                 )}
@@ -218,6 +274,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           );
         })}
       </div>
+
+      {/* Tactical Quiz Power-Ups Dock (Attendees only) */}
+      {!isHost && powerUpInventory && onActivatePowerUp && (
+        <QuizPowerUpsBar
+          inventory={powerUpInventory}
+          activePowerUp={activePowerUp}
+          onActivate={onActivatePowerUp}
+          disabled={!quizState.isActive || quizState.isRevealed || userSelectedOption !== null}
+          userStreak={userStreak}
+        />
+      )}
 
       {/* Retro Result & Architecture Takeaway Card */}
       {isRevealed && (

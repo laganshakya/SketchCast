@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw } from 'lucide-react';
-import type { AttendeePresence, Room } from '../../types';
+import type { AttendeePresence, Room, LeaderboardEntry } from '../../types';
 import { isUserRoomAdmin } from '../../lib/supabase';
+import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
 
 interface ActiveAttendeesModalProps {
   isOpen: boolean;
   onClose: () => void;
   attendees: AttendeePresence[];
+  leaderboard?: LeaderboardEntry[];
   currentSessionId: string;
   isHost: boolean;
   roomCode: string;
@@ -20,6 +22,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   isOpen,
   onClose,
   attendees,
+  leaderboard = [],
   currentSessionId,
   isHost,
   roomCode,
@@ -137,6 +140,17 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             const isMemberAdmin = isAttendeeAdmin(attendee);
             const isOwner = isAttendeeOwner(attendee);
 
+            const lbEntryIndex = (leaderboard || []).findIndex((e) => e.session_id === attendee.session_id);
+            const lbEntry = lbEntryIndex >= 0 ? leaderboard![lbEntryIndex] : null;
+            const attendeeBadges = lbEntry
+              ? calculateUserBadges({
+                  correctQuizzes: lbEntry.correct_quizzes,
+                  streak: lbEntry.streak,
+                  rank: lbEntryIndex + 1,
+                  pollsVoted: lbEntry.polls_voted,
+                })
+              : [];
+
             return (
               <div
                 key={attendee.session_id}
@@ -156,7 +170,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap gap-y-0.5">
                       <span className="text-xs font-black text-black truncate max-w-32.5 sm:max-w-none">
                         {attendee.name}
                       </span>
@@ -165,6 +179,19 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                           YOU
                         </span>
                       )}
+                      {attendeeBadges.slice(0, 2).map((badge) => {
+                        const style = getRarityBadgeStyle(badge.rarity);
+                        return (
+                          <span
+                            key={badge.id}
+                            className={`flex items-center space-x-0.5 text-[8px] font-mono font-black uppercase px-1 py-0.2 border ${style.bg} ${style.text} ${style.border} shrink-0`}
+                            title={`${badge.name}: ${badge.desc}`}
+                          >
+                            <span>{badge.icon}</span>
+                            <span>{badge.name}</span>
+                          </span>
+                        );
+                      })}
                     </div>
                     <div className="flex items-center space-x-1.5 sm:space-x-2 text-[9px] sm:text-[10px] text-slate-500 font-bold mt-0.5 flex-wrap">
                       <span
@@ -178,6 +205,11 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                       >
                         {isOwner ? '👑 HOST OWNER' : isMemberAdmin ? '👑 CO-ADMIN' : 'ATTENDEE'}
                       </span>
+                      {lbEntry && (
+                        <span className="text-black font-mono font-black bg-neo-yellow/30 px-1 border border-black text-[9px]">
+                          {lbEntry.score} PTS
+                        </span>
+                      )}
                       <span className="shrink-0">ACTIVE NOW</span>
                     </div>
                   </div>

@@ -18,7 +18,8 @@ import {
   FileText,
   X,
   Bot,
-  Settings
+  Settings,
+  RotateCw,
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -40,6 +41,7 @@ interface AppHeaderProps {
   onOpenActiveAttendees?: () => void;
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
+  onOpenSpotlightRoulette?: () => void;
   onSignOut: () => void;
   currentUser: SupabaseUser | null;
 }
@@ -59,6 +61,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenActiveAttendees,
   onOpenAISettings,
   onOpenAISummary,
+  onOpenSpotlightRoulette,
   onSignOut,
   currentUser,
 }) => {
@@ -282,6 +285,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   <span className="hidden lg:inline">REPORT</span>
                 </button>
               )}
+
+              {onOpenSpotlightRoulette && (
+                <button
+                  onClick={onOpenSpotlightRoulette}
+                  className="h-8 px-2 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+                  title="Spin Attendee Spotlight Roulette Wheel"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span className="hidden lg:inline">ROULETTE</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -428,6 +442,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     >
                       <FileText className="w-4 h-4 shrink-0" />
                       <span>MASTERCLASS REPORT</span>
+                    </button>
+                  )}
+
+                  {onOpenSpotlightRoulette && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onOpenSpotlightRoulette();
+                      }}
+                      className="w-full py-2 px-2.5 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    >
+                      <RotateCw className="w-4 h-4 shrink-0" />
+                      <span>SPOTLIGHT ROULETTE WHEEL</span>
                     </button>
                   )}
                 </div>

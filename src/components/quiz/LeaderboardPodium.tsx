@@ -1,15 +1,20 @@
 import React from 'react';
-import { Trophy, Medal, Crown, Flame, CheckCircle, Vote } from 'lucide-react';
+import { Trophy, Medal, Crown, CheckCircle, Vote, Share2 } from 'lucide-react';
 import type { LeaderboardEntry } from '../../types';
+import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
 
 interface LeaderboardPodiumProps {
   leaderboard: LeaderboardEntry[];
   compact?: boolean;
+  currentUserSessionId?: string;
+  onExportCard?: (entry: LeaderboardEntry, rank: number) => void;
 }
 
 export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
   leaderboard,
   compact = false,
+  currentUserSessionId,
+  onExportCard,
 }) => {
   const top3 = leaderboard.slice(0, 3);
 
@@ -42,6 +47,9 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
     );
   };
 
+  const myEntryIndex = leaderboard.findIndex((e) => e.session_id === currentUserSessionId);
+  const myEntry = myEntryIndex >= 0 ? leaderboard[myEntryIndex] : leaderboard[0];
+
   return (
     <div className="flex flex-col max-w-4xl mx-auto w-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans mb-24 md:mb-6">
       {/* Header */}
@@ -56,9 +64,24 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
             </h3>
           </div>
         </div>
-        <span className="text-[10px] sm:text-xs font-mono font-black text-black bg-neo-mint px-2 sm:px-2.5 py-0.5 sm:py-1 border-2 border-black brutal-shadow-sm uppercase shrink-0">
-          {leaderboard.length} PLAYERS
-        </span>
+
+        <div className="flex items-center space-x-2">
+          {onExportCard && myEntry && (
+            <button
+              type="button"
+              onClick={() => onExportCard(myEntry, (myEntryIndex >= 0 ? myEntryIndex : 0) + 1)}
+              className="px-2.5 py-1 bg-neo-cyan hover:bg-[#33F3FF] text-black font-mono text-[10px] sm:text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer active:translate-x-px active:translate-y-px transition-all"
+              title="Export Champion Social Card (1200x630)"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>EXPORT SOCIAL CARD</span>
+            </button>
+          )}
+
+          <span className="text-[10px] sm:text-xs font-mono font-black text-black bg-neo-mint px-2 sm:px-2.5 py-0.5 sm:py-1 border-2 border-black brutal-shadow-sm uppercase shrink-0">
+            {leaderboard.length} PLAYERS
+          </span>
+        </div>
       </div>
 
       {/* Top 3 Visual Neo-Brutalist Podium */}
@@ -129,41 +152,81 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
             No player scores yet. Vote in polls and quizzes to climb the leaderboard!
           </div>
         ) : (
-          leaderboard.map((entry, index) => (
-            <div
-              key={entry.session_id}
-              className="flex items-center justify-between p-2 sm:p-3 bg-[#161924] hover:bg-[#1C202E] border-2 border-black brutal-shadow-sm transition-all gap-2"
-            >
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                {getRankBadge(index)}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap gap-y-0.5">
-                    <span className="text-[11px] sm:text-xs font-bold text-white truncate uppercase font-display max-w-30 xs:max-w-44 sm:max-w-none">
-                      {entry.name}
-                    </span>
-                    {entry.streak > 1 && (
-                      <span className="flex items-center text-[8px] xs:text-[9px] sm:text-[10px] font-black text-black bg-neo-orange px-1 sm:px-1.5 py-0.2 border border-black shrink-0">
-                        <Flame className="w-2.5 h-2.5 fill-black" /> {entry.streak}X
+          leaderboard.map((entry, index) => {
+            const isMe = entry.session_id === currentUserSessionId;
+            const rank = index + 1;
+            const badges = calculateUserBadges({
+              correctQuizzes: entry.correct_quizzes,
+              streak: entry.streak,
+              rank,
+              pollsVoted: entry.polls_voted,
+            });
+
+            return (
+              <div
+                key={entry.session_id}
+                className={`flex items-center justify-between p-2 sm:p-3 border-2 border-black brutal-shadow-sm transition-all gap-2 ${
+                  isMe ? 'bg-[#22283A] ring-2 ring-neo-yellow' : 'bg-[#161924] hover:bg-[#1C202E]'
+                }`}
+              >
+                <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                  {getRankBadge(index)}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 flex-wrap gap-y-1">
+                      <span className="text-[11px] sm:text-xs font-bold text-white truncate uppercase font-display max-w-30 xs:max-w-44 sm:max-w-none">
+                        {entry.name}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-1.5 xs:space-x-2 text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 mt-0.5 flex-wrap">
-                    <span className="flex items-center gap-0.5 font-bold">
-                      <CheckCircle className="w-2.5 h-2.5 text-neo-mint" /> {entry.correct_quizzes} QUIZZES
-                    </span>
-                    <span className="hidden xs:inline">•</span>
-                    <span className="flex items-center gap-0.5 font-bold">
-                      <Vote className="w-2.5 h-2.5 text-neo-cyan" /> {entry.polls_voted} POLLS
-                    </span>
+                      {isMe && (
+                        <span className="px-1 py-0.2 bg-neo-yellow text-black text-[8px] sm:text-[9px] font-black uppercase border border-black">
+                          YOU
+                        </span>
+                      )}
+                      {/* Dynamic Badges with Rarity Styling */}
+                      {badges.slice(0, 3).map((badge) => {
+                        const style = getRarityBadgeStyle(badge.rarity);
+                        return (
+                          <span
+                            key={badge.id}
+                            className={`flex items-center space-x-0.5 text-[8px] xs:text-[9px] font-mono font-black uppercase px-1 sm:px-1.5 py-0.2 border ${style.bg} ${style.text} ${style.border} ${style.glow} shrink-0 cursor-help`}
+                            title={`${badge.name}: ${badge.desc}`}
+                          >
+                            <span>{badge.icon}</span>
+                            <span>{badge.name}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center space-x-1.5 xs:space-x-2 text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 mt-0.5 flex-wrap">
+                      <span className="flex items-center gap-0.5 font-bold">
+                        <CheckCircle className="w-2.5 h-2.5 text-neo-mint" /> {entry.correct_quizzes} QUIZZES
+                      </span>
+                      <span className="hidden xs:inline">•</span>
+                      <span className="flex items-center gap-0.5 font-bold">
+                        <Vote className="w-2.5 h-2.5 text-neo-cyan" /> {entry.polls_voted} POLLS
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="text-right shrink-0">
-                <span className="text-[11px] sm:text-xs md:text-sm font-mono font-black text-neo-yellow">{entry.score} PTS</span>
+                <div className="flex items-center space-x-2 shrink-0">
+                  <div className="text-right">
+                    <span className="text-[11px] sm:text-xs md:text-sm font-mono font-black text-neo-yellow">{entry.score} PTS</span>
+                  </div>
+
+                  {onExportCard && (
+                    <button
+                      type="button"
+                      onClick={() => onExportCard(entry, index + 1)}
+                      className="p-1 sm:p-1.5 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-300 border border-black text-[10px] font-mono cursor-pointer transition-all"
+                      title="Export Champion Card"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

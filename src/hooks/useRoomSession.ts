@@ -14,9 +14,13 @@ const ROOM_CODE_KEY = 'sketchcast_room_code';
 
 export function getOrCreateSessionId(): string {
   if (typeof window !== 'undefined') {
-    let id = sessionStorage.getItem(SESSION_KEY);
+    let id = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     if (!id) {
       id = 'user_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+      localStorage.setItem(SESSION_KEY, id);
+      sessionStorage.setItem(SESSION_KEY, id);
+    } else {
+      localStorage.setItem(SESSION_KEY, id);
       sessionStorage.setItem(SESSION_KEY, id);
     }
     return id;

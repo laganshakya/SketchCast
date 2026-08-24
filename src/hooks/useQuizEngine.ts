@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import type { QuizQuestion, QuizRoundState, LeaderboardEntry } from '../types';
+import type { QuizQuestion, QuizRoundState, LeaderboardEntry, PowerUpType, PowerUpInventory } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
+import { playPowerUpSound } from '../lib/soundFx';
 import {
   dbFetchLeaderboard,
   dbUpsertLeaderboardEntry,
   dbFetchActiveQuizRound,
   dbSaveActiveQuizRound,
   dbUpdateQuizRoundReveal,
-  dbUpdateQuizVotes,
+  dbIncrementQuizVote,
 } from '../lib/supabase';
 
 export function useQuizEngine({
@@ -17,15 +18,36 @@ export function useQuizEngine({
   userName,
   userRole,
   roomCode,
+  appActiveTab,
 }: {
   channelManager: RealtimeChannelManager | null;
   sessionId: string;
   userName: string;
   userRole: 'host' | 'attendee';
   roomCode: string;
+  appActiveTab?: string;
 }) {
   const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
   const quizStorageKey = `sketchcast_active_quiz_round_${currentRoomKey}`;
+  const powerUpsStorageKey = `sketchcast_powerups_${currentRoomKey}_${sessionId}`;
+
+  const [powerUpInventory, setPowerUpInventory] = useState<PowerUpInventory>(() => {
+    try {
+      const stored = localStorage.getItem(powerUpsStorageKey);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // ignore
+    }
+    return { '50-50': 1, 'double-down': 1, 'streak-shield': 1, 'time-freeze': 1 };
+  });
+
+  const [activePowerUp, setActivePowerUp] = useState<PowerUpType | null>(null);
+  const [eliminatedOptionIds, setEliminatedOptionIds] = useState<string[]>([]);
+  const isTimeFrozenRef = useRef<boolean>(false);
+  const freezeTimeoutRef = useRef<number | null>(null);
+  const votedUsersRef = useRef<Set<string>>(new Set());
 
   const [quizState, setQuizState] = useState<QuizRoundState>(() => {
     try {
@@ -56,8 +78,7 @@ export function useQuizEngine({
 
   const timerRef = useRef<number | null>(null);
 
-  // Load from Supabase DB on mount & when roomCode changes
-  useEffect(() => {
+  const syncQuizAndLeaderboardFromDB = useCallback(() => {
     // 1. Leaderboard
     dbFetchLeaderboard(currentRoomKey).then((remoteBoard) => {
       if (remoteBoard) {
@@ -68,14 +89,23 @@ export function useQuizEngine({
     // 2. Active Quiz Round from Supabase for this room
     dbFetchActiveQuizRound(currentRoomKey).then((remoteRound) => {
       if (remoteRound && remoteRound.question) {
-        setQuizState((prev) => ({
-          ...remoteRound,
-          userSelectedOption: prev.question?.id === remoteRound.question?.id ? prev.userSelectedOption : null,
-          isCorrect: prev.question?.id === remoteRound.question?.id ? prev.isCorrect : null,
-          pointsEarned: prev.question?.id === remoteRound.question?.id ? prev.pointsEarned : 0,
-        }));
+        setQuizState((prev) => {
+          const mergedVotes = {
+            A: Math.max(prev.votesDistribution?.A || 0, remoteRound.votesDistribution?.A || 0),
+            B: Math.max(prev.votesDistribution?.B || 0, remoteRound.votesDistribution?.B || 0),
+            C: Math.max(prev.votesDistribution?.C || 0, remoteRound.votesDistribution?.C || 0),
+            D: Math.max(prev.votesDistribution?.D || 0, remoteRound.votesDistribution?.D || 0),
+          };
+          return {
+            ...remoteRound,
+            userSelectedOption: prev.question?.id === remoteRound.question?.id ? prev.userSelectedOption : null,
+            isCorrect: prev.question?.id === remoteRound.question?.id ? prev.isCorrect : null,
+            pointsEarned: prev.question?.id === remoteRound.question?.id ? prev.pointsEarned : 0,
+            votesDistribution: mergedVotes,
+          };
+        });
 
-        if (remoteRound.endTime) {
+        if (remoteRound.endTime && !isTimeFrozenRef.current) {
           const remaining = Math.max(0, Math.ceil((remoteRound.endTime - Date.now()) / 1000));
           setTimeRemaining(remaining);
         }
@@ -95,6 +125,11 @@ export function useQuizEngine({
     });
   }, [currentRoomKey]);
 
+  // Load from Supabase DB on mount, when roomCode changes, or when active tab switches to quiz/leaderboard
+  useEffect(() => {
+    syncQuizAndLeaderboardFromDB();
+  }, [currentRoomKey, appActiveTab, syncQuizAndLeaderboardFromDB]);
+
   // Sync state from realtime channel
   useEffect(() => {
     if (!channelManager) return;
@@ -109,11 +144,28 @@ export function useQuizEngine({
           return prev;
         }
 
+        // Reset power-ups if this is a new question round
+        if (prev.question?.id !== remoteState.question?.id) {
+          setActivePowerUp(null);
+          setEliminatedOptionIds([]);
+          isTimeFrozenRef.current = false;
+          if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
+          votedUsersRef.current.clear();
+        }
+
+        const mergedVotes = {
+          A: Math.max(prev.votesDistribution?.A || 0, remoteState.votesDistribution?.A || 0),
+          B: Math.max(prev.votesDistribution?.B || 0, remoteState.votesDistribution?.B || 0),
+          C: Math.max(prev.votesDistribution?.C || 0, remoteState.votesDistribution?.C || 0),
+          D: Math.max(prev.votesDistribution?.D || 0, remoteState.votesDistribution?.D || 0),
+        };
+
         const next = {
           ...remoteState,
           userSelectedOption: prev.question?.id === remoteState.question?.id ? prev.userSelectedOption : null,
           isCorrect: prev.question?.id === remoteState.question?.id ? prev.isCorrect : null,
           pointsEarned: prev.question?.id === remoteState.question?.id ? prev.pointsEarned : 0,
+          votesDistribution: mergedVotes,
         };
 
         try {
@@ -122,7 +174,7 @@ export function useQuizEngine({
           // ignore
         }
 
-        if (next.endTime) {
+        if (next.endTime && !isTimeFrozenRef.current) {
           const remaining = Math.max(0, Math.ceil((next.endTime - Date.now()) / 1000));
           setTimeRemaining(remaining);
         }
@@ -137,7 +189,15 @@ export function useQuizEngine({
       }
     });
 
-    const unQuizVote = channelManager.on('quiz_vote', ({ optionId }) => {
+    const unQuizVote = channelManager.on('quiz_vote', ({ optionId, userId }) => {
+      // Prevent double-counting the same user's vote
+      if (userId && votedUsersRef.current.has(userId)) {
+        return;
+      }
+      if (userId) {
+        votedUsersRef.current.add(userId);
+      }
+
       setQuizState((prev) => {
         const nextVotes = {
           ...prev.votesDistribution,
@@ -190,16 +250,21 @@ export function useQuizEngine({
     });
   }, [channelManager, quizStorageKey]);
 
-  // Round countdown timer loop
+  // Round countdown timer loop - strictly attendee-local timing
   useEffect(() => {
     if (quizState.isActive && quizState.endTime && !quizState.isRevealed) {
       const updateTimer = () => {
+        // If this specific attendee used Time Freeze, their local countdown is frozen
+        if (isTimeFrozenRef.current) return;
         const remaining = Math.max(0, Math.ceil((quizState.endTime! - Date.now()) / 1000));
         setTimeRemaining(remaining);
 
         if (remaining === 0) {
           if (timerRef.current) clearInterval(timerRef.current);
-          revealAnswer();
+          // ONLY HOST auto-reveals question for the room on timer expiration
+          if (userRole === 'host') {
+            revealAnswer();
+          }
         }
       };
 
@@ -210,7 +275,7 @@ export function useQuizEngine({
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer]);
+  }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer, userRole]);
 
   const triggerConfetti = () => {
     try {
@@ -225,10 +290,78 @@ export function useQuizEngine({
     }
   };
 
+  const activatePowerUp = useCallback(
+    (type: PowerUpType) => {
+      if (
+        !quizState.isActive ||
+        quizState.isRevealed ||
+        quizState.userSelectedOption ||
+        (powerUpInventory[type] || 0) <= 0 ||
+        activePowerUp === type
+      ) {
+        return;
+      }
+
+      // Deduct inventory
+      const nextInventory = {
+        ...powerUpInventory,
+        [type]: Math.max(0, (powerUpInventory[type] || 0) - 1),
+      };
+      setPowerUpInventory(nextInventory);
+      try {
+        localStorage.setItem(powerUpsStorageKey, JSON.stringify(nextInventory));
+      } catch {
+        // ignore
+      }
+
+      playPowerUpSound(type);
+
+      if (type === '50-50') {
+        if (quizState.question) {
+          const wrongOpts = quizState.question.options
+            .filter((o) => o.id !== quizState.question!.correctOptionId)
+            .map((o) => o.id);
+          // Randomly pick up to 2 wrong options to prune
+          const shuffled = [...wrongOpts].sort(() => 0.5 - Math.random());
+          const toEliminate = shuffled.slice(0, 2);
+          setEliminatedOptionIds(toEliminate);
+        }
+      } else if (type === 'double-down') {
+        setActivePowerUp('double-down');
+      } else if (type === 'streak-shield') {
+        setActivePowerUp('streak-shield');
+      } else if (type === 'time-freeze') {
+        setActivePowerUp('time-freeze');
+        setTimeRemaining((prev) => prev + 5);
+        isTimeFrozenRef.current = true;
+        if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
+        freezeTimeoutRef.current = window.setTimeout(() => {
+          isTimeFrozenRef.current = false;
+        }, 5000);
+      }
+    },
+    [
+      quizState.isActive,
+      quizState.isRevealed,
+      quizState.userSelectedOption,
+      quizState.question,
+      powerUpInventory,
+      activePowerUp,
+      powerUpsStorageKey,
+    ]
+  );
+
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
       const duration = question.timeLimitSeconds || 25;
       const endTime = Date.now() + duration * 1000;
+
+      // Reset tactical power-up states for new round
+      setActivePowerUp(null);
+      setEliminatedOptionIds([]);
+      isTimeFrozenRef.current = false;
+      if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
+      votedUsersRef.current.clear();
 
       const nextState: QuizRoundState = {
         isActive: true,
@@ -269,14 +402,22 @@ export function useQuizEngine({
         return;
       }
 
+      votedUsersRef.current.add(sessionId);
+
       const isCorrect = quizState.question?.correctOptionId === optionId;
       let points = 0;
 
       if (isCorrect) {
         const timeRatio = Math.max(0.1, timeRemaining / quizState.totalSeconds);
         const streakMultiplier = userStreak >= 3 ? 2.0 : userStreak >= 1 ? 1.5 : 1.0;
-        points = Math.round((100 + timeRatio * 150) * streakMultiplier);
+        let basePoints = Math.round((100 + timeRatio * 150) * streakMultiplier);
 
+        // Apply Double-Down 2x multiplier
+        if (activePowerUp === 'double-down') {
+          basePoints = basePoints * 2;
+        }
+
+        points = basePoints;
         const nextStreak = userStreak + 1;
         setUserStreak(nextStreak);
         triggerConfetti();
@@ -316,7 +457,38 @@ export function useQuizEngine({
           return updatedBoard;
         });
       } else {
-        setUserStreak(0);
+        // Incorrect answer handling
+        if (activePowerUp === 'double-down') {
+          // Double down penalty (-50 pts)
+          points = -50;
+          setLeaderboard((prev) => {
+            const exists = prev.find((u) => u.session_id === sessionId);
+            if (exists) {
+              const updatedEntry = {
+                ...exists,
+                score: Math.max(0, exists.score - 50),
+                streak: 0,
+              };
+              const updatedBoard = prev
+                .map((u) => (u.session_id === sessionId ? updatedEntry : u))
+                .sort((a, b) => b.score - a.score);
+              dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
+              if (channelManager) {
+                channelManager.broadcast('leaderboard_update', updatedBoard);
+              }
+              return updatedBoard;
+            }
+            return prev;
+          });
+        }
+
+        // Streak Shield check
+        if (activePowerUp === 'streak-shield') {
+          // Shield protects the streak!
+          console.log('[PowerUp] Streak Shield protected user streak:', userStreak);
+        } else {
+          setUserStreak(0);
+        }
       }
 
       const updatedVotes = {
@@ -341,7 +513,19 @@ export function useQuizEngine({
       });
 
       if (quizState.question) {
-        dbUpdateQuizVotes(quizState.question.id, updatedVotes);
+        dbIncrementQuizVote(quizState.question.id, optionId).then((serverVotes) => {
+          if (serverVotes) {
+            setQuizState((prev) => ({
+              ...prev,
+              votesDistribution: {
+                A: Math.max(prev.votesDistribution?.A || 0, serverVotes.A || 0),
+                B: Math.max(prev.votesDistribution?.B || 0, serverVotes.B || 0),
+                C: Math.max(prev.votesDistribution?.C || 0, serverVotes.C || 0),
+                D: Math.max(prev.votesDistribution?.D || 0, serverVotes.D || 0),
+              },
+            }));
+          }
+        });
       }
 
       if (channelManager) {
@@ -361,12 +545,13 @@ export function useQuizEngine({
       quizState.votesDistribution,
       timeRemaining,
       userStreak,
+      activePowerUp,
       sessionId,
       userName,
       userRole,
-      channelManager,
       currentRoomKey,
       quizStorageKey,
+      channelManager,
     ]
   );
 
@@ -393,6 +578,10 @@ export function useQuizEngine({
     leaderboard,
     timeRemaining,
     userStreak,
+    powerUpInventory,
+    activePowerUp,
+    eliminatedOptionIds,
+    activatePowerUp,
     startQuizRound,
     revealAnswer,
     selectOption,
