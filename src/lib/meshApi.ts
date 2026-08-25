@@ -7,6 +7,7 @@ export interface MeshChatMessage {
 }
 
 export interface MeshCompletionOptions {
+  apiKey?: string;
   model?: string;
   temperature?: number;
   maxTokens?: number;
@@ -112,7 +113,7 @@ export async function callMeshChatCompletion(
   messages: MeshChatMessage[],
   options: MeshCompletionOptions = {}
 ): Promise<string> {
-  const apiKey = getStoredMeshKey();
+  const apiKey = options.apiKey || getStoredMeshKey();
   if (!apiKey) {
     throw new Error('Mesh API Key missing. Please click "AI SETTINGS" in the header to enter your rsk_... key.');
   }
@@ -135,7 +136,7 @@ export async function callMeshChatCompletion(
     payload.response_format = { type: 'json_object' };
   }
 
-  // Attempt proxy endpoint first (avoids browser CORS)
+  // Attempt proxy endpoint first (avoids browser CORS in local dev)
   const proxyUrl = `${getMeshApiBaseUrl()}/chat/completions`;
   const directUrl = `${MESH_DIRECT_URL}/chat/completions`;
 
@@ -144,33 +145,51 @@ export async function callMeshChatCompletion(
     'Authorization': `Bearer ${apiKey}`,
   };
 
-  let response: Response;
+  let response: Response | null = null;
+  let lastError: any = null;
+
   try {
-    response = await fetch(proxyUrl, {
+    const res = await fetch(proxyUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
     });
 
-    // If proxy returned 404, fallback to direct URL
-    if (response.status === 404 && proxyUrl !== directUrl) {
-      response = await fetch(directUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
+    const contentType = res.headers.get('content-type') || '';
+    // If proxy returned 404/405/502 or returned SPA HTML instead of JSON, fallback to direct Mesh API
+    if (
+      (!res.ok && (res.status === 404 || res.status === 405 || res.status === 502 || res.status === 503)) ||
+      contentType.includes('text/html')
+    ) {
+      if (proxyUrl !== directUrl) {
+        response = await fetch(directUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = res;
+      }
+    } else {
+      response = res;
     }
   } catch (netErr: any) {
-    // If proxy fetch failed, try direct URL
-    try {
-      response = await fetch(directUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-    } catch {
-      throw new Error(`Connection failed: ${netErr?.message || 'Network error'}. Please verify Vite dev server is running with /api/mesh proxy.`);
+    lastError = netErr;
+    if (proxyUrl !== directUrl) {
+      try {
+        response = await fetch(directUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        });
+      } catch (directErr: any) {
+        lastError = directErr;
+      }
     }
+  }
+
+  if (!response) {
+    throw new Error(`Connection failed: ${lastError?.message || 'Network error'}. Please check your connection.`);
   }
 
   if (!response.ok) {
@@ -212,7 +231,7 @@ export async function testMeshConnection(apiKey?: string, model?: string): Promi
   try {
     const text = await callMeshChatCompletion(
       [{ role: 'user', content: 'Respond with exactly: "MESH_API_ONLINE"' }],
-      { model: targetModel, maxTokens: 25, temperature: 0.1 }
+      { apiKey: keyToUse, model: targetModel, maxTokens: 25, temperature: 0.1 }
     );
 
     return {

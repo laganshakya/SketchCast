@@ -21,6 +21,7 @@ import {
   resendVerificationEmail,
   isEmailVerified
 } from '../../lib/supabase';
+import { refreshAuthExpiry } from '../../hooks/useRoomSession';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthModalProps {
@@ -117,6 +118,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           } else {
             const name = user.user_metadata?.display_name || user.email?.split('@')[0] || 'Attendee';
             setUserName(name);
+            refreshAuthExpiry();
             setSuccessMessage(`Welcome back, ${name}!`);
             setTimeout(onClose, 1000);
           }
@@ -132,6 +134,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             setResendCooldown(60);
           } else {
             setUserName(name);
+            refreshAuthExpiry();
             setSuccessMessage('Account registered & verified successfully!');
             setTimeout(onClose, 1000);
           }

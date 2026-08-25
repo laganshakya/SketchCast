@@ -9,8 +9,38 @@ const SESSION_KEY = 'sketchcast_session_id';
 const NAME_KEY = 'sketchcast_user_name';
 const ROLE_KEY = 'sketchcast_user_role';
 const AUTH_FLAG_KEY = 'sketchcast_authenticated_session';
+const AUTH_EXPIRY_KEY = 'sketchcast_auth_expiry';
 const ACTIVE_TAB_KEY = 'sketchcast_active_tab';
 const ROOM_CODE_KEY = 'sketchcast_room_code';
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+
+export function isSessionAutoAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false;
+  const expiry = localStorage.getItem(AUTH_EXPIRY_KEY);
+  const authFlag = localStorage.getItem(AUTH_FLAG_KEY) || sessionStorage.getItem(AUTH_FLAG_KEY);
+  if (authFlag === 'true') {
+    if (expiry) {
+      const expiryTime = parseInt(expiry, 10);
+      if (!isNaN(expiryTime) && Date.now() < expiryTime) {
+        return true;
+      }
+    } else {
+      // Auto-upgrade legacy auth session to 14 days
+      localStorage.setItem(AUTH_EXPIRY_KEY, (Date.now() + FOURTEEN_DAYS_MS).toString());
+      return true;
+    }
+  }
+  return false;
+}
+
+export function refreshAuthExpiry(): void {
+  if (typeof window !== 'undefined') {
+    const newExpiry = (Date.now() + FOURTEEN_DAYS_MS).toString();
+    localStorage.setItem(AUTH_EXPIRY_KEY, newExpiry);
+    localStorage.setItem(AUTH_FLAG_KEY, 'true');
+    sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
+  }
+}
 
 export function getOrCreateSessionId(): string {
   if (typeof window !== 'undefined') {
@@ -105,12 +135,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   const [channelManager, setChannelManager] = useState<RealtimeChannelManager | null>(() => {
     return RealtimeChannelManager.getInstance(getStoredRoomCode(initialRoomCode), getOrCreateSessionId());
   });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(AUTH_FLAG_KEY) === 'true' || localStorage.getItem(AUTH_FLAG_KEY) === 'true';
-    }
-    return false;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(isSessionAutoAuthenticated);
 
   // Sync activeTab with URL Hash & Storage
   const setActiveTab = (tab: ActiveTabType) => {
@@ -143,26 +168,33 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Supabase Auth Listener (Auto-auth on active Supabase session with verified email)
+  // Supabase Auth Listener (Auto-auth on active Supabase session with 14-day persistent window)
   useEffect(() => {
     getCurrentUser().then((user) => {
       if (user && isEmailVerified(user)) {
         setCurrentUser(user);
         setIsAuthenticated(true);
-        sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
-        localStorage.setItem(AUTH_FLAG_KEY, 'true');
+        refreshAuthExpiry();
         const name = user.user_metadata?.display_name || user.email?.split('@')[0];
         if (name) {
           setUserNameState(name);
           sessionStorage.setItem(NAME_KEY, name);
+          localStorage.setItem(NAME_KEY, name);
         }
       } else {
         if (user && !isEmailVerified(user)) {
           signOutUser();
+          setIsAuthenticated(false);
+          sessionStorage.removeItem(AUTH_FLAG_KEY);
+          localStorage.removeItem(AUTH_FLAG_KEY);
+          localStorage.removeItem(AUTH_EXPIRY_KEY);
+        } else {
+          // If user is null (guest entry or token refreshing), check if 14-day persistent window is active
+          if (isSessionAutoAuthenticated()) {
+            setIsAuthenticated(true);
+            refreshAuthExpiry();
+          }
         }
-        setIsAuthenticated(false);
-        sessionStorage.removeItem(AUTH_FLAG_KEY);
-        localStorage.removeItem(AUTH_FLAG_KEY);
       }
     });
 
@@ -170,18 +202,22 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       if (user && isEmailVerified(user)) {
         setCurrentUser(user);
         setIsAuthenticated(true);
-        sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
-        localStorage.setItem(AUTH_FLAG_KEY, 'true');
+        refreshAuthExpiry();
         const name = user.user_metadata?.display_name || user.email?.split('@')[0];
         if (name) {
           sessionStorage.setItem(NAME_KEY, name);
+          localStorage.setItem(NAME_KEY, name);
           setUserNameState(name);
         }
-      } else {
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-        sessionStorage.removeItem(AUTH_FLAG_KEY);
-        localStorage.removeItem(AUTH_FLAG_KEY);
+      } else if (!user) {
+        // Only de-authenticate if 14-day window is expired
+        if (!isSessionAutoAuthenticated()) {
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+          sessionStorage.removeItem(AUTH_FLAG_KEY);
+          localStorage.removeItem(AUTH_FLAG_KEY);
+          localStorage.removeItem(AUTH_EXPIRY_KEY);
+        }
       }
     });
 
@@ -366,9 +402,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     setActiveRoomCode(targetRoomCode);
     
     sessionStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
-    sessionStorage.setItem(AUTH_FLAG_KEY, 'true');
     localStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
-    localStorage.setItem(AUTH_FLAG_KEY, 'true');
+    refreshAuthExpiry();
     setIsAuthenticated(true);
 
     if (typeof window !== 'undefined') {
@@ -384,6 +419,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     setCurrentUser(null);
     sessionStorage.removeItem(AUTH_FLAG_KEY);
     localStorage.removeItem(AUTH_FLAG_KEY);
+    localStorage.removeItem(AUTH_EXPIRY_KEY);
   };
 
   return {

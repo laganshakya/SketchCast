@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/mesh/:path*",
+      "destination": "https://api.meshapi.ai/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
