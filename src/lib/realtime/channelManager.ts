@@ -20,7 +20,7 @@ import type {
 
 export type RealtimeEventMap = {
   quiz_round_state: QuizRoundState;
-  quiz_vote: { optionId: string; userId: string; points: number };
+  quiz_vote: { optionId: string; userId: string; points: number; questionId?: string };
   leaderboard_update: LeaderboardEntry[];
   poll_update: LivePoll[];
   poll_vote: { pollId: string; optionId: string; voterSession: string };

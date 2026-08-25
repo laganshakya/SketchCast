@@ -90,17 +90,22 @@ export function useQuizEngine({
     dbFetchActiveQuizRound(currentRoomKey).then((remoteRound) => {
       if (remoteRound && remoteRound.question) {
         setQuizState((prev) => {
-          const mergedVotes = {
-            A: Math.max(prev.votesDistribution?.A || 0, remoteRound.votesDistribution?.A || 0),
-            B: Math.max(prev.votesDistribution?.B || 0, remoteRound.votesDistribution?.B || 0),
-            C: Math.max(prev.votesDistribution?.C || 0, remoteRound.votesDistribution?.C || 0),
-            D: Math.max(prev.votesDistribution?.D || 0, remoteRound.votesDistribution?.D || 0),
-          };
+          const isSameQuestion = prev.question?.id === remoteRound.question?.id;
+          const cleanRemoteVotes = remoteRound.votesDistribution || { A: 0, B: 0, C: 0, D: 0 };
+          const mergedVotes = isSameQuestion
+            ? {
+                A: Math.max(prev.votesDistribution?.A || 0, cleanRemoteVotes.A || 0),
+                B: Math.max(prev.votesDistribution?.B || 0, cleanRemoteVotes.B || 0),
+                C: Math.max(prev.votesDistribution?.C || 0, cleanRemoteVotes.C || 0),
+                D: Math.max(prev.votesDistribution?.D || 0, cleanRemoteVotes.D || 0),
+              }
+            : cleanRemoteVotes;
+
           return {
             ...remoteRound,
-            userSelectedOption: prev.question?.id === remoteRound.question?.id ? prev.userSelectedOption : null,
-            isCorrect: prev.question?.id === remoteRound.question?.id ? prev.isCorrect : null,
-            pointsEarned: prev.question?.id === remoteRound.question?.id ? prev.pointsEarned : 0,
+            userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
+            isCorrect: isSameQuestion ? prev.isCorrect : null,
+            pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
             votesDistribution: mergedVotes,
           };
         });
@@ -144,8 +149,10 @@ export function useQuizEngine({
           return prev;
         }
 
-        // Reset power-ups if this is a new question round
-        if (prev.question?.id !== remoteState.question?.id) {
+        const isSameQuestion = prev.question?.id === remoteState.question?.id;
+
+        // Reset power-ups and registered votes if this is a new question round
+        if (!isSameQuestion) {
           setActivePowerUp(null);
           setEliminatedOptionIds([]);
           isTimeFrozenRef.current = false;
@@ -153,18 +160,21 @@ export function useQuizEngine({
           votedUsersRef.current.clear();
         }
 
-        const mergedVotes = {
-          A: Math.max(prev.votesDistribution?.A || 0, remoteState.votesDistribution?.A || 0),
-          B: Math.max(prev.votesDistribution?.B || 0, remoteState.votesDistribution?.B || 0),
-          C: Math.max(prev.votesDistribution?.C || 0, remoteState.votesDistribution?.C || 0),
-          D: Math.max(prev.votesDistribution?.D || 0, remoteState.votesDistribution?.D || 0),
-        };
+        const cleanRemoteVotes = remoteState.votesDistribution || { A: 0, B: 0, C: 0, D: 0 };
+        const mergedVotes = isSameQuestion
+          ? {
+              A: Math.max(prev.votesDistribution?.A || 0, cleanRemoteVotes.A || 0),
+              B: Math.max(prev.votesDistribution?.B || 0, cleanRemoteVotes.B || 0),
+              C: Math.max(prev.votesDistribution?.C || 0, cleanRemoteVotes.C || 0),
+              D: Math.max(prev.votesDistribution?.D || 0, cleanRemoteVotes.D || 0),
+            }
+          : cleanRemoteVotes;
 
         const next = {
           ...remoteState,
-          userSelectedOption: prev.question?.id === remoteState.question?.id ? prev.userSelectedOption : null,
-          isCorrect: prev.question?.id === remoteState.question?.id ? prev.isCorrect : null,
-          pointsEarned: prev.question?.id === remoteState.question?.id ? prev.pointsEarned : 0,
+          userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
+          isCorrect: isSameQuestion ? prev.isCorrect : null,
+          pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
           votesDistribution: mergedVotes,
         };
 
@@ -189,7 +199,7 @@ export function useQuizEngine({
       }
     });
 
-    const unQuizVote = channelManager.on('quiz_vote', ({ optionId, userId }) => {
+    const unQuizVote = channelManager.on('quiz_vote', ({ optionId, userId, questionId }: any) => {
       // Prevent double-counting the same user's vote
       if (userId && votedUsersRef.current.has(userId)) {
         return;
@@ -199,6 +209,11 @@ export function useQuizEngine({
       }
 
       setQuizState((prev) => {
+        // Ignore vote if it belongs to a different question
+        if (questionId && prev.question?.id && prev.question.id !== questionId) {
+          return prev;
+        }
+
         const nextVotes = {
           ...prev.votesDistribution,
           [optionId]: (prev.votesDistribution[optionId] || 0) + 1,
@@ -513,17 +528,21 @@ export function useQuizEngine({
       });
 
       if (quizState.question) {
-        dbIncrementQuizVote(quizState.question.id, optionId).then((serverVotes) => {
+        const targetQId = quizState.question.id;
+        dbIncrementQuizVote(targetQId, optionId).then((serverVotes) => {
           if (serverVotes) {
-            setQuizState((prev) => ({
-              ...prev,
-              votesDistribution: {
-                A: Math.max(prev.votesDistribution?.A || 0, serverVotes.A || 0),
-                B: Math.max(prev.votesDistribution?.B || 0, serverVotes.B || 0),
-                C: Math.max(prev.votesDistribution?.C || 0, serverVotes.C || 0),
-                D: Math.max(prev.votesDistribution?.D || 0, serverVotes.D || 0),
-              },
-            }));
+            setQuizState((prev) => {
+              if (prev.question?.id !== targetQId) return prev;
+              return {
+                ...prev,
+                votesDistribution: {
+                  A: Math.max(prev.votesDistribution?.A || 0, serverVotes.A || 0),
+                  B: Math.max(prev.votesDistribution?.B || 0, serverVotes.B || 0),
+                  C: Math.max(prev.votesDistribution?.C || 0, serverVotes.C || 0),
+                  D: Math.max(prev.votesDistribution?.D || 0, serverVotes.D || 0),
+                },
+              };
+            });
           }
         });
       }
@@ -532,6 +551,7 @@ export function useQuizEngine({
         channelManager.broadcast('quiz_vote', {
           optionId,
           userId: sessionId,
+          questionId: quizState.question?.id,
           points,
         });
       }
