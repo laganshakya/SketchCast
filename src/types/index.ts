@@ -149,9 +149,11 @@ export interface SpotlightWinner {
   targetSessionId: string;
   targetName: string;
   spunBy: string;
+  perkId?: string;
   rewardPerk?: string;
   rewardIcon?: string;
   rewardDesc?: string;
+  bonusPoints?: number;
   timestamp: number;
 }
 

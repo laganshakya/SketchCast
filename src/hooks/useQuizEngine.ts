@@ -73,6 +73,11 @@ export function useQuizEngine({
   });
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const leaderboardRef = useRef<LeaderboardEntry[]>([]);
+  useEffect(() => {
+    leaderboardRef.current = leaderboard;
+  }, [leaderboard]);
+
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
   const [userStreak, setUserStreak] = useState<number>(0);
 
@@ -593,6 +598,52 @@ export function useQuizEngine({
     [channelManager, quizStorageKey]
   );
 
+  const awardBonusPoints = useCallback(
+    async (targetSessionId: string, targetName: string, pointsBonus: number = 500) => {
+      if (!targetSessionId && !targetName) return;
+
+      const currentBoard = leaderboardRef.current;
+      const cleanTargetName = (targetName || '').trim().toLowerCase();
+      const exists = currentBoard.find(
+        (u) =>
+          (targetSessionId && u.session_id === targetSessionId) ||
+          (cleanTargetName && u.name.trim().toLowerCase() === cleanTargetName)
+      );
+
+      let updatedEntry: LeaderboardEntry;
+      let nextBoard: LeaderboardEntry[];
+
+      if (exists) {
+        updatedEntry = {
+          ...exists,
+          score: (exists.score || 0) + pointsBonus,
+        };
+        nextBoard = currentBoard
+          .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
+          .sort((a, b) => b.score - a.score);
+      } else {
+        updatedEntry = {
+          session_id: targetSessionId || `session_${Date.now()}`,
+          name: targetName || 'Attendee',
+          score: pointsBonus,
+          correct_quizzes: 0,
+          polls_voted: 0,
+          streak: 0,
+          avatar_color: '#00F59B',
+        };
+        nextBoard = [...currentBoard, updatedEntry].sort((a, b) => b.score - a.score);
+      }
+
+      setLeaderboard(nextBoard);
+      await dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
+
+      if (channelManager) {
+        channelManager.broadcast('leaderboard_update', nextBoard);
+      }
+    },
+    [channelManager, currentRoomKey]
+  );
+
   return {
     quizState,
     leaderboard,
@@ -606,5 +657,6 @@ export function useQuizEngine({
     revealAnswer,
     selectOption,
     updateAIDeepDive,
+    awardBonusPoints,
   };
 }

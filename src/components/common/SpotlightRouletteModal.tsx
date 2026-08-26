@@ -27,30 +27,30 @@ interface SpotlightRouletteModalProps {
 const STAGE_PERKS: SpotlightRewardPerk[] = [
   {
     id: 'stage-mic',
-    name: 'Stage Mic Privilege',
+    name: 'Stage Mic',
     icon: '🎙️',
-    description: 'Invited to unmute & ask a live keynote question',
+    description: 'Unmute & ask live',
     color: '#00F0FF',
   },
   {
     id: 'vip-swag',
-    name: 'Keynote VIP Swag Box',
+    name: 'VIP Swag',
     icon: '🎁',
-    description: 'Wins exclusive SketchCast developer swag pack',
+    description: 'Swag pack prize',
     color: '#FFE600',
   },
   {
     id: 'bonus-points',
-    name: '+500 Leaderboard Boost',
+    name: '+500 PTS Boost',
     icon: '⚡',
-    description: 'Instant +500 PTS leaderboard bonus boost',
+    description: '+500 leaderboard pts',
     color: '#00F59B',
   },
   {
     id: 'honorary-cohost',
-    name: 'Honorary Keynote Co-Host',
+    name: 'Co-Host Badge',
     icon: '👑',
-    description: 'Stage spotlight and honorary co-host badge',
+    description: 'Spotlight & co-host',
     color: '#FF2A6D',
   },
 ];
@@ -153,13 +153,24 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
 
         // Text label
         ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(sliceAngle + arcSize / 2);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 11px "JetBrains Mono", monospace';
-        const label = roster[i].name.length > 13 ? roster[i].name.slice(0, 11) + '..' : roster[i].name;
-        ctx.fillText(label.toUpperCase(), radius - 26, 4);
+        if (numSlices === 1) {
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#000000';
+          ctx.font = '900 12px "JetBrains Mono", monospace';
+          const nameStr = roster[i].name || 'ATTENDEE';
+          const shortName = nameStr.length > 12 ? nameStr.slice(0, 10) + '..' : nameStr;
+          ctx.fillText(shortName.toUpperCase(), centerX, centerY - 46);
+        } else {
+          ctx.translate(centerX, centerY);
+          ctx.rotate(sliceAngle + arcSize / 2);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#000000';
+          ctx.font = numSlices > 8 ? 'bold 9px "JetBrains Mono", monospace' : 'bold 10px "JetBrains Mono", monospace';
+          const maxChars = numSlices > 8 ? 8 : 11;
+          const nameStr = roster[i].name || 'ATTENDEE';
+          const label = nameStr.length > maxChars ? nameStr.slice(0, maxChars - 2) + '..' : nameStr;
+          ctx.fillText(label.toUpperCase(), radius - 24, 3.5);
+        }
         ctx.restore();
       }
 
@@ -259,9 +270,11 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
             targetSessionId: winner.session_id,
             targetName: winner.name,
             spunBy: currentUserName,
+            perkId: selectedPerk.id,
             rewardPerk: selectedPerk.name,
             rewardIcon: selectedPerk.icon,
             rewardDesc: selectedPerk.description,
+            bonusPoints: selectedPerk.id === 'bonus-points' ? 500 : undefined,
             timestamp: Date.now(),
           });
         }

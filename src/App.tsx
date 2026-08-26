@@ -82,6 +82,7 @@ export function App() {
     startQuizRound,
     revealAnswer,
     selectOption,
+    awardBonusPoints,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -232,6 +233,18 @@ export function App() {
     if (winner.targetSessionId === sessionId) {
       setIsSpotlightCelebrationOpen(true);
     }
+
+    // Award +500 (or specified) bonus points to the winner in the leaderboard
+    const isBonusPerk =
+      winner.perkId === 'bonus-points' ||
+      Boolean(winner.bonusPoints && winner.bonusPoints > 0) ||
+      Boolean(winner.rewardPerk && (winner.rewardPerk.includes('500') || winner.rewardPerk.toLowerCase().includes('boost')));
+
+    if (isBonusPerk) {
+      const pointsToAward = winner.bonusPoints || 500;
+      awardBonusPoints(winner.targetSessionId, winner.targetName, pointsToAward);
+    }
+
     if (channelManager) {
       channelManager.broadcast('attendee_spotlight', winner);
     }
