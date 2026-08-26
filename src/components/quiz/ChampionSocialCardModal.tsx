@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Download, Copy, Check, Trophy } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { ChampionSocialCardData } from '../../types';
+import { playClickSound, playPopSound } from '../../lib/soundFx';
 
 interface ChampionSocialCardModalProps {
   isOpen: boolean;
@@ -246,91 +248,125 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
   const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[95vh] overflow-y-auto">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
-          title="Close modal"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
-        </button>
+          <motion.div
+            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.9, y: 15, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[95vh] overflow-y-auto"
+          >
+            {/* Close Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                playClickSound();
+                onClose();
+              }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+              title="Close modal"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+            </motion.button>
 
-        {/* Modal Header */}
-        <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
-            <Trophy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                EXPORT CHAMPION SOCIAL CARD
-              </h3>
-              <span className="px-1.5 py-0.2 bg-black text-neo-mint font-mono text-[9px] font-black uppercase border border-black">
-                HIGH RES 1200x630
-              </span>
+            {/* Modal Header */}
+            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
+                    EXPORT CHAMPION SOCIAL CARD
+                  </h3>
+                  <span className="px-1.5 py-0.2 bg-black text-neo-mint font-mono text-[9px] font-black uppercase border border-black">
+                    HIGH RES 1200x630
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
+                  Ready-to-share graphic card for your LinkedIn, X (Twitter), or developer portfolio!
+                </p>
+              </div>
             </div>
-            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-              Ready-to-share graphic card for your LinkedIn, X (Twitter), or developer portfolio!
-            </p>
-          </div>
-        </div>
 
-        {/* Canvas Preview Container */}
-        <div className="p-2 sm:p-3 bg-[#0B0D14] border-2 border-black brutal-shadow-sm mb-4 flex items-center justify-center overflow-hidden">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-auto aspect-1200/630 border border-slate-800 brutal-shadow-sm"
-          />
-        </div>
+            {/* Canvas Preview Container */}
+            <div className="p-2 sm:p-3 bg-[#0B0D14] border-2 border-black brutal-shadow-sm mb-4 flex items-center justify-center overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-auto aspect-1200/630 border border-slate-800 brutal-shadow-sm"
+              />
+            </div>
 
-        {/* 1-Click Action Buttons */}
-        <div className="space-y-2 font-mono">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={handleDownloadPNG}
-              disabled={downloading}
-              className="py-2.5 px-4 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 cursor-pointer transition-all"
-            >
-              <Download className="w-4 h-4" />
-              <span>{downloading ? 'GENERATING PNG...' : '📥 DOWNLOAD PNG IMAGE'}</span>
-            </button>
+            {/* 1-Click Action Buttons */}
+            <div className="space-y-2 font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playClickSound();
+                    handleDownloadPNG();
+                  }}
+                  disabled={downloading}
+                  className="py-2.5 px-4 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{downloading ? 'GENERATING PNG...' : '📥 DOWNLOAD PNG IMAGE'}</span>
+                </motion.button>
 
-            <button
-              type="button"
-              onClick={handleCopyImage}
-              className={`py-2.5 px-4 text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 cursor-pointer transition-all ${
-                copied ? 'bg-neo-mint text-black' : 'bg-neo-cyan hover:bg-[#33F3FF] text-black'
-              }`}
-            >
-              {copied ? <Check className="w-4 h-4 stroke-3" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'IMAGE COPIED TO CLIPBOARD!' : '📋 COPY IMAGE TO CLIPBOARD'}</span>
-            </button>
-          </div>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playPopSound();
+                    handleCopyImage();
+                  }}
+                  className={`py-2.5 px-4 text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all ${
+                    copied ? 'bg-neo-mint text-black' : 'bg-neo-cyan hover:bg-[#33F3FF] text-black'
+                  }`}
+                >
+                  {copied ? <Check className="w-4 h-4 stroke-3" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'IMAGE COPIED TO CLIPBOARD!' : '📋 COPY IMAGE TO CLIPBOARD'}</span>
+                </motion.button>
+              </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <a
-              href={tweetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
-            >
-              <span>🐦 SHARE ON X (TWITTER)</span>
-            </a>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <motion.a
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  href={tweetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
+                >
+                  <span>🐦 SHARE ON X (TWITTER)</span>
+                </motion.a>
 
-            <a
-              href={linkedInUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
-            >
-              <span>💼 SHARE ON LINKEDIN</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+                <motion.a
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  href={linkedInUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
+                >
+                  <span>💼 SHARE ON LINKEDIN</span>
+                </motion.a>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

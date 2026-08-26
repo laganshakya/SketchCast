@@ -14,8 +14,10 @@ import {
   Sliders,
   AlertCircle
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import type { QuizQuestion } from '../../types';
 import { generateAIQuizQuestions, getStoredMeshKey } from '../../lib/meshApi';
+import { playClickSound, playPopSound } from '../../lib/soundFx';
 
 interface QuizHostPanelProps {
   onStartQuiz: (question: QuizQuestion) => void;
@@ -293,21 +295,31 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
           </h3>
         </div>
         <div className="flex items-center space-x-1.5 shrink-0">
-          <button
-            onClick={() => handleOpenModal('ai')}
-            className="h-8 px-2.5 sm:px-3 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              playClickSound();
+              handleOpenModal('ai');
+            }}
+            className="h-8 px-2.5 sm:px-3 bg-neo-pink hover:bg-[#FF4782] text-white text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
             title="Generate quiz with Mesh AI"
           >
             <Bot className="w-3.5 h-3.5 shrink-0" />
             <span>AI QUIZ</span>
-          </button>
-          <button
-            onClick={() => handleOpenModal('editor')}
-            className="h-8 px-2.5 sm:px-3 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              playClickSound();
+              handleOpenModal('editor');
+            }}
+            className="h-8 px-2.5 sm:px-3 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5 stroke-3 shrink-0" />
             <span>NEW</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -323,20 +335,30 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               Use Mesh AI to generate senior architecture quiz packs or create questions manually.
             </p>
             <div className="flex items-center justify-center space-x-2 pt-1">
-              <button
-                onClick={() => handleOpenModal('ai')}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  handleOpenModal('ai');
+                }}
                 className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1 cursor-pointer"
               >
                 <Bot className="w-3.5 h-3.5" />
                 <span>AI GENERATE</span>
-              </button>
-              <button
-                onClick={() => handleOpenModal('editor')}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  handleOpenModal('editor');
+                }}
                 className="px-3 py-1.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm inline-flex items-center space-x-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 stroke-3" />
                 <span>MANUAL DRAFT</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         ) : (
@@ -346,8 +368,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             const isCompleted = completedIds.includes(q.id) || (isCurrentlyActive && isRevealed);
 
             return (
-              <div
+              <motion.div
                 key={q.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
                 className={`p-3 border-2 border-black transition-all flex items-center justify-between gap-2.5 ${
                   isLive
                     ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow'
@@ -383,46 +408,66 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
                 <div className="flex items-center space-x-1.5 shrink-0 font-mono">
                   {isLive ? (
-                    <button
-                      onClick={() => onStartQuiz(q)}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playPopSound();
+                        onStartQuiz(q);
+                      }}
                       className="px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 bg-neo-mint text-black brutal-shadow-sm animate-pulse cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-black" />
                       <span>LIVE</span>
-                    </button>
+                    </motion.button>
                   ) : isCompleted ? (
                     <div className="flex items-center space-x-1">
                       <span className="px-2 py-1 text-[10px] font-black uppercase border border-neo-mint/40 bg-neo-mint/10 text-neo-mint flex items-center space-x-1">
                         <CheckCircle className="w-3 h-3 text-neo-mint" />
                         <span>DONE</span>
                       </span>
-                      <button
-                        onClick={() => onStartQuiz(q)}
+                      <motion.button
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                          playClickSound();
+                          onStartQuiz(q);
+                        }}
                         className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 transition-colors cursor-pointer"
                         title="Relaunch question"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                      </button>
+                      </motion.button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => onStartQuiz(q)}
-                      className="px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black brutal-shadow-sm"
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playClickSound();
+                        onStartQuiz(q);
+                      }}
+                      className="px-3 py-1.5 rounded-none text-xs font-mono font-black uppercase border-2 border-black transition-all flex items-center space-x-1 bg-neo-yellow hover:bg-[#FFF04D] text-black brutal-shadow-sm cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-black" />
                       <span>LAUNCH</span>
-                    </button>
+                    </motion.button>
                   )}
 
-                  <button
-                    onClick={(e) => handleDeleteQuestion(q.id, e)}
-                    className="p-1.5 text-slate-500 hover:text-neo-pink hover:bg-black/30 transition-colors"
+                  <motion.button
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={(e) => {
+                      playClickSound();
+                      handleDeleteQuestion(q.id, e);
+                    }}
+                    className="p-1.5 text-slate-500 hover:text-neo-pink hover:bg-black/30 transition-colors cursor-pointer"
                     title="Delete question from queue"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             );
           })
         )}

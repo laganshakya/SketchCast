@@ -21,6 +21,7 @@ import {
   Send,
   Check
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   signInWithEmail,
@@ -29,6 +30,7 @@ import {
   isEmailVerified,
   signOutUser
 } from '../../lib/supabase';
+import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface LandingAuthPageProps {
   onAuthenticated: (name: string, role: 'host' | 'attendee', roomCode?: string) => void;
@@ -350,9 +352,13 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             <>
               {/* Tab Switcher */}
               <div className="grid grid-cols-2 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
-                <button
+                <motion.button
                   type="button"
-                  onClick={() => handleTabChange('signin')}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    playClickSound();
+                    handleTabChange('signin');
+                  }}
                   className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
                     tab === 'signin'
                       ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
@@ -360,10 +366,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   }`}
                 >
                   SIGN IN
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
-                  onClick={() => handleTabChange('signup')}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    playClickSound();
+                    handleTabChange('signup');
+                  }}
                   className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
                     tab === 'signup'
                       ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
@@ -371,7 +381,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   }`}
                 >
                   CREATE ACCOUNT
-                </button>
+                </motion.button>
               </div>
 
               {/* Feedback Banners */}
@@ -381,13 +391,18 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   <div className="flex-1">
                     <div>{errorMessage}</div>
                     {errorMessage.toLowerCase().includes('not verified') && email && (
-                      <button
+                      <motion.button
                         type="button"
-                        onClick={() => handleResendVerification(email)}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => {
+                          playClickSound();
+                          handleResendVerification(email);
+                        }}
                         className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
                       >
                         Resend Verification Email
-                      </button>
+                      </motion.button>
                     )}
                   </div>
                 </div>
@@ -413,14 +428,19 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                       </span>
                     </label>
                     {role === 'host' ? (
-                      <button
+                      <motion.button
                         type="button"
-                        onClick={generateRandomRoomKey}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => {
+                          playPopSound();
+                          generateRandomRoomKey();
+                        }}
                         className="text-[9px] sm:text-[10px] bg-black text-white hover:bg-neo-pink px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors cursor-pointer"
                         title="Shuffle unique room key"
                       >
                         <RefreshCw className="w-3 h-3" /> SHUFFLE
-                      </button>
+                      </motion.button>
                     ) : (
                       <span className="text-[10px] text-slate-500 font-bold uppercase">
                         REQUIRED
@@ -508,9 +528,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                 <div>
                   <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <motion.button
                       type="button"
-                      onClick={() => setRole('attendee')}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        playPopSound();
+                        setRole('attendee');
+                      }}
                       className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
                         role === 'attendee'
                           ? 'bg-neo-mint text-black brutal-shadow-sm'
@@ -519,10 +544,15 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     >
                       <UserIcon className="w-3.5 h-3.5" />
                       <span>ATTENDEE</span>
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       type="button"
-                      onClick={() => setRole('host')}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        playPopSound();
+                        setRole('host');
+                      }}
                       className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
                         role === 'host'
                           ? 'bg-neo-yellow text-black brutal-shadow-sm'
@@ -531,16 +561,19 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     >
                       <Crown className="w-3.5 h-3.5" />
                       <span>HOST / ADMIN</span>
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
                 {/* Submit Button */}
                 <div className="pt-2">
-                  <button
+                  <motion.button
                     type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => playWhoosh()}
                     disabled={isLoading}
-                    className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                    className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer ${
                       tab === 'signin'
                         ? 'bg-neo-yellow hover:bg-[#FFF04D]'
                         : 'bg-neo-cyan hover:bg-[#33F3FF]'
@@ -554,7 +587,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                         : `REGISTER & SEND VERIFICATION EMAIL`}
                     </span>
                     <ArrowRight className="w-4 h-4 stroke-3" />
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             </>

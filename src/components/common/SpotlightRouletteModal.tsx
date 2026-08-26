@@ -10,9 +10,10 @@ import {
   Users,
   Flame,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import type { AttendeePresence, SpotlightWinner, SpotlightRewardPerk, LeaderboardEntry } from '../../types';
-import { playClickTick, playFanfare, isSoundFxMuted, toggleMuteSoundFx } from '../../lib/soundFx';
+import { playClickTick, playFanfare, isSoundFxMuted, toggleMuteSoundFx, playClickSound, playPopSound } from '../../lib/soundFx';
 
 interface SpotlightRouletteModalProps {
   isOpen: boolean;
@@ -278,168 +279,212 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
     };
   }, []);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-neo-cream text-black w-full max-w-xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[95vh] overflow-y-auto">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
-          title="Close modal"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
-            <Trophy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                KEYNOTE SPOTLIGHT ROULETTE 2.0
-              </h3>
-              <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase border border-black">
-                HOST STAGE
-              </span>
-            </div>
-            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-              Spin the stage wheel to grant live keynote perks, mic privileges, or swag to an attendee!
-            </p>
-          </div>
-        </div>
-
-        {/* Filter Roster Mode Tabs */}
-        <div className="flex items-center justify-between gap-2 mb-3 bg-[#11131E] p-1 border-2 border-black font-mono text-xs">
-          <div className="flex items-center space-x-1">
-            <button
-              type="button"
-              onClick={() => setFilterMode('all')}
-              className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
-                filterMode === 'all'
-                  ? 'bg-neo-yellow text-black border border-black font-black'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Users className="w-3 h-3 inline mr-1" /> ALL ATTENDEES ({attendees.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterMode('top5')}
-              className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
-                filterMode === 'top5'
-                  ? 'bg-neo-cyan text-black border border-black font-black'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Flame className="w-3 h-3 inline mr-1" /> TOP 5 CONTENDERS
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMuted(toggleMuteSoundFx())}
-            className="p-1 text-slate-400 hover:text-neo-yellow cursor-pointer"
-            title={muted ? 'Unmute SFX' : 'Mute SFX'}
+          <motion.div
+            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.9, y: 15, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="bg-neo-cream text-black w-full max-w-xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[95vh] overflow-y-auto"
           >
-            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-        </div>
+            {/* Close Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                playClickSound();
+                onClose();
+              }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+              title="Close modal"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+            </motion.button>
 
-        {/* Wheel Canvas Area */}
-        <div className="flex flex-col items-center justify-center p-3 bg-[#121522] border-2 border-black brutal-shadow-sm relative overflow-hidden mb-3.5">
-          <canvas
-            ref={canvasRef}
-            width={340}
-            height={340}
-            className="w-64 h-64 sm:w-72 sm:h-72 drop-shadow-[0_6px_16px_rgba(0,0,0,0.8)]"
-          />
+            {/* Modal Header */}
+            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
+                    KEYNOTE SPOTLIGHT ROULETTE 2.0
+                  </h3>
+                  <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase border border-black">
+                    HOST STAGE
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
+                  Spin the stage wheel to grant live keynote perks, mic privileges, or swag to an attendee!
+                </p>
+              </div>
+            </div>
 
-          <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/80 text-neo-mint border border-black font-mono text-[10px] font-bold uppercase flex items-center gap-1">
-            <UserCheck className="w-3 h-3" />
-            <span>{roster.length} ELIGIBLE SLICES</span>
-          </div>
-        </div>
-
-        {/* Stage Perk / Reward Selector */}
-        <div className="mb-3.5">
-          <label className="block text-[11px] font-mono font-black uppercase text-black mb-1.5">
-            🎁 ACTIVE KEYNOTE STAGE PERK / REWARD:
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
-            {STAGE_PERKS.map((perk) => {
-              const isSelected = selectedPerk.id === perk.id;
-              return (
-                <button
-                  key={perk.id}
+            {/* Filter Roster Mode Tabs */}
+            <div className="flex items-center justify-between gap-2 mb-3 bg-[#11131E] p-1 border-2 border-black font-mono text-xs">
+              <div className="flex items-center space-x-1">
+                <motion.button
                   type="button"
-                  onClick={() => setSelectedPerk(perk)}
-                  className={`p-2 border-2 border-black text-left flex items-start space-x-1.5 transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-black text-white brutal-shadow-sm -translate-x-px -translate-y-px'
-                      : 'bg-white hover:bg-slate-100 text-black'
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    playClickSound();
+                    setFilterMode('all');
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
+                    filterMode === 'all'
+                      ? 'bg-neo-yellow text-black border border-black font-black'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <span className="text-base shrink-0">{perk.icon}</span>
-                  <div className="min-w-0">
-                    <div className="font-heavy text-[11px] uppercase truncate">{perk.name}</div>
-                    <div className={`text-[9px] truncate ${isSelected ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {perk.description}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  <Users className="w-3 h-3 inline mr-1" /> ALL ATTENDEES ({attendees.length})
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    playClickSound();
+                    setFilterMode('top5');
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all cursor-pointer ${
+                    filterMode === 'top5'
+                      ? 'bg-neo-cyan text-black border border-black font-black'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Flame className="w-3 h-3 inline mr-1" /> TOP 5 CONTENDERS
+                </motion.button>
+              </div>
 
-        {/* Recent Winners History */}
-        {recentWinners.length > 0 && (
-          <div className="mb-3 p-2 bg-[#1A1D2C] border border-black text-slate-300 font-mono text-[10px]">
-            <span className="font-black uppercase text-neo-yellow mr-1">RECENT STAGE WINNERS:</span>
-            <span className="text-slate-200">{recentWinners.join(', ')}</span>
-          </div>
-        )}
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setMuted(toggleMuteSoundFx())}
+                className="p-1 text-slate-400 hover:text-neo-yellow cursor-pointer"
+                title={muted ? 'Unmute SFX' : 'Mute SFX'}
+              >
+                {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </motion.button>
+            </div>
 
-        {/* Winner Announcement Banner */}
-        {selectedWinner && (
-          <div className="p-3.5 bg-neo-mint text-black border-2 border-black brutal-shadow-sm mb-3.5 space-y-1 animate-fadeIn font-mono text-center">
-            <div className="flex items-center justify-center space-x-1.5 text-xs font-black uppercase text-black">
-              <Sparkles className="w-4 h-4 stroke-[2.5]" />
-              <span>STAGE SPOTLIGHT WINNER SELECTED!</span>
-            </div>
-            <div className="text-base sm:text-lg font-heavy text-black uppercase tracking-tight break-all">
-              👑 {selectedWinner.name}
-            </div>
-            <div className="inline-flex items-center space-x-1 px-2 py-0.5 bg-black text-neo-yellow text-[10px] font-black uppercase border border-black mt-1">
-              <span>{selectedPerk.icon} AWARDED: {selectedPerk.name}</span>
-            </div>
-          </div>
-        )}
+            {/* Wheel Canvas Area */}
+            <div className="flex flex-col items-center justify-center p-3 bg-[#121522] border-2 border-black brutal-shadow-sm relative overflow-hidden mb-3.5">
+              <canvas
+                ref={canvasRef}
+                width={340}
+                height={340}
+                className="w-64 h-64 sm:w-72 sm:h-72 drop-shadow-[0_6px_16px_rgba(0,0,0,0.8)]"
+              />
 
-        {/* Action Controls */}
-        <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-1 font-mono">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full xs:w-auto px-4 py-2 text-xs font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
-          >
-            CLOSE
-          </button>
-          <button
-            type="button"
-            onClick={spin}
-            disabled={isSpinning || roster.length === 0}
-            className="w-full xs:w-auto px-6 py-2.5 bg-neo-yellow hover:bg-[#FFF04D] disabled:bg-slate-300 disabled:text-slate-500 text-black text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 cursor-pointer transition-all"
-          >
-            <RotateCw className={`w-4 h-4 ${isSpinning ? 'animate-spin' : ''}`} />
-            <span>{isSpinning ? 'SPINNING ROULETTE...' : '🎰 SPIN THE WHEEL!'}</span>
-          </button>
-        </div>
-      </div>
-    </div>
+              <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/80 text-neo-mint border border-black font-mono text-[10px] font-bold uppercase flex items-center gap-1">
+                <UserCheck className="w-3 h-3" />
+                <span>{roster.length} ELIGIBLE SLICES</span>
+              </div>
+            </div>
+
+            {/* Stage Perk / Reward Selector */}
+            <div className="mb-3.5">
+              <label className="block text-[11px] font-mono font-black uppercase text-black mb-1.5">
+                🎁 ACTIVE KEYNOTE STAGE PERK / REWARD:
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
+                {STAGE_PERKS.map((perk) => {
+                  const isSelected = selectedPerk.id === perk.id;
+                  return (
+                    <motion.button
+                      key={perk.id}
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        playPopSound();
+                        setSelectedPerk(perk);
+                      }}
+                      className={`p-2 border-2 border-black text-left flex items-start space-x-1.5 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-black text-white brutal-shadow-sm -translate-x-px -translate-y-px'
+                          : 'bg-white hover:bg-slate-100 text-black'
+                      }`}
+                    >
+                      <span className="text-base shrink-0">{perk.icon}</span>
+                      <div className="min-w-0">
+                        <div className="font-heavy text-[11px] uppercase truncate">{perk.name}</div>
+                        <div className={`text-[9px] truncate ${isSelected ? 'text-slate-300' : 'text-slate-600'}`}>
+                          {perk.description}
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Recent Winners History */}
+            {recentWinners.length > 0 && (
+              <div className="mb-3 p-2 bg-[#1A1D2C] border border-black text-slate-300 font-mono text-[10px]">
+                <span className="font-black uppercase text-neo-yellow mr-1">RECENT STAGE WINNERS:</span>
+                <span className="text-slate-200">{recentWinners.join(', ')}</span>
+              </div>
+            )}
+
+            {/* Winner Announcement Banner */}
+            {selectedWinner && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="p-3.5 bg-neo-mint text-black border-2 border-black brutal-shadow-sm mb-3.5 space-y-1 font-mono text-center"
+              >
+                <div className="flex items-center justify-center space-x-1.5 text-xs font-black uppercase text-black">
+                  <Sparkles className="w-4 h-4 stroke-[2.5]" />
+                  <span>STAGE SPOTLIGHT WINNER SELECTED!</span>
+                </div>
+                <div className="text-base sm:text-lg font-heavy text-black uppercase tracking-tight break-all">
+                  👑 {selectedWinner.name}
+                </div>
+                <div className="inline-flex items-center space-x-1 px-2 py-0.5 bg-black text-neo-yellow text-[10px] font-black uppercase border border-black mt-1">
+                  <span>{selectedPerk.icon} AWARDED: {selectedPerk.name}</span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Action Controls */}
+            <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-1 font-mono">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  onClose();
+                }}
+                className="w-full xs:w-auto px-4 py-2 text-xs font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
+              >
+                CLOSE
+              </motion.button>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={spin}
+                disabled={isSpinning || roster.length === 0}
+                className="w-full xs:w-auto px-6 py-2.5 bg-neo-yellow hover:bg-[#FFF04D] disabled:bg-slate-300 disabled:text-slate-500 text-black text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
+              >
+                <RotateCw className={`w-4 h-4 ${isSpinning ? 'animate-spin' : ''}`} />
+                <span>{isSpinning ? 'SPINNING ROULETTE...' : '🎰 SPIN THE WHEEL!'}</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

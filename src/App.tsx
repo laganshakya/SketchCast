@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
@@ -23,7 +24,7 @@ import { AISessionReportModal } from './components/common/AISessionReportModal';
 import { SpotlightRouletteModal } from './components/common/SpotlightRouletteModal';
 import { SpotlightCelebrationModal } from './components/common/SpotlightCelebrationModal';
 import { ChampionSocialCardModal } from './components/quiz/ChampionSocialCardModal';
-import { playFanfare } from './lib/soundFx';
+import { playFanfare, playWhoosh, playClickSound } from './lib/soundFx';
 import { calculateUserBadges } from './lib/badgeSystem';
 import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X } from 'lucide-react';
@@ -348,147 +349,196 @@ export function App() {
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Content Area with Framer Motion Spring Transitions */}
       <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-24 sm:pb-28 md:pb-6">
-        {/* TAB 1: Live Quiz Arena */}
-        {activeTab === 'quiz' && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full h-full">
-            {/* Mobile Host Switcher Bar (Screen < lg) */}
-            {userRole === 'host' && (
-              <div className="lg:hidden flex items-center justify-center p-1 bg-[#11131B] border-2 border-black font-mono text-xs font-black shrink-0 brutal-shadow-sm">
-                <button
-                  onClick={() => setMobileHostQuizView('arena')}
-                  className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
-                    mobileHostQuizView === 'arena'
-                      ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>LIVE ARENA</span>
-                </button>
-                <button
-                  onClick={() => setMobileHostQuizView('controls')}
-                  className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
-                    mobileHostQuizView === 'controls'
-                      ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>HOST CONTROLS</span>
-                </button>
-              </div>
-            )}
-
-            {/* Arena View */}
-            <div
-              className={`flex-1 flex flex-col overflow-y-auto ${
-                userRole === 'host' && mobileHostQuizView === 'controls' ? 'hidden lg:flex' : 'flex'
-              }`}
+        <AnimatePresence mode="wait">
+          {/* TAB 1: Live Quiz Arena */}
+          {activeTab === 'quiz' && (
+            <motion.div
+              key="tab-quiz"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full h-full"
             >
-              <QuizArena
-                quizState={quizState}
-                timeRemaining={timeRemaining}
-                userStreak={userStreak}
-                onSelectOption={selectOption}
-                onRevealAnswer={revealAnswer}
-                onNextQuestion={handleNextQuestion}
-                hasNextQuestion={hasNextQuestion}
-                onViewScores={() => setActiveTab('leaderboard')}
-                isHost={userRole === 'host'}
-                powerUpInventory={powerUpInventory}
-                activePowerUp={activePowerUp}
-                eliminatedOptionIds={eliminatedOptionIds}
-                onActivatePowerUp={activatePowerUp}
-              />
-            </div>
+              {/* Mobile Host Switcher Bar (Screen < lg) */}
+              {userRole === 'host' && (
+                <div className="lg:hidden flex items-center justify-center p-1 bg-[#11131B] border-2 border-black font-mono text-xs font-black shrink-0 brutal-shadow-sm">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      playClickSound();
+                      setMobileHostQuizView('arena');
+                    }}
+                    className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                      mobileHostQuizView === 'arena'
+                        ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>LIVE ARENA</span>
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      playClickSound();
+                      setMobileHostQuizView('controls');
+                    }}
+                    className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                      mobileHostQuizView === 'controls'
+                        ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>HOST CONTROLS</span>
+                  </motion.button>
+                </div>
+              )}
 
-            {/* Host Quiz Launcher & Pack Selector (Shown if Host) */}
-            {userRole === 'host' && (
+              {/* Arena View */}
               <div
-                className={`w-full lg:w-96 shrink-0 flex flex-col h-full ${
-                  mobileHostQuizView === 'arena' ? 'hidden lg:flex' : 'flex'
+                className={`flex-1 flex flex-col overflow-y-auto ${
+                  userRole === 'host' && mobileHostQuizView === 'controls' ? 'hidden lg:flex' : 'flex'
                 }`}
               >
-                <QuizHostPanel
-                  onStartQuiz={startQuizRound}
-                  activeQuestionId={quizState.question?.id}
-                  isRevealed={quizState.isRevealed}
-                  roomCode={room.code}
-                  onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                <QuizArena
+                  quizState={quizState}
+                  timeRemaining={timeRemaining}
+                  userStreak={userStreak}
+                  onSelectOption={selectOption}
+                  onRevealAnswer={revealAnswer}
+                  onNextQuestion={handleNextQuestion}
+                  hasNextQuestion={hasNextQuestion}
+                  onViewScores={() => setActiveTab('leaderboard')}
+                  isHost={userRole === 'host'}
+                  powerUpInventory={powerUpInventory}
+                  activePowerUp={activePowerUp}
+                  eliminatedOptionIds={eliminatedOptionIds}
+                  onActivatePowerUp={activatePowerUp}
                 />
               </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 2: Live Polls & Voting */}
-        {activeTab === 'polls' && (
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <LivePollsView
-              polls={polls}
-              userVotes={userVotes}
-              onVote={voteOnPoll}
-              onOpenCreatePoll={() => setIsCreatePollModalOpen(true)}
-              onResetPoll={resetPoll}
-              onDeletePoll={deletePoll}
-              onUpdateAIConsensus={updatePollAIConsensus}
-              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-              isHost={userRole === 'host'}
-            />
-          </div>
-        )}
+              {/* Host Quiz Launcher & Pack Selector (Shown if Host) */}
+              {userRole === 'host' && (
+                <div
+                  className={`w-full lg:w-96 shrink-0 flex flex-col h-full ${
+                    mobileHostQuizView === 'arena' ? 'hidden lg:flex' : 'flex'
+                  }`}
+                >
+                  <QuizHostPanel
+                    onStartQuiz={startQuizRound}
+                    activeQuestionId={quizState.question?.id}
+                    isRevealed={quizState.isRevealed}
+                    roomCode={room.code}
+                    onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                  />
+                </div>
+              )}
+            </motion.div>
+          )}
 
-        {/* TAB 3: Q&A Upvoting Feed */}
-        {activeTab === 'qa' && (
-          <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full h-full overflow-hidden">
-            <QuestionFeed
-              questions={filteredQuestions}
-              upvotedIds={upvotedIds}
-              onToggleUpvote={toggleUpvote}
-              onStatusChange={updateQuestionStatus}
-              onUpdateTalkingPoints={updateQuestionTalkingPoints}
-              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-              activeTab={qaFilterTab}
-              setActiveTab={setQAFilterTab}
-              onOpenAskModal={() => setIsAskModalOpen(true)}
-              isHost={userRole === 'host'}
-            />
-          </div>
-        )}
+          {/* TAB 2: Live Polls & Voting */}
+          {activeTab === 'polls' && (
+            <motion.div
+              key="tab-polls"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <LivePollsView
+                polls={polls}
+                userVotes={userVotes}
+                onVote={voteOnPoll}
+                onOpenCreatePoll={() => setIsCreatePollModalOpen(true)}
+                onResetPoll={resetPoll}
+                onDeletePoll={deletePoll}
+                onUpdateAIConsensus={updatePollAIConsensus}
+                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                isHost={userRole === 'host'}
+              />
+            </motion.div>
+          )}
 
-        {/* TAB 4: Leaderboard Podium */}
-        {activeTab === 'leaderboard' && (
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <LeaderboardPodium
-              leaderboard={leaderboard}
-              currentUserSessionId={sessionId}
-              onExportCard={handleOpenSocialCard}
-            />
-          </div>
-        )}
+          {/* TAB 3: Q&A Upvoting Feed */}
+          {activeTab === 'qa' && (
+            <motion.div
+              key="tab-qa"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full h-full overflow-hidden"
+            >
+              <QuestionFeed
+                questions={filteredQuestions}
+                upvotedIds={upvotedIds}
+                onToggleUpvote={toggleUpvote}
+                onStatusChange={updateQuestionStatus}
+                onUpdateTalkingPoints={updateQuestionTalkingPoints}
+                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                activeTab={qaFilterTab}
+                setActiveTab={setQAFilterTab}
+                onOpenAskModal={() => setIsAskModalOpen(true)}
+                isHost={userRole === 'host'}
+              />
+            </motion.div>
+          )}
 
-        {/* TAB 5: Rooms Admin Management */}
-        {activeTab === 'rooms' && (
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <RoomsAdminView
-              currentRoomCode={room.code}
-              onSwitchRoom={handleSwitchRoom}
-              onOpenQRCodeForRoom={handleOpenQRForRoom}
-              onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
-              onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-              userName={userName}
-              currentUser={currentUser}
-            />
-          </div>
-        )}
+          {/* TAB 4: Leaderboard Podium */}
+          {activeTab === 'leaderboard' && (
+            <motion.div
+              key="tab-leaderboard"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <LeaderboardPodium
+                leaderboard={leaderboard}
+                currentUserSessionId={sessionId}
+                onExportCard={handleOpenSocialCard}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 5: Rooms Admin Management */}
+          {activeTab === 'rooms' && (
+            <motion.div
+              key="tab-rooms"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <RoomsAdminView
+                currentRoomCode={room.code}
+                onSwitchRoom={handleSwitchRoom}
+                onOpenQRCodeForRoom={handleOpenQRForRoom}
+                onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
+                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                userName={userName}
+                currentUser={currentUser}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-neo-card-darker border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
-        <button
-          onClick={() => setActiveTab('quiz')}
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
+            setActiveTab('quiz');
+          }}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'quiz'
               ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
@@ -497,10 +547,14 @@ export function App() {
         >
           <Zap className="w-4 h-4 mb-0.5" />
           <span>QUIZ</span>
-        </button>
+        </motion.button>
 
-        <button
-          onClick={() => setActiveTab('polls')}
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
+            setActiveTab('polls');
+          }}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'polls'
               ? 'bg-neo-pink text-white border-2 border-black brutal-shadow-sm -translate-y-0.5'
@@ -509,10 +563,14 @@ export function App() {
         >
           <Vote className="w-4 h-4 mb-0.5" />
           <span>POLLS</span>
-        </button>
+        </motion.button>
 
-        <button
-          onClick={() => setActiveTab('qa')}
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
+            setActiveTab('qa');
+          }}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer relative ${
             activeTab === 'qa'
               ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
@@ -524,10 +582,14 @@ export function App() {
           {filteredQuestions.length > 0 && (
             <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
           )}
-        </button>
+        </motion.button>
 
-        <button
-          onClick={() => setActiveTab('leaderboard')}
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
+            setActiveTab('leaderboard');
+          }}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
             activeTab === 'leaderboard'
               ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
@@ -536,11 +598,15 @@ export function App() {
         >
           <Trophy className="w-4 h-4 mb-0.5" />
           <span>SCORES</span>
-        </button>
+        </motion.button>
 
         {userRole === 'host' && (
-          <button
-            onClick={() => setActiveTab('rooms')}
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            onClick={() => {
+              playWhoosh();
+              setActiveTab('rooms');
+            }}
             className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
               activeTab === 'rooms'
                 ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
@@ -549,7 +615,7 @@ export function App() {
           >
             <Layers className="w-4 h-4 mb-0.5" />
             <span>ROOMS</span>
-          </button>
+          </motion.button>
         )}
       </div>
 

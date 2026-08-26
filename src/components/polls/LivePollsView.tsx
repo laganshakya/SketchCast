@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Plus, CheckCircle2, Users, Clock, Sparkles, Vote, RotateCcw, Trash2, AlertCircle } from 'lucide-react';
+import { motion } from 'motion/react';
 import type { LivePoll } from '../../types';
 import { synthesizePollConsensus, getStoredMeshKey } from '../../lib/meshApi';
+import { playPopSound, playClickSound } from '../../lib/soundFx';
 
 interface LivePollsViewProps {
   polls: LivePoll[];
@@ -121,13 +123,18 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
 
         {/* Host only can create new polls */}
         {isHost ? (
-          <button
-            onClick={onOpenCreatePoll}
-            className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-1.5 transition-all shrink-0 cursor-pointer"
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              playClickSound();
+              onOpenCreatePoll();
+            }}
+            className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-1.5 transition-all shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-3" />
             <span>NEW POLL</span>
-          </button>
+          </motion.button>
         ) : (
           <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#1A1E2B] border-2 border-black brutal-shadow-sm text-[11px] sm:text-xs font-mono font-bold text-neo-mint flex items-center space-x-1.5 shrink-0">
             <Vote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -150,13 +157,18 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                 : 'Stand by. The Host will broadcast community architecture polls during the live session.'}
             </p>
             {isHost && (
-              <button
-                onClick={onOpenCreatePoll}
-                className="mt-2 px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-px active:translate-y-px active:shadow-none text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5 cursor-pointer"
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  onOpenCreatePoll();
+                }}
+                className="mt-2 px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow inline-flex items-center space-x-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-3" />
                 <span>CREATE FIRST POLL</span>
-              </button>
+              </motion.button>
             )}
           </div>
         ) : (
@@ -166,8 +178,11 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
             const currentError = aiError?.pollId === poll.id ? aiError.message : null;
 
             return (
-              <div
+              <motion.div
                 key={poll.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
                 className="bg-[#161924] p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-3.5 relative overflow-hidden"
               >
                 {/* Poll Header Bar */}
@@ -202,23 +217,31 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                         : 0;
 
                     return (
-                      <button
+                      <motion.button
                         key={option.id}
-                        onClick={() => !isVoted && onVote(poll.id, option.id)}
+                        whileHover={isVoted ? {} : { scale: 1.01, x: 2 }}
+                        whileTap={isVoted ? {} : { scale: 0.98 }}
+                        onClick={() => {
+                          if (!isVoted) {
+                            playPopSound();
+                            onVote(poll.id, option.id);
+                          }
+                        }}
                         disabled={isVoted}
                         className={`w-full p-3 border-2 border-black text-left transition-all relative overflow-hidden flex items-center justify-between group ${
                           isVoted
                             ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow text-white cursor-default'
-                            : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none cursor-pointer'
+                            : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm cursor-pointer'
                         }`}
                       >
                         {/* Animated Percentage Fill Bar */}
-                        <div
-                          className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-20 ${getOptionFillColor(
+                        <motion.div
+                          className={`absolute inset-y-0 left-0 opacity-20 ${getOptionFillColor(
                             idx,
                             isVoted
                           )}`}
                           style={{ width: `${percentage}%` }}
+                          transition={{ duration: 0.4 }}
                         />
 
                         {/* Content */}
@@ -246,14 +269,18 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                             ({option.votesCount})
                           </span>
                         </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
 
                 {/* Rendered AI Consensus Note (Visible to all players!) */}
                 {(poll.aiConsensusNote || localConsensusNotes[poll.id]) && (
-                  <div className="p-3 bg-[#11131B] border-2 border-neo-cyan brutal-shadow-cyan font-mono text-xs text-slate-200 space-y-1 animate-fadeIn">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-3 bg-[#11131B] border-2 border-neo-cyan brutal-shadow-cyan font-mono text-xs text-slate-200 space-y-1"
+                  >
                     <div className="flex items-center justify-between text-[10px] font-black uppercase text-neo-cyan">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-neo-cyan" />
@@ -264,7 +291,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                     <p className="text-slate-300 font-sans text-xs leading-relaxed">
                       {poll.aiConsensusNote || localConsensusNotes[poll.id]}
                     </p>
-                  </div>
+                  </motion.div>
                 )}
 
                 {currentError && (
@@ -289,47 +316,60 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                 {isHost && (
                   <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-[#23283A]">
                     <div>
-                      <button
+                      <motion.button
                         type="button"
-                        onClick={() => handleSynthesizeConsensus(poll)}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => {
+                          playClickSound();
+                          handleSynthesizeConsensus(poll);
+                        }}
                         disabled={isSynthesizing || poll.totalVotes === 0}
-                        className="px-2.5 sm:px-3 py-1.5 bg-neo-cyan hover:bg-[#33F3FF] disabled:bg-slate-800 disabled:text-slate-600 text-black text-xs font-mono font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer active:translate-x-px active:translate-y-px shrink-0"
+                        className="px-2.5 sm:px-3 py-1.5 bg-neo-cyan hover:bg-[#33F3FF] disabled:bg-slate-800 disabled:text-slate-600 text-black text-xs font-mono font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer shrink-0"
                         title={poll.totalVotes === 0 ? 'Collect votes first to synthesize consensus' : 'Analyze consensus with Mesh AI'}
                       >
                         <Sparkles className="w-3.5 h-3.5 shrink-0" />
                         <span>{isSynthesizing ? 'ANALYZING...' : (poll.aiConsensusNote || localConsensusNotes[poll.id]) ? 'REFRESH AI' : 'AI SUMMARY'}</span>
-                      </button>
+                      </motion.button>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       {onResetPoll && (
-                        <button
-                          onClick={() => onResetPoll(poll.id)}
-                          className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-yellow hover:text-black text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => {
+                            playClickSound();
+                            onResetPoll(poll.id);
+                          }}
+                          className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-yellow hover:text-black text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all cursor-pointer"
                           title="Reset all votes to zero and allow attendees to vote again"
                         >
                           <RotateCcw className="w-3 h-3 stroke-[2.5]" />
                           <span>RESET VOTES</span>
-                        </button>
+                        </motion.button>
                       )}
                       {onDeletePoll && (
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.96 }}
                           onClick={() => {
                             if (window.confirm(`Delete poll "${poll.question}"?`)) {
+                              playClickSound();
                               onDeletePoll(poll.id);
                             }
                           }}
-                          className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-pink hover:text-white text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
+                          className="px-2.5 py-1 bg-[#1A1E2B] hover:bg-neo-pink hover:text-white text-slate-300 text-[11px] font-mono font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 transition-all cursor-pointer"
                           title="Delete this poll"
                         >
                           <Trash2 className="w-3 h-3 stroke-[2.5]" />
                           <span>DELETE</span>
-                        </button>
+                        </motion.button>
                       )}
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })
         )}

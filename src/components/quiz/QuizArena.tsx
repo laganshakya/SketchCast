@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Timer,
   CheckCircle,
@@ -12,8 +12,17 @@ import {
   Clock,
   Shield,
 } from 'lucide-react';
+import { motion } from 'motion/react';
+import confetti from 'canvas-confetti';
 import type { QuizRoundState, PowerUpType, PowerUpInventory } from '../../types';
 import { QuizPowerUpsBar } from './QuizPowerUpsBar';
+import {
+  playPopSound,
+  playClickSound,
+  playSuccessFanfare,
+  playErrorBuzz,
+  playCountdownTick,
+} from '../../lib/soundFx';
 
 interface QuizArenaProps {
   quizState: QuizRoundState;
@@ -67,6 +76,44 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   }
 
   const totalVotes = Object.values(votesDistribution).reduce((a, b) => a + b, 0);
+  const lastRemainingRef = useRef<number>(timeRemaining);
+  const hasPlayedRevealRef = useRef<boolean>(false);
+
+  // Play countdown ticks in final 5 seconds of active round
+  useEffect(() => {
+    if (timeRemaining <= 5 && timeRemaining > 0 && !isRevealed && question) {
+      if (lastRemainingRef.current !== timeRemaining) {
+        playCountdownTick(timeRemaining);
+      }
+    }
+    lastRemainingRef.current = timeRemaining;
+  }, [timeRemaining, isRevealed, question]);
+
+  // Play celebratory fanfare or buzzer on answer reveal
+  useEffect(() => {
+    if (isRevealed && !hasPlayedRevealRef.current && question) {
+      hasPlayedRevealRef.current = true;
+      if (userSelectedOption) {
+        if (isCorrect) {
+          playSuccessFanfare();
+          try {
+            confetti({
+              particleCount: 70,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: ['#00F59B', '#FFE600', '#FF4782', '#33F3FF'],
+            });
+          } catch {
+            // ignore
+          }
+        } else {
+          playErrorBuzz();
+        }
+      }
+    } else if (!isRevealed) {
+      hasPlayedRevealRef.current = false;
+    }
+  }, [isRevealed, isCorrect, userSelectedOption, question]);
 
   const getOptionButtonClass = (optionId: string) => {
     const isSelected = userSelectedOption === optionId;
@@ -115,15 +162,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const timerPercentage = Math.max(0, (timeRemaining / (quizState.totalSeconds || 25)) * 100);
 
   return (
-    <div className={`flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans ${
-      activePowerUp === 'double-down'
-        ? 'ring-4 ring-neo-orange/80 rounded-sm'
-        : activePowerUp === 'streak-shield'
-        ? 'ring-4 ring-neo-purple/80 rounded-sm'
-        : activePowerUp === 'time-freeze'
-        ? 'ring-4 ring-neo-mint/80 rounded-sm'
-        : ''
-    }`}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className={`flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans ${
+        activePowerUp === 'double-down'
+          ? 'ring-4 ring-neo-orange/80 rounded-sm'
+          : activePowerUp === 'streak-shield'
+          ? 'ring-4 ring-neo-purple/80 rounded-sm'
+          : activePowerUp === 'time-freeze'
+          ? 'ring-4 ring-neo-mint/80 rounded-sm'
+          : ''
+      }`}
+    >
       {/* Retro Window Top Frame Bar */}
       <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 min-w-0">
@@ -141,10 +193,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono shrink-0 flex-wrap">
           {/* Active Power-Up Buff Badge */}
           {activePowerUp === 'double-down' && (
-            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-orange text-black text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1 animate-pulse">
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 1.2 }}
+              className="px-1.5 sm:px-2 py-0.5 bg-neo-orange text-black text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1"
+            >
               <Flame className="w-3 h-3 fill-black" />
               <span>2X DOUBLE ACTIVE!</span>
-            </div>
+            </motion.div>
           )}
           {activePowerUp === 'streak-shield' && (
             <div className="px-1.5 sm:px-2 py-0.5 bg-neo-purple text-white text-[10px] sm:text-[11px] font-black border border-black brutal-shadow-sm flex items-center gap-1">
@@ -160,40 +216,49 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )}
 
           {userStreak > 0 && (
-            <div className="px-1.5 sm:px-2 py-0.5 bg-neo-yellow text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1">
+            <motion.div
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="px-1.5 sm:px-2 py-0.5 bg-neo-yellow text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1"
+            >
               <Flame className="w-3 h-3 fill-black" />
               <span>{userStreak}X STREAK</span>
-            </div>
+            </motion.div>
           )}
 
           {/* Digital Countdown Timer */}
-          <div
+          <motion.div
+            animate={timeRemaining <= 5 && !isRevealed ? { scale: [1, 1.08, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 0.8 }}
             className={`px-2 sm:px-3 py-0.5 text-[11px] sm:text-xs font-mono font-black border-2 border-black brutal-shadow-sm flex items-center gap-1 sm:gap-1.5 ${
               timeRemaining <= 5 && !isRevealed
-                ? 'bg-neo-pink text-white animate-pulse'
+                ? 'bg-neo-pink text-white'
                 : 'bg-neo-yellow text-black'
             }`}
           >
             <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
             <span>{isRevealed ? 'REVEALED' : `${timeRemaining} SEC`}</span>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Progress Bar (Retro chunky blocks) */}
       {!isRevealed && (
         <div className="w-full h-2 sm:h-2.5 bg-neo-card-darker border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
-          <div
-            className={`h-full transition-all duration-300 ease-linear ${
-              timeRemaining <= 5 ? 'bg-neo-pink' : 'bg-neo-yellow'
-            }`}
+          <motion.div
+            className={`h-full ${timeRemaining <= 5 ? 'bg-neo-pink' : 'bg-neo-yellow'}`}
             style={{ width: `${timerPercentage}%` }}
+            transition={{ duration: 0.3 }}
           />
         </div>
       )}
 
       {/* Question Prompt Card */}
-      <div className="bg-[#181B26] p-4 sm:p-5 md:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#181B26] p-4 sm:p-5 md:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden"
+      >
         {/* Corner Tag */}
         <div className="absolute top-0 right-0 bg-neo-yellow text-black font-mono font-bold text-[9px] sm:text-[10px] uppercase px-2 sm:px-2.5 py-0.5 border-b-2 border-l-2 border-black">
           Q_PROMPT
@@ -202,7 +267,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <h2 className="text-base sm:text-xl md:text-2xl font-heavy text-white uppercase leading-snug sm:leading-tight tracking-tight mt-1">
           {question.question}
         </h2>
-      </div>
+      </motion.div>
 
       {/* 4 Neo-Brutalist Option Cards (A, B, C, D) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
@@ -212,14 +277,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           const isSelected = userSelectedOption === option.id;
           const isAnswer = question.correctOptionId === option.id;
           const isEliminated = eliminatedOptionIds.includes(option.id);
+          const isDisabled = isRevealed || userSelectedOption !== null || isEliminated;
 
           return (
-            <button
+            <motion.button
               key={option.id}
-              onClick={() => onSelectOption(option.id)}
-              disabled={isRevealed || userSelectedOption !== null || isEliminated}
+              whileHover={isDisabled ? {} : { scale: 1.015, x: 1 }}
+              whileTap={isDisabled ? {} : { scale: 0.98, y: 1 }}
+              onClick={() => {
+                if (!isDisabled) {
+                  playPopSound();
+                  onSelectOption(option.id);
+                }
+              }}
+              disabled={isDisabled}
               className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-19 sm:min-h-24 ${
-                isEliminated ? 'cursor-not-allowed' : 'cursor-pointer active:translate-x-px active:translate-y-px'
+                isEliminated ? 'cursor-not-allowed' : 'cursor-pointer'
               } ${getOptionButtonClass(
                 option.id
               )}`}
@@ -270,7 +343,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <span className="text-xs sm:text-[13px]">{votePct}%</span>
                 </div>
               )}
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -288,7 +361,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Retro Result & Architecture Takeaway Card */}
       {isRevealed && (
-        <div className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-3 animate-fadeIn">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-3"
+        >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               {userSelectedOption ? (
@@ -323,28 +401,38 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
             <p className="font-medium text-slate-900 text-xs sm:text-sm">{question.explanation}</p>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Host Control Actions */}
       {isHost && (
         <div className="flex items-center justify-end flex-wrap gap-2 pt-2">
           {!isRevealed ? (
-            <button
-              onClick={onRevealAnswer}
-              className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                playClickSound();
+                onRevealAnswer();
+              }}
+              className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <Eye className="w-4 h-4" />
               <span>REVEAL CORRECT ANSWER</span>
-            </button>
+            </motion.button>
           ) : hasNextQuestion && onNextQuestion ? (
-            <button
-              onClick={onNextQuestion}
-              className="w-full sm:w-auto px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                playClickSound();
+                onNextQuestion();
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>NEXT QUESTION</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </motion.button>
           ) : (
             <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
               <span className="px-3 py-2 bg-[#1C2030] text-neo-mint border-2 border-black font-mono text-xs font-black uppercase flex items-center space-x-1.5 brutal-shadow-sm">
@@ -352,18 +440,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <span>QUIZ COMPLETED</span>
               </span>
               {onViewScores && (
-                <button
-                  onClick={onViewScores}
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playClickSound();
+                    onViewScores();
+                  }}
                   className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
                   <Trophy className="w-4 h-4" />
                   <span>VIEW LEADERBOARD</span>
-                </button>
+                </motion.button>
               )}
             </div>
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

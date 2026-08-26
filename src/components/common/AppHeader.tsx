@@ -20,10 +20,14 @@ import {
   RotateCw,
   ChevronDown,
   Wrench,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { isUserRoomAdmin } from '../../lib/supabase';
+import { isAudioMuted, toggleAudioMute, playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface AppHeaderProps {
   room: Room;
@@ -71,10 +75,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const [isHostStudioOpen, setIsHostStudioOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [muted, setMuted] = useState(isAudioMuted());
 
   const hostStudioRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleMute = () => {
+    const next = toggleAudioMute();
+    setMuted(next);
+    if (!next) {
+      playPopSound();
+    }
+  };
 
   // Close dropdowns on outside click or Escape key
   useEffect(() => {
@@ -108,12 +121,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   }, []);
 
   const handleCopyCode = () => {
+    playPopSound();
     navigator.clipboard.writeText(room.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleTabClick = (tab: ActiveTabType) => {
+    if (tab !== activeTab) {
+      playWhoosh();
+      setActiveTab(tab);
+    }
+  };
+
   const handleRoleToggle = () => {
+    playClickSound();
     if (userRole === 'host') {
       setUserRole('attendee');
     } else {
@@ -142,18 +164,29 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="h-1.5 w-full hazard-stripes" />
 
       {/* Host Requirement Notice Toast */}
-      {showHostNotice && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 px-3.5 py-2 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold brutal-shadow flex items-center space-x-2 animate-bounce max-w-md text-center">
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          <span>{hostNoticeMessage || 'Host / Admin privileges require verified ownership.'}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {showHostNotice && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 px-3.5 py-2 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold brutal-shadow flex items-center space-x-2 animate-bounce max-w-md text-center"
+          >
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>{hostNoticeMessage || 'Host / Admin privileges require verified ownership.'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="h-14 sm:h-15 px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 w-full relative">
         {/* ================= LEFT: Brand & Unified Room Badge ================= */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
           {/* Logo */}
-          <div className="flex items-center space-x-1.5 shrink-0">
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: -3 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center space-x-1.5 shrink-0 cursor-pointer"
+          >
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
               <Zap className="w-4 h-4 fill-black stroke-black" />
             </div>
@@ -162,14 +195,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 SKETCH<span className="text-neo-yellow">CAST</span>
               </span>
             </div>
-          </div>
+          </motion.div>
 
           <div className="h-5 w-0.5 bg-slate-800 hidden sm:block shrink-0" />
 
           {/* Unified Compact Room & Actions Pill */}
           <div className="hidden sm:flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0 overflow-hidden font-mono text-xs">
             {/* Copy Code Action */}
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={handleCopyCode}
               className="flex items-center space-x-1.5 px-2.5 h-full hover:bg-[#252B3D] transition-colors cursor-copy-btn text-slate-200"
               title="Click to copy Room Code"
@@ -183,36 +217,46 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               ) : (
                 <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               )}
-            </button>
+            </motion.button>
 
             {/* QR Modal Trigger */}
-            <button
-              onClick={onOpenQRCode}
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => {
+                playClickSound();
+                onOpenQRCode();
+              }}
               className="px-2 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
               title="Open Mobile Join QR Code"
             >
               <QrCode className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">QR</span>
-            </button>
+            </motion.button>
 
             {/* Change / Switch Room Trigger */}
             {onOpenChangeRoom && (
-              <button
-                onClick={onOpenChangeRoom}
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={() => {
+                  playClickSound();
+                  onOpenChangeRoom();
+                }}
                 className="px-2 h-full bg-neo-card hover:bg-neo-pink hover:text-white text-slate-300 border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
                 title="Switch to another Arena Room"
               >
                 <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
                 <span className="hidden xl:inline">SWITCH</span>
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
 
         {/* ================= CENTER: Core Neo-Brutalist Navigation Tabs ================= */}
         <nav className="hidden md:flex items-center space-x-1 bg-[#090B0F] p-0.5 border-2 border-black brutal-shadow-sm shrink-0">
-          <button
-            onClick={() => setActiveTab('quiz')}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleTabClick('quiz')}
             className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'quiz'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
@@ -221,10 +265,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           >
             <Zap className="w-3.5 h-3.5" />
             <span>QUIZ</span>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('polls')}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleTabClick('polls')}
             className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'polls'
                 ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
@@ -233,10 +279,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           >
             <Vote className="w-3.5 h-3.5" />
             <span>POLLS</span>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('qa')}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleTabClick('qa')}
             className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'qa'
                 ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
@@ -250,10 +298,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 {questionsCount}
               </span>
             )}
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('leaderboard')}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleTabClick('leaderboard')}
             className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'leaderboard'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
@@ -262,14 +312,34 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           >
             <Trophy className="w-3.5 h-3.5" />
             <span>SCORES</span>
-          </button>
+          </motion.button>
         </nav>
 
-        {/* ================= RIGHT: Presence, Host Studio & Profile ================= */}
+        {/* ================= RIGHT: Presence, Audio, Host Studio & Profile ================= */}
         <div className="hidden md:flex items-center space-x-2 shrink-0 min-w-0">
+          {/* Tactile Audio SFX Toggle Button */}
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleToggleMute}
+            className={`h-8 w-8 flex items-center justify-center border-2 border-black brutal-shadow-sm transition-all cursor-pointer ${
+              muted
+                ? 'bg-[#181B26] text-slate-500 hover:text-slate-300'
+                : 'bg-neo-yellow/20 hover:bg-neo-yellow text-neo-yellow hover:text-black border-neo-yellow/50 hover:border-black'
+            }`}
+            title={muted ? 'Unmute Sound Effects (SFX)' : 'Mute Sound Effects (SFX)'}
+          >
+            {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          </motion.button>
+
           {/* Live Online Indicator */}
-          <button
-            onClick={onOpenActiveAttendees}
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              playClickSound();
+              onOpenActiveAttendees?.();
+            }}
             className="h-8 flex items-center space-x-1.5 px-2.5 bg-[#141824] hover:bg-[#1E2436] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
             title="Click to view live participants & manage room admins"
           >
@@ -277,17 +347,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <span className="text-xs tracking-wide whitespace-nowrap">
               {Math.max(1, activeViewerCount)} <span className="hidden lg:inline">ONLINE</span>
             </span>
-          </button>
+          </motion.button>
 
           {/* Unified Host Studio Dropdown (Exclusively for Host) */}
           {userRole === 'host' && (
             <div className="relative" ref={hostStudioRef}>
-              <button
-                onClick={() => setIsHostStudioOpen(!isHostStudioOpen)}
-                className={`h-8 px-2.5 border-2 border-black brutal-shadow-sm font-mono text-xs font-black flex items-center space-x-1.5 transition-all active:translate-x-px active:translate-y-px cursor-pointer ${
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  playPopSound();
+                  setIsHostStudioOpen(!isHostStudioOpen);
+                }}
+                className={`h-8 px-2.5 border-2 border-black brutal-shadow-sm font-mono text-xs font-black flex items-center space-x-1.5 transition-all cursor-pointer ${
                   isHostStudioOpen
                     ? 'bg-neo-yellow text-black -translate-x-px -translate-y-px'
-                    : 'bg-neo-yellow hover:bg-[#FFE600] text-black'
+                    : 'bg-neo-yellow hover:bg-neo-yellow/90 text-black'
                 }`}
                 title="Host Stage & AI Studio Tools"
               >
@@ -295,101 +370,122 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <span className="hidden lg:inline">HOST STUDIO</span>
                 <span className="lg:hidden">STUDIO</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isHostStudioOpen ? 'rotate-180' : ''}`} />
-              </button>
+              </motion.button>
 
               {/* Host Studio Dropdown Menu Popover */}
-              {isHostStudioOpen && (
-                <div className="absolute top-10 right-0 w-64 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs animate-fadeIn">
-                  <div className="px-2 py-1 border-b border-slate-700/80 flex items-center justify-between text-[10px] text-slate-400 font-extrabold uppercase">
-                    <span>STAGE CONTROLS & AI</span>
-                    <span className="px-1.5 py-0.2 bg-neo-yellow text-black border border-black font-black text-[9px]">
-                      HOST
-                    </span>
-                  </div>
-
-                  {/* 1. AI Settings */}
-                  {onOpenAISettings && (
-                    <button
-                      onClick={() => {
-                        setIsHostStudioOpen(false);
-                        onOpenAISettings();
-                      }}
-                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-pink hover:text-white text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
-                    >
-                      <div className="w-7 h-7 bg-neo-pink text-white border border-black flex items-center justify-center shrink-0">
-                        <Bot className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-heavy text-[11px] uppercase group-hover:text-white">AI ENGINE SETTINGS</div>
-                        <div className="text-[9px] text-slate-400 group-hover:text-slate-100 truncate">Mesh API key & LLM models</div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* 2. AI Summary Report */}
-                  {onOpenAISummary && (
-                    <button
-                      onClick={() => {
-                        setIsHostStudioOpen(false);
-                        onOpenAISummary();
-                      }}
-                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
-                    >
-                      <div className="w-7 h-7 bg-neo-yellow text-black border border-black flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-heavy text-[11px] uppercase group-hover:text-black">MASTERCLASS REPORT</div>
-                        <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Instant AI session synthesis</div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* 3. Attendee Spotlight Roulette */}
-                  {onOpenSpotlightRoulette && (
-                    <button
-                      onClick={() => {
-                        setIsHostStudioOpen(false);
-                        onOpenSpotlightRoulette();
-                      }}
-                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
-                    >
-                      <div className="w-7 h-7 bg-neo-cyan text-black border border-black flex items-center justify-center shrink-0">
-                        <RotateCw className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-heavy text-[11px] uppercase group-hover:text-black">ATTENDEE ROULETTE</div>
-                        <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Live stage giveaway wheel</div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* 4. Rooms Admin Hub */}
-                  <button
-                    onClick={() => {
-                      setIsHostStudioOpen(false);
-                      setActiveTab('rooms');
-                    }}
-                    className="w-full p-2 bg-[#1C2030] hover:bg-neo-mint hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+              <AnimatePresence>
+                {isHostStudioOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.94, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.94, y: -6 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="absolute top-10 right-0 w-64 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs"
                   >
-                    <div className="w-7 h-7 bg-neo-mint text-black border border-black flex items-center justify-center shrink-0">
-                      <Layers className="w-4 h-4" />
+                    <div className="px-2 py-1 border-b border-slate-700/80 flex items-center justify-between text-[10px] text-slate-400 font-extrabold uppercase">
+                      <span>STAGE CONTROLS & AI</span>
+                      <span className="px-1.5 py-0.2 bg-neo-yellow text-black border border-black font-black text-[9px]">
+                        HOST
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-heavy text-[11px] uppercase group-hover:text-black">ROOMS HUB</div>
-                      <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Manage broadcast arenas</div>
-                    </div>
-                  </button>
-                </div>
-              )}
+
+                    {/* 1. AI Settings */}
+                    {onOpenAISettings && (
+                      <motion.button
+                        whileHover={{ x: 2 }}
+                        onClick={() => {
+                          playClickSound();
+                          setIsHostStudioOpen(false);
+                          onOpenAISettings();
+                        }}
+                        className="w-full p-2 bg-[#1C2030] hover:bg-neo-pink hover:text-white text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                      >
+                        <div className="w-7 h-7 bg-neo-pink text-white border border-black flex items-center justify-center shrink-0">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-heavy text-[11px] uppercase group-hover:text-white">AI ENGINE SETTINGS</div>
+                          <div className="text-[9px] text-slate-400 group-hover:text-slate-100 truncate">Mesh API key & LLM models</div>
+                        </div>
+                      </motion.button>
+                    )}
+
+                    {/* 2. AI Summary Report */}
+                    {onOpenAISummary && (
+                      <motion.button
+                        whileHover={{ x: 2 }}
+                        onClick={() => {
+                          playClickSound();
+                          setIsHostStudioOpen(false);
+                          onOpenAISummary();
+                        }}
+                        className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                      >
+                        <div className="w-7 h-7 bg-neo-yellow text-black border border-black flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-heavy text-[11px] uppercase group-hover:text-black">MASTERCLASS REPORT</div>
+                          <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Instant AI session synthesis</div>
+                        </div>
+                      </motion.button>
+                    )}
+
+                    {/* 3. Attendee Spotlight Roulette */}
+                    {onOpenSpotlightRoulette && (
+                      <motion.button
+                        whileHover={{ x: 2 }}
+                        onClick={() => {
+                          playClickSound();
+                          setIsHostStudioOpen(false);
+                          onOpenSpotlightRoulette();
+                        }}
+                        className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                      >
+                        <div className="w-7 h-7 bg-neo-cyan text-black border border-black flex items-center justify-center shrink-0">
+                          <RotateCw className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-heavy text-[11px] uppercase group-hover:text-black">ATTENDEE ROULETTE</div>
+                          <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Live stage giveaway wheel</div>
+                        </div>
+                      </motion.button>
+                    )}
+
+                    {/* 4. Rooms Admin Hub */}
+                    <motion.button
+                      whileHover={{ x: 2 }}
+                      onClick={() => {
+                        playClickSound();
+                        setIsHostStudioOpen(false);
+                        setActiveTab('rooms');
+                      }}
+                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-mint hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 bg-neo-mint text-black border border-black flex items-center justify-center shrink-0">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heavy text-[11px] uppercase group-hover:text-black">ROOMS HUB</div>
+                        <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Manage broadcast arenas</div>
+                      </div>
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
           {/* User Profile & Account Dropdown */}
           <div className="relative" ref={profileMenuRef}>
-            <button
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="h-8 flex items-center space-x-1.5 bg-[#1A1E2B] hover:bg-[#252B3D] border-2 border-black brutal-shadow-sm px-2 text-xs font-mono cursor-pointer transition-all active:translate-x-px active:translate-y-px shrink min-w-0 max-w-40 lg:max-w-48"
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                playPopSound();
+                setIsProfileMenuOpen(!isProfileMenuOpen);
+              }}
+              className="h-8 flex items-center space-x-1.5 bg-[#1A1E2B] hover:bg-[#252B3D] border-2 border-black brutal-shadow-sm px-2 text-xs font-mono cursor-pointer transition-all shrink min-w-0 max-w-40 lg:max-w-48"
               title="User Profile & Account Settings"
             >
               <span
@@ -401,61 +497,80 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </span>
               <span className="text-slate-200 font-bold truncate text-xs">{userName}</span>
               <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </motion.button>
 
             {/* Profile Dropdown Popover */}
-            {isProfileMenuOpen && (
-              <div className="absolute top-10 right-0 w-56 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs animate-fadeIn">
-                <div className="p-2 bg-[#0C0E14] border-2 border-black space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-400 font-bold uppercase">SIGNED IN AS</span>
-                    <span className="px-1 py-0.1 bg-neo-mint text-black font-black text-[9px] border border-black">
-                      ACTIVE
-                    </span>
+            <AnimatePresence>
+              {isProfileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.94, y: -6 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className="absolute top-10 right-0 w-56 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs"
+                >
+                  <div className="p-2 bg-[#0C0E14] border-2 border-black space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase">SIGNED IN AS</span>
+                      <span className="px-1 py-0.1 bg-neo-mint text-black font-black text-[9px] border border-black">
+                        ACTIVE
+                      </span>
+                    </div>
+                    <div className="font-heavy text-white truncate text-xs">{userName}</div>
+                    <div className="text-[10px] text-slate-400 truncate font-sans">{currentUser?.email || 'Guest Participant'}</div>
                   </div>
-                  <div className="font-heavy text-white truncate text-xs">{userName}</div>
-                  <div className="text-[10px] text-slate-400 truncate font-sans">{currentUser?.email || 'Guest Participant'}</div>
-                </div>
 
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    onOpenAuthModal();
-                  }}
-                  className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
-                >
-                  <Settings className="w-3.5 h-3.5 shrink-0" />
-                  <span>Profile & Auth</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setIsProfileMenuOpen(false);
+                      onOpenAuthModal();
+                    }}
+                    className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                  >
+                    <Settings className="w-3.5 h-3.5 shrink-0" />
+                    <span>Profile & Auth</span>
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    handleRoleToggle();
-                  }}
-                  className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
-                >
-                  <Crown className="w-3.5 h-3.5 shrink-0" />
-                  <span>Toggle Role ({userRole === 'host' ? 'Attendee' : 'Host'})</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      handleRoleToggle();
+                    }}
+                    className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                  >
+                    <Crown className="w-3.5 h-3.5 shrink-0" />
+                    <span>Toggle Role ({userRole === 'host' ? 'Attendee' : 'Host'})</span>
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setIsProfileMenuOpen(false);
-                    onSignOut();
-                  }}
-                  className="w-full p-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border-2 border-neo-pink/60 hover:border-black flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
-                >
-                  <LogOut className="w-3.5 h-3.5 shrink-0" />
-                  <span>Log Out</span>
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => {
+                      playPopSound();
+                      setIsProfileMenuOpen(false);
+                      onSignOut();
+                    }}
+                    className="w-full p-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border-2 border-neo-pink/60 hover:border-black flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                  >
+                    <LogOut className="w-3.5 h-3.5 shrink-0" />
+                    <span>Log Out</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         {/* ================= COMPACT MOBILE CONTROLS (< md) ================= */}
         <div className="md:hidden flex items-center space-x-1.5 shrink-0 min-w-0" ref={mobileMenuRef}>
+          {/* Mobile Audio Toggle */}
+          <button
+            onClick={handleToggleMute}
+            className="h-8 w-8 flex items-center justify-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm text-slate-300 cursor-pointer"
+            title={muted ? 'Unmute' : 'Mute'}
+          >
+            {muted ? <VolumeX className="w-3 h-3 text-slate-500" /> : <Volume2 className="w-3 h-3 text-neo-yellow" />}
+          </button>
+
           {/* Mobile Room & QR Combo Pill */}
           <div className="flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0">
             <button
@@ -471,7 +586,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               )}
             </button>
             <button
-              onClick={onOpenQRCode}
+              onClick={() => {
+                playClickSound();
+                onOpenQRCode();
+              }}
               className="px-1.5 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors cursor-zoom flex items-center"
               title="Open Mobile QR Code"
             >
@@ -481,8 +599,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           {/* Unified Mobile Menu Trigger */}
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`h-8 flex items-center space-x-1 border-2 border-black brutal-shadow-sm px-2 text-[10px] sm:text-[11px] font-mono shrink min-w-0 max-w-32 xs:max-w-40 transition-all active:translate-x-px active:translate-y-px cursor-pointer ${
+            onClick={() => {
+              playPopSound();
+              setIsMobileMenuOpen(!isMobileMenuOpen);
+            }}
+            className={`h-8 flex items-center space-x-1 border-2 border-black brutal-shadow-sm px-2 text-[10px] sm:text-[11px] font-mono shrink min-w-0 max-w-32 xs:max-w-40 transition-all cursor-pointer ${
               isMobileMenuOpen
                 ? 'bg-neo-yellow text-black'
                 : 'bg-neo-card hover:bg-[#1E2230] text-slate-200'
@@ -501,141 +622,156 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </button>
 
           {/* Mobile Quick-Menu Dropdown Popover */}
-          {isMobileMenuOpen && (
-            <div className="absolute top-13 right-2 w-68 bg-neo-dark border-3 border-black brutal-shadow-lg p-2.5 space-y-2 z-50 font-mono text-xs animate-fadeIn">
-              {/* Dropdown Header Info */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <div className="flex items-center space-x-1.5 min-w-0">
-                  <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase border border-black ${
-                    userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
-                  }`}>
-                    {userRole.toUpperCase()}
-                  </span>
-                  <span className="text-slate-300 font-bold text-[11px] truncate">
-                    ROOM: {room.code}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-black cursor-pointer"
-                  title="Close Menu"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Host Quick Actions */}
-              {userRole === 'host' && (
-                <div className="space-y-1.5">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block px-1">HOST STUDIO</span>
-                  {onOpenAISettings && (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        onOpenAISettings();
-                      }}
-                      className="w-full py-2 px-2.5 bg-neo-pink hover:bg-[#FF4782] text-white border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
-                    >
-                      <Bot className="w-4 h-4 shrink-0" />
-                      <span>AI ENGINE SETTINGS</span>
-                    </button>
-                  )}
-
-                  {onOpenAISummary && (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        onOpenAISummary();
-                      }}
-                      className="w-full py-2 px-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
-                    >
-                      <FileText className="w-4 h-4 shrink-0" />
-                      <span>MASTERCLASS REPORT</span>
-                    </button>
-                  )}
-
-                  {onOpenSpotlightRoulette && (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        onOpenSpotlightRoulette();
-                      }}
-                      className="w-full py-2 px-2.5 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
-                    >
-                      <RotateCw className="w-4 h-4 shrink-0" />
-                      <span>SPOTLIGHT ROULETTE</span>
-                    </button>
-                  )}
-
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: -6 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute top-13 right-2 w-68 bg-neo-dark border-3 border-black brutal-shadow-lg p-2.5 space-y-2 z-50 font-mono text-xs"
+              >
+                {/* Dropdown Header Info */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <span className={`px-1.5 py-0.2 text-[9px] font-black uppercase border border-black ${
+                      userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                    }`}>
+                      {userRole.toUpperCase()}
+                    </span>
+                    <span className="text-slate-300 font-bold text-[11px] truncate">
+                      ROOM: {room.code}
+                    </span>
+                  </div>
                   <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      setActiveTab('rooms');
-                    }}
-                    className="w-full py-2 px-2.5 bg-neo-mint hover:bg-[#00F59B] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-black cursor-pointer"
+                    title="Close Menu"
                   >
-                    <Layers className="w-4 h-4 shrink-0" />
-                    <span>ROOMS HUB</span>
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              )}
 
-              {/* General Actions */}
-              <div className="pt-2 border-t border-slate-800 space-y-1.5">
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onOpenAuthModal();
-                  }}
-                  className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
-                >
-                  <span className="flex items-center space-x-1.5">
-                    <Settings className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Account Settings</span>
-                  </span>
-                  <span className="text-[10px] text-neo-yellow">{userName}</span>
-                </button>
+                {/* Host Quick Actions */}
+                {userRole === 'host' && (
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block px-1">HOST STUDIO</span>
+                    {onOpenAISettings && (
+                      <button
+                        onClick={() => {
+                          playClickSound();
+                          setIsMobileMenuOpen(false);
+                          onOpenAISettings();
+                        }}
+                        className="w-full py-2 px-2.5 bg-neo-pink hover:bg-[#FF4782] text-white border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                      >
+                        <Bot className="w-4 h-4 shrink-0" />
+                        <span>AI ENGINE SETTINGS</span>
+                      </button>
+                    )}
 
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleRoleToggle();
-                  }}
-                  className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
-                >
-                  <span className="flex items-center space-x-1.5">
-                    <Crown className="w-3.5 h-3.5 text-neo-yellow" />
-                    <span>Switch Role</span>
-                  </span>
-                  <span className="text-[10px] text-slate-400 uppercase">Now: {userRole}</span>
-                </button>
+                    {onOpenAISummary && (
+                      <button
+                        onClick={() => {
+                          playClickSound();
+                          setIsMobileMenuOpen(false);
+                          onOpenAISummary();
+                        }}
+                        className="w-full py-2 px-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                      >
+                        <FileText className="w-4 h-4 shrink-0" />
+                        <span>MASTERCLASS REPORT</span>
+                      </button>
+                    )}
 
-                {onOpenChangeRoom && (
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      onOpenChangeRoom();
-                    }}
-                    className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5 text-neo-mint" />
-                    <span>Switch Arena Room</span>
-                  </button>
+                    {onOpenSpotlightRoulette && (
+                      <button
+                        onClick={() => {
+                          playClickSound();
+                          setIsMobileMenuOpen(false);
+                          onOpenSpotlightRoulette();
+                        }}
+                        className="w-full py-2 px-2.5 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                      >
+                        <RotateCw className="w-4 h-4 shrink-0" />
+                        <span>SPOTLIGHT ROULETTE</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        playClickSound();
+                        setIsMobileMenuOpen(false);
+                        setActiveTab('rooms');
+                      }}
+                      className="w-full py-2 px-2.5 bg-neo-mint hover:bg-neo-mint/90 text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                    >
+                      <Layers className="w-4 h-4 shrink-0" />
+                      <span>ROOMS HUB</span>
+                    </button>
+                  </div>
                 )}
 
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    onSignOut();
-                  }}
-                  className="w-full py-1.5 px-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border border-neo-pink/50 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Log Out & Exit</span>
-                </button>
-              </div>
-            </div>
-          )}
+                {/* General Actions */}
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setIsMobileMenuOpen(false);
+                      onOpenAuthModal();
+                    }}
+                    className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
+                  >
+                    <span className="flex items-center space-x-1.5">
+                      <Settings className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Account Settings</span>
+                    </span>
+                    <span className="text-[10px] text-neo-yellow">{userName}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleRoleToggle();
+                    }}
+                    className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
+                  >
+                    <span className="flex items-center space-x-1.5">
+                      <Crown className="w-3.5 h-3.5 text-neo-yellow" />
+                      <span>Switch Role</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 uppercase">Now: {userRole}</span>
+                  </button>
+
+                  {onOpenChangeRoom && (
+                    <button
+                      onClick={() => {
+                        playClickSound();
+                        setIsMobileMenuOpen(false);
+                        onOpenChangeRoom();
+                      }}
+                      className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-neo-mint" />
+                      <span>Switch Arena Room</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      playPopSound();
+                      setIsMobileMenuOpen(false);
+                      onSignOut();
+                    }}
+                    className="w-full py-1.5 px-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border border-neo-pink/50 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Log Out & Exit</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

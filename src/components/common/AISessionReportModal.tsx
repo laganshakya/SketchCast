@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { X, FileText, Copy, Download, CheckCircle, AlertCircle, RefreshCw, Sparkles, Globe, FileCode } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { generateSessionSummaryReport, getStoredMeshKey } from '../../lib/meshApi';
 import type { QuizQuestion, LivePoll, Question, LeaderboardEntry } from '../../types';
+import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface AISessionReportModalProps {
   isOpen: boolean;
@@ -501,165 +503,220 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-      <div className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[92vh] overflow-y-auto flex flex-col">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 pr-8 sm:pr-10">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0 -rotate-2">
-            <FileText className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5 flex-wrap">
-              <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                AI MASTERCLASS SESSION REPORT
-              </h3>
-              <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase">
-                MESH SYNTHESIS
-              </span>
-            </div>
-            <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-              Generates an executive recap of all architecture quizzes, community polls, and top Q&A.
-            </p>
-          </div>
-        </div>
-
-        {/* Action / Trigger Banner */}
-        {!reportMarkdown && !isGenerating && (
-          <div className="p-4 bg-white border-2 border-black brutal-shadow-sm font-mono space-y-3 mb-3">
-            <div className="text-xs text-slate-800 leading-relaxed">
-              <strong>Session Data to Synthesize:</strong>
-              <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px]">
-                <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
-                <li>{polls.length} Live Community Polls</li>
-                <li>{questions.length} Audience Q&A Submissions</li>
-                <li>{leaderboard.length} Leaderboard participants (Top score: {leaderboard[0]?.score || 0} pts)</li>
-              </ul>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGenerateReport}
-              className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
+          <motion.div
+            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.9, y: 15, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[92vh] overflow-y-auto flex flex-col"
+          >
+            {/* Close button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                playClickSound();
+                onClose();
+              }}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
             >
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span>GENERATE MASTERCLASS REPORT</span>
-            </button>
-          </div>
-        )}
+              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+            </motion.button>
 
-        {isGenerating && (
-          <div className="p-8 bg-white border-2 border-black brutal-shadow-sm text-center font-mono space-y-3 mb-3">
-            <RefreshCw className="w-8 h-8 text-neo-pink mx-auto animate-spin" />
-            <h4 className="text-xs font-heavy uppercase">Synthesizing Executive Masterclass Report...</h4>
-            <p className="text-[11px] text-slate-600">Analyzing quiz takeaways, voting consensus, and top Q&A threads via Mesh API</p>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="p-2.5 mb-3 bg-neo-pink text-white font-mono text-xs font-bold border-2 border-black flex items-start space-x-2">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <div>{errorMessage}</div>
-              {onOpenAISettings && errorMessage.includes('AI Settings') && (
-                <button
-                  type="button"
-                  onClick={onOpenAISettings}
-                  className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
-                >
-                  Open AI Settings
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Report Content View */}
-        {reportMarkdown && (
-          <div className="space-y-3 flex-1 flex flex-col min-h-0 font-mono">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-[11px] font-black uppercase text-emerald-800 flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5 stroke-3" />
-                <span>REPORT GENERATED ({reportMarkdown.length} CHARS)</span>
-              </span>
-
-              <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="px-2 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
-                  title="Copy formatted markdown to clipboard"
-                >
-                  {copied ? <CheckCircle className="w-3.5 h-3.5 stroke-3" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'COPIED!' : 'COPY'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadMarkdown}
-                  className="px-2 py-1 bg-neo-cyan hover:bg-[#33F3FF] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
-                  title="Download as Markdown file"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>.MD</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadTxt}
-                  className="px-2 py-1 bg-neo-mint hover:bg-[#26F7A9] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
-                  title="Download as Plain Text file"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>.TXT</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadHtml}
-                  className="px-2 py-1 bg-neo-purple hover:bg-[#A855F7] text-white text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
-                  title="Download as styled Neo-Brutalist HTML report"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>.HTML</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadJson}
-                  className="px-2 py-1 bg-neo-orange hover:bg-[#FF8833] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all active:translate-x-px active:translate-y-px"
-                  title="Download full session structured JSON payload"
-                >
-                  <FileCode className="w-3.5 h-3.5" />
-                  <span>.JSON</span>
-                </button>
+            {/* Modal Header */}
+            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 pr-8 sm:pr-10">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0 -rotate-2">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-1.5 flex-wrap">
+                  <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
+                    AI MASTERCLASS SESSION REPORT
+                  </h3>
+                  <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase">
+                    MESH SYNTHESIS
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
+                  Generates an executive recap of all architecture quizzes, community polls, and top Q&A.
+                </p>
               </div>
             </div>
 
-            <div className="p-3.5 bg-white border-2 border-black brutal-shadow-sm flex-1 overflow-y-auto max-h-96 text-xs text-slate-900 whitespace-pre-wrap font-mono leading-relaxed select-text">
-              {reportMarkdown}
-            </div>
+            {/* Action / Trigger Banner */}
+            {!reportMarkdown && !isGenerating && (
+              <div className="p-4 bg-white border-2 border-black brutal-shadow-sm font-mono space-y-3 mb-3">
+                <div className="text-xs text-slate-800 leading-relaxed">
+                  <strong>Session Data to Synthesize:</strong>
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px]">
+                    <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
+                    <li>{polls.length} Live Community Polls</li>
+                    <li>{questions.length} Audience Q&A Submissions</li>
+                    <li>{leaderboard.length} Leaderboard participants (Top score: {leaderboard[0]?.score || 0} pts)</li>
+                  </ul>
+                </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={handleGenerateReport}
-                className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold uppercase border border-black flex items-center space-x-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>RE-GENERATE</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    playWhoosh();
+                    handleGenerateReport();
+                  }}
+                  className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                >
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>GENERATE MASTERCLASS REPORT</span>
+                </motion.button>
+              </div>
+            )}
+
+            {isGenerating && (
+              <div className="p-8 bg-white border-2 border-black brutal-shadow-sm text-center font-mono space-y-3 mb-3">
+                <RefreshCw className="w-8 h-8 text-neo-pink mx-auto animate-spin" />
+                <h4 className="text-xs font-heavy uppercase">Synthesizing Executive Masterclass Report...</h4>
+                <p className="text-[11px] text-slate-600">Analyzing quiz takeaways, voting consensus, and top Q&A threads via Mesh API</p>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="p-2.5 mb-3 bg-neo-pink text-white font-mono text-xs font-bold border-2 border-black flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div>{errorMessage}</div>
+                  {onOpenAISettings && errorMessage.includes('AI Settings') && (
+                    <button
+                      type="button"
+                      onClick={onOpenAISettings}
+                      className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
+                    >
+                      Open AI Settings
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Report Content View */}
+            {reportMarkdown && (
+              <div className="space-y-3 flex-1 flex flex-col min-h-0 font-mono">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-[11px] font-black uppercase text-emerald-800 flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5 stroke-3" />
+                    <span>REPORT GENERATED ({reportMarkdown.length} CHARS)</span>
+                  </span>
+
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playPopSound();
+                        handleCopy();
+                      }}
+                      className="px-2 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Copy formatted markdown to clipboard"
+                    >
+                      {copied ? <CheckCircle className="w-3.5 h-3.5 stroke-3" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copied ? 'COPIED!' : 'COPY'}</span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playClickSound();
+                        handleDownloadMarkdown();
+                      }}
+                      className="px-2 py-1 bg-neo-cyan hover:bg-[#33F3FF] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Download as Markdown file"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>.MD</span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playClickSound();
+                        handleDownloadTxt();
+                      }}
+                      className="px-2 py-1 bg-neo-mint hover:bg-[#26F7A9] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Download as Plain Text file"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>.TXT</span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playClickSound();
+                        handleDownloadHtml();
+                      }}
+                      className="px-2 py-1 bg-neo-purple hover:bg-[#A855F7] text-white text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Download as styled Neo-Brutalist HTML report"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>.HTML</span>
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        playClickSound();
+                        handleDownloadJson();
+                      }}
+                      className="px-2 py-1 bg-neo-orange hover:bg-[#FF8833] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Download full session structured JSON payload"
+                    >
+                      <FileCode className="w-3.5 h-3.5" />
+                      <span>.JSON</span>
+                    </motion.button>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border-2 border-black brutal-shadow-sm flex-1 overflow-y-auto max-h-96 text-xs text-slate-900 whitespace-pre-wrap font-mono leading-relaxed select-text">
+                  {reportMarkdown}
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      playWhoosh();
+                      handleGenerateReport();
+                    }}
+                    className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold uppercase border border-black flex items-center space-x-1 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>RE-GENERATE</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

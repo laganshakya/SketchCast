@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Plus, Flame, Clock, CheckCircle2, Sparkles, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Question, QuestionStatus } from '../../types';
 import { QuestionCard } from './QuestionCard';
+import { playClickSound } from '../../lib/soundFx';
 
 interface QuestionFeedProps {
   questions: Question[];
@@ -55,20 +57,29 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             </span>
           </div>
 
-          <button
-            onClick={onOpenAskModal}
-            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-neo-pink hover:bg-[#FF4782] active:translate-x-px active:translate-y-px active:shadow-none text-white text-[11px] sm:text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1 cursor-pointer"
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              playClickSound();
+              onOpenAskModal();
+            }}
+            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white text-[11px] sm:text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-3" />
             <span>ASK QUESTION</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Retro Folder Tabs */}
         <div className="grid grid-cols-4 gap-1 p-1 bg-black border-2 border-black font-mono text-xs">
-          <button
-            onClick={() => setActiveTab('top')}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              playClickSound();
+              setActiveTab('top');
+            }}
+            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
               activeTab === 'top'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
@@ -76,11 +87,15 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
           >
             <Flame className="w-3 h-3" />
             <span>TOP</span>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              playClickSound();
+              setActiveTab('recent');
+            }}
+            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
               activeTab === 'recent'
                 ? 'bg-neo-cyan text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
@@ -88,11 +103,15 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
           >
             <Clock className="w-3 h-3" />
             <span>NEW</span>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('spotlight')}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              playClickSound();
+              setActiveTab('spotlight');
+            }}
+            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
               activeTab === 'spotlight'
                 ? 'bg-neo-pink text-white border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
@@ -100,11 +119,15 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
           >
             <Sparkles className="w-3 h-3" />
             <span>STAGE</span>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={() => setActiveTab('answered')}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border ${
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              playClickSound();
+              setActiveTab('answered');
+            }}
+            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
               activeTab === 'answered'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm'
                 : 'text-slate-400 hover:text-white border-transparent'
@@ -112,7 +135,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
           >
             <CheckCircle2 className="w-3 h-3" />
             <span>DONE</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Search */}
@@ -139,19 +162,21 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
             </p>
           </div>
         ) : (
-          filtered.map((q) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              isUpvoted={upvotedIds.has(q.id)}
-              onToggleUpvote={onToggleUpvote}
-              onStatusChange={onStatusChange}
-              onUpdateTalkingPoints={onUpdateTalkingPoints}
-              onOpenAISettings={onOpenAISettings}
-              isHost={isHost}
-              compact={compact}
-            />
-          ))
+          <AnimatePresence mode="popLayout">
+            {filtered.map((q) => (
+              <QuestionCard
+                key={q.id}
+                question={q}
+                isUpvoted={upvotedIds.has(q.id)}
+                onToggleUpvote={onToggleUpvote}
+                onStatusChange={onStatusChange}
+                onUpdateTalkingPoints={onUpdateTalkingPoints}
+                onOpenAISettings={onOpenAISettings}
+                isHost={isHost}
+                compact={compact}
+              />
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </div>

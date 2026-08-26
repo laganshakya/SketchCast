@@ -1,6 +1,8 @@
 import React from 'react';
 import { Scissors, Flame, Shield, Clock, Zap } from 'lucide-react';
+import { motion } from 'motion/react';
 import type { PowerUpType, PowerUpInventory } from '../../types';
+import { playPowerUpSound } from '../../lib/soundFx';
 
 interface QuizPowerUpsBarProps {
   inventory: PowerUpInventory;
@@ -87,17 +89,24 @@ export const QuizPowerUpsBar: React.FC<QuizPowerUpsBarProps> = ({
           const isUsable = count > 0 && !disabled && !isActive;
 
           return (
-            <button
+            <motion.button
               key={p.id}
               type="button"
-              onClick={() => onActivate(p.id)}
+              whileHover={isUsable ? { scale: 1.03, y: -1 } : {}}
+              whileTap={isUsable ? { scale: 0.96, y: 1 } : {}}
+              onClick={() => {
+                if (isUsable) {
+                  playPowerUpSound();
+                  onActivate(p.id);
+                }
+              }}
               disabled={!isUsable}
               title={`${p.label}: ${p.description}`}
               className={`p-1.5 sm:p-2 border-2 transition-all flex flex-col items-start justify-between min-h-13.5 sm:min-h-15 text-left relative overflow-hidden group ${
                 isActive
                   ? `${p.colorBg} ${p.activeBorder} brutal-shadow-sm scale-[1.02]`
                   : count > 0 && !disabled
-                  ? 'bg-[#1C2030] hover:bg-[#22283A] text-slate-200 border-black cursor-pointer active:translate-x-px active:translate-y-px'
+                  ? 'bg-[#1C2030] hover:bg-[#22283A] text-slate-200 border-black cursor-pointer'
                   : 'bg-black/40 text-slate-600 border-slate-800 opacity-60 cursor-not-allowed'
               }`}
             >
@@ -130,7 +139,7 @@ export const QuizPowerUpsBar: React.FC<QuizPowerUpsBarProps> = ({
               }`}>
                 {isActive ? p.activeText : p.description}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>

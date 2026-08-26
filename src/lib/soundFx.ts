@@ -1,52 +1,221 @@
-// Web Audio API Retro Synthesizer for SketchCast Live 2.0
-// 100% client-side, zero external MP3 dependencies, zero loading lag
+/**
+ * Native Web Audio SFX Engine for SketchCast Live 2.0
+ * Zero external audio dependencies, zero latency, ultra-tactile micro-interactions.
+ */
 
 let audioCtx: AudioContext | null = null;
-let isMuted = false;
+let isMuted: boolean = false;
+
+// Initialize sound preferences from localStorage
+try {
+  const saved = localStorage.getItem('sketchcast_sfx_muted');
+  if (saved !== null) {
+    isMuted = saved === 'true';
+  }
+} catch {
+  // ignore
+}
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
-  if (isMuted) return null;
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+export function isAudioMuted(): boolean {
+  return isMuted;
+}
+
+export function setAudioMuted(muted: boolean): void {
+  isMuted = muted;
   try {
-    if (!audioCtx) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
-      }
-    }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    return audioCtx;
+    localStorage.setItem('sketchcast_sfx_muted', String(muted));
   } catch {
-    return null;
+    // ignore
   }
 }
 
-export function toggleMuteSoundFx(): boolean {
-  isMuted = !isMuted;
-  return isMuted;
+export function toggleAudioMute(): boolean {
+  const next = !isMuted;
+  setAudioMuted(next);
+  return next;
 }
 
-export function isSoundFxMuted(): boolean {
-  return isMuted;
-}
-
-// 1. Mechanical Roulette Tick (for spinning wheel)
-export function playClickTick(frequencyMultiplier: number = 1.0) {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
+/**
+ * Mechanical tactile button click sound
+ */
+export function playClickSound(pitchFactor: number = 1.0): void {
+  if (isMuted) return;
   try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(440 * frequencyMultiplier, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.04);
+    osc.frequency.setValueAtTime(480 * pitchFactor, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120 * pitchFactor, ctx.currentTime + 0.04);
 
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.04);
+  } catch {
+    // AudioContext blocked or uninitialized
+  }
+}
+
+/**
+ * Snappy tactile bubble pop (for votes, upvotes, chips, switches)
+ */
+export function playPopSound(): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.06);
+
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.07);
+  } catch {
+    // AudioContext blocked
+  }
+}
+
+/**
+ * Victory fanfare arpeggio (for correct quiz answer, podium winner)
+ */
+export function playSuccessFanfare(): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.08);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + idx * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.28);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime + idx * 0.08);
+      osc.stop(ctx.currentTime + idx * 0.08 + 0.3);
+    });
+  } catch {
+    // AudioContext blocked
+  }
+}
+
+/**
+ * Cyber error buzzer for wrong answers or failed validation
+ */
+export function playErrorBuzz(): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(90, ctx.currentTime + 0.18);
+
+    gain.gain.setValueAtTime(0.14, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch {
+    // AudioContext blocked
+  }
+}
+
+/**
+ * Sci-fi power-up laser activation sound (50/50, Freeze, Double Down)
+ */
+export function playPowerUpSound(_type?: string): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.16);
+    osc.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.24);
+
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.25);
+  } catch {
+    // AudioContext blocked
+  }
+}
+
+/**
+ * Urgent countdown tick sound for final 5 seconds of quiz round
+ */
+export function playCountdownTick(remaining: number): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    const baseFreq = remaining <= 3 ? 900 : 700;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -54,91 +223,41 @@ export function playClickTick(frequencyMultiplier: number = 1.0) {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.05);
   } catch {
-    // Audio autoplay or permissions handled gracefully
+    // AudioContext blocked
   }
 }
 
-// 2. Victory Arpeggio / Fanfare (Winner celebration & high scores)
-export function playFanfare() {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
+/**
+ * Smooth swoosh for tab switches
+ */
+export function playWhoosh(): void {
+  if (isMuted) return;
   try {
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-      const startTime = ctx.currentTime + idx * 0.1;
-      const duration = idx === notes.length - 1 ? 0.6 : 0.15;
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      gain.gain.setValueAtTime(0.15, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.05);
-    });
-  } catch {
-    // Ignore
-  }
-}
-
-// 3. Power-Up Activation Charge (50/50, Double Down, Shield)
-export function playPowerUpSound(type: '50-50' | 'double-down' | 'streak-shield' | 'time-freeze') {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  try {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    if (type === '50-50') {
-      // Laser slice
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.18);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(280, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.08);
 
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    } else if (type === 'double-down') {
-      // Fire charge up
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.22);
-
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-    } else if (type === 'time-freeze') {
-      // Ice crystal chime
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, ctx.currentTime);
-      osc.frequency.setValueAtTime(1600, ctx.currentTime + 0.08);
-      osc.frequency.setValueAtTime(2000, ctx.currentTime + 0.16);
-
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    } else {
-      // Shield hum
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.25);
-
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    }
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.35);
+    osc.stop(ctx.currentTime + 0.08);
   } catch {
-    // Ignore
+    // AudioContext blocked
   }
 }
+
+export const playFanfare = playSuccessFanfare;
+export const playClickTick = playClickSound;
+export const isSoundFxMuted = isAudioMuted;
+export const toggleMuteSoundFx = toggleAudioMute;
+
