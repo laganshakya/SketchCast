@@ -4,7 +4,6 @@ import {
   Copy,
   Check,
   Crown,
-  User,
   Vote,
   Trophy,
   HelpCircle,
@@ -14,12 +13,13 @@ import {
   ShieldAlert,
   Layers,
   ArrowRightLeft,
-  Sparkles,
   FileText,
   X,
   Bot,
   Settings,
   RotateCw,
+  ChevronDown,
+  Wrench,
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -68,23 +68,44 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const [copied, setCopied] = useState(false);
   const [showHostNotice, setShowHostNotice] = useState(false);
   const [hostNoticeMessage, setHostNoticeMessage] = useState<string>('');
+  const [isHostStudioOpen, setIsHostStudioOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  const hostStudioRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (hostStudioRef.current && !hostStudioRef.current.contains(target)) {
+        setIsHostStudioOpen(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+        setIsProfileMenuOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
         setIsMobileMenuOpen(false);
       }
     };
-    if (isMobileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsHostStudioOpen(false);
+        setIsProfileMenuOpen(false);
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMobileMenuOpen]);
+  }, []);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.code);
@@ -128,9 +149,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       )}
 
-      <div className="h-14 sm:h-15 px-2 sm:px-3 md:px-4 flex items-center justify-between gap-1.5 sm:gap-2.5 w-full relative">
-        {/* Left: Brand Logo & Room Passcode */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 min-w-0">
+      <div className="h-14 sm:h-15 px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 w-full relative">
+        {/* ================= LEFT: Brand & Unified Room Badge ================= */}
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
           {/* Logo */}
           <div className="flex items-center space-x-1.5 shrink-0">
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
@@ -140,19 +161,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               <span className="text-xs sm:text-sm md:text-base font-heavy tracking-tight text-white uppercase shrink-0">
                 SKETCH<span className="text-neo-yellow">CAST</span>
               </span>
-              <span className="hidden xl:inline-block px-1.5 py-0.2 bg-neo-pink text-white font-mono text-[9px] font-extrabold uppercase border border-black brutal-shadow-sm">
-                LIVE 2.0
-              </span>
             </div>
           </div>
 
           <div className="h-5 w-0.5 bg-slate-800 hidden sm:block shrink-0" />
 
-          {/* Desktop/Tablet Room Ticket Tag */}
-          <div className="hidden sm:flex items-center space-x-1 shrink-0">
+          {/* Unified Compact Room & Actions Pill */}
+          <div className="hidden sm:flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0 overflow-hidden font-mono text-xs">
+            {/* Copy Code Action */}
             <button
               onClick={handleCopyCode}
-              className="h-8 flex items-center space-x-1.5 px-2 bg-[#1A1E2B] hover:bg-[#222738] border-2 border-black brutal-shadow-sm transition-all text-xs font-mono group cursor-copy-btn active:translate-x-px active:translate-y-px"
+              className="flex items-center space-x-1.5 px-2.5 h-full hover:bg-[#252B3D] transition-colors cursor-copy-btn text-slate-200"
               title="Click to copy Room Code"
             >
               <span className="text-slate-400 font-bold text-[10px]">ROOM:</span>
@@ -162,28 +181,39 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-neo-mint shrink-0" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-white shrink-0" />
+                <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               )}
             </button>
 
+            {/* QR Modal Trigger */}
+            <button
+              onClick={onOpenQRCode}
+              className="px-2 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+              title="Open Mobile Join QR Code"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">QR</span>
+            </button>
+
+            {/* Change / Switch Room Trigger */}
             {onOpenChangeRoom && (
               <button
                 onClick={onOpenChangeRoom}
-                className="h-8 flex items-center space-x-1 px-2 bg-neo-card hover:bg-neo-yellow hover:text-black border-2 border-black brutal-shadow-sm transition-all text-[11px] font-mono font-black uppercase text-slate-300 active:translate-x-px active:translate-y-px cursor-pointer"
-                title="Change / Switch Arena Room without logging out"
+                className="px-2 h-full bg-neo-card hover:bg-neo-pink hover:text-white text-slate-300 border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+                title="Switch to another Arena Room"
               >
                 <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
-                <span className="hidden lg:inline">SWITCH</span>
+                <span className="hidden xl:inline">SWITCH</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Center: Neo-Brutalist Navigation Tabs (Desktop / Tablet) */}
+        {/* ================= CENTER: Core Neo-Brutalist Navigation Tabs ================= */}
         <nav className="hidden md:flex items-center space-x-1 bg-[#090B0F] p-0.5 border-2 border-black brutal-shadow-sm shrink-0">
           <button
             onClick={() => setActiveTab('quiz')}
-            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
+            className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'quiz'
                 ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -195,7 +225,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('polls')}
-            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
+            className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'polls'
                 ? 'bg-neo-pink text-white border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -207,7 +237,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('qa')}
-            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
+            className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'qa'
                 ? 'bg-neo-cyan text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -216,7 +246,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Q&A</span>
             {questionsCount > 0 && (
-              <span className="ml-0.5 px-1 py-0.1 bg-black text-white text-[9px] font-black rounded-full">
+              <span className="ml-0.5 px-1.5 py-0.2 bg-black text-white text-[9px] font-black rounded-full">
                 {questionsCount}
               </span>
             )}
@@ -224,7 +254,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
+            className={`h-8 px-2.5 lg:px-3 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 border-2 cursor-pointer ${
               activeTab === 'leaderboard'
                 ? 'bg-neo-mint text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                 : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
@@ -233,120 +263,199 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Trophy className="w-3.5 h-3.5" />
             <span>SCORES</span>
           </button>
-
-          {(userRole === 'host' || Boolean(currentUser)) && (
-            <button
-              onClick={() => setActiveTab('rooms')}
-              className={`h-8 px-2 lg:px-2.5 text-[11px] lg:text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1 border-2 cursor-pointer ${
-                activeTab === 'rooms'
-                  ? 'bg-neo-yellow text-black border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                  : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>ROOMS</span>
-            </button>
-          )}
         </nav>
 
-        {/* ================= DESKTOP / TABLET CONTROLS (≥ md) ================= */}
-        <div className="hidden md:flex items-center space-x-1.5 shrink-0 min-w-0">
-          {/* Desktop QR Code Button */}
+        {/* ================= RIGHT: Presence, Host Studio & Profile ================= */}
+        <div className="hidden md:flex items-center space-x-2 shrink-0 min-w-0">
+          {/* Live Online Indicator */}
           <button
-            onClick={onOpenQRCode}
-            className="h-8 px-2 bg-neo-cream text-black border-2 border-black brutal-shadow-sm hover:bg-neo-yellow active:translate-x-px active:translate-y-px active:shadow-none text-xs font-mono font-bold flex items-center space-x-1 transition-all cursor-zoom shrink-0"
-            title="Open Mobile Join QR Code"
+            onClick={onOpenActiveAttendees}
+            className="h-8 flex items-center space-x-1.5 px-2.5 bg-[#141824] hover:bg-[#1E2436] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
+            title="Click to view live participants & manage room admins"
           >
-            <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">JOIN_QR</span>
+            <Radio className="w-3 h-3 animate-pulse text-neo-mint shrink-0" />
+            <span className="text-xs tracking-wide whitespace-nowrap">
+              {Math.max(1, activeViewerCount)} <span className="hidden lg:inline">ONLINE</span>
+            </span>
           </button>
 
-          {/* Host AI Tools Group */}
+          {/* Unified Host Studio Dropdown (Exclusively for Host) */}
           {userRole === 'host' && (
-            <div className="flex items-center space-x-1 shrink-0">
-              {onOpenAISettings && (
-                <button
-                  onClick={onOpenAISettings}
-                  className="h-8 px-2 bg-neo-pink hover:bg-[#FF4782] text-white border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
-                  title="Configure Mesh AI key and models"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline">AI</span>
-                </button>
-              )}
+            <div className="relative" ref={hostStudioRef}>
+              <button
+                onClick={() => setIsHostStudioOpen(!isHostStudioOpen)}
+                className={`h-8 px-2.5 border-2 border-black brutal-shadow-sm font-mono text-xs font-black flex items-center space-x-1.5 transition-all active:translate-x-px active:translate-y-px cursor-pointer ${
+                  isHostStudioOpen
+                    ? 'bg-neo-yellow text-black -translate-x-px -translate-y-px'
+                    : 'bg-neo-yellow hover:bg-[#FFE600] text-black'
+                }`}
+                title="Host Stage & AI Studio Tools"
+              >
+                <Wrench className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden lg:inline">HOST STUDIO</span>
+                <span className="lg:hidden">STUDIO</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isHostStudioOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-              {onOpenAISummary && (
-                <button
-                  onClick={onOpenAISummary}
-                  className="h-8 px-2 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
-                  title="Generate Masterclass Summary Report with Mesh AI"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline">REPORT</span>
-                </button>
-              )}
+              {/* Host Studio Dropdown Menu Popover */}
+              {isHostStudioOpen && (
+                <div className="absolute top-10 right-0 w-64 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs animate-fadeIn">
+                  <div className="px-2 py-1 border-b border-slate-700/80 flex items-center justify-between text-[10px] text-slate-400 font-extrabold uppercase">
+                    <span>STAGE CONTROLS & AI</span>
+                    <span className="px-1.5 py-0.2 bg-neo-yellow text-black border border-black font-black text-[9px]">
+                      HOST
+                    </span>
+                  </div>
 
-              {onOpenSpotlightRoulette && (
-                <button
-                  onClick={onOpenSpotlightRoulette}
-                  className="h-8 px-2 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm text-xs font-mono font-black flex items-center space-x-1 transition-all active:translate-x-px active:translate-y-px cursor-pointer"
-                  title="Spin Attendee Spotlight Roulette Wheel"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                  <span className="hidden lg:inline">ROULETTE</span>
-                </button>
+                  {/* 1. AI Settings */}
+                  {onOpenAISettings && (
+                    <button
+                      onClick={() => {
+                        setIsHostStudioOpen(false);
+                        onOpenAISettings();
+                      }}
+                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-pink hover:text-white text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 bg-neo-pink text-white border border-black flex items-center justify-center shrink-0">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heavy text-[11px] uppercase group-hover:text-white">AI ENGINE SETTINGS</div>
+                        <div className="text-[9px] text-slate-400 group-hover:text-slate-100 truncate">Mesh API key & LLM models</div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* 2. AI Summary Report */}
+                  {onOpenAISummary && (
+                    <button
+                      onClick={() => {
+                        setIsHostStudioOpen(false);
+                        onOpenAISummary();
+                      }}
+                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 bg-neo-yellow text-black border border-black flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heavy text-[11px] uppercase group-hover:text-black">MASTERCLASS REPORT</div>
+                        <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Instant AI session synthesis</div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* 3. Attendee Spotlight Roulette */}
+                  {onOpenSpotlightRoulette && (
+                    <button
+                      onClick={() => {
+                        setIsHostStudioOpen(false);
+                        onOpenSpotlightRoulette();
+                      }}
+                      className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 bg-neo-cyan text-black border border-black flex items-center justify-center shrink-0">
+                        <RotateCw className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heavy text-[11px] uppercase group-hover:text-black">ATTENDEE ROULETTE</div>
+                        <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Live stage giveaway wheel</div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* 4. Rooms Admin Hub */}
+                  <button
+                    onClick={() => {
+                      setIsHostStudioOpen(false);
+                      setActiveTab('rooms');
+                    }}
+                    className="w-full p-2 bg-[#1C2030] hover:bg-neo-mint hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm transition-all flex items-center space-x-2.5 text-left cursor-pointer group"
+                  >
+                    <div className="w-7 h-7 bg-neo-mint text-black border border-black flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-heavy text-[11px] uppercase group-hover:text-black">ROOMS HUB</div>
+                      <div className="text-[9px] text-slate-400 group-hover:text-slate-900 truncate">Manage broadcast arenas</div>
+                    </div>
+                  </button>
+                </div>
               )}
             </div>
           )}
 
-          {/* Live Online Indicator */}
-          <button
-            onClick={onOpenActiveAttendees}
-            className="h-8 flex items-center space-x-1 px-2 bg-neo-card-darker hover:bg-[#1C2030] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
-            title="Click to view live participants & manage room admins"
-          >
-            <Radio className="w-3 h-3 animate-pulse text-neo-mint shrink-0" />
-            <span className="text-[11px] tracking-wide whitespace-nowrap">
-              <span className="hidden lg:inline">{Math.max(1, activeViewerCount)} ONLINE</span>
-              <span className="lg:hidden">{Math.max(1, activeViewerCount)}</span>
-            </span>
-          </button>
-
-          {/* Role and Name Pill */}
-          <div className="h-8 flex items-center space-x-1.5 bg-neo-card border-2 border-black brutal-shadow-sm px-2 text-xs font-mono shrink min-w-0 max-w-37.5 lg:max-w-50">
+          {/* User Profile & Account Dropdown */}
+          <div className="relative" ref={profileMenuRef}>
             <button
-              onClick={handleRoleToggle}
-              className={`flex items-center gap-0.5 font-extrabold uppercase text-[10px] px-1 py-0.5 border border-black cursor-pointer shrink-0 ${
-                userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
-              }`}
-              title={`Role: ${userRole}. Click to toggle.`}
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className="h-8 flex items-center space-x-1.5 bg-[#1A1E2B] hover:bg-[#252B3D] border-2 border-black brutal-shadow-sm px-2 text-xs font-mono cursor-pointer transition-all active:translate-x-px active:translate-y-px shrink min-w-0 max-w-40 lg:max-w-48"
+              title="User Profile & Account Settings"
             >
-              {userRole === 'host' ? <Crown className="w-3 h-3" /> : <User className="w-3 h-3" />}
-              <span className="hidden xl:inline">{userRole}</span>
+              <span
+                className={`px-1 py-0.2 text-[9px] font-black uppercase border border-black shrink-0 ${
+                  userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                }`}
+              >
+                {userRole === 'host' ? 'HOST' : 'GUEST'}
+              </span>
+              <span className="text-slate-200 font-bold truncate text-xs">{userName}</span>
+              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            <button
-              onClick={onOpenAuthModal}
-              className="text-slate-200 hover:text-neo-yellow font-bold truncate text-[11px] cursor-pointer min-w-0 flex items-center gap-1"
-              title={`Profile & Settings: ${userName}. Click to view details.`}
-            >
-              <span className="truncate">{userName}</span>
-              <Settings className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-            </button>
+            {/* Profile Dropdown Popover */}
+            {isProfileMenuOpen && (
+              <div className="absolute top-10 right-0 w-56 bg-[#141722] border-3 border-black brutal-shadow-lg p-2 space-y-1.5 z-50 font-mono text-xs animate-fadeIn">
+                <div className="p-2 bg-[#0C0E14] border-2 border-black space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase">SIGNED IN AS</span>
+                    <span className="px-1 py-0.1 bg-neo-mint text-black font-black text-[9px] border border-black">
+                      ACTIVE
+                    </span>
+                  </div>
+                  <div className="font-heavy text-white truncate text-xs">{userName}</div>
+                  <div className="text-[10px] text-slate-400 truncate font-sans">{currentUser?.email || 'Guest Participant'}</div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    onOpenAuthModal();
+                  }}
+                  className="w-full p-2 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                >
+                  <Settings className="w-3.5 h-3.5 shrink-0" />
+                  <span>Profile & Auth</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    handleRoleToggle();
+                  }}
+                  className="w-full p-2 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black brutal-shadow-sm flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                >
+                  <Crown className="w-3.5 h-3.5 shrink-0" />
+                  <span>Toggle Role ({userRole === 'host' ? 'Attendee' : 'Host'})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    onSignOut();
+                  }}
+                  className="w-full p-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border-2 border-neo-pink/60 hover:border-black flex items-center space-x-2 text-xs font-bold cursor-pointer transition-colors text-left"
+                >
+                  <LogOut className="w-3.5 h-3.5 shrink-0" />
+                  <span>Log Out</span>
+                </button>
+              </div>
+            )}
           </div>
-
-          {/* Sign Out Button */}
-          <button
-            onClick={onSignOut}
-            className="h-8 w-8 flex items-center justify-center bg-neo-card hover:bg-neo-pink text-slate-400 hover:text-white border-2 border-black brutal-shadow-sm active:translate-x-px active:translate-y-px active:shadow-none transition-all cursor-pointer shrink-0"
-            title="Sign out & return to landing page"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
         </div>
 
         {/* ================= COMPACT MOBILE CONTROLS (< md) ================= */}
-        <div className="md:hidden flex items-center space-x-1.5 shrink-0 min-w-0" ref={menuRef}>
+        <div className="md:hidden flex items-center space-x-1.5 shrink-0 min-w-0" ref={mobileMenuRef}>
           {/* Mobile Room & QR Combo Pill */}
           <div className="flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0">
             <button
@@ -370,7 +479,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </button>
           </div>
 
-          {/* Unified Mobile Profile & Settings Trigger */}
+          {/* Unified Mobile Menu Trigger */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className={`h-8 flex items-center space-x-1 border-2 border-black brutal-shadow-sm px-2 text-[10px] sm:text-[11px] font-mono shrink min-w-0 max-w-32 xs:max-w-40 transition-all active:translate-x-px active:translate-y-px cursor-pointer ${
@@ -385,10 +494,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-slate-700 text-slate-200'
               }`}
             >
-              {userRole === 'host' ? <Crown className="w-2.5 h-2.5 text-black" /> : <User className="w-2.5 h-2.5 text-slate-200" />}
+              {userRole === 'host' ? <Crown className="w-2.5 h-2.5 text-black" /> : <Settings className="w-2.5 h-2.5 text-slate-200" />}
             </span>
             <span className="text-slate-200 truncate font-bold">{userName}</span>
-            <Settings className={`w-3 h-3 shrink-0 ml-0.5 ${isMobileMenuOpen ? 'text-black rotate-45' : 'text-slate-400'} transition-transform`} />
+            <ChevronDown className={`w-3 h-3 shrink-0 ${isMobileMenuOpen ? 'rotate-180' : ''} transition-transform`} />
           </button>
 
           {/* Mobile Quick-Menu Dropdown Popover */}
@@ -418,7 +527,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               {/* Host Quick Actions */}
               {userRole === 'host' && (
                 <div className="space-y-1.5">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block px-1">HOST TOOLS</span>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block px-1">HOST STUDIO</span>
                   {onOpenAISettings && (
                     <button
                       onClick={() => {
@@ -454,52 +563,51 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       className="w-full py-2 px-2.5 bg-neo-cyan hover:bg-[#33F3FF] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
                     >
                       <RotateCw className="w-4 h-4 shrink-0" />
-                      <span>SPOTLIGHT ROULETTE WHEEL</span>
+                      <span>SPOTLIGHT ROULETTE</span>
                     </button>
                   )}
-                </div>
-              )}
 
-              {/* Active Players & Room Information */}
-              {onOpenActiveAttendees && (
-                <div className="pt-1.5 border-t border-slate-800">
                   <button
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      onOpenActiveAttendees();
+                      setActiveTab('rooms');
                     }}
-                    className="w-full py-2 px-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
+                    className="w-full py-2 px-2.5 bg-neo-mint hover:bg-[#00F59B] text-black border-2 border-black brutal-shadow-sm font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all active:translate-x-px active:translate-y-px"
                   >
-                    <Radio className="w-4 h-4 shrink-0" />
-                    <span>ACTIVE PLAYERS ({activeViewerCount})</span>
+                    <Layers className="w-4 h-4 shrink-0" />
+                    <span>ROOMS HUB</span>
                   </button>
                 </div>
               )}
 
-              {/* General & Account Settings */}
-              <div className="space-y-1.5 pt-1.5 border-t border-slate-800">
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block px-1">SETTINGS & ACCOUNT</span>
-                
+              {/* General Actions */}
+              <div className="pt-2 border-t border-slate-800 space-y-1.5">
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     onOpenAuthModal();
                   }}
-                  className="w-full py-2 px-2.5 bg-[#1A1E2B] hover:bg-slate-700 text-slate-200 border-2 border-black font-bold flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                  className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
                 >
-                  <Settings className="w-3.5 h-3.5 text-neo-yellow shrink-0" />
-                  <span>ACCOUNT & PROFILE SETTINGS</span>
+                  <span className="flex items-center space-x-1.5">
+                    <Settings className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Account Settings</span>
+                  </span>
+                  <span className="text-[10px] text-neo-yellow">{userName}</span>
                 </button>
 
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setActiveTab('rooms');
+                    handleRoleToggle();
                   }}
-                  className="w-full py-2 px-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black border-2 border-black font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all brutal-shadow-sm active:translate-x-px active:translate-y-px"
+                  className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center justify-between text-[11px] cursor-pointer"
                 >
-                  <Crown className="w-3.5 h-3.5 text-black shrink-0" />
-                  <span>MY HOST ROOMS HUB</span>
+                  <span className="flex items-center space-x-1.5">
+                    <Crown className="w-3.5 h-3.5 text-neo-yellow" />
+                    <span>Switch Role</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 uppercase">Now: {userRole}</span>
                 </button>
 
                 {onOpenChangeRoom && (
@@ -508,10 +616,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       setIsMobileMenuOpen(false);
                       onOpenChangeRoom();
                     }}
-                    className="w-full py-1.5 px-2.5 bg-[#1A1E2B] hover:bg-neo-cyan hover:text-black text-slate-200 border-2 border-black font-bold flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                    className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer"
                   >
-                    <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
-                    <span>SWITCH ARENA ROOM</span>
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-neo-mint" />
+                    <span>Switch Arena Room</span>
                   </button>
                 )}
 
@@ -520,10 +628,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     setIsMobileMenuOpen(false);
                     onSignOut();
                   }}
-                  className="w-full py-1.5 px-2.5 bg-red-600 hover:bg-red-700 text-white border-2 border-black font-black flex items-center space-x-2 text-[11px] uppercase cursor-pointer text-left transition-all"
+                  className="w-full py-1.5 px-2 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border border-neo-pink/50 font-bold flex items-center space-x-1.5 text-[11px] cursor-pointer transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5 shrink-0" />
-                  <span>SIGN OUT & EXIT</span>
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log Out & Exit</span>
                 </button>
               </div>
             </div>
