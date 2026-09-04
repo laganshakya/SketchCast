@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Vote, Sparkles, Bot, Zap, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Vote, Sparkles, Bot, Zap, AlertCircle, Link2, RefreshCw, FolderGit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { generateAIPollSuggestions, getStoredMeshKey, type SuggestedAIPoll } from '../../lib/meshApi';
+import { generateAIPollSuggestions, generateAIPollsFromUrl, getStoredMeshKey, isGitHubRepoInput, type SuggestedAIPoll } from '../../lib/meshApi';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface CreatePollModalProps {
@@ -20,7 +20,9 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState<string[]>(['', '', '']);
   const [aiTopic, setAiTopic] = useState('');
+  const [aiPollMode, setAiPollMode] = useState<'topic' | 'url'>('topic');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiStatusMsg, setAiStatusMsg] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<SuggestedAIPoll[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -49,8 +51,9 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
   const handleFetchAISuggestions = async () => {
     playClickSound();
-    if (!aiTopic.trim()) {
-      setAiError('Please enter a topic for AI poll suggestions (e.g. gRPC vs REST or Microservices).');
+    const cleanInput = aiTopic.trim();
+    if (!cleanInput) {
+      setAiError(aiPollMode === 'url' ? 'Please enter a webpage URL or GitHub repo (e.g. facebook/react).' : 'Please enter a topic for AI poll suggestions.');
       return;
     }
 
@@ -65,12 +68,24 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
     setAiSuggestions([]);
 
     try {
-      const suggestions = await generateAIPollSuggestions(aiTopic.trim());
-      setAiSuggestions(suggestions);
+      if (aiPollMode === 'url' || cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || isGitHubRepoInput(cleanInput)) {
+        if (isGitHubRepoInput(cleanInput)) {
+          setAiStatusMsg(`🐙 Scanning GitHub repo & building polls...`);
+        } else {
+          setAiStatusMsg(`🔗 Scraping content & building polls...`);
+        }
+        const res = await generateAIPollsFromUrl(cleanInput);
+        setAiSuggestions(res.polls);
+      } else {
+        setAiStatusMsg(`✨ Generating interactive poll suggestions...`);
+        const suggestions = await generateAIPollSuggestions(cleanInput);
+        setAiSuggestions(suggestions);
+      }
     } catch (err: any) {
       setAiError(err?.message || 'Failed to generate poll suggestions via Mesh API.');
     } finally {
       setIsGeneratingAI(false);
+      setAiStatusMsg(null);
     }
   };
 
@@ -161,22 +176,58 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-3 bg-white border-2 border-black mb-3 font-mono space-y-2"
+                className="p-3 bg-white border-2 border-black mb-3 font-mono space-y-2.5"
               >
+                {/* Mode Selector */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { playPopSound(); setAiPollMode('topic'); }}
+                    className={`px-2 py-0.5 text-[10px] font-black uppercase border border-black cursor-pointer transition-all flex items-center gap-1 ${
+                      aiPollMode === 'topic' ? 'bg-neo-yellow text-black brutal-shadow-xs' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    <span>Topic / Search</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { playPopSound(); setAiPollMode('url'); }}
+                    className={`px-2 py-0.5 text-[10px] font-black uppercase border border-black cursor-pointer transition-all flex items-center gap-1 ${
+                      aiPollMode === 'url' ? 'bg-neo-mint text-black brutal-shadow-xs' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Link2 className="w-2.5 h-2.5" />
+                    <span>Scrape URL / GitHub</span>
+                  </button>
+                </div>
+
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleFetchAISuggestions();
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={aiTopic}
+                      onChange={(e) => setAiTopic(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleFetchAISuggestions();
+                        }
+                      }}
+                      placeholder={
+                        aiPollMode === 'url'
+                          ? 'Paste URL or GitHub repo: e.g. https://bun.sh/docs or facebook/react'
+                          : 'Topic: e.g. Rate this Web App, PostgreSQL vs Redis, Next.js 15...'
                       }
-                    }}
-                    placeholder="Topic: e.g. Rate this Web App, PostgreSQL vs Redis..."
-                    className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
-                  />
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20 pr-16"
+                    />
+                    {aiPollMode === 'url' && isGitHubRepoInput(aiTopic) && (
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 px-1 py-0.2 bg-purple-200 border border-black text-[8px] font-black uppercase flex items-center gap-0.5">
+                        <FolderGit2 className="w-2.5 h-2.5 text-purple-700" />
+                        <span>Repo</span>
+                      </span>
+                    )}
+                  </div>
                   <motion.button
                     type="button"
                     whileHover={{ scale: 1.05 }}
@@ -186,9 +237,17 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                     className="px-3 py-1.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer shrink-0"
                   >
                     <Zap className="w-3.5 h-3.5" />
-                    <span>{isGeneratingAI ? 'GENERATING...' : 'SUGGEST'}</span>
+                    <span>{isGeneratingAI ? 'GENERATING...' : aiPollMode === 'url' ? 'SCRAPE & POLL' : 'SUGGEST'}</span>
                   </motion.button>
                 </div>
+
+                {/* Status Indicator */}
+                {isGeneratingAI && aiStatusMsg && (
+                  <div className="p-1.5 bg-neo-yellow/20 border border-black text-[10px] font-bold text-black flex items-center gap-1.5 animate-pulse">
+                    <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
+                    <span>{aiStatusMsg}</span>
+                  </div>
+                )}
 
                 {aiError && (
                   <div className="p-2 bg-neo-pink text-white text-[11px] font-bold border border-black flex items-start space-x-1.5">

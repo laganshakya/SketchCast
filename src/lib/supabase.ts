@@ -187,9 +187,18 @@ export async function dbFetchRooms(): Promise<Room[]> {
           // ignore
         }
       }
+      let aiModel = r.ai_model;
+      if (!aiModel) {
+        try {
+          aiModel = localStorage.getItem(`sketchcast_room_ai_model_${r.code?.toUpperCase().trim()}`) || undefined;
+        } catch {
+          // ignore
+        }
+      }
       return {
         ...r,
         admins,
+        ai_model: aiModel,
       };
     }) as Room[];
   } catch {
@@ -208,6 +217,9 @@ export async function dbCreateRoom(room: Room) {
     if (room.admins && room.admins.length > 0) {
       localStorage.setItem(`sketchcast_room_admins_${targetKey}`, JSON.stringify(room.admins));
     }
+    if (room.ai_model) {
+      localStorage.setItem(`sketchcast_room_ai_model_${targetKey}`, room.ai_model);
+    }
   } catch {
     // ignore
   }
@@ -222,6 +234,7 @@ export async function dbCreateRoom(room: Room) {
       host_name: room.host_name,
       host_email: room.host_email || null,
       admins: room.admins || [],
+      ai_model: room.ai_model || null,
       created_at: room.created_at,
     });
   } catch {
@@ -240,6 +253,23 @@ export async function dbUpdateRoomAdmins(roomCode: string, admins: string[]) {
   if (!supabase) return;
   try {
     await supabase.from('rooms').update({ admins }).or(`code.eq.${targetKey},id.eq.room-${targetKey}`);
+  } catch {
+    // fallback
+  }
+}
+
+export async function dbUpdateRoomAIModel(roomCode: string, aiModel: string) {
+  const targetKey = roomCode.toUpperCase().trim();
+  try {
+    localStorage.setItem(`sketchcast_room_ai_model_${targetKey}`, aiModel);
+    localStorage.setItem('sketchcast_mesh_selected_model', aiModel);
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return;
+  try {
+    await supabase.from('rooms').update({ ai_model: aiModel }).or(`code.eq.${targetKey},id.eq.room-${targetKey}`);
   } catch {
     // fallback
   }
@@ -527,6 +557,7 @@ export async function dbFetchLeaderboard(roomId: string): Promise<LeaderboardEnt
           polls_voted: row.polls_voted || 0,
           streak: row.streak || 0,
           avatar_color: row.avatar_color || '#FF2A6D',
+          fastest_answer_seconds: row.fastest_answer_seconds || undefined,
         });
       }
     });
@@ -555,7 +586,7 @@ export async function dbUpsertLeaderboardEntry(entry: LeaderboardEntry, roomId: 
       ? existingRows[0].session_id
       : entry.session_id;
 
-    await supabase.from('leaderboard').upsert({
+    const basePayload: any = {
       session_id: targetSessionId,
       room_id: targetKey,
       name: cleanName,
@@ -565,7 +596,18 @@ export async function dbUpsertLeaderboardEntry(entry: LeaderboardEntry, roomId: 
       streak: entry.streak,
       avatar_color: entry.avatar_color,
       updated_at: new Date().toISOString(),
-    });
+    };
+
+    if (entry.fastest_answer_seconds) {
+      basePayload.fastest_answer_seconds = entry.fastest_answer_seconds;
+    }
+
+    const { error } = await supabase.from('leaderboard').upsert(basePayload);
+    if (error && (error.message?.includes('column') || error.code === 'PGRST204')) {
+      // Graceful fallback if fastest_answer_seconds column has not been migrated
+      delete basePayload.fastest_answer_seconds;
+      await supabase.from('leaderboard').upsert(basePayload);
+    }
   } catch {
     // fallback
   }

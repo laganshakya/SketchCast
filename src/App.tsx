@@ -7,6 +7,7 @@ import { usePollsEngine } from './hooks/usePollsEngine';
 import { useQAFeed } from './hooks/useQAFeed';
 import { LandingAuthPage } from './components/auth/LandingAuthPage';
 import { AppHeader } from './components/common/AppHeader';
+import { AppSidebar } from './components/common/AppSidebar';
 import { QuizArena } from './components/quiz/QuizArena';
 import { QuizHostPanel } from './components/quiz/QuizHostPanel';
 import { LeaderboardPodium } from './components/quiz/LeaderboardPodium';
@@ -24,10 +25,16 @@ import { AISessionReportModal } from './components/common/AISessionReportModal';
 import { SpotlightRouletteModal } from './components/common/SpotlightRouletteModal';
 import { SpotlightCelebrationModal } from './components/common/SpotlightCelebrationModal';
 import { ChampionSocialCardModal } from './components/quiz/ChampionSocialCardModal';
-import { playFanfare, playWhoosh, playClickSound } from './lib/soundFx';
+import { SurveyTab } from './components/survey/SurveyTab';
+import { FloatingReactionsOverlay } from './components/common/FloatingReactionsOverlay';
+import { MasterclassCertificateModal } from './components/certificate/MasterclassCertificateModal';
+import { CertificateVerificationModal, type VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
+import { useSurveys } from './hooks/useSurveys';
+import { playFanfare, playWhoosh, playClickSound, playPopSound } from './lib/soundFx';
 import { calculateUserBadges } from './lib/badgeSystem';
-import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry } from './types';
-import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X } from 'lucide-react';
+import { isUserRoomAdmin, dbFetchRooms } from './lib/supabase';
+import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
+import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
 export function App() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -46,6 +53,10 @@ export function App() {
   const [socialCardData, setSocialCardData] = useState<ChampionSocialCardData | null>(null);
   const [spotlightBanner, setSpotlightBanner] = useState<SpotlightWinner | null>(null);
   const [mobileHostQuizView, setMobileHostQuizView] = useState<'arena' | 'controls'>('arena');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [qaClusters, setQaClusters] = useState<QuestionCluster[]>([]);
+  const [verifiedCertData, setVerifiedCertData] = useState<VerifiedCertPayload | null>(null);
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -67,6 +78,21 @@ export function App() {
     setPromotionToast,
     promoteToAdmin,
     demoteFromAdmin,
+    mutedSessionIds,
+    isMuted,
+    isBanned,
+    banNotice,
+    dismissBanNotice,
+    muteAttendee,
+    unmuteAttendee,
+    banAttendee,
+    strikesBySession,
+    myStrikes,
+    recordMyStrike,
+    officialWarning,
+    dismissOfficialWarning,
+    sendAttendeeWarning,
+    resetAttendeeStrikes,
   } = useRoomSession('SKT-789');
 
   // 2. Live Quiz Engine (Isolated to room.code)
@@ -83,6 +109,7 @@ export function App() {
     revealAnswer,
     selectOption,
     awardBonusPoints,
+    fastestAnswerSeconds,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -129,6 +156,24 @@ export function App() {
     appActiveTab: activeTab,
   });
 
+  // 5. Live Survey System & Multi-Question Feedback
+  const {
+    surveys,
+    activeSurvey,
+    responsesBySurvey,
+    userSubmittedIds,
+    incomingSurveyAlert,
+    dismissSurveyAlert,
+    isSummarizing,
+    createSurvey,
+    launchSurvey,
+    closeSurvey,
+    deleteSurvey,
+    submitResponse,
+    generateAISummary,
+    exportResponses,
+  } = useSurveys(room.code, sessionId, userName, channelManager);
+
   const activeViewerCount = Math.max(1, attendees.length);
 
   // Host quiz queue for AI report export
@@ -141,6 +186,226 @@ export function App() {
       return [];
     }
   }, [room.code]);
+
+  // Room AI Session Summary Report storage & realtime sync
+  const reportStorageKey = `sketchcast_session_report_${room.code.toUpperCase().trim()}`;
+  const [sessionReport, setSessionReport] = useState<string>(() => {
+    try {
+      return localStorage.getItem(reportStorageKey) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  // Public Masterclass Certificate Verification URL detector (?verify_cert=... or /verify/...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    let verifyCert = params.get('verify_cert');
+
+    // Check path-based URL (/verify/CERT-...)
+    const pathMatch = window.location.pathname.match(/^\/verify\/([^/?#]+)/i);
+    if (!verifyCert && pathMatch) {
+      verifyCert = decodeURIComponent(pathMatch[1]);
+    }
+
+    if (verifyCert && verifyCert.trim()) {
+      const roomCode = (params.get('room') || 'ARENA').toUpperCase().trim();
+      const score = Number(params.get('score') || 0);
+      const recipientName = params.get('name') || 'Masterclass Attendee';
+      const rawTitle = params.get('title');
+      const rank = Number(params.get('rank') || 1);
+      const totalAttendees = Number(params.get('total') || 1);
+      const issueDate = params.get('date') || new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+
+      const initialPayload: VerifiedCertPayload = {
+        certId: verifyCert.trim(),
+        roomCode,
+        score,
+        recipientName,
+        roomTitle: rawTitle || `Masterclass Architecture Session (${roomCode})`,
+        rank,
+        totalAttendees,
+        issueDate,
+      };
+
+      setVerifiedCertData(initialPayload);
+
+      // If room title wasn't passed in query params, look up real title from Supabase
+      if (!rawTitle) {
+        dbFetchRooms().then((rooms) => {
+          const matching = rooms.find((r) => r.code.toUpperCase() === roomCode);
+          if (matching && matching.title) {
+            setVerifiedCertData((prev) => (prev ? { ...prev, roomTitle: matching.title } : null));
+          }
+        }).catch(() => {});
+      }
+    }
+  }, []);
+
+  const handleCloseVerification = () => {
+    setVerifiedCertData(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verify_cert');
+      url.searchParams.delete('score');
+      url.searchParams.delete('name');
+      url.searchParams.delete('title');
+      url.searchParams.delete('rank');
+      url.searchParams.delete('total');
+      url.searchParams.delete('date');
+      const cleanPath = url.pathname.startsWith('/verify/') ? '/' : url.pathname;
+      window.history.replaceState({}, '', `${cleanPath}${url.search}`);
+    }
+  };
+
+  const handleEnterArenaFromCert = (targetRoomCode: string) => {
+    handleCloseVerification();
+    if (targetRoomCode && targetRoomCode !== room.code) {
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', targetRoomCode);
+        window.history.replaceState({}, '', url.toString());
+        window.location.reload();
+      }
+    }
+  };
+
+  // Reload report when room code changes
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(reportStorageKey) || '';
+      setSessionReport(stored);
+    } catch {
+      setSessionReport('');
+    }
+  }, [reportStorageKey]);
+
+  // Realtime listener for published session report
+  useEffect(() => {
+    if (!channelManager) return;
+
+    const unReport = channelManager.on('session_report_published', (payload) => {
+      if (payload && payload.reportMarkdown) {
+        setSessionReport(payload.reportMarkdown);
+        try {
+          localStorage.setItem(reportStorageKey, payload.reportMarkdown);
+        } catch {
+          // ignore
+        }
+        setIsCertificateModalOpen(true);
+      }
+    });
+
+    return () => {
+      unReport();
+    };
+  }, [channelManager, reportStorageKey]);
+
+  // Realtime listener for Q&A theme clustering
+  useEffect(() => {
+    if (!channelManager) return;
+    const unCluster = channelManager.on('qa_cluster_update', (clusters) => {
+      if (Array.isArray(clusters)) {
+        setQaClusters(clusters);
+      }
+    });
+    return () => {
+      unCluster();
+    };
+  }, [channelManager]);
+
+  // Calculate current user's performance and credentials for Masterclass Certificate
+  const myLeaderboardIndex = leaderboard.findIndex((e) => e.session_id === sessionId);
+  const myLeaderboardEntry = myLeaderboardIndex >= 0 ? leaderboard[myLeaderboardIndex] : undefined;
+  const myRank = myLeaderboardIndex >= 0 ? myLeaderboardIndex + 1 : 1;
+  const myScore = myLeaderboardEntry ? myLeaderboardEntry.score : 0;
+
+  const myBadges = calculateUserBadges({
+    correctQuizzes: myLeaderboardEntry?.correct_quizzes || 0,
+    totalQuizzesAnswered: myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes : 0,
+    streak: userStreak,
+    rank: myRank,
+    pollsVoted: userVotes ? Object.keys(userVotes).length : 0,
+    fastestAnswerSeconds,
+    isTopInquirer: questions.slice(0, 3).some((q) => q.author_name.toLowerCase() === userName.toLowerCase()),
+  });
+
+  const handlePublishReport = (markdown: string) => {
+    setSessionReport(markdown);
+    try {
+      localStorage.setItem(reportStorageKey, markdown);
+    } catch {
+      // ignore
+    }
+    if (channelManager) {
+      channelManager.broadcast('session_report_published', {
+        reportMarkdown: markdown,
+        generatedAt: Date.now(),
+        publishedBy: userName,
+      });
+    }
+  };
+
+  const isHostOrAdmin = useMemo(() => {
+    return userRole === 'host' || isUserRoomAdmin(room, currentUser, userName);
+  }, [userRole, room, currentUser, userName]);
+
+  // Safeguard Strike Alert for Host / Admins
+  const [violationAlert, setViolationAlert] = useState<{
+    roomId: string;
+    attendeeSessionId: string;
+    attendeeName: string;
+    strikeCount: number;
+    reason: string;
+    category?: string;
+    sampleText: string;
+    timestamp: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!channelManager) return;
+
+    const unViolation = channelManager.on('safeguard_violation_alert', (alert) => {
+      if (alert.roomId.toUpperCase().trim() === room.code.toUpperCase().trim()) {
+        const isHostOrAdmin =
+          userRole === 'host' || isUserRoomAdmin(room, currentUser, userName);
+        if (isHostOrAdmin) {
+          playPopSound();
+          setViolationAlert(alert);
+        }
+      }
+    });
+
+    return () => {
+      unViolation();
+    };
+  }, [channelManager, room.code, userRole, room, currentUser, userName]);
+
+  const handleSafeguardViolation = (data: {
+    strikeCount: number;
+    reason: string;
+    category?: string;
+    sampleText: string;
+  }) => {
+    if (channelManager) {
+      channelManager.broadcast('safeguard_violation_alert', {
+        roomId: room.code,
+        attendeeSessionId: sessionId,
+        attendeeName: userName,
+        strikeCount: data.strikeCount,
+        reason: data.reason,
+        category: data.category,
+        sampleText: data.sampleText,
+        timestamp: Date.now(),
+      });
+    }
+  };
 
   // Handle switching rooms from Rooms Admin Hub
   const handleSwitchRoom = (newCode: string, _newTitle?: string) => {
@@ -279,13 +544,22 @@ export function App() {
     setIsSocialCardModalOpen(true);
   };
 
-  // If user is not authenticated, show the Landing / Auth Page
+  // If user is not authenticated, show the Landing / Auth Page (with Verification Modal on top if verifying)
   if (!isAuthenticated) {
     return (
-      <LandingAuthPage
-        onAuthenticated={handleAuthenticated}
-        roomCode={room.code}
-      />
+      <>
+        {verifiedCertData && (
+          <CertificateVerificationModal
+            certData={verifiedCertData}
+            onClose={handleCloseVerification}
+            onEnterArena={handleEnterArenaFromCert}
+          />
+        )}
+        <LandingAuthPage
+          onAuthenticated={handleAuthenticated}
+          roomCode={room.code}
+        />
+      </>
     );
   }
 
@@ -313,6 +587,7 @@ export function App() {
         onOpenAISettings={() => setIsAISettingsModalOpen(true)}
         onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
         onOpenSpotlightRoulette={() => setIsSpotlightModalOpen(true)}
+        onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
@@ -362,8 +637,199 @@ export function App() {
         </div>
       )}
 
-      {/* Main Content Area with Framer Motion Spring Transitions */}
-      <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-24 sm:pb-28 md:pb-6">
+      {/* Real-time Safeguard Strike Alert Banner for Host/Admins */}
+      <AnimatePresence>
+        {violationAlert && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-xl bg-neo-yellow text-black border-4 border-black brutal-shadow-lg p-3 sm:p-4 font-mono"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-pink text-white border-2 border-black flex items-center justify-center font-heavy shrink-0 animate-bounce">
+                  <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-heavy text-xs sm:text-sm uppercase tracking-tight text-black">
+                      SAFEGUARD STRIKE ALERT
+                    </span>
+                    <span className="px-1.5 py-0.2 bg-neo-pink text-white text-[9px] font-black uppercase border border-black animate-pulse">
+                      STRIKE {violationAlert.strikeCount}/3
+                    </span>
+                    {violationAlert.category && (
+                      <span className="px-1.5 py-0.2 bg-black text-white text-[8px] sm:text-[9px] font-black uppercase border border-black">
+                        {violationAlert.category}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-black font-bold mt-1">
+                    Attendee <span className="bg-black text-neo-yellow px-1 py-0.2 font-black">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
+                  </p>
+                  <div className="text-[11px] text-slate-900 font-sans mt-1 bg-white/90 p-1.5 border border-black leading-snug">
+                    <span className="font-bold">Reason:</span> {violationAlert.reason}
+                    {violationAlert.sampleText && (
+                      <span className="block italic text-[10px] text-slate-700 truncate mt-0.5">
+                        &ldquo;{violationAlert.sampleText}&rdquo;
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViolationAlert(null)}
+                className="p-1 bg-black text-white hover:bg-neo-pink border border-black cursor-pointer shrink-0"
+                title="Dismiss alert"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap items-center justify-end gap-2 mt-2.5 pt-2 border-t-2 border-black/20">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playPopSound();
+                  sendAttendeeWarning(violationAlert.attendeeSessionId, violationAlert.attendeeName);
+                }}
+                className="px-3 py-1.5 bg-amber-300 hover:bg-amber-400 text-black font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                title="Send official safeguard warning to attendee"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-black" />
+                <span>WARN ATTENDEE</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playPopSound();
+                  resetAttendeeStrikes(violationAlert.attendeeSessionId, violationAlert.attendeeName);
+                  setViolationAlert(null);
+                }}
+                className="px-3 py-1.5 bg-white hover:bg-neo-yellow text-black font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                title="Reset and forgive strikes"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>RESET STRIKES</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playPopSound();
+                  muteAttendee(violationAlert.attendeeSessionId, violationAlert.attendeeName);
+                  setViolationAlert(null);
+                }}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+              >
+                <VolumeX className="w-3.5 h-3.5 text-neo-pink" />
+                <span>MUTE ATTENDEE</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  if (confirm(`Ban and eject "${violationAlert.attendeeName}" from this room?`)) {
+                    banAttendee(violationAlert.attendeeSessionId, violationAlert.attendeeName);
+                    setViolationAlert(null);
+                  }
+                }}
+                className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>BAN & KICK</span>
+              </motion.button>
+              <button
+                onClick={() => setViolationAlert(null)}
+                className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-black font-mono text-xs font-bold uppercase border-2 border-black cursor-pointer"
+              >
+                DISMISS
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Real-time Survey Launched Floating Banner */}
+        {incomingSurveyAlert && activeTab !== 'surveys' && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg bg-[#00F59B] text-black border-4 border-black brutal-shadow-lg p-3 sm:p-4 font-mono flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <div className="w-9 h-9 bg-black text-[#00F59B] border-2 border-black flex items-center justify-center shrink-0 font-heavy">
+                <ClipboardList className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.2 bg-black text-white border border-black">
+                  NEW SURVEY LAUNCHED
+                </span>
+                <h4 className="text-xs sm:text-sm font-heavy uppercase tracking-tight text-black truncate mt-0.5">
+                  {incomingSurveyAlert.surveyTitle}
+                </h4>
+                <p className="text-[11px] text-slate-800 font-sans truncate">
+                  Host {incomingSurveyAlert.launchedBy} invited you to share feedback!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  playPopSound();
+                  setActiveTab('surveys');
+                  dismissSurveyAlert();
+                }}
+                className="px-3 py-1.5 bg-black text-white hover:bg-slate-900 font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                TAKE SURVEY
+              </motion.button>
+              <button
+                onClick={dismissSurveyAlert}
+                className="p-1.5 hover:bg-black/10 text-black border border-black cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar + Main Content Layout Area */}
+      <div className="flex-1 flex overflow-hidden relative">
+        <AppSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          userRole={userRole}
+          setUserRole={setUserRole}
+          userName={userName}
+          room={room}
+          currentUser={currentUser}
+          questionsCount={filteredQuestions.length}
+          activeSurveysCount={activeSurvey && !userSubmittedIds.has(activeSurvey.id) ? 1 : 0}
+          hasGeneratedReport={Boolean(sessionReport)}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+          onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
+          onOpenSpotlightRoulette={() => setIsSpotlightModalOpen(true)}
+          onOpenCertificate={() => setIsCertificateModalOpen(true)}
+          onSignOut={handleSignOut}
+          isOpenMobile={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
+
+        {/* Main Content Area with Framer Motion Spring Transitions */}
+        <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-24 sm:pb-28 md:pb-6">
         <AnimatePresence mode="wait">
           {/* TAB 1: Live Quiz Arena */}
           {activeTab === 'quiz' && (
@@ -401,7 +867,7 @@ export function App() {
                     }}
                     className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
                       mobileHostQuizView === 'controls'
-                        ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
+                        ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -411,9 +877,9 @@ export function App() {
                 </div>
               )}
 
-              {/* Arena View */}
+              {/* Main Arena View */}
               <div
-                className={`flex-1 flex flex-col overflow-y-auto ${
+                className={`flex-1 flex flex-col h-full min-w-0 ${
                   userRole === 'host' && mobileHostQuizView === 'controls' ? 'hidden lg:flex' : 'flex'
                 }`}
               >
@@ -498,11 +964,16 @@ export function App() {
                 setActiveTab={setQAFilterTab}
                 onOpenAskModal={() => setIsAskModalOpen(true)}
                 isHost={userRole === 'host'}
+                initialClusters={qaClusters}
+                onClustersChange={(clusters) => {
+                  setQaClusters(clusters);
+                  channelManager?.broadcast('qa_cluster_update', clusters);
+                }}
               />
             </motion.div>
           )}
 
-          {/* TAB 4: Leaderboard Podium */}
+          {/* TAB 4: Leaderboard Podium & Team Battle */}
           {activeTab === 'leaderboard' && (
             <motion.div
               key="tab-leaderboard"
@@ -516,11 +987,40 @@ export function App() {
                 leaderboard={leaderboard}
                 currentUserSessionId={sessionId}
                 onExportCard={handleOpenSocialCard}
+                onOpenCertificate={() => setIsCertificateModalOpen(true)}
               />
             </motion.div>
           )}
 
-          {/* TAB 5: Rooms Admin Management */}
+          {/* TAB 5: Audience Feedback Surveys */}
+          {activeTab === 'surveys' && (
+            <motion.div
+              key="tab-surveys"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 max-w-5xl mx-auto w-full"
+            >
+              <SurveyTab
+                surveys={surveys}
+                activeSurvey={activeSurvey}
+                responsesBySurvey={responsesBySurvey}
+                userSubmittedIds={userSubmittedIds}
+                isHost={userRole === 'host'}
+                isSummarizing={isSummarizing}
+                onCreateSurvey={createSurvey}
+                onLaunchSurvey={launchSurvey}
+                onCloseSurvey={closeSurvey}
+                onDeleteSurvey={deleteSurvey}
+                onSubmitResponse={submitResponse}
+                onGenerateAISummary={generateAISummary}
+                onExportResponses={exportResponses}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 6: Rooms Admin Management */}
           {activeTab === 'rooms' && (
             <motion.div
               key="tab-rooms"
@@ -538,11 +1038,14 @@ export function App() {
                 onOpenAISettings={() => setIsAISettingsModalOpen(true)}
                 userName={userName}
                 currentUser={currentUser}
+                isHost={isHostOrAdmin}
+                hasGeneratedReport={Boolean(sessionReport)}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+      </div>
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-neo-card-darker border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
@@ -601,6 +1104,25 @@ export function App() {
           whileTap={{ scale: 0.94 }}
           onClick={() => {
             playWhoosh();
+            setActiveTab('surveys');
+          }}
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer relative ${
+            activeTab === 'surveys'
+              ? 'bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4 mb-0.5" />
+          <span>SURVEYS</span>
+          {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
+            <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
+          )}
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
             setActiveTab('leaderboard');
           }}
           className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
@@ -612,24 +1134,6 @@ export function App() {
           <Trophy className="w-4 h-4 mb-0.5" />
           <span>SCORES</span>
         </motion.button>
-
-        {userRole === 'host' && (
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => {
-              playWhoosh();
-              setActiveTab('rooms');
-            }}
-            className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
-              activeTab === 'rooms'
-                ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Layers className="w-4 h-4 mb-0.5" />
-            <span>ROOMS</span>
-          </motion.button>
-        )}
       </div>
 
       {/* Modals */}
@@ -656,6 +1160,17 @@ export function App() {
         onClose={() => setIsAskModalOpen(false)}
         onSubmit={submitQuestion}
         userName={userName}
+        roomCode={room.code}
+        sessionId={sessionId}
+        isMuted={isMuted}
+        currentStrikes={myStrikes}
+        onRecordStrike={recordMyStrike}
+        onSafeguardViolation={handleSafeguardViolation}
+        existingQuestions={questions}
+        onUpvoteExisting={(questionId) => {
+          toggleUpvote(questionId);
+          setActiveTab('qa');
+        }}
       />
 
       <AuthModal
@@ -690,11 +1205,19 @@ export function App() {
         onPromoteToAdmin={promoteToAdmin}
         onDemoteFromAdmin={demoteFromAdmin}
         onRefresh={() => channelManager?.pingPresence()}
+        mutedSessionIds={mutedSessionIds}
+        strikesBySession={strikesBySession}
+        onMuteAttendee={muteAttendee}
+        onUnmuteAttendee={unmuteAttendee}
+        onBanAttendee={banAttendee}
+        onSendWarning={sendAttendeeWarning}
+        onResetStrikes={resetAttendeeStrikes}
       />
 
       <AISettingsModal
         isOpen={isAISettingsModalOpen}
         onClose={() => setIsAISettingsModalOpen(false)}
+        roomCode={room.code}
       />
 
       <AISessionReportModal
@@ -707,6 +1230,9 @@ export function App() {
         polls={polls}
         questions={questions}
         leaderboard={leaderboard}
+        isHost={isHostOrAdmin}
+        initialReportMarkdown={sessionReport}
+        onReportGenerated={handlePublishReport}
         onOpenAISettings={() => setIsAISettingsModalOpen(true)}
       />
 
@@ -717,6 +1243,7 @@ export function App() {
         attendees={attendees}
         leaderboard={leaderboard}
         currentUserName={userName}
+        room={room}
         onSelectWinner={handleSelectSpotlightWinner}
       />
 
@@ -736,6 +1263,99 @@ export function App() {
           cardData={socialCardData}
         />
       )}
+
+      {/* Masterclass Certificate Pass Modal */}
+      <MasterclassCertificateModal
+        isOpen={isCertificateModalOpen}
+        onClose={() => setIsCertificateModalOpen(false)}
+        recipientName={userName}
+        roomTitle={room.title}
+        roomCode={room.code}
+        score={myScore}
+        rank={myRank}
+        totalAttendees={leaderboard.length || attendees.length || 1}
+        badges={myBadges}
+      />
+
+      {/* Public Verified Certificate Modal */}
+      {verifiedCertData && (
+        <CertificateVerificationModal
+          certData={verifiedCertData}
+          onClose={handleCloseVerification}
+          onEnterArena={handleEnterArenaFromCert}
+        />
+      )}
+
+      {/* Official Host Warning Modal */}
+      {officialWarning && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-neo-cream text-black border-4 border-black brutal-shadow-lg p-6 max-w-md w-full font-mono">
+            <div className="w-14 h-14 bg-amber-400 text-black border-3 border-black mx-auto mb-4 flex items-center justify-center brutal-shadow-sm">
+              <AlertTriangle className="w-8 h-8 stroke-[2.5]" />
+            </div>
+            <div className="text-center">
+              <span className="px-2 py-0.5 bg-black text-amber-300 font-black text-[10px] uppercase tracking-wider">
+                OFFICIAL HOST DIRECTIVE
+              </span>
+              <h2 className="text-xl font-heavy uppercase tracking-tight text-black mt-2">
+                WARNING ISSUED BY {officialWarning.issuedBy || 'HOST'}
+              </h2>
+              <p className="text-xs text-slate-800 font-sans mt-2.5 leading-relaxed bg-white p-3 border-2 border-black">
+                {officialWarning.message}
+              </p>
+              <p className="text-[11px] text-red-600 font-bold mt-2 font-mono uppercase">
+                ⚠️ Further inappropriate questions will result in an immediate mute or permanent ban.
+              </p>
+            </div>
+            <div className="mt-5">
+              <button
+                onClick={() => {
+                  playClickSound();
+                  dismissOfficialWarning();
+                }}
+                className="w-full py-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black font-mono font-black uppercase border-2 border-black brutal-shadow cursor-pointer transition-all"
+              >
+                I UNDERSTAND & AGREE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Banned Notice Screen */}
+      {isBanned && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-neo-cream text-black border-4 border-black brutal-shadow-lg p-6 max-w-md w-full font-mono text-center">
+            <div className="w-14 h-14 bg-neo-pink text-white border-3 border-black mx-auto mb-4 flex items-center justify-center brutal-shadow-sm">
+              <UserX className="w-8 h-8 stroke-[2.5]" />
+            </div>
+            <h2 className="text-xl font-heavy uppercase tracking-tight text-black">
+              ROOM ACCESS BANNED
+            </h2>
+            <p className="text-xs text-slate-800 font-sans mt-2 leading-relaxed">
+              {banNotice || `You have been removed and banned from Room ${room.code} by the host for repeated policy violations.`}
+            </p>
+            <div className="mt-5">
+              <button
+                onClick={() => {
+                  dismissBanNotice();
+                  handleSignOut();
+                  window.location.href = window.location.pathname;
+                }}
+                className="w-full py-2.5 bg-neo-yellow text-black font-mono font-black uppercase border-2 border-black brutal-shadow hover:bg-[#FFF04D] cursor-pointer"
+              >
+                RETURN TO HOME
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Audience Floating Emoji Reactions Overlay */}
+      <FloatingReactionsOverlay
+        channelManager={channelManager}
+        userName={userName}
+      />
     </div>
   );
 }

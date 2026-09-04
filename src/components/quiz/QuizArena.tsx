@@ -11,6 +11,7 @@ import {
   Flame,
   Clock,
   Shield,
+  Zap,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -57,25 +58,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 }) => {
   const { question, isRevealed, userSelectedOption, isCorrect, pointsEarned, votesDistribution } = quizState;
 
-  if (!question) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-retro-dots">
-        <div className="w-16 h-16 bg-neo-yellow text-black border-2 border-black brutal-shadow flex items-center justify-center mb-4 -rotate-3">
-          <Sparkles className="w-8 h-8 stroke-black" />
-        </div>
-        <h3 className="text-2xl font-heavy text-white uppercase tracking-tight mb-2">
-          NO ACTIVE QUIZ ROUND
-        </h3>
-        <p className="text-xs font-mono text-slate-400 max-w-md bg-neo-card p-3 border-2 border-black brutal-shadow-sm">
-          {isHost
-            ? '> Launch a technical question from the host control panel to start live round.'
-            : '> Stand by. The host is queuing the next architecture challenge...'}
-        </p>
-      </div>
-    );
-  }
-
-  const totalVotes = Object.values(votesDistribution).reduce((a, b) => a + b, 0);
+  const totalVotes = Object.values(votesDistribution || {}).reduce((a, b) => a + b, 0);
   const lastRemainingRef = useRef<number>(timeRemaining);
   const hasPlayedRevealRef = useRef<boolean>(false);
 
@@ -114,6 +97,24 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       hasPlayedRevealRef.current = false;
     }
   }, [isRevealed, isCorrect, userSelectedOption, question]);
+
+  if (!question) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-retro-dots">
+        <div className="w-16 h-16 bg-neo-yellow text-black border-2 border-black brutal-shadow flex items-center justify-center mb-4 -rotate-3">
+          <Sparkles className="w-8 h-8 stroke-black" />
+        </div>
+        <h3 className="text-2xl font-heavy text-white uppercase tracking-tight mb-2">
+          NO ACTIVE QUIZ ROUND
+        </h3>
+        <p className="text-xs font-mono text-slate-400 max-w-md bg-neo-card p-3 border-2 border-black brutal-shadow-sm">
+          {isHost
+            ? '> Launch a technical question from the host control panel to start live round.'
+            : '> Stand by. The host is queuing the next architecture challenge...'}
+        </p>
+      </div>
+    );
+  }
 
   const getOptionButtonClass = (optionId: string) => {
     const isSelected = userSelectedOption === optionId;
@@ -215,14 +216,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           )}
 
+
+
           {userStreak > 0 && (
             <motion.div
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className="px-1.5 sm:px-2 py-0.5 bg-neo-yellow text-black text-[10px] sm:text-[11px] font-extrabold border border-black brutal-shadow-sm flex items-center gap-1"
+              className={`px-1.5 sm:px-2 py-0.5 border border-black brutal-shadow-sm flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold ${
+                userStreak >= 3
+                  ? 'bg-neo-pink text-white animate-pulse'
+                  : userStreak >= 2
+                  ? 'bg-[#FF8833] text-black'
+                  : 'bg-neo-yellow text-black'
+              }`}
             >
-              <Flame className="w-3 h-3 fill-black" />
-              <span>{userStreak}X STREAK</span>
+              <Flame className={`w-3 h-3 ${userStreak >= 3 ? 'fill-white text-white' : 'fill-black text-black'}`} />
+              <span>{userStreak}X STREAK {userStreak >= 3 ? '(2.0x)' : userStreak >= 2 ? '(1.5x)' : ''}</span>
             </motion.div>
           )}
 
@@ -371,10 +380,24 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <div>
               {userSelectedOption ? (
                 isCorrect ? (
-                  <span className="px-2.5 sm:px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
-                    <span>CORRECT! +{pointsEarned} PTS</span>
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 sm:px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
+                      <span>CORRECT! +{pointsEarned} PTS</span>
+                    </span>
+                    {userStreak >= 2 && (
+                      <motion.span
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className={`px-2.5 sm:px-3 py-1 font-mono font-black text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 ${
+                          userStreak >= 3 ? 'bg-neo-pink text-white animate-bounce' : 'bg-neo-orange text-black'
+                        }`}
+                      >
+                        <Zap className="w-3.5 h-3.5 stroke-3 fill-current" />
+                        <span>{userStreak >= 3 ? '⚡ 2.0X MAXIMUM OVERDRIVE!' : '🔥 1.5X STREAK BONUS!'}</span>
+                      </motion.span>
+                    )}
+                  </div>
                 ) : (
                   <span className="px-2.5 sm:px-3 py-1 bg-neo-pink text-white font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
                     <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />

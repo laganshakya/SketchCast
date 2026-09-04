@@ -4,6 +4,7 @@ import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { playPopSound } from '../lib/soundFx';
 
 const SESSION_KEY = 'sketchcast_session_id';
 const NAME_KEY = 'sketchcast_user_name';
@@ -136,6 +137,56 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return RealtimeChannelManager.getInstance(getStoredRoomCode(initialRoomCode), getOrCreateSessionId());
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(isSessionAutoAuthenticated);
+
+  // Moderation state: Muted and Banned session tracking per room
+  const [mutedSessionIds, setMutedSessionIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(`sketchcast_muted_${getStoredRoomCode(initialRoomCode)}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [bannedSessionIds, setBannedSessionIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(`sketchcast_banned_${getStoredRoomCode(initialRoomCode)}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isBanned, setIsBanned] = useState<boolean>(false);
+  const [banNotice, setBanNotice] = useState<string | null>(null);
+
+  // Live Strike & Warning State
+  const strikeStorageKey = `sketchcast_strikes_${activeRoomCode.toUpperCase()}_${sessionId}`;
+  const [myStrikes, setMyStrikes] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(strikeStorageKey);
+      return stored ? parseInt(stored, 10) || 0 : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [strikesBySession, setStrikesBySession] = useState<Record<string, number>>({});
+  const [officialWarning, setOfficialWarning] = useState<{
+    message: string;
+    issuedBy: string;
+    timestamp: number;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(strikeStorageKey);
+      setMyStrikes(stored ? parseInt(stored, 10) || 0 : 0);
+    } catch {
+      setMyStrikes(0);
+    }
+  }, [strikeStorageKey]);
 
   // Sync activeTab with URL Hash & Storage
   const setActiveTab = (tab: ActiveTabType) => {
@@ -296,11 +347,119 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       }
     });
 
+    const unModeration = manager.on('attendee_moderation_action', (event) => {
+      if (event.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        const currentName = userNameRef.current;
+        const isTarget =
+          event.targetSessionId === sessionId ||
+          event.targetName.toLowerCase() === currentName.toLowerCase();
+
+        if (event.action === 'mute') {
+          setMutedSessionIds((prev) => {
+            const next = new Set(prev);
+            next.add(event.targetSessionId);
+            try {
+              localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+            } catch {
+              // ignore
+            }
+            return next;
+          });
+          if (isTarget) {
+            setIsMuted(true);
+            setPromotionToast('⚠️ You have been muted by the host for repeated guideline violations.');
+          }
+        } else if (event.action === 'unmute') {
+          setMutedSessionIds((prev) => {
+            const next = new Set(prev);
+            next.delete(event.targetSessionId);
+            try {
+              localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+            } catch {
+              // ignore
+            }
+            return next;
+          });
+          if (isTarget) {
+            setIsMuted(false);
+            setPromotionToast('🎉 The host has restored your Q&A permissions.');
+          }
+        } else if (event.action === 'ban') {
+          setBannedSessionIds((prev) => {
+            const next = new Set(prev);
+            next.add(event.targetSessionId);
+            try {
+              localStorage.setItem(`sketchcast_banned_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+            } catch {
+              // ignore
+            }
+            return next;
+          });
+          setAttendees((prev) => prev.filter((a) => a.session_id !== event.targetSessionId));
+          if (isTarget) {
+            setIsBanned(true);
+            setBanNotice(`You have been banned from Room ${activeRoomCode} by the host for repeated policy violations.`);
+            manager.leaveRoom();
+          }
+        }
+      }
+    });
+
+    const unStrikeUpdate = manager.on('safeguard_strike_update', (ev) => {
+      if (ev.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        setStrikesBySession((prev) => ({
+          ...prev,
+          [ev.sessionId]: ev.strikeCount,
+        }));
+      }
+    });
+
+    const unStrikesReset = manager.on('safeguard_strikes_reset', (ev) => {
+      if (ev.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        setStrikesBySession((prev) => ({
+          ...prev,
+          [ev.targetSessionId]: 0,
+        }));
+        const isTarget =
+          ev.targetSessionId === sessionId ||
+          ev.targetName.toLowerCase() === userNameRef.current.toLowerCase();
+        if (isTarget) {
+          setMyStrikes(0);
+          try {
+            localStorage.setItem(strikeStorageKey, '0');
+          } catch {
+            // ignore
+          }
+          setPromotionToast('✨ Your safeguard strikes have been forgiven and reset by the host.');
+        }
+      }
+    });
+
+    const unWarningIssued = manager.on('safeguard_warning_issued', (ev) => {
+      if (ev.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        const isTarget =
+          ev.targetSessionId === sessionId ||
+          ev.targetName.toLowerCase() === userNameRef.current.toLowerCase();
+        if (isTarget) {
+          setOfficialWarning({
+            message: ev.warningMessage,
+            issuedBy: ev.issuedBy,
+            timestamp: ev.timestamp,
+          });
+          playPopSound();
+        }
+      }
+    });
+
     return () => {
       unPresence();
       unAdminPromote();
+      unModeration();
+      unStrikeUpdate();
+      unStrikesReset();
+      unWarningIssued();
     };
-  }, [activeRoomCode, sessionId]);
+  }, [activeRoomCode, sessionId, strikeStorageKey]);
 
   // Keep presence updated whenever name or role changes
   useEffect(() => {
@@ -364,6 +523,126 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     const updatedAdmins = existingAdmins.filter((a) => a.toLowerCase() !== targetName.toLowerCase());
     await dbUpdateRoomAdmins(activeRoomCode, updatedAdmins);
     setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
+  };
+
+  const muteAttendee = (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('attendee_moderation_action', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        action: 'mute',
+        issuedBy: userName,
+        timestamp: Date.now(),
+      });
+    }
+    setMutedSessionIds((prev) => {
+      const next = new Set(prev);
+      next.add(targetSessionId);
+      try {
+        localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const unmuteAttendee = (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('attendee_moderation_action', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        action: 'unmute',
+        issuedBy: userName,
+        timestamp: Date.now(),
+      });
+    }
+    setMutedSessionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(targetSessionId);
+      try {
+        localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const banAttendee = (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('attendee_moderation_action', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        action: 'ban',
+        issuedBy: userName,
+        timestamp: Date.now(),
+      });
+    }
+    setBannedSessionIds((prev) => {
+      const next = new Set(prev);
+      next.add(targetSessionId);
+      try {
+        localStorage.setItem(`sketchcast_banned_${activeRoomCode}`, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+    setAttendees((prev) => prev.filter((a) => a.session_id !== targetSessionId));
+  };
+
+  const sendAttendeeWarning = (targetSessionId: string, targetName: string, message?: string) => {
+    const warningMessage =
+      message ||
+      '⚠️ Official Host Warning: You have reached multiple safeguard strikes for inappropriate questions. Further violations will result in being muted or banned.';
+    if (channelManager) {
+      channelManager.broadcast('safeguard_warning_issued', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        warningMessage,
+        issuedBy: userName,
+        timestamp: Date.now(),
+      });
+    }
+  };
+
+  const resetAttendeeStrikes = (targetSessionId: string, targetName: string) => {
+    if (channelManager) {
+      channelManager.broadcast('safeguard_strikes_reset', {
+        roomId: activeRoomCode,
+        targetSessionId,
+        targetName,
+        issuedBy: userName,
+        timestamp: Date.now(),
+      });
+      channelManager.broadcast('safeguard_strike_update', {
+        roomId: activeRoomCode,
+        sessionId: targetSessionId,
+        userName: targetName,
+        strikeCount: 0,
+      });
+    }
+    setStrikesBySession((prev) => ({
+      ...prev,
+      [targetSessionId]: 0,
+    }));
+  };
+
+  const recordMyStrike = (count: number) => {
+    setMyStrikes(count);
+    if (channelManager) {
+      channelManager.broadcast('safeguard_strike_update', {
+        roomId: activeRoomCode,
+        sessionId,
+        userName,
+        strikeCount: count,
+      });
+    }
   };
 
   const handleAuthenticated = async (name: string, requestedRole: 'host' | 'attendee', customRoomCode?: string) => {
@@ -442,5 +721,21 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     setPromotionToast,
     promoteToAdmin,
     demoteFromAdmin,
+    mutedSessionIds,
+    bannedSessionIds,
+    isMuted,
+    isBanned,
+    banNotice,
+    dismissBanNotice: () => setBanNotice(null),
+    muteAttendee,
+    unmuteAttendee,
+    banAttendee,
+    strikesBySession,
+    myStrikes,
+    recordMyStrike,
+    officialWarning,
+    dismissOfficialWarning: () => setOfficialWarning(null),
+    sendAttendeeWarning,
+    resetAttendeeStrikes,
   };
 }

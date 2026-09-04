@@ -18,7 +18,7 @@ import {
   UserX,
   Shield,
   Bot,
-  FileText
+  FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Room } from '../../types';
@@ -34,6 +34,8 @@ interface RoomsAdminViewProps {
   onOpenAISettings?: () => void;
   userName: string;
   currentUser?: User | null;
+  isHost?: boolean;
+  hasGeneratedReport?: boolean;
 }
 
 export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
@@ -44,6 +46,8 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   onOpenAISettings,
   userName,
   currentUser,
+  isHost = false,
+  hasGeneratedReport = false,
 }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -203,7 +207,8 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap gap-y-2">
-          {onOpenAISettings && (
+          {/* AI Settings: Host / Admin only */}
+          {isHost && onOpenAISettings && (
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
@@ -218,7 +223,10 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
             </motion.button>
           )}
 
-          {onOpenAISummary && (
+          {/* AI Summary Report:
+              - Host: sees [AI SUMMARY REPORT] (generator)
+              - Attendee: sees [VIEW AI REPORT] ONLY if hasGeneratedReport is true */}
+          {onOpenAISummary && (isHost || hasGeneratedReport) && (
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
@@ -226,25 +234,36 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                 playClickSound();
                 onOpenAISummary();
               }}
-              className="px-3.5 py-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
+              className={`px-3.5 py-2.5 text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer ${
+                isHost
+                  ? 'bg-neo-yellow hover:bg-[#FFF04D] text-black'
+                  : 'bg-neo-mint hover:bg-[#26F7A9] text-black'
+              }`}
             >
               <FileText className="w-4 h-4" />
-              <span>AI SUMMARY REPORT</span>
+              <span>{isHost ? 'AI SUMMARY REPORT' : 'VIEW AI REPORT'}</span>
+              {!isHost && hasGeneratedReport && (
+                <span className="px-1.5 py-0.2 bg-black text-neo-mint text-[9px] font-black uppercase ml-1">
+                  READY
+                </span>
+              )}
             </motion.button>
           )}
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => {
-              playClickSound();
-              handleOpenCreateModal();
-            }}
-            className="px-4 py-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-2 shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-3" />
-            <span>CREATE NEW ROOM</span>
-          </motion.button>
+          {isHost && (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                playClickSound();
+                handleOpenCreateModal();
+              }}
+              className="px-4 py-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-2 shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-3" />
+              <span>CREATE NEW ROOM</span>
+            </motion.button>
+          )}
         </div>
       </div>
 

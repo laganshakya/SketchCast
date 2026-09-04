@@ -21,6 +21,14 @@ interface QuestionCardProps {
   onOpenAISettings?: () => void;
   isHost?: boolean;
   compact?: boolean;
+  clusterTheme?: { name: string; emoji: string; color: string };
+}
+
+function timeAgo(dateStr: string) {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60));
+  if (mins < 1) return 'JUST NOW';
+  if (mins < 60) return `${mins}M AGO`;
+  return `${Math.floor(mins / 60)}H AGO`;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -32,6 +40,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onOpenAISettings,
   isHost = false,
   compact = false,
+  clusterTheme,
 }) => {
   const [isGeneratingPoints, setIsGeneratingPoints] = useState(false);
   const [localPoints, setLocalPoints] = useState<string[] | null>(null);
@@ -69,13 +78,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </span>
         );
     }
-  };
-
-  const timeAgo = (dateStr: string) => {
-    const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60));
-    if (mins < 1) return 'JUST NOW';
-    if (mins < 60) return `${mins}M AGO`;
-    return `${Math.floor(mins / 60)}H AGO`;
   };
 
   const handleGenerateTalkingPoints = async () => {
@@ -151,7 +153,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {timeAgo(question.created_at)}
               </span>
             </div>
-            {getStatusBadge()}
+            <div className="flex items-center space-x-1.5 flex-wrap">
+              {clusterTheme && (
+                <span
+                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase border border-black shrink-0"
+                  style={{ backgroundColor: `${clusterTheme.color}25`, color: clusterTheme.color, borderColor: clusterTheme.color }}
+                  title={`AI Topic Cluster: ${clusterTheme.name}`}
+                >
+                  <span>{clusterTheme.emoji}</span>
+                  <span>{clusterTheme.name}</span>
+                </span>
+              )}
+              {getStatusBadge()}
+            </div>
           </div>
 
           <p className="text-xs sm:text-sm text-slate-100 font-semibold leading-relaxed wrap-break-word font-display">

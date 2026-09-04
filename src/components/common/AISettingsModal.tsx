@@ -21,19 +21,24 @@ import {
   setStoredMeshModel,
   testMeshConnection,
   MESH_MODEL_OPTIONS,
+  isQASafeguardEnabled,
+  setQASafeguardEnabled,
 } from '../../lib/meshApi';
+import { dbUpdateRoomAIModel } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface AISettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  roomCode?: string;
 }
 
-export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClose }) => {
+export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClose, roomCode }) => {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [selectedModel, setSelectedModel] = useState(getStoredMeshModel());
   const [customModelInput, setCustomModelInput] = useState('');
+  const [qaSafeguard, setQaSafeguard] = useState(isQASafeguardEnabled());
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
@@ -44,9 +49,11 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
       setApiKey(existingKey);
       const existingModel = getStoredMeshModel();
       setSelectedModel(existingModel);
+      setQaSafeguard(isQASafeguardEnabled());
       setTestResult(null);
       setSaveStatus(null);
-      if (!MESH_MODEL_OPTIONS.some((m) => m.id === existingModel)) {
+      // If it's 'auto' or matches a preset, custom model input is cleared
+      if (existingModel && existingModel !== 'auto' && !MESH_MODEL_OPTIONS.some((m) => m.id === existingModel)) {
         setCustomModelInput(existingModel);
       } else {
         setCustomModelInput('');
@@ -59,19 +66,38 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
   const handleSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const finalKey = apiKey.trim();
-    setStoredMeshKey(finalKey);
+    if (finalKey) {
+      setStoredMeshKey(finalKey);
+    }
 
-    const finalModel = customModelInput.trim() || selectedModel;
+    const finalModel = customModelInput.trim() || selectedModel || 'auto';
     setStoredMeshModel(finalModel);
+
+    if (roomCode) {
+      dbUpdateRoomAIModel(roomCode, finalModel);
+    }
+
+    setQASafeguardEnabled(qaSafeguard);
 
     setSaveStatus('Mesh AI configuration saved!');
     setTimeout(() => setSaveStatus(null), 2500);
   };
 
+  const handleCloseModal = () => {
+    playClickSound();
+    const finalModel = customModelInput.trim() || selectedModel || 'auto';
+    setStoredMeshModel(finalModel);
+    if (roomCode) {
+      dbUpdateRoomAIModel(roomCode, finalModel);
+    }
+    setQASafeguardEnabled(qaSafeguard);
+    onClose();
+  };
+
   const handleTest = async () => {
     setIsTesting(true);
     setTestResult(null);
-    const finalModel = customModelInput.trim() || selectedModel;
+    const finalModel = customModelInput.trim() || selectedModel || 'auto';
     const result = await testMeshConnection(apiKey.trim(), finalModel);
     setTestResult(result);
     setIsTesting(false);
@@ -107,10 +133,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                playClickSound();
-                onClose();
-              }}
+              onClick={handleCloseModal}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
               title="Close AI Settings"
             >
@@ -226,6 +249,12 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                           playPopSound();
                           setSelectedModel(m.id);
                           setCustomModelInput('');
+                          setStoredMeshModel(m.id);
+                          if (roomCode) {
+                            dbUpdateRoomAIModel(roomCode, m.id);
+                          }
+                          setSaveStatus(`Active: ${m.name}`);
+                          setTimeout(() => setSaveStatus(null), 2000);
                         }}
                         className={`p-2.5 text-left border-2 border-black transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
@@ -252,17 +281,148 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                 </div>
 
                 {/* Custom Model Override */}
-                <div className="mt-2 p-2 bg-white border-2 border-black">
-                  <label className="text-[10px] font-black uppercase block mb-1 text-slate-700">
-                    Or enter custom model ID (any model on Mesh API):
-                  </label>
+                <div className={`mt-2 p-2.5 bg-white border-2 border-black transition-colors ${
+                  customModelInput.trim() ? 'bg-neo-yellow/10 border-neo-pink' : ''
+                }`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-black uppercase text-slate-700 flex items-center gap-1">
+                      <span>Or enter custom model ID (any model on Mesh API):</span>
+                    </label>
+                    {customModelInput.trim() ? (
+                      <span className="text-[9px] font-black uppercase text-neo-pink px-1 py-0.2 bg-neo-pink/10 border border-neo-pink">
+                        ● CUSTOM OVERRIDE ACTIVE
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold text-slate-500">
+                        Leave blank to use preset
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={customModelInput}
-                    onChange={(e) => setCustomModelInput(e.target.value)}
-                    placeholder="e.g. meta/llama-3.3-70b-instruct or deepseek/deepseek-chat"
-                    className="w-full px-2 py-1 text-xs bg-slate-50 border border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomModelInput(val);
+                      const modelToSave = val.trim() || selectedModel || 'auto';
+                      setStoredMeshModel(modelToSave);
+                      if (roomCode) {
+                        dbUpdateRoomAIModel(roomCode, modelToSave);
+                      }
+                    }}
+                    placeholder="e.g. openai/gpt-4o-mini or deepseek/deepseek-v4-flash"
+                    className="w-full px-2 py-1.5 text-xs bg-slate-50 border border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20 font-mono"
                   />
+                  <div className="flex items-center justify-between text-[9px] text-slate-500 mt-1">
+                    <span>Quick model IDs:</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = 'openai/gpt-4o-mini';
+                          setCustomModelInput(id);
+                          setSelectedModel(id);
+                          setStoredMeshModel(id);
+                          if (roomCode) dbUpdateRoomAIModel(roomCode, id);
+                          setSaveStatus('Active: GPT-4o Mini');
+                          setTimeout(() => setSaveStatus(null), 2000);
+                        }}
+                        className="underline hover:text-black font-bold cursor-pointer"
+                      >
+                        gpt-4o-mini
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = 'deepseek/deepseek-v4-flash';
+                          setCustomModelInput(id);
+                          setSelectedModel(id);
+                          setStoredMeshModel(id);
+                          if (roomCode) dbUpdateRoomAIModel(roomCode, id);
+                          setSaveStatus('Active: DeepSeek V4 Flash');
+                          setTimeout(() => setSaveStatus(null), 2000);
+                        }}
+                        className="underline hover:text-black font-bold cursor-pointer"
+                      >
+                        deepseek-v4-flash
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const id = 'deepseek/deepseek-chat';
+                          setCustomModelInput(id);
+                          setSelectedModel(id);
+                          setStoredMeshModel(id);
+                          if (roomCode) dbUpdateRoomAIModel(roomCode, id);
+                          setSaveStatus('Active: DeepSeek V3 Chat');
+                          setTimeout(() => setSaveStatus(null), 2000);
+                        }}
+                        className="underline hover:text-black font-bold cursor-pointer"
+                      >
+                        deepseek-chat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Maximum Credit Saver Engine Callout */}
+                <div className="mt-2.5 p-2.5 bg-emerald-50 border-2 border-black font-mono text-[11px] text-emerald-950 flex items-start gap-2">
+                  <Zap className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-black uppercase text-emerald-900 flex items-center gap-1.5 flex-wrap">
+                      <span>MAX CREDIT SAVER ENGINE ACTIVE</span>
+                      <span className="px-1 py-0.2 bg-emerald-600 text-white text-[8px] font-black">COST OPTIMIZED</span>
+                    </div>
+                    <p className="text-[10px] text-emerald-800 leading-snug">
+                      <strong>Smart Auto-Router</strong> & <strong>GPT-4o Mini</strong> route live moderation, quizzes, duplicate checks, and surveys to ultra-low cost, high-efficiency endpoints with zero-cost memoization.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Q&A Safeguard & Content Moderation Card */}
+              <div className="p-3 bg-white border-2 border-black space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start space-x-2.5 min-w-0">
+                    <div className="w-7 h-7 bg-neo-pink text-white border border-black flex items-center justify-center font-heavy shrink-0 mt-0.5">
+                      <Shield className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-heavy text-xs uppercase tracking-tight text-black flex items-center space-x-1.5 flex-wrap gap-y-1">
+                        <span>AI Q&A SAFEGUARD</span>
+                        <span
+                          className={`px-1.5 py-0.2 text-[8px] font-black uppercase border border-black ${
+                            qaSafeguard ? 'bg-neo-mint text-black' : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {qaSafeguard ? 'ACTIVE' : 'DISABLED'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-600 font-sans mt-0.5 leading-snug">
+                        Screens audience questions for harassment, offensive profanity, and spam via Mesh AI before they appear on the live stage.
+                      </div>
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => {
+                      playPopSound();
+                      const next = !qaSafeguard;
+                      setQaSafeguard(next);
+                      setQASafeguardEnabled(next);
+                    }}
+                    className={`px-3 py-1 text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm cursor-pointer transition-all shrink-0 ${
+                      qaSafeguard
+                        ? 'bg-neo-mint text-black'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    }`}
+                  >
+                    {qaSafeguard ? 'ENABLED' : 'DISABLED'}
+                  </motion.button>
                 </div>
               </div>
 
@@ -308,10 +468,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                     type="button"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => {
-                      playClickSound();
-                      onClose();
-                    }}
+                    onClick={handleCloseModal}
                     className="w-full xs:w-auto px-3.5 py-1.5 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
                   >
                     CANCEL

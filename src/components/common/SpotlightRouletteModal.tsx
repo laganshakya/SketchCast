@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
-import type { AttendeePresence, SpotlightWinner, SpotlightRewardPerk, LeaderboardEntry } from '../../types';
+import type { AttendeePresence, SpotlightWinner, SpotlightRewardPerk, LeaderboardEntry, Room } from '../../types';
 import { playClickTick, playFanfare, isSoundFxMuted, toggleMuteSoundFx, playClickSound, playPopSound } from '../../lib/soundFx';
+import { isUserRoomAdmin } from '../../lib/supabase';
 
 interface SpotlightRouletteModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface SpotlightRouletteModalProps {
   attendees: AttendeePresence[];
   leaderboard?: LeaderboardEntry[];
   currentUserName: string;
+  room?: Room;
   onSelectWinner?: (winner: SpotlightWinner) => void;
 }
 
@@ -72,6 +74,7 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
   attendees,
   leaderboard = [],
   currentUserName,
+  room,
   onSelectWinner,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -82,26 +85,67 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
   const [recentWinners, setRecentWinners] = useState<string[]>([]);
   const [muted, setMuted] = useState(isSoundFxMuted());
 
+  // Check if an attendee is the host, co-admin, or admin (excluded from wheel)
+  const isExemptStaff = useCallback(
+    (att: AttendeePresence) => {
+      // 1. Explicit host presence role
+      if (att.role === 'host') return true;
+
+      // 2. Matches the active host name running the session
+      if (currentUserName && att.name.trim().toLowerCase() === currentUserName.trim().toLowerCase()) {
+        return true;
+      }
+
+      // 3. Matches room creator / host_name
+      if (room?.host_name && att.name.trim().toLowerCase() === room.host_name.trim().toLowerCase()) {
+        return true;
+      }
+
+      // 4. Matches co-admin list stored in room.admins
+      if (
+        room?.admins &&
+        room.admins.some((adminName) => adminName.trim().toLowerCase() === att.name.trim().toLowerCase())
+      ) {
+        return true;
+      }
+
+      // 5. Supabase room admin checker (checks host email, ID, and admins)
+      if (room && isUserRoomAdmin(room, null, att.name)) {
+        return true;
+      }
+
+      return false;
+    },
+    [room, currentUserName]
+  );
+
+  // Audience roster strictly excluding hosts, admins, and co-admins
+  const eligibleAttendees = useMemo(() => {
+    return attendees.filter((a) => !isExemptStaff(a));
+  }, [attendees, isExemptStaff]);
+
   // Dynamic attendee roster based on filter mode
   const roster = useMemo(() => {
-    let list = attendees;
+    let list = eligibleAttendees;
     if (filterMode === 'top5' && leaderboard.length > 0) {
       const topIds = new Set(leaderboard.slice(0, 5).map((e) => e.session_id));
-      list = attendees.filter((a) => topIds.has(a.session_id));
+      list = eligibleAttendees.filter((a) => topIds.has(a.session_id));
     }
-    // If not enough users, fallback to full list
+    // If not enough users in top5, fallback to full eligible audience
     if (list.length < 2) {
-      list = attendees;
+      list = eligibleAttendees;
     }
+    // Only if there are zero eligible audience members in the room (e.g. host testing alone),
+    // supply demo audience members for previewing the wheel
     if (list.length === 0) {
       return [
-        { session_id: '1', name: 'Alex Chen', role: 'attendee' as const, joined_at: 0, last_active: 0 },
-        { session_id: '2', name: 'Jordan Dev', role: 'attendee' as const, joined_at: 0, last_active: 0 },
-        { session_id: '3', name: 'Taylor Code', role: 'attendee' as const, joined_at: 0, last_active: 0 },
+        { session_id: 'mock-1', name: 'Alex Chen', role: 'attendee' as const, joined_at: 0, last_active: 0 },
+        { session_id: 'mock-2', name: 'Jordan Dev', role: 'attendee' as const, joined_at: 0, last_active: 0 },
+        { session_id: 'mock-3', name: 'Taylor Code', role: 'attendee' as const, joined_at: 0, last_active: 0 },
       ];
     }
     return list;
-  }, [attendees, filterMode, leaderboard]);
+  }, [eligibleAttendees, filterMode, leaderboard]);
 
   const angleRef = useRef<number>(0);
   const velocityRef = useRef<number>(0);
@@ -358,7 +402,7 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Users className="w-3 h-3 inline mr-1" /> ALL ATTENDEES ({attendees.length})
+                  <Users className="w-3 h-3 inline mr-1" /> AUDIENCE ({eligibleAttendees.length})
                 </motion.button>
                 <motion.button
                   type="button"
@@ -377,16 +421,21 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
                 </motion.button>
               </div>
 
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.88 }}
-                onClick={() => setMuted(toggleMuteSoundFx())}
-                className="p-1 text-slate-400 hover:text-neo-yellow cursor-pointer"
-                title={muted ? 'Unmute SFX' : 'Mute SFX'}
-              >
-                {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </motion.button>
+              <div className="flex items-center space-x-2 pr-1">
+                <span className="hidden sm:inline-block px-1.5 py-0.5 bg-black text-neo-mint border border-black text-[9px] font-black uppercase">
+                  HOST & ADMINS EXCLUDED
+                </span>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => setMuted(toggleMuteSoundFx())}
+                  className="p-1 text-slate-400 hover:text-neo-yellow cursor-pointer"
+                  title={muted ? 'Unmute SFX' : 'Mute SFX'}
+                >
+                  {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </motion.button>
+              </div>
             </div>
 
             {/* Wheel Canvas Area */}
@@ -400,7 +449,7 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
 
               <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/80 text-neo-mint border border-black font-mono text-[10px] font-bold uppercase flex items-center gap-1">
                 <UserCheck className="w-3 h-3" />
-                <span>{roster.length} ELIGIBLE SLICES</span>
+                <span>{roster.length} AUDIENCE SLICES (NO HOST/ADMINS)</span>
               </div>
             </div>
 

@@ -15,6 +15,9 @@ interface AISessionReportModalProps {
   polls: LivePoll[];
   questions: Question[];
   leaderboard: LeaderboardEntry[];
+  isHost?: boolean;
+  initialReportMarkdown?: string;
+  onReportGenerated?: (markdown: string) => void;
   onOpenAISettings?: () => void;
 }
 
@@ -360,12 +363,17 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
   polls,
   questions,
   leaderboard,
+  isHost = false,
+  initialReportMarkdown = '',
+  onReportGenerated,
   onOpenAISettings,
 }) => {
-  const [reportMarkdown, setReportMarkdown] = useState<string>('');
+  const [generatedMarkdown, setGeneratedMarkdown] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const activeMarkdown = generatedMarkdown || initialReportMarkdown;
 
   if (!isOpen) return null;
 
@@ -419,7 +427,8 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
         leaderboardTop3: top3Leaderboard,
       });
 
-      setReportMarkdown(report);
+      setGeneratedMarkdown(report);
+      onReportGenerated?.(report);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to generate session summary report.');
     } finally {
@@ -428,8 +437,8 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
   };
 
   const handleCopy = () => {
-    if (!reportMarkdown) return;
-    navigator.clipboard.writeText(reportMarkdown);
+    if (!activeMarkdown) return;
+    navigator.clipboard.writeText(activeMarkdown);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -445,13 +454,13 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
   };
 
   const handleDownloadMarkdown = () => {
-    if (!reportMarkdown) return;
-    downloadBlob(reportMarkdown, `SketchCast-Report-${roomCode}-${Date.now()}.md`, 'text/markdown');
+    if (!activeMarkdown) return;
+    downloadBlob(activeMarkdown, `SketchCast-Report-${roomCode}-${Date.now()}.md`, 'text/markdown');
   };
 
   const handleDownloadTxt = () => {
-    if (!reportMarkdown) return;
-    const cleanTxt = reportMarkdown
+    if (!activeMarkdown) return;
+    const cleanTxt = activeMarkdown
       .replace(/^#+\s+/gm, '')
       .replace(/\*\*/g, '')
       .replace(/\*/g, '');
@@ -459,9 +468,9 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
   };
 
   const handleDownloadHtml = () => {
-    if (!reportMarkdown) return;
+    if (!activeMarkdown) return;
     const timeStr = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    const htmlContent = parseMarkdownToStyledHtml(reportMarkdown, roomTitle, roomCode, timeStr);
+    const htmlContent = parseMarkdownToStyledHtml(activeMarkdown, roomTitle, roomCode, timeStr);
     downloadBlob(htmlContent, `SketchCast-Report-${roomCode}-${Date.now()}.html`, 'text/html');
   };
 
@@ -478,7 +487,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
         leaderboardEntries: leaderboard.length,
         topScore: leaderboard[0]?.score || 0,
       },
-      reportMarkdown,
+      reportMarkdown: activeMarkdown,
       quizzes: quizzes.map((q) => ({
         category: q.category,
         question: q.question,
@@ -552,32 +561,44 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             </div>
 
             {/* Action / Trigger Banner */}
-            {!reportMarkdown && !isGenerating && (
-              <div className="p-4 bg-white border-2 border-black brutal-shadow-sm font-mono space-y-3 mb-3">
-                <div className="text-xs text-slate-800 leading-relaxed">
-                  <strong>Session Data to Synthesize:</strong>
-                  <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px]">
-                    <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
-                    <li>{polls.length} Live Community Polls</li>
-                    <li>{questions.length} Audience Q&A Submissions</li>
-                    <li>{leaderboard.length} Leaderboard participants (Top score: {leaderboard[0]?.score || 0} pts)</li>
-                  </ul>
-                </div>
+            {!activeMarkdown && !isGenerating && (
+              isHost ? (
+                <div className="p-4 bg-white border-2 border-black brutal-shadow-sm font-mono space-y-3 mb-3">
+                  <div className="text-xs text-slate-800 leading-relaxed">
+                    <strong>Session Data to Synthesize:</strong>
+                    <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px]">
+                      <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
+                      <li>{polls.length} Live Community Polls</li>
+                      <li>{questions.length} Audience Q&A Submissions</li>
+                      <li>{leaderboard.length} Leaderboard participants (Top score: {leaderboard[0]?.score || 0} pts)</li>
+                    </ul>
+                  </div>
 
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    playWhoosh();
-                    handleGenerateReport();
-                  }}
-                  className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
-                >
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>GENERATE MASTERCLASS REPORT</span>
-                </motion.button>
-              </div>
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      playWhoosh();
+                      handleGenerateReport();
+                    }}
+                    className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                  >
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>GENERATE MASTERCLASS REPORT</span>
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="p-6 bg-white border-2 border-black brutal-shadow-sm font-mono text-center space-y-2 mb-3">
+                  <div className="w-12 h-12 bg-[#FAF8F5] border-2 border-black mx-auto flex items-center justify-center brutal-shadow-sm">
+                    <FileText className="w-6 h-6 text-slate-700" />
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-heavy uppercase text-black">NO REPORT PUBLISHED YET</h4>
+                  <p className="text-xs text-slate-600 font-sans max-w-sm mx-auto">
+                    The host has not generated or published the AI Session Report for Room {roomCode} yet. Once published, you can view and download it here!
+                  </p>
+                </div>
+              )
             )}
 
             {isGenerating && (
@@ -593,7 +614,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <div>{errorMessage}</div>
-                  {onOpenAISettings && errorMessage.includes('AI Settings') && (
+                  {onOpenAISettings && isHost && errorMessage.includes('AI Settings') && (
                     <button
                       type="button"
                       onClick={onOpenAISettings}
@@ -607,12 +628,12 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             )}
 
             {/* Report Content View */}
-            {reportMarkdown && (
+            {activeMarkdown && (
               <div className="space-y-3 flex-1 flex flex-col min-h-0 font-mono">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-[11px] font-black uppercase text-emerald-800 flex items-center gap-1">
                     <CheckCircle className="w-3.5 h-3.5 stroke-3" />
-                    <span>REPORT GENERATED ({reportMarkdown.length} CHARS)</span>
+                    <span>REPORT GENERATED ({activeMarkdown.length} CHARS)</span>
                   </span>
 
                   <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
@@ -694,24 +715,26 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
                 </div>
 
                 <div className="p-3.5 bg-white border-2 border-black brutal-shadow-sm flex-1 overflow-y-auto max-h-96 text-xs text-slate-900 whitespace-pre-wrap font-mono leading-relaxed select-text">
-                  {reportMarkdown}
+                  {activeMarkdown}
                 </div>
 
-                <div className="pt-2 flex justify-end">
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => {
-                      playWhoosh();
-                      handleGenerateReport();
-                    }}
-                    className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold uppercase border border-black flex items-center space-x-1 cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>RE-GENERATE</span>
-                  </motion.button>
-                </div>
+                {isHost && (
+                  <div className="pt-2 flex justify-end">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        playWhoosh();
+                        handleGenerateReport();
+                      }}
+                      className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold uppercase border border-black flex items-center space-x-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>RE-GENERATE</span>
+                    </motion.button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LivePoll } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import { dbFetchPolls, dbInsertPoll, dbUpdatePoll, dbDeletePoll } from '../lib/supabase';
@@ -39,17 +39,33 @@ export function usePollsEngine({
     }
   });
 
+  // Synchronous refs to prevent stale closure races during rapid clicking
+  const userVotesRef = useRef<Record<string, string>>(userVotes);
+  const pollsRef = useRef<LivePoll[]>(polls);
+  const votingLockRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    userVotesRef.current = userVotes;
+  }, [userVotes]);
+
+  useEffect(() => {
+    pollsRef.current = polls;
+  }, [polls]);
+
   const syncPollsFromDB = useCallback(() => {
     dbFetchPolls(currentRoomKey).then((remotePolls) => {
       if (remotePolls && remotePolls.length > 0) {
         setPolls((currentPolls) => {
           const merged = remotePolls.map((rp) => {
             const current = currentPolls.find((cp) => cp.id === rp.id);
+            const sumVotes = rp.options.reduce((sum, opt) => sum + Math.max(0, opt.votesCount || 0), 0);
             return {
               ...rp,
+              totalVotes: Math.max(sumVotes, rp.totalVotes || 0),
               aiConsensusNote: rp.aiConsensusNote || current?.aiConsensusNote || undefined,
             };
           });
+          pollsRef.current = merged;
           try {
             localStorage.setItem(pollStorageKey, JSON.stringify(merged));
           } catch {
@@ -74,11 +90,14 @@ export function usePollsEngine({
       setPolls((currentPolls) => {
         const merged = updatedPolls.map((up: LivePoll) => {
           const current = currentPolls.find((cp) => cp.id === up.id);
+          const sumVotes = up.options.reduce((sum, opt) => sum + Math.max(0, opt.votesCount || 0), 0);
           return {
             ...up,
+            totalVotes: Math.max(sumVotes, up.totalVotes || 0),
             aiConsensusNote: up.aiConsensusNote || current?.aiConsensusNote || undefined,
           };
         });
+        pollsRef.current = merged;
         try {
           localStorage.setItem(pollStorageKey, JSON.stringify(merged));
         } catch {
@@ -92,6 +111,7 @@ export function usePollsEngine({
       setUserVotes((prev) => {
         const next = { ...prev };
         delete next[pollId];
+        userVotesRef.current = next;
         try {
           localStorage.setItem(voteStorageKey, JSON.stringify(next));
           localStorage.setItem(voteNameStorageKey, JSON.stringify(next));
@@ -108,24 +128,32 @@ export function usePollsEngine({
     };
   }, [channelManager, pollStorageKey, voteStorageKey, voteNameStorageKey]);
 
-  const persistPolls = (newPolls: LivePoll[]) => {
-    setPolls(newPolls);
-    try {
-      localStorage.setItem(pollStorageKey, JSON.stringify(newPolls));
-    } catch {
-      // ignore
-    }
-  };
+  const persistPolls = useCallback(
+    (newPolls: LivePoll[]) => {
+      pollsRef.current = newPolls;
+      setPolls(newPolls);
+      try {
+        localStorage.setItem(pollStorageKey, JSON.stringify(newPolls));
+      } catch {
+        // ignore
+      }
+    },
+    [pollStorageKey]
+  );
 
-  const persistUserVotes = (votes: Record<string, string>) => {
-    setUserVotes(votes);
-    try {
-      localStorage.setItem(voteStorageKey, JSON.stringify(votes));
-      localStorage.setItem(voteNameStorageKey, JSON.stringify(votes));
-    } catch {
-      // ignore
-    }
-  };
+  const persistUserVotes = useCallback(
+    (votes: Record<string, string>) => {
+      userVotesRef.current = votes;
+      setUserVotes(votes);
+      try {
+        localStorage.setItem(voteStorageKey, JSON.stringify(votes));
+        localStorage.setItem(voteNameStorageKey, JSON.stringify(votes));
+      } catch {
+        // ignore
+      }
+    },
+    [voteStorageKey, voteNameStorageKey]
+  );
 
   // Create a new Live Poll for this room
   const createPoll = useCallback(
@@ -148,7 +176,7 @@ export function usePollsEngine({
           })),
       };
 
-      const nextPolls = [newPoll, ...polls];
+      const nextPolls = [newPoll, ...pollsRef.current];
       persistPolls(nextPolls);
       dbInsertPoll(newPoll);
 
@@ -156,22 +184,31 @@ export function usePollsEngine({
         channelManager.broadcast('poll_update', nextPolls);
       }
     },
-    [polls, userName, channelManager, currentRoomKey, pollStorageKey]
+    [userName, channelManager, currentRoomKey, persistPolls]
   );
 
-  // Vote on a Poll Option (Supports option change and un-voting toggle)
+  // Vote on a Poll Option (Supports option change and un-voting toggle with anti-spam concurrency lock)
   const voteOnPoll = useCallback(
     (pollId: string, optionId: string) => {
-      const currentVotedOption = userVotes[pollId];
+      const now = Date.now();
+      const lastVoteTime = votingLockRef.current[pollId] || 0;
+      if (now - lastVoteTime < 300) {
+        return; // Guard against rapid multi-click race conditions
+      }
+      votingLockRef.current[pollId] = now;
+
+      // Always read from synchronous refs to guarantee we never read a stale render closure
+      const currentVotedOption = userVotesRef.current[pollId];
+      const currentPolls = pollsRef.current;
 
       // If user clicked the exact same option, UN-VOTE (toggle off)
       if (currentVotedOption === optionId) {
-        const nextVotes = { ...userVotes };
+        const nextVotes = { ...userVotesRef.current };
         delete nextVotes[pollId];
         persistUserVotes(nextVotes);
 
         let targetUpdatedPoll: LivePoll | null = null;
-        const nextPolls = polls.map((poll) => {
+        const nextPolls = currentPolls.map((poll) => {
           if (poll.id === pollId) {
             const updatedOptions = poll.options.map((opt) => {
               if (opt.id === optionId) {
@@ -179,9 +216,11 @@ export function usePollsEngine({
               }
               return opt;
             });
+            // Total votes strictly equals sum of all options
+            const recalculatedTotal = updatedOptions.reduce((acc, opt) => acc + opt.votesCount, 0);
             const updated: LivePoll = {
               ...poll,
-              totalVotes: Math.max(0, poll.totalVotes - 1),
+              totalVotes: Math.max(0, recalculatedTotal),
               options: updatedOptions,
             };
             targetUpdatedPoll = updated;
@@ -197,19 +236,13 @@ export function usePollsEngine({
       }
 
       // User voted for a new or changed option
-      const nextVotes = { ...userVotes, [pollId]: optionId };
+      const nextVotes = { ...userVotesRef.current, [pollId]: optionId };
       persistUserVotes(nextVotes);
 
       let targetUpdatedPoll: LivePoll | null = null;
 
-      const nextPolls = polls.map((poll) => {
+      const nextPolls = currentPolls.map((poll) => {
         if (poll.id === pollId) {
-          let updatedTotal = poll.totalVotes;
-          if (!currentVotedOption) {
-            // First time voting on this poll
-            updatedTotal += 1;
-          }
-
           const updatedOptions = poll.options.map((opt) => {
             if (opt.id === optionId) {
               return { ...opt, votesCount: opt.votesCount + 1 };
@@ -220,9 +253,12 @@ export function usePollsEngine({
             return opt;
           });
 
+          // Strict mathematical consistency: totalVotes always equals sum of options
+          const recalculatedTotal = updatedOptions.reduce((acc, opt) => acc + opt.votesCount, 0);
+
           const updated: LivePoll = {
             ...poll,
-            totalVotes: updatedTotal,
+            totalVotes: Math.max(0, recalculatedTotal),
             options: updatedOptions,
           };
           targetUpdatedPoll = updated;
@@ -241,15 +277,16 @@ export function usePollsEngine({
         channelManager.broadcast('poll_update', nextPolls);
       }
     },
-    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey, voteNameStorageKey]
+    [channelManager, persistPolls, persistUserVotes]
   );
 
   // Admin: Reset all votes for a poll back to 0 so attendees can vote again
   const resetPoll = useCallback(
     (pollId: string) => {
       let targetUpdatedPoll: LivePoll | null = null;
+      const currentPolls = pollsRef.current;
 
-      const nextPolls = polls.map((poll) => {
+      const nextPolls = currentPolls.map((poll) => {
         if (poll.id === pollId) {
           const resetOptions = poll.options.map((opt) => ({ ...opt, votesCount: 0 }));
           const updated: LivePoll = {
@@ -266,7 +303,7 @@ export function usePollsEngine({
       persistPolls(nextPolls);
 
       // Clear local user vote for this poll
-      const nextVotes = { ...userVotes };
+      const nextVotes = { ...userVotesRef.current };
       delete nextVotes[pollId];
       persistUserVotes(nextVotes);
 
@@ -279,16 +316,16 @@ export function usePollsEngine({
         channelManager.broadcast('poll_reset', { pollId });
       }
     },
-    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
+    [channelManager, persistPolls, persistUserVotes]
   );
 
   // Admin: Delete a poll completely
   const deletePoll = useCallback(
     (pollId: string) => {
-      const nextPolls = polls.filter((poll) => poll.id !== pollId);
+      const nextPolls = pollsRef.current.filter((poll) => poll.id !== pollId);
       persistPolls(nextPolls);
 
-      const nextVotes = { ...userVotes };
+      const nextVotes = { ...userVotesRef.current };
       delete nextVotes[pollId];
       persistUserVotes(nextVotes);
 
@@ -299,7 +336,7 @@ export function usePollsEngine({
         channelManager.broadcast('poll_reset', { pollId });
       }
     },
-    [polls, userVotes, channelManager, pollStorageKey, voteStorageKey]
+    [channelManager, persistPolls, persistUserVotes]
   );
 
   // Admin: Update AI Consensus summary on a poll

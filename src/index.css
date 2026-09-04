@@ -38,6 +38,11 @@ html, body {
   overflow-x: hidden;
 }
 
+input, textarea, select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Mobile Safe Area & Responsive Utilities */
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);

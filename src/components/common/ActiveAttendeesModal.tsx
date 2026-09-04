@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw } from 'lucide-react';
+import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw, VolumeX, Volume2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { AttendeePresence, Room, LeaderboardEntry } from '../../types';
 import { isUserRoomAdmin } from '../../lib/supabase';
@@ -18,6 +18,13 @@ interface ActiveAttendeesModalProps {
   onPromoteToAdmin?: (sessionId: string, name: string) => void;
   onDemoteFromAdmin?: (sessionId: string, name: string) => void;
   onRefresh?: () => void;
+  mutedSessionIds?: Set<string>;
+  strikesBySession?: Record<string, number>;
+  onMuteAttendee?: (sessionId: string, name: string) => void;
+  onUnmuteAttendee?: (sessionId: string, name: string) => void;
+  onBanAttendee?: (sessionId: string, name: string) => void;
+  onSendWarning?: (sessionId: string, name: string) => void;
+  onResetStrikes?: (sessionId: string, name: string) => void;
 }
 
 export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
@@ -32,6 +39,13 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   onPromoteToAdmin,
   onDemoteFromAdmin,
   onRefresh,
+  mutedSessionIds,
+  strikesBySession,
+  onMuteAttendee,
+  onUnmuteAttendee,
+  onBanAttendee,
+  onSendWarning,
+  onResetStrikes,
 }) => {
   useEffect(() => {
     if (isOpen && onRefresh) {
@@ -241,6 +255,23 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                           >
                             {isOwner ? '👑 HOST OWNER' : isMemberAdmin ? '👑 CO-ADMIN' : 'ATTENDEE'}
                           </span>
+                          {strikesBySession && (strikesBySession[attendee.session_id] || 0) > 0 && (
+                            <span className={`px-1.5 py-0.2 uppercase border border-black font-mono font-black text-[8px] sm:text-[9px] shrink-0 ${
+                              (strikesBySession[attendee.session_id] || 0) >= 3
+                                ? 'bg-red-500 text-white animate-pulse'
+                                : (strikesBySession[attendee.session_id] || 0) === 2
+                                ? 'bg-amber-400 text-black'
+                                : 'bg-neo-yellow text-black'
+                            }`}>
+                              STRIKE {strikesBySession[attendee.session_id]}/3
+                            </span>
+                          )}
+                          {mutedSessionIds?.has(attendee.session_id) && (
+                            <span className="px-1.5 py-0.2 uppercase border border-black bg-red-600 text-white font-mono font-black text-[8px] sm:text-[9px] flex items-center gap-0.5 shrink-0 animate-pulse">
+                              <VolumeX className="w-2.5 h-2.5" />
+                              <span>MUTED</span>
+                            </span>
+                          )}
                           {lbEntry && (
                             <span className="text-black font-mono font-black bg-neo-yellow/50 px-1.5 py-0.2 border border-black text-[9px]">
                               {lbEntry.score} PTS
@@ -254,9 +285,96 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Host Control Actions (Promote / Demote) */}
+                    {/* Host Control Actions (Warn / Reset / Mute / Unmute / Ban / Promote / Demote) */}
                     {isHost && !isSelf && !isOwner && (
-                      <div className="shrink-0 flex items-center justify-end">
+                      <div className="shrink-0 flex items-center justify-end gap-1 sm:gap-1.5 flex-wrap">
+                        {/* Send Warning Button */}
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playPopSound();
+                            onSendWarning?.(attendee.session_id, attendee.name);
+                          }}
+                          className="px-2 py-1 bg-amber-300 hover:bg-amber-400 text-black text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                          title="Issue official safeguard warning to this attendee"
+                        >
+                          <AlertTriangle className="w-3 h-3 text-black" />
+                          <span>WARN</span>
+                        </motion.button>
+
+                        {/* Reset Strikes Button */}
+                        {strikesBySession && (strikesBySession[attendee.session_id] || 0) > 0 && (
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => {
+                              playPopSound();
+                              if (confirm(`Reset and forgive strikes for "${attendee.name}"?`)) {
+                                onResetStrikes?.(attendee.session_id, attendee.name);
+                              }
+                            }}
+                            className="px-2 py-1 bg-white hover:bg-neo-yellow text-black text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                            title="Reset strikes to 0"
+                          >
+                            <RotateCcw className="w-3 h-3 text-black" />
+                            <span>RESET</span>
+                          </motion.button>
+                        )}
+                        {/* Mute / Unmute Button */}
+                        {mutedSessionIds?.has(attendee.session_id) ? (
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => {
+                              playPopSound();
+                              onUnmuteAttendee?.(attendee.session_id, attendee.name);
+                            }}
+                            className="px-2 py-1 bg-neo-mint hover:bg-[#33F3FF] text-black text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                            title="Restore attendee Q&A permissions"
+                          >
+                            <Volume2 className="w-3 h-3" />
+                            <span>UNMUTE</span>
+                          </motion.button>
+                        ) : (
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => {
+                              playPopSound();
+                              onMuteAttendee?.(attendee.session_id, attendee.name);
+                            }}
+                            className="px-2 py-1 bg-slate-200 hover:bg-red-200 text-slate-800 text-[9px] sm:text-[10px] font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                            title="Mute attendee Q&A submissions"
+                          >
+                            <VolumeX className="w-3 h-3 text-red-600" />
+                            <span>MUTE</span>
+                          </motion.button>
+                        )}
+
+                        {/* Ban & Kick Button */}
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playClickSound();
+                            if (confirm(`Ban and eject "${attendee.name}" from Room ${roomCode}?`)) {
+                              onBanAttendee?.(attendee.session_id, attendee.name);
+                            }
+                          }}
+                          className="px-2 py-1 bg-neo-pink hover:bg-[#FF4782] text-white text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                          title="Ban and kick attendee from room"
+                        >
+                          <UserX className="w-3 h-3" />
+                          <span>BAN</span>
+                        </motion.button>
+
+                        {/* Promote / Demote */}
                         {!isMemberAdmin ? (
                           <motion.button
                             type="button"
@@ -264,13 +382,14 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                             whileTap={{ scale: 0.94 }}
                             onClick={() => {
                               playPopSound();
-                              onPromoteToAdmin && onPromoteToAdmin(attendee.session_id, attendee.name);
+                              onPromoteToAdmin?.(attendee.session_id, attendee.name);
                             }}
-                            className="w-full xs:w-auto px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                            className="w-full xs:w-auto px-2 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[9px] sm:text-[10px] font-black uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer"
                             title="Promote this attendee to Room Admin"
                           >
                             <Crown className="w-3 h-3 stroke-[2.5]" />
-                            <span>MAKE ADMIN</span>
+                            <span className="hidden xs:inline">MAKE ADMIN</span>
+                            <span className="xs:hidden">ADMIN</span>
                           </motion.button>
                         ) : (
                           <motion.button
@@ -279,7 +398,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                             whileTap={{ scale: 0.94 }}
                             onClick={() => {
                               playClickSound();
-                              onDemoteFromAdmin && onDemoteFromAdmin(attendee.session_id, attendee.name);
+                              onDemoteFromAdmin?.(attendee.session_id, attendee.name);
                             }}
                             className="w-full xs:w-auto px-2 py-1 bg-slate-200 hover:bg-neo-pink hover:text-white text-slate-700 text-[9px] sm:text-[10px] font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer"
                             title="Demote from Room Admin"

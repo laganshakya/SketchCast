@@ -16,7 +16,11 @@ import type {
   QuizRoundState,
   LeaderboardEntry,
   SpotlightWinner,
+  Survey,
+  SurveyResponse,
+  AudienceReaction,
 } from '../../types';
+import type { QuestionCluster } from '../meshApi';
 
 export type RealtimeEventMap = {
   quiz_round_state: QuizRoundState;
@@ -33,6 +37,51 @@ export type RealtimeEventMap = {
   presence_ping: AttendeePresence;
   presence_pong: AttendeePresence;
   presence_leave: { sessionId: string };
+  safeguard_violation_alert: {
+    roomId: string;
+    attendeeSessionId: string;
+    attendeeName: string;
+    strikeCount: number;
+    reason: string;
+    category?: string;
+    sampleText: string;
+    timestamp: number;
+  };
+  attendee_moderation_action: {
+    roomId: string;
+    targetSessionId: string;
+    targetName: string;
+    action: 'mute' | 'unmute' | 'ban';
+    issuedBy: string;
+    timestamp: number;
+  };
+  safeguard_warning_issued: {
+    roomId: string;
+    targetSessionId: string;
+    targetName: string;
+    warningMessage: string;
+    issuedBy: string;
+    timestamp: number;
+  };
+  safeguard_strikes_reset: {
+    roomId: string;
+    targetSessionId: string;
+    targetName: string;
+    issuedBy: string;
+    timestamp: number;
+  };
+  safeguard_strike_update: {
+    roomId: string;
+    sessionId: string;
+    userName: string;
+    strikeCount: number;
+  };
+  survey_list_update: Survey[];
+  survey_response_submit: { surveyId: string; response: SurveyResponse };
+  survey_launched_alert: { surveyId: string; surveyTitle: string; launchedBy: string; timestamp: number };
+  audience_reaction: AudienceReaction;
+  session_report_published: { reportMarkdown: string; generatedAt: number; publishedBy: string };
+  qa_cluster_update: QuestionCluster[];
 };
 
 export type EventKey = keyof RealtimeEventMap;
@@ -141,6 +190,17 @@ export class RealtimeChannelManager {
       'presence_ping',
       'presence_pong',
       'presence_leave',
+      'safeguard_violation_alert',
+      'attendee_moderation_action',
+      'safeguard_warning_issued',
+      'safeguard_strikes_reset',
+      'safeguard_strike_update',
+      'survey_list_update',
+      'survey_response_submit',
+      'survey_launched_alert',
+      'audience_reaction',
+      'session_report_published',
+      'qa_cluster_update',
     ];
 
     broadcastEvents.forEach((ev) => {
@@ -349,11 +409,21 @@ export class RealtimeChannelManager {
 
       // Cleanup presence on tab close / reload
       window.addEventListener('beforeunload', () => {
-        if (this.myPresence) {
-          dbRemoveAttendeePresence(this.myPresence.session_id);
-          this.broadcast('presence_leave', { sessionId: this.myPresence.session_id });
-        }
+        this.leaveRoom();
       });
+    }
+  }
+
+  public leaveRoom() {
+    if (this.myPresence) {
+      dbRemoveAttendeePresence(this.myPresence.session_id);
+      this.broadcast('presence_leave', { sessionId: this.myPresence.session_id });
+      this.presenceList.delete(this.myPresence.session_id);
+      this.emitPresenceSync();
+    }
+    if (this.pulseTimer) {
+      window.clearInterval(this.pulseTimer);
+      this.pulseTimer = null;
     }
   }
 

@@ -17,6 +17,13 @@ interface LivePollsViewProps {
   isHost?: boolean;
 }
 
+function timeAgo(dateStr: string) {
+  const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60));
+  if (mins < 1) return 'JUST NOW';
+  if (mins < 60) return `${mins}M AGO`;
+  return `${Math.floor(mins / 60)}H AGO`;
+}
+
 export const LivePollsView: React.FC<LivePollsViewProps> = ({
   polls,
   userVotes,
@@ -31,13 +38,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   const [synthesizingPollId, setSynthesizingPollId] = useState<string | null>(null);
   const [localConsensusNotes, setLocalConsensusNotes] = useState<Record<string, string>>({});
   const [aiError, setAiError] = useState<{ pollId: string; message: string } | null>(null);
-
-  const timeAgo = (dateStr: string) => {
-    const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60));
-    if (mins < 1) return 'JUST NOW';
-    if (mins < 60) return `${mins}M AGO`;
-    return `${Math.floor(mins / 60)}H AGO`;
-  };
+  const [votingPollId, setVotingPollId] = useState<string | null>(null);
 
   const getOptionFillColor = (idx: number, isVoted: boolean) => {
     if (isVoted) return 'bg-neo-yellow';
@@ -211,6 +212,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                 <div className="space-y-2 font-mono">
                   {poll.options.map((option, idx) => {
                     const isVoted = userVotedOptionId === option.id;
+                    const isVotingThisPoll = votingPollId === poll.id;
                     const percentage =
                       poll.totalVotes > 0
                         ? Math.round((option.votesCount / poll.totalVotes) * 100)
@@ -219,18 +221,24 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                     return (
                       <motion.button
                         key={option.id}
-                        whileHover={isVoted ? {} : { scale: 1.01, x: 2 }}
-                        whileTap={isVoted ? {} : { scale: 0.98 }}
+                        whileHover={isVoted || isVotingThisPoll ? {} : { scale: 1.01, x: 2 }}
+                        whileTap={isVoted || isVotingThisPoll ? {} : { scale: 0.98 }}
                         onClick={() => {
-                          if (!isVoted) {
+                          if (!isVoted && !isVotingThisPoll) {
                             playPopSound();
+                            setVotingPollId(poll.id);
+                            setTimeout(() => {
+                              setVotingPollId((current) => (current === poll.id ? null : current));
+                            }, 300);
                             onVote(poll.id, option.id);
                           }
                         }}
-                        disabled={isVoted}
+                        disabled={isVoted || isVotingThisPoll}
                         className={`w-full p-3 border-2 border-black text-left transition-all relative overflow-hidden flex items-center justify-between group ${
                           isVoted
                             ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow text-white cursor-default'
+                            : isVotingThisPoll
+                            ? 'bg-[#12141D] text-slate-400 brutal-shadow-sm opacity-70 cursor-not-allowed pointer-events-none'
                             : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm cursor-pointer'
                         }`}
                       >

@@ -12,11 +12,30 @@ import {
   Bot,
   Zap,
   Sliders,
-  AlertCircle
+  AlertCircle,
+  Globe,
+  Link2,
+  FolderGit2,
+  Flame,
+  ExternalLink,
+  Code,
+  RefreshCw,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { QuizQuestion } from '../../types';
-import { generateAIQuizQuestions, getStoredMeshKey } from '../../lib/meshApi';
+import {
+  generateAIQuizQuestions,
+  generateAIQuizFromWebSearch,
+  generateAIQuizFromUrl,
+  generateAIQuizFromGitHub,
+  generateAIQuizFromHNTrends,
+  distributeQuestionOptions,
+  fetchTrendingTechNews,
+  formatCodeSnippet,
+  getStoredMeshKey,
+  isGitHubRepoInput,
+  type TrendingTechStory,
+} from '../../lib/meshApi';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
 
 interface QuizHostPanelProps {
@@ -96,6 +115,31 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const [aiDifficulty, setAiDifficulty] = useState<'Junior' | 'Mid' | 'Senior' | 'Principal'>('Senior');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiSuccessNote, setAiSuccessNote] = useState<string | null>(null);
+
+  // Real-Time AI Tool State (Consolidated: Prompt with auto web search, URL/GitHub Scraper, HN Trends)
+  const [aiToolMode, setAiToolMode] = useState<'topic' | 'url_scraper' | 'hackernews'>('topic');
+  const [aiAutoWebSearch, setAiAutoWebSearch] = useState<boolean>(true);
+  const [aiUrlInput, setAiUrlInput] = useState<string>('');
+  const [hnStories, setHnStories] = useState<TrendingTechStory[]>([]);
+  const [selectedHnStory, setSelectedHnStory] = useState<TrendingTechStory | null>(null);
+  const [isLoadingHnStories, setIsLoadingHnStories] = useState(false);
+  const [aiToolStatus, setAiToolStatus] = useState<string | null>(null);
+  const [groundingSources, setGroundingSources] = useState<Array<{ title: string; url: string }>>([]);
+
+  const loadHackerNewsStories = async () => {
+    setIsLoadingHnStories(true);
+    try {
+      const stories = await fetchTrendingTechNews(5);
+      setHnStories(stories);
+      if (stories.length > 0) {
+        setSelectedHnStory(stories[0]);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingHnStories(false);
+    }
+  };
 
   // Track completed questions when revealed
   useEffect(() => {
@@ -179,10 +223,6 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   // AI Generation Trigger
   const handleGenerateAI = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!aiTopic.trim()) {
-      setErrorMessage('Please provide a technical topic (e.g. Distributed Cache Invalidation or Raft Consensus).');
-      return;
-    }
 
     const hasKey = Boolean(getStoredMeshKey());
     if (!hasKey) {
@@ -193,17 +233,82 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     setIsGeneratingAI(true);
     setErrorMessage(null);
     setAiSuccessNote(null);
+    setGroundingSources([]);
 
     try {
-      const generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
+      let generated: any[] = [];
+      let successMsg = '';
+      let defaultCategory = aiTopic.trim() || 'System Design';
+
+      if (aiToolMode === 'topic') {
+        if (!aiTopic.trim()) {
+          throw new Error('Please enter a technical topic prompt (e.g. Distributed Cache Invalidation).');
+        }
+
+        if (aiAutoWebSearch) {
+          setAiToolStatus(`🌐 Searching live web for latest RFCs & docs on "${aiTopic.trim()}"...`);
+          try {
+            const res = await generateAIQuizFromWebSearch(aiTopic.trim(), aiCount, aiDifficulty);
+            generated = res.questions;
+            setGroundingSources(res.sources);
+            successMsg = res.sources.length > 0
+              ? `🌐 Grounded ${generated.length} questions using ${res.sources.length} live web sources!`
+              : `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
+          } catch (err: any) {
+            console.warn('[Quiz AI] Live web search error, falling back to pure prompt synthesis:', err);
+            setAiToolStatus('Synthesizing questions via Mesh AI...');
+            generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
+            successMsg = `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
+          }
+        } else {
+          setAiToolStatus('Synthesizing questions via Mesh AI...');
+          generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
+          successMsg = `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
+        }
+      } else if (aiToolMode === 'url_scraper') {
+        const inputTarget = aiUrlInput.trim();
+        if (!inputTarget) {
+          throw new Error('Please enter a documentation URL or GitHub repository (e.g. facebook/react).');
+        }
+
+        if (isGitHubRepoInput(inputTarget)) {
+          setAiToolStatus(`🐙 Fetching repo metadata & README for ${inputTarget}...`);
+          const res = await generateAIQuizFromGitHub(inputTarget, aiCount, aiDifficulty);
+          generated = res.questions;
+          setGroundingSources([{ title: res.repoSummary.fullName, url: `https://github.com/${res.repoSummary.fullName}` }]);
+          defaultCategory = res.repoSummary.repo;
+          successMsg = `🐙 Scanned ${res.repoSummary.fullName} (${res.repoSummary.stars.toLocaleString()} ⭐) & generated ${generated.length} questions!`;
+        } else {
+          setAiToolStatus(`🔗 Scraping & parsing content from ${inputTarget}...`);
+          const res = await generateAIQuizFromUrl(inputTarget, aiCount, aiDifficulty);
+          generated = res.questions;
+          setGroundingSources([{ title: res.pageInfo.title, url: res.pageInfo.url }]);
+          defaultCategory = res.pageInfo.title.slice(0, 20);
+          successMsg = `🔗 Scraped & constructed ${generated.length} questions from "${res.pageInfo.title}"!`;
+        }
+      } else if (aiToolMode === 'hackernews') {
+        if (!selectedHnStory) {
+          throw new Error('Please select a trending Hacker News story from the list.');
+        }
+        setAiToolStatus(`🔥 Analyzing breaking tech news: "${selectedHnStory.title}"...`);
+        const res = await generateAIQuizFromHNTrends(selectedHnStory.title, selectedHnStory.url, aiCount, aiDifficulty);
+        generated = res.questions;
+        if (selectedHnStory.url) {
+          setGroundingSources([{ title: selectedHnStory.title, url: selectedHnStory.url }]);
+        }
+        defaultCategory = 'Tech Trends';
+        successMsg = `🔥 Generated ${generated.length} trivia questions on today's story: "${selectedHnStory.title}"!`;
+      }
+
       if (!generated || generated.length === 0) {
         throw new Error('No questions returned by AI model.');
       }
 
+      const balanced = distributeQuestionOptions(generated);
       const timestamp = Date.now();
-      const newDrafts: DraftQuestion[] = generated.map((g, idx) => ({
+      const newDrafts: DraftQuestion[] = balanced.map((g, idx) => ({
         id: `ai-draft-${timestamp}-${idx}`,
-        category: g.category || aiTopic.trim(),
+        category: g.category || defaultCategory,
         question: g.question,
         optA: g.optA,
         optB: g.optB,
@@ -217,11 +322,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       setDraftQuestions(newDrafts);
       setActiveQuestionIndex(0);
       setModalTab('editor');
-      setAiSuccessNote(`✨ Generated ${newDrafts.length} questions! Review, edit, or launch below.`);
+      setAiSuccessNote(successMsg);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to generate quiz questions via Mesh API.');
     } finally {
       setIsGeneratingAI(false);
+      setAiToolStatus(null);
     }
   };
 
@@ -533,7 +639,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <div className="flex items-center justify-between border-b border-black/20 pb-1.5">
                   <span className="text-xs font-black uppercase text-neo-pink flex items-center gap-1">
                     <Bot className="w-4 h-4" />
-                    <span>INSTANT AI QUIZ BUILDER (MESH API)</span>
+                    <span>AI TOOL SUITE (ZERO-CONFIG & REAL-TIME)</span>
                   </span>
                   {onOpenAISettings && (
                     <button
@@ -546,21 +652,229 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   )}
                 </div>
 
+                {/* Tool Mode Pills (Consolidated 3 High-Power Modes) */}
                 <div>
-                  <label className="text-xs font-black uppercase block mb-1">
-                    Topic / Concept Prompt:
+                  <label className="text-[10px] font-black uppercase text-slate-600 block mb-1">
+                    Select AI Tool Capability:
                   </label>
-                  <input
-                    type="text"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="e.g. Distributed Cache Invalidation, PostgreSQL VACUUM & Indexes, Raft Consensus"
-                    className="w-full px-3 py-1.5 sm:py-2 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
-                    required
-                  />
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => { playPopSound(); setAiToolMode('topic'); }}
+                      className={`px-2.5 py-1 text-[11px] font-black uppercase border border-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        aiToolMode === 'topic' ? 'bg-neo-yellow text-black brutal-shadow-xs font-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>✨ Prompt</span>
+                      {aiAutoWebSearch && (
+                        <span className="ml-0.5 px-1 py-0.2 bg-neo-cyan text-black text-[9px] font-black border border-black uppercase tracking-tight">
+                          +Web
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { playPopSound(); setAiToolMode('url_scraper'); }}
+                      className={`px-2.5 py-1 text-[11px] font-black uppercase border border-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        aiToolMode === 'url_scraper' ? 'bg-neo-mint text-black brutal-shadow-xs font-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Link2 className="w-3 h-3" />
+                      <span>🔗 Scrape URL / GitHub</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        setAiToolMode('hackernews');
+                        if (hnStories.length === 0) loadHackerNewsStories();
+                      }}
+                      className={`px-2.5 py-1 text-[11px] font-black uppercase border border-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        aiToolMode === 'hackernews' ? 'bg-orange-300 text-black brutal-shadow-xs font-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Flame className="w-3 h-3 text-orange-600" />
+                      <span>🔥 HN Trends</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                {/* 1. TOPIC PROMPT MODE (with Auto Web Grounding) */}
+                {aiToolMode === 'topic' && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-xs font-black uppercase block mb-1">
+                        Concept / Topic Prompt:
+                      </label>
+                      <input
+                        type="text"
+                        value={aiTopic}
+                        onChange={(e) => setAiTopic(e.target.value)}
+                        placeholder="e.g. Distributed Cache Invalidation, PostgreSQL 17 features, Raft Consensus"
+                        className="w-full px-3 py-1.5 sm:py-2 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/20"
+                        required
+                      />
+                    </div>
+
+                    {/* Auto Web Search Toggle */}
+                    <div className="p-2 bg-neo-cyan/15 border-2 border-black flex items-center justify-between">
+                      <label className="flex items-center gap-2 cursor-pointer text-[11px] font-black uppercase text-black select-none">
+                        <input
+                          type="checkbox"
+                          checked={aiAutoWebSearch}
+                          onChange={(e) => setAiAutoWebSearch(e.target.checked)}
+                          className="w-4 h-4 border-2 border-black rounded-none accent-neo-cyan cursor-pointer"
+                        />
+                        <span className="flex items-center gap-1">
+                          <Globe className="w-3.5 h-3.5 text-black" />
+                          <span>Auto Web Grounding</span>
+                        </span>
+                      </label>
+                      <span className="text-[10px] text-slate-600 font-bold hidden sm:inline">
+                        {aiAutoWebSearch ? '⚡ Searches live web for latest RFCs & articles' : 'Offline / Theoretical only'}
+                      </span>
+                    </div>
+
+                    {/* Suggestions */}
+                    <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-600">
+                      <span className="font-bold">Try:</span>
+                      {['Next.js 15 Server Actions', 'PostgreSQL 17 features', 'Distributed Cache Invalidation', 'Kafka vs RabbitMQ 2026'].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setAiTopic(t)}
+                          className="px-1.5 py-0.5 bg-slate-100 border border-black/30 hover:border-black hover:bg-neo-yellow/30 text-black text-[10px] cursor-pointer"
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. URL & GITHUB REPO SCRAPER MODE */}
+                {aiToolMode === 'url_scraper' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase block flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Link2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Documentation URL or GitHub Repo:</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-normal">Scrapes docs or scans repo</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={aiUrlInput}
+                        onChange={(e) => setAiUrlInput(e.target.value)}
+                        placeholder="e.g. https://bun.sh/docs or facebook/react or https://github.com/supabase/supabase"
+                        className="w-full px-3 py-1.5 sm:py-2 text-xs bg-slate-50 border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-mint/20 pr-24"
+                        required
+                      />
+                      {isGitHubRepoInput(aiUrlInput) && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-purple-200 border border-black text-[9px] font-black uppercase flex items-center gap-1">
+                          <FolderGit2 className="w-3 h-3 text-purple-700" />
+                          <span>GitHub</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-600">
+                      <span className="font-bold">Presets:</span>
+                      {[
+                        { label: 'Bun Docs', value: 'https://bun.sh/docs' },
+                        { label: 'Docker Intro', value: 'https://docs.docker.com/get-started/' },
+                        { label: 'facebook/react', value: 'facebook/react' },
+                        { label: 'supabase/supabase', value: 'supabase/supabase' },
+                      ].map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => setAiUrlInput(p.value)}
+                          className="px-1.5 py-0.5 bg-slate-100 border border-black/30 hover:border-black hover:bg-neo-mint/30 text-black text-[10px] cursor-pointer flex items-center gap-1"
+                        >
+                          {p.value.includes('github') || !p.value.startsWith('http') ? (
+                            <FolderGit2 className="w-2.5 h-2.5 text-purple-600" />
+                          ) : (
+                            <Link2 className="w-2.5 h-2.5 text-emerald-600" />
+                          )}
+                          <span>{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. HACKER NEWS TRENDS MODE */}
+                {aiToolMode === 'hackernews' && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black uppercase flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 text-orange-600 fill-orange-500" />
+                        <span>Breaking Tech Stories (Hacker News):</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={loadHackerNewsStories}
+                        disabled={isLoadingHnStories}
+                        className="text-[10px] text-slate-700 hover:text-black flex items-center gap-1 underline font-bold cursor-pointer"
+                      >
+                        <RefreshCw className={`w-2.5 h-2.5 ${isLoadingHnStories ? 'animate-spin' : ''}`} />
+                        <span>Refresh Stories</span>
+                      </button>
+                    </div>
+
+                    {isLoadingHnStories ? (
+                      <div className="py-4 text-center text-xs font-bold text-slate-500 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Scanning today's top Hacker News stories...</span>
+                      </div>
+                    ) : hnStories.length > 0 ? (
+                      <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+                        {hnStories.map((story) => (
+                          <div
+                            key={story.id}
+                            onClick={() => setSelectedHnStory(story)}
+                            className={`p-2 border-2 cursor-pointer transition-all flex items-center justify-between text-xs ${
+                              selectedHnStory?.id === story.id
+                                ? 'bg-orange-100 border-black font-black brutal-shadow-xs'
+                                : 'bg-slate-50 border-slate-300 hover:border-black'
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0 pr-2">
+                              <div className="font-bold truncate text-[11px] text-black">{story.title}</div>
+                              <div className="text-[9px] text-slate-500 flex items-center gap-2 mt-0.5">
+                                <span>🔺 {story.score} pts</span>
+                                <span>💬 {story.commentsCount} comments</span>
+                                {story.domain && <span>🌐 {story.domain}</span>}
+                              </div>
+                            </div>
+                            <input
+                              type="radio"
+                              name="hnStory"
+                              checked={selectedHnStory?.id === story.id}
+                              onChange={() => setSelectedHnStory(story)}
+                              className="accent-orange-500 cursor-pointer"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={loadHackerNewsStories}
+                        className="w-full py-2 bg-slate-100 border border-black text-xs font-bold uppercase hover:bg-orange-100 cursor-pointer"
+                      >
+                        Load Today's Top Stories
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Difficulty & Count */}
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-black/10">
                   <div>
                     <label className="text-[11px] font-black uppercase block mb-1">Difficulty:</label>
                     <select
@@ -590,22 +904,71 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   </div>
                 </div>
 
+                {/* Status Indicator */}
+                {isGeneratingAI && aiToolStatus && (
+                  <div className="p-2 bg-neo-yellow/30 border border-black text-[11px] font-bold text-black flex items-center gap-2 animate-pulse">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                    <span>{aiToolStatus}</span>
+                  </div>
+                )}
+
+                {/* Action Button */}
                 <button
                   type="submit"
                   disabled={isGeneratingAI}
                   className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] disabled:bg-slate-200 text-white text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>{isGeneratingAI ? 'GENERATING WITH MESH AI...' : `⚡ GENERATE ${aiCount} ${aiDifficulty.toUpperCase()} QUESTIONS`}</span>
+                  <span>
+                    {isGeneratingAI
+                      ? 'EXECUTING AI TOOLS...'
+                      : aiToolMode === 'topic'
+                      ? aiAutoWebSearch
+                        ? `🌐 SEARCH & GENERATE ${aiCount} QUESTIONS`
+                        : `✨ GENERATE ${aiCount} QUESTIONS`
+                      : aiToolMode === 'url_scraper'
+                      ? isGitHubRepoInput(aiUrlInput)
+                        ? `🐙 SCAN REPO & GENERATE ${aiCount} QUESTIONS`
+                        : `🔗 SCRAPE & GENERATE ${aiCount} QUESTIONS`
+                      : `🔥 GENERATE ${aiCount} HN TRIVIA QUESTIONS`}
+                  </span>
                 </button>
               </form>
             )}
 
             {/* Success & Error Banners */}
             {aiSuccessNote && (
-              <div className="p-2.5 mb-3 bg-neo-mint text-black font-mono text-xs font-black border-2 border-black flex items-center space-x-1.5">
+              <div className="p-2.5 mb-2 bg-neo-mint text-black font-mono text-xs font-black border-2 border-black flex items-center space-x-1.5">
                 <CheckCircle className="w-4 h-4 stroke-3 shrink-0" />
                 <span>{aiSuccessNote}</span>
+              </div>
+            )}
+
+            {/* Grounding Sources Cited */}
+            {groundingSources.length > 0 && (
+              <div className="p-2.5 mb-3 bg-cyan-50 border-2 border-black font-mono text-[11px]">
+                <div className="font-black uppercase text-cyan-950 flex items-center gap-1 mb-1.5">
+                  <Globe className="w-3.5 h-3.5 text-cyan-700" />
+                  <span>Grounding Sources Consulted ({groundingSources.length}):</span>
+                </div>
+                <div className="space-y-1">
+                  {groundingSources.map((source, sIdx) => (
+                    <div key={sIdx} className="flex items-center gap-1.5 truncate">
+                      <span className="text-[9px] font-bold px-1 bg-cyan-200 border border-cyan-400 text-cyan-900 shrink-0">
+                        SOURCE {sIdx + 1}
+                      </span>
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="truncate text-blue-700 hover:underline flex items-center gap-1 font-bold"
+                      >
+                        <span className="truncate">{source.title}</span>
+                        <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -715,7 +1078,21 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[10px] sm:text-[11px] font-black uppercase block mb-1">Question Prompt</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] sm:text-[11px] font-black uppercase block">Question Prompt</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound();
+                        updateCurrentDraft('question', formatCodeSnippet(currentDraft.question));
+                      }}
+                      className="text-[9px] font-bold text-slate-600 hover:text-black flex items-center gap-1 border border-slate-300 px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                      title="Clean and format code indentation with markdown syntax"
+                    >
+                      <Code className="w-2.5 h-2.5 text-slate-700" />
+                      <span>Format Code</span>
+                    </button>
+                  </div>
                   <textarea
                     value={currentDraft.question}
                     onChange={(e) => updateCurrentDraft('question', e.target.value)}

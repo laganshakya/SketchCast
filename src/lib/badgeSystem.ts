@@ -2,9 +2,12 @@ import type { AchievementBadge, BadgeRarity } from '../types';
 
 export interface UserBadgeStats {
   correctQuizzes: number;
+  totalQuizzesAnswered?: number;
   streak: number;
   rank?: number;
   pollsVoted: number;
+  fastestAnswerSeconds?: number;
+  isTopInquirer?: boolean;
   hasUsedPowerUp?: boolean;
   isSpotlightWinner?: boolean;
 }
@@ -14,7 +17,21 @@ export const ALL_ACHIEVEMENTS: AchievementBadge[] = [
     id: 'speed_demon',
     name: 'Speed Demon',
     icon: '⚡',
-    desc: 'Solved 3+ technical quizzes in the arena',
+    desc: 'Answered quiz in under 3 seconds',
+    rarity: 'rare',
+  },
+  {
+    id: 'sharpshooter',
+    name: 'Sharpshooter',
+    icon: '🎯',
+    desc: 'Maintained 100% quiz accuracy',
+    rarity: 'epic',
+  },
+  {
+    id: 'top_inquirer',
+    name: 'Top Inquirer',
+    icon: '💬',
+    desc: 'Q&A question reached top 3 upvotes',
     rarity: 'rare',
   },
   {
@@ -38,6 +55,7 @@ export const ALL_ACHIEVEMENTS: AchievementBadge[] = [
     desc: 'Finished in the Top 3 Keynote Podium',
     rarity: 'epic',
   },
+
   {
     id: 'democracy_hero',
     name: 'Democracy Hero',
@@ -81,9 +99,22 @@ export function calculateUserBadges(stats: UserBadgeStats): AchievementBadge[] {
     earned.push(ALL_ACHIEVEMENTS.find((b) => b.id === 'on_fire')!);
   }
 
-  if (stats.correctQuizzes >= 3) {
+  // Speed Demon: Answered quiz in under 3 seconds or solved 3+ quizzes
+  if ((stats.fastestAnswerSeconds && stats.fastestAnswerSeconds <= 3) || stats.correctQuizzes >= 3) {
     earned.push(ALL_ACHIEVEMENTS.find((b) => b.id === 'speed_demon')!);
   }
+
+  // Sharpshooter: 100% quiz accuracy (min 2 quizzes)
+  if (stats.totalQuizzesAnswered && stats.totalQuizzesAnswered >= 2 && stats.correctQuizzes === stats.totalQuizzesAnswered) {
+    earned.push(ALL_ACHIEVEMENTS.find((b) => b.id === 'sharpshooter')!);
+  }
+
+  // Top Inquirer: Q&A question reached top 3 upvotes
+  if (stats.isTopInquirer) {
+    earned.push(ALL_ACHIEVEMENTS.find((b) => b.id === 'top_inquirer')!);
+  }
+
+
 
   if (stats.pollsVoted >= 2) {
     earned.push(ALL_ACHIEVEMENTS.find((b) => b.id === 'democracy_hero')!);

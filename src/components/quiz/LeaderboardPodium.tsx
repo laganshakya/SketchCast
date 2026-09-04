@@ -1,15 +1,16 @@
 import React from 'react';
-import { Trophy, Medal, Crown, CheckCircle, Vote, Share2 } from 'lucide-react';
+import { Trophy, Medal, Crown, CheckCircle, Vote, Share2, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { LeaderboardEntry } from '../../types';
 import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
-import { playClickSound, playPopSound } from '../../lib/soundFx';
+import { playPopSound } from '../../lib/soundFx';
 
 interface LeaderboardPodiumProps {
   leaderboard: LeaderboardEntry[];
   compact?: boolean;
   currentUserSessionId?: string;
   onExportCard?: (entry: LeaderboardEntry, rank: number) => void;
+  onOpenCertificate?: () => void;
 }
 
 export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
@@ -17,6 +18,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
   compact = false,
   currentUserSessionId,
   onExportCard,
+  onOpenCertificate,
 }) => {
   const top3 = leaderboard.slice(0, 3);
 
@@ -49,12 +51,8 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
     );
   };
 
-  const myEntryIndex = leaderboard.findIndex((e) => e.session_id === currentUserSessionId);
-  const myEntry = myEntryIndex >= 0 ? leaderboard[myEntryIndex] : leaderboard[0];
-
   return (
     <div className="flex flex-col max-w-4xl mx-auto w-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans mb-24 md:mb-6">
-      {/* Header */}
       <div className="p-3 sm:p-4 border-b-2 border-black bg-neo-card flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2 sm:space-x-2.5">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center shrink-0">
@@ -67,35 +65,31 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          {onExportCard && myEntry && (
+        <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+          {onOpenCertificate && (
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => {
-                playClickSound();
-                onExportCard(myEntry, (myEntryIndex >= 0 ? myEntryIndex : 0) + 1);
+                playPopSound();
+                onOpenCertificate();
               }}
-              className="px-2.5 py-1 bg-neo-cyan hover:bg-[#33F3FF] text-black font-mono text-[10px] sm:text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer transition-all"
-              title="Export Champion Social Card (1200x630)"
+              className="px-2 sm:px-2.5 py-1 bg-neo-yellow hover:bg-[#FFE600] text-black font-mono text-[10px] sm:text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
             >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>EXPORT SOCIAL CARD</span>
+              <Award className="w-3.5 h-3.5" />
+              <span>CERTIFICATE</span>
             </motion.button>
           )}
-
           <span className="text-[10px] sm:text-xs font-mono font-black text-black bg-neo-mint px-2 sm:px-2.5 py-0.5 sm:py-1 border-2 border-black brutal-shadow-sm uppercase shrink-0">
             {leaderboard.length} PLAYERS
           </span>
         </div>
       </div>
 
-      {/* Top 3 Visual Neo-Brutalist Podium with rising animations */}
       {!compact && top3.length > 0 && (
         <div className="p-3 sm:p-5 md:p-6 bg-neo-card-darker border-b-2 border-black bg-retro-dots overflow-hidden">
           <div className="flex items-end justify-center gap-1.5 xs:gap-3 sm:gap-4 md:gap-6 max-w-lg mx-auto pt-2">
-            {/* 2nd Place */}
             {top3[1] && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -103,59 +97,54 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className="flex flex-col items-center flex-1 max-w-23.75 xs:max-w-28 sm:max-w-32 min-w-0"
               >
-                <div className="w-8 h-8 xs:w-9 xs:h-9 sm:w-12 sm:h-12 bg-neo-cyan text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-sm xs:text-base sm:text-xl mb-1">
-                  🥈
+                <div className="relative mb-2 flex flex-col items-center">
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-neo-cyan border-2 border-black brutal-shadow flex items-center justify-center font-heavy text-base sm:text-xl text-black">
+                    🥈
+                  </div>
+                  <span className="font-mono text-[9px] xs:text-[10px] sm:text-xs font-bold text-white mt-1 max-w-full truncate px-1">
+                    {top3[1].name}
+                  </span>
+                  <span className="font-mono font-black text-neo-cyan text-[10px] sm:text-xs">
+                    {top3[1].score} PTS
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs font-bold text-white uppercase truncate w-full text-center">
-                  {top3[1].name}
-                </span>
-                <span className="text-[9px] xs:text-[10px] sm:text-xs font-mono font-black text-neo-cyan truncate">
-                  {top3[1].score} PTS
-                </span>
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: 'auto' }}
-                  transition={{ duration: 0.5, delay: 0.15 }}
-                  className="w-full h-10 xs:h-12 sm:h-16 bg-[#1A1E2B] border-2 border-black border-b-0 brutal-shadow-sm mt-1.5 sm:mt-2 flex items-center justify-center text-xs sm:text-sm font-heavy text-neo-cyan"
-                >
-                  #2
-                </motion.div>
+                <div className="w-full h-16 xs:h-20 sm:h-24 bg-neo-cyan/20 border-2 border-black border-b-0 flex items-center justify-center font-heavy text-xl sm:text-2xl text-neo-cyan brutal-shadow-sm">
+                  2
+                </div>
               </motion.div>
             )}
 
-            {/* 1st Place */}
             {top3[0] && (
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="flex flex-col items-center flex-1 max-w-27.5 xs:max-w-32 sm:max-w-36 min-w-0"
+                className="flex flex-col items-center flex-1 max-w-26 xs:max-w-32 sm:max-w-36 min-w-0"
               >
-                <motion.div
-                  animate={{ y: [0, -3, 0], rotate: [-2, 2, -2] }}
-                  transition={{ repeat: Infinity, duration: 2.2 }}
-                  className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 bg-neo-yellow text-black border-2 border-black brutal-shadow flex items-center justify-center font-heavy text-lg xs:text-xl sm:text-2xl mb-1"
-                >
-                  👑
-                </motion.div>
-                <span className="text-xs sm:text-sm font-heavy text-neo-yellow uppercase truncate w-full text-center">
-                  {top3[0].name}
-                </span>
-                <span className="text-[10px] xs:text-[11px] sm:text-sm font-mono font-black text-neo-yellow truncate">
-                  {top3[0].score} PTS
-                </span>
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: 'auto' }}
-                  transition={{ duration: 0.6, delay: 0.05 }}
-                  className="w-full h-14 xs:h-18 sm:h-24 bg-neo-yellow text-black border-2 border-black border-b-0 brutal-shadow mt-1.5 sm:mt-2 flex items-center justify-center text-base xs:text-lg sm:text-xl font-heavy"
-                >
-                  #1
-                </motion.div>
+                <div className="relative mb-2 flex flex-col items-center">
+                  <motion.div
+                    animate={{ rotate: [-3, 3, -3] }}
+                    transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                    className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 bg-neo-yellow border-3 border-black brutal-shadow-yellow flex items-center justify-center font-heavy text-xl sm:text-3xl text-black"
+                  >
+                    👑
+                  </motion.div>
+                  <span className="font-mono text-[10px] xs:text-[11px] sm:text-sm font-black text-neo-yellow mt-1 max-w-full truncate px-1">
+                    {top3[0].name}
+                  </span>
+                  <span className="font-mono font-black text-white text-[10px] sm:text-xs bg-black px-1.5 py-0.5 border border-neo-yellow">
+                    {top3[0].score} PTS
+                  </span>
+                </div>
+                <div className="w-full h-24 xs:h-28 sm:h-36 bg-neo-yellow/25 border-3 border-black border-b-0 flex flex-col items-center justify-center font-heavy text-2xl sm:text-4xl text-neo-yellow brutal-shadow">
+                  <span>1</span>
+                  <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase text-black bg-neo-yellow px-1 mt-1">
+                    CHAMPION
+                  </span>
+                </div>
               </motion.div>
             )}
 
-            {/* 3rd Place */}
             {top3[2] && (
               <motion.div
                 initial={{ opacity: 0, y: 25 }}
@@ -163,34 +152,30 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="flex flex-col items-center flex-1 max-w-23.75 xs:max-w-28 sm:max-w-32 min-w-0"
               >
-                <div className="w-8 h-8 xs:w-9 xs:h-9 sm:w-12 sm:h-12 bg-neo-orange text-white border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-sm xs:text-base sm:text-xl mb-1">
-                  🥉
+                <div className="relative mb-2 flex flex-col items-center">
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-neo-orange border-2 border-black brutal-shadow flex items-center justify-center font-heavy text-base sm:text-xl text-white">
+                    🥉
+                  </div>
+                  <span className="font-mono text-[9px] xs:text-[10px] sm:text-xs font-bold text-white mt-1 max-w-full truncate px-1">
+                    {top3[2].name}
+                  </span>
+                  <span className="font-mono font-black text-neo-orange text-[10px] sm:text-xs">
+                    {top3[2].score} PTS
+                  </span>
                 </div>
-                <span className="text-[10px] sm:text-xs font-bold text-white uppercase truncate w-full text-center">
-                  {top3[2].name}
-                </span>
-                <span className="text-[9px] xs:text-[10px] sm:text-xs font-mono font-black text-neo-orange truncate">
-                  {top3[2].score} PTS
-                </span>
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: 'auto' }}
-                  transition={{ duration: 0.45, delay: 0.25 }}
-                  className="w-full h-8 xs:h-10 sm:h-12 bg-[#1A1E2B] border-2 border-black border-b-0 brutal-shadow-sm mt-1.5 sm:mt-2 flex items-center justify-center text-[10px] xs:text-[11px] sm:text-xs font-heavy text-neo-orange"
-                >
-                  #3
-                </motion.div>
+                <div className="w-full h-12 xs:h-16 sm:h-20 bg-neo-orange/20 border-2 border-black border-b-0 flex items-center justify-center font-heavy text-lg sm:text-xl text-neo-orange brutal-shadow-sm">
+                  3
+                </div>
               </motion.div>
             )}
           </div>
         </div>
       )}
 
-      {/* Leaderboard Table */}
-      <div className="p-2 sm:p-3.5 space-y-1.5 sm:space-y-2 max-h-96 overflow-y-auto font-mono pb-20 md:pb-4">
+      <div className="p-2 sm:p-4 space-y-1.5 sm:space-y-2">
         {leaderboard.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 font-mono text-xs uppercase">
-            No player scores yet. Vote in polls and quizzes to climb the leaderboard!
+          <div className="text-center py-8 text-slate-500 font-mono text-xs">
+            NO PLAYERS YET. START A QUIZ ROUND TO CLIMB THE PODIUM!
           </div>
         ) : (
           leaderboard.map((entry, index) => {
@@ -226,8 +211,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                           YOU
                         </span>
                       )}
-                      {/* Dynamic Badges with Rarity Styling */}
-                      {badges.slice(0, 3).map((badge) => {
+                      {badges.slice(0, 2).map((badge) => {
                         const style = getRarityBadgeStyle(badge.rarity);
                         return (
                           <span
@@ -255,7 +239,9 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
 
                 <div className="flex items-center space-x-2 shrink-0">
                   <div className="text-right">
-                    <span className="text-[11px] sm:text-xs md:text-sm font-mono font-black text-neo-yellow">{entry.score} PTS</span>
+                    <span className="text-[11px] sm:text-xs md:text-sm font-mono font-black text-neo-yellow">
+                      {entry.score} PTS
+                    </span>
                   </div>
 
                   {onExportCard && (

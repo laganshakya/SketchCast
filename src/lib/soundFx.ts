@@ -261,3 +261,102 @@ export const playClickTick = playClickSound;
 export const isSoundFxMuted = isAudioMuted;
 export const toggleMuteSoundFx = toggleAudioMute;
 
+/**
+ * Dynamic streak multiplier sound:
+ * 1.5x: Ascending 3-tone arpeggio
+ * 2.0x: Heroic 4-tone power synth fanfare
+ */
+export function playStreakMultiplierSound(multiplier: number = 1.5): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+
+    if (multiplier >= 2.0) {
+      // 2.0x Maximum Overdrive: 4 triumphant notes (C5, E5, G5, C6)
+      const freqs = [523.25, 659.25, 783.99, 1046.5];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = idx === freqs.length - 1 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+        const startTime = now + idx * 0.08;
+        const duration = idx === freqs.length - 1 ? 0.35 : 0.12;
+
+        gain.gain.setValueAtTime(0.18, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      });
+    } else {
+      // 1.5x Streak Bonus: 3 ascending punchy notes (F4, A4, C5)
+      const freqs = [349.23, 440.0, 523.25];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+
+        const startTime = now + idx * 0.07;
+        const duration = 0.14;
+
+        gain.gain.setValueAtTime(0.15, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      });
+    }
+  } catch {
+    // AudioContext blocked
+  }
+}
+
+/**
+ * Grand celebratory fanfare for Masterclass Certificate unlock
+ */
+export function playCertificateFanfare(): void {
+  if (isMuted) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    // Grand arpeggio: C4, G4, C5, E5, G5
+    const notes = [261.63, 392.0, 523.25, 659.25, 783.99];
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+      const startTime = now + idx * 0.1;
+      const duration = idx === notes.length - 1 ? 0.6 : 0.22;
+
+      gain.gain.setValueAtTime(0.18, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    });
+  } catch {
+    // AudioContext blocked
+  }
+}
+

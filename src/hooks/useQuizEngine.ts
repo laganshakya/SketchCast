@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import type { QuizQuestion, QuizRoundState, LeaderboardEntry, PowerUpType, PowerUpInventory } from '../types';
+import type {
+  QuizQuestion,
+  QuizRoundState,
+  LeaderboardEntry,
+  PowerUpType,
+  PowerUpInventory,
+} from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { playPowerUpSound } from '../lib/soundFx';
+import { playPowerUpSound, playStreakMultiplierSound } from '../lib/soundFx';
 import {
   dbFetchLeaderboard,
   dbUpsertLeaderboardEntry,
@@ -80,6 +86,15 @@ export function useQuizEngine({
 
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
   const [userStreak, setUserStreak] = useState<number>(0);
+
+  const [fastestAnswerSeconds, setFastestAnswerSeconds] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`sketchcast_fastest_${currentRoomKey}`);
+      return saved ? parseFloat(saved) : 999;
+    } catch {
+      return 999;
+    }
+  });
 
   const timerRef = useRef<number | null>(null);
 
@@ -429,7 +444,19 @@ export function useQuizEngine({
 
       if (isCorrect) {
         const timeRatio = Math.max(0.1, timeRemaining / quizState.totalSeconds);
-        const streakMultiplier = userStreak >= 3 ? 2.0 : userStreak >= 1 ? 1.5 : 1.0;
+        const answerTimeSeconds = Number(Math.max(0.2, quizState.totalSeconds - timeRemaining).toFixed(1));
+        if (answerTimeSeconds < fastestAnswerSeconds) {
+          setFastestAnswerSeconds(answerTimeSeconds);
+          try {
+            localStorage.setItem(`sketchcast_fastest_${currentRoomKey}`, String(answerTimeSeconds));
+          } catch {
+            // ignore
+          }
+        }
+
+        const nextStreak = userStreak + 1;
+        // Streak multipliers: 1.5x at 2x streak, 2.0x at 3x+ streak
+        const streakMultiplier = nextStreak >= 3 ? 2.0 : nextStreak >= 2 ? 1.5 : 1.0;
         let basePoints = Math.round((100 + timeRatio * 150) * streakMultiplier);
 
         // Apply Double-Down 2x multiplier
@@ -438,9 +465,13 @@ export function useQuizEngine({
         }
 
         points = basePoints;
-        const nextStreak = userStreak + 1;
         setUserStreak(nextStreak);
         triggerConfetti();
+
+        // Custom Sound Fanfare based on streak
+        if (nextStreak >= 2) {
+          playStreakMultiplierSound(streakMultiplier);
+        }
 
         setLeaderboard((prev) => {
           const exists = prev.find((u) => u.session_id === sessionId);
@@ -454,6 +485,7 @@ export function useQuizEngine({
               correct_quizzes: exists.correct_quizzes + 1,
               streak: nextStreak,
               avatar_color: userRole === 'host' ? '#FFE600' : exists.avatar_color || '#FF2A6D',
+              fastest_answer_seconds: Math.min(exists.fastest_answer_seconds || 999, answerTimeSeconds),
             };
             updatedBoard = prev
               .map((u) => (u.session_id === sessionId ? updatedEntry : u))
@@ -467,6 +499,7 @@ export function useQuizEngine({
               polls_voted: 0,
               streak: nextStreak,
               avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
+              fastest_answer_seconds: answerTimeSeconds,
             };
             updatedBoard = [...prev, updatedEntry].sort((a, b) => b.score - a.score);
           }
@@ -577,6 +610,7 @@ export function useQuizEngine({
       currentRoomKey,
       quizStorageKey,
       channelManager,
+      fastestAnswerSeconds,
     ]
   );
 
@@ -649,6 +683,7 @@ export function useQuizEngine({
     leaderboard,
     timeRemaining,
     userStreak,
+    fastestAnswerSeconds,
     powerUpInventory,
     activePowerUp,
     eliminatedOptionIds,
