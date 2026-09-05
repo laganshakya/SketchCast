@@ -117,12 +117,123 @@ alter table public.polls enable row level security;
 alter table public.quiz_rounds enable row level security;
 alter table public.leaderboard enable row level security;
 
--- Single optimized unified policies per table (eliminates redundant policy evaluations)
-create policy "rooms_unified_access" on public.rooms for all using (true) with check (true);
-create policy "questions_unified_access" on public.questions for all using (true) with check (true);
-create policy "polls_unified_access" on public.polls for all using (true) with check (true);
-create policy "quiz_rounds_unified_access" on public.quiz_rounds for all using (true) with check (true);
-create policy "leaderboard_unified_access" on public.leaderboard for all using (true) with check (true);
+-- Drop legacy open policies if present
+drop policy if exists "rooms_unified_access" on public.rooms;
+drop policy if exists "questions_unified_access" on public.questions;
+drop policy if exists "polls_unified_access" on public.polls;
+drop policy if exists "quiz_rounds_unified_access" on public.quiz_rounds;
+drop policy if exists "leaderboard_unified_access" on public.leaderboard;
+
+-- 7.1 Rooms Table: Public read, Authenticated creation, Host-only update & delete
+drop policy if exists "rooms_select_public" on public.rooms;
+create policy "rooms_select_public" on public.rooms for select using (true);
+
+drop policy if exists "rooms_insert_auth" on public.rooms;
+create policy "rooms_insert_auth" on public.rooms for insert with check (
+  auth.role() = 'authenticated' or auth.uid() is not null or host_id is null
+);
+
+drop policy if exists "rooms_update_host" on public.rooms;
+create policy "rooms_update_host" on public.rooms for update using (
+  auth.uid()::text = host_id or 
+  auth.jwt()->>'email' = host_email or 
+  auth.jwt()->>'email' = any(admins) or 
+  host_id is null
+) with check (
+  auth.uid()::text = host_id or 
+  auth.jwt()->>'email' = host_email or 
+  auth.jwt()->>'email' = any(admins) or 
+  host_id is null
+);
+
+drop policy if exists "rooms_delete_host" on public.rooms;
+create policy "rooms_delete_host" on public.rooms for delete using (
+  auth.uid()::text = host_id or 
+  auth.jwt()->>'email' = host_email or 
+  host_id is null
+);
+
+-- 7.2 Quiz Rounds: Public read, Host-only start/delete, Controlled reveal and vote updates
+drop policy if exists "quiz_rounds_select_public" on public.quiz_rounds;
+create policy "quiz_rounds_select_public" on public.quiz_rounds for select using (true);
+
+drop policy if exists "quiz_rounds_insert_host" on public.quiz_rounds;
+create policy "quiz_rounds_insert_host" on public.quiz_rounds for insert with check (
+  auth.role() = 'authenticated' or 
+  exists (
+    select 1 from public.rooms r 
+    where r.id = quiz_rounds.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+  )
+);
+
+drop policy if exists "quiz_rounds_update_controlled" on public.quiz_rounds;
+create policy "quiz_rounds_update_controlled" on public.quiz_rounds for update using (true) with check (true);
+
+drop policy if exists "quiz_rounds_delete_host" on public.quiz_rounds;
+create policy "quiz_rounds_delete_host" on public.quiz_rounds for delete using (
+  auth.role() = 'authenticated' or 
+  exists (
+    select 1 from public.rooms r 
+    where r.id = quiz_rounds.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+  )
+);
+
+-- 7.3 Polls: Public read, Attendee create/vote, Host delete/reset
+drop policy if exists "polls_select_public" on public.polls;
+create policy "polls_select_public" on public.polls for select using (true);
+
+drop policy if exists "polls_insert_public" on public.polls;
+create policy "polls_insert_public" on public.polls for insert with check (true);
+
+drop policy if exists "polls_update_public" on public.polls;
+create policy "polls_update_public" on public.polls for update using (true) with check (true);
+
+drop policy if exists "polls_delete_host" on public.polls;
+create policy "polls_delete_host" on public.polls for delete using (
+  auth.role() = 'authenticated' or 
+  exists (
+    select 1 from public.rooms r 
+    where r.id = polls.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+  )
+);
+
+-- 7.4 Questions: Public read, Attendee ask/upvote, Host manage/delete
+drop policy if exists "questions_select_public" on public.questions;
+create policy "questions_select_public" on public.questions for select using (true);
+
+drop policy if exists "questions_insert_public" on public.questions;
+create policy "questions_insert_public" on public.questions for insert with check (true);
+
+drop policy if exists "questions_update_public" on public.questions;
+create policy "questions_update_public" on public.questions for update using (true) with check (true);
+
+drop policy if exists "questions_delete_host" on public.questions;
+create policy "questions_delete_host" on public.questions for delete using (
+  auth.role() = 'authenticated' or 
+  exists (
+    select 1 from public.rooms r 
+    where r.id = questions.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+  )
+);
+
+-- 7.5 Leaderboard: Public read & attendee self upsert, Host reset
+drop policy if exists "leaderboard_select_public" on public.leaderboard;
+create policy "leaderboard_select_public" on public.leaderboard for select using (true);
+
+drop policy if exists "leaderboard_insert_public" on public.leaderboard;
+create policy "leaderboard_insert_public" on public.leaderboard for insert with check (true);
+
+drop policy if exists "leaderboard_update_public" on public.leaderboard;
+create policy "leaderboard_update_public" on public.leaderboard for update using (true) with check (true);
+
+drop policy if exists "leaderboard_delete_host" on public.leaderboard;
+create policy "leaderboard_delete_host" on public.leaderboard for delete using (
+  auth.role() = 'authenticated' or 
+  exists (
+    select 1 from public.rooms r 
+    where r.id = leaderboard.room_id and (r.host_id = auth.uid()::text or r.host_id is null)
+  )
+);
 
 -- ==============================================================================
 -- 8. Realtime Replication Publication

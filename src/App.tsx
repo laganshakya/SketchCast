@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
@@ -30,11 +30,45 @@ import { FloatingReactionsOverlay } from './components/common/FloatingReactionsO
 import { MasterclassCertificateModal } from './components/certificate/MasterclassCertificateModal';
 import { CertificateVerificationModal, type VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
 import { useSurveys } from './hooks/useSurveys';
-import { playFanfare, playWhoosh, playClickSound, playPopSound } from './lib/soundFx';
+import { playFanfare, playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
 import { calculateUserBadges } from './lib/badgeSystem';
 import { isUserRoomAdmin, dbFetchRooms } from './lib/supabase';
 import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
+
+function parseVerificationUrl(): VerifiedCertPayload | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  let verifyCert = params.get('verify_cert');
+  const pathMatch = window.location.pathname.match(/^\/verify\/([^/?#]+)/i);
+  if (!verifyCert && pathMatch) {
+    verifyCert = decodeURIComponent(pathMatch[1]);
+  }
+  if (verifyCert && verifyCert.trim()) {
+    const roomCode = (params.get('room') || 'ARENA').toUpperCase().trim();
+    const score = Number(params.get('score') || 0);
+    const recipientName = params.get('name') || 'Masterclass Attendee';
+    const rawTitle = params.get('title');
+    const rank = Number(params.get('rank') || 1);
+    const totalAttendees = Number(params.get('total') || 1);
+    const issueDate = params.get('date') || new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    return {
+      certId: verifyCert.trim(),
+      roomCode,
+      score,
+      recipientName,
+      roomTitle: rawTitle || `Masterclass Architecture Session (${roomCode})`,
+      rank,
+      totalAttendees,
+      issueDate,
+    };
+  }
+  return null;
+}
 
 export function App() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -56,7 +90,7 @@ export function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const [qaClusters, setQaClusters] = useState<QuestionCluster[]>([]);
-  const [verifiedCertData, setVerifiedCertData] = useState<VerifiedCertPayload | null>(null);
+  const [verifiedCertData, setVerifiedCertData] = useState<VerifiedCertPayload | null>(parseVerificationUrl);
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -189,62 +223,37 @@ export function App() {
 
   // Room AI Session Summary Report storage & realtime sync
   const reportStorageKey = `sketchcast_session_report_${room.code.toUpperCase().trim()}`;
-  const [sessionReport, setSessionReport] = useState<string>(() => {
-    try {
-      return localStorage.getItem(reportStorageKey) || '';
-    } catch {
-      return '';
-    }
-  });
+  const [publishedReports, setPublishedReports] = useState<Record<string, string>>({});
+  const sessionReport = publishedReports[room.code] ?? (typeof window !== 'undefined' ? localStorage.getItem(reportStorageKey) || '' : '');
 
-  // Public Masterclass Certificate Verification URL detector (?verify_cert=... or /verify/...)
+  const setSessionReport = useCallback((markdown: string) => {
+    setPublishedReports((prev) => ({ ...prev, [room.code]: markdown }));
+    try {
+      localStorage.setItem(reportStorageKey, markdown);
+    } catch {
+      // ignore
+    }
+  }, [room.code, reportStorageKey]);
+
+  // Asynchronously enrich verified certificate room title from Supabase if not provided in URL
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     const params = new URLSearchParams(window.location.search);
-    let verifyCert = params.get('verify_cert');
-
-    // Check path-based URL (/verify/CERT-...)
-    const pathMatch = window.location.pathname.match(/^\/verify\/([^/?#]+)/i);
-    if (!verifyCert && pathMatch) {
-      verifyCert = decodeURIComponent(pathMatch[1]);
-    }
-
-    if (verifyCert && verifyCert.trim()) {
+    const rawTitle = params.get('title');
+    const verifyCert = params.get('verify_cert');
+    if (verifyCert && !rawTitle) {
       const roomCode = (params.get('room') || 'ARENA').toUpperCase().trim();
-      const score = Number(params.get('score') || 0);
-      const recipientName = params.get('name') || 'Masterclass Attendee';
-      const rawTitle = params.get('title');
-      const rank = Number(params.get('rank') || 1);
-      const totalAttendees = Number(params.get('total') || 1);
-      const issueDate = params.get('date') || new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-
-      const initialPayload: VerifiedCertPayload = {
-        certId: verifyCert.trim(),
-        roomCode,
-        score,
-        recipientName,
-        roomTitle: rawTitle || `Masterclass Architecture Session (${roomCode})`,
-        rank,
-        totalAttendees,
-        issueDate,
+      let isMounted = true;
+      dbFetchRooms().then((rooms) => {
+        if (!isMounted) return;
+        const matching = rooms.find((r) => r.code.toUpperCase() === roomCode);
+        if (matching && matching.title) {
+          setVerifiedCertData((prev) => (prev ? { ...prev, roomTitle: matching.title } : null));
+        }
+      }).catch(() => {});
+      return () => {
+        isMounted = false;
       };
-
-      setVerifiedCertData(initialPayload);
-
-      // If room title wasn't passed in query params, look up real title from Supabase
-      if (!rawTitle) {
-        dbFetchRooms().then((rooms) => {
-          const matching = rooms.find((r) => r.code.toUpperCase() === roomCode);
-          if (matching && matching.title) {
-            setVerifiedCertData((prev) => (prev ? { ...prev, roomTitle: matching.title } : null));
-          }
-        }).catch(() => {});
-      }
     }
   }, []);
 
@@ -276,16 +285,6 @@ export function App() {
     }
   };
 
-  // Reload report when room code changes
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(reportStorageKey) || '';
-      setSessionReport(stored);
-    } catch {
-      setSessionReport('');
-    }
-  }, [reportStorageKey]);
-
   // Realtime listener for published session report
   useEffect(() => {
     if (!channelManager) return;
@@ -293,19 +292,21 @@ export function App() {
     const unReport = channelManager.on('session_report_published', (payload) => {
       if (payload && payload.reportMarkdown) {
         setSessionReport(payload.reportMarkdown);
-        try {
-          localStorage.setItem(reportStorageKey, payload.reportMarkdown);
-        } catch {
-          // ignore
-        }
         setIsCertificateModalOpen(true);
+      }
+    });
+
+    const unAudioPack = channelManager.on('room_audio_pack_update', ({ pack }) => {
+      if (pack === 'arcade' || pack === 'hifi') {
+        setAudioPack(pack);
       }
     });
 
     return () => {
       unReport();
+      unAudioPack();
     };
-  }, [channelManager, reportStorageKey]);
+  }, [channelManager, setSessionReport]);
 
   // Realtime listener for Q&A theme clustering
   useEffect(() => {
@@ -459,7 +460,7 @@ export function App() {
       // ignore
     }
     return false;
-  }, [room.code, quizState.question?.id]);
+  }, [room.code, quizState.question]);
 
   // Listen for live Spotlight Winner broadcasts
   useEffect(() => {

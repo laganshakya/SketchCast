@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
@@ -133,9 +133,9 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   const [activeTab, setActiveTabState] = useState<ActiveTabType>(getInitialActiveTab);
   const [attendees, setAttendees] = useState<AttendeePresence[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [channelManager, setChannelManager] = useState<RealtimeChannelManager | null>(() => {
-    return RealtimeChannelManager.getInstance(getStoredRoomCode(initialRoomCode), getOrCreateSessionId());
-  });
+  const channelManager = useMemo(() => {
+    return RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
+  }, [activeRoomCode, sessionId]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(isSessionAutoAuthenticated);
 
   // Moderation state: Muted and Banned session tracking per room
@@ -172,21 +172,23 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     }
   });
 
-  const [strikesBySession, setStrikesBySession] = useState<Record<string, number>>({});
-  const [officialWarning, setOfficialWarning] = useState<{
-    message: string;
-    issuedBy: string;
-    timestamp: number;
-  } | null>(null);
-
-  useEffect(() => {
+  const [prevStrikeKey, setPrevStrikeKey] = useState(strikeStorageKey);
+  if (prevStrikeKey !== strikeStorageKey) {
+    setPrevStrikeKey(strikeStorageKey);
     try {
       const stored = localStorage.getItem(strikeStorageKey);
       setMyStrikes(stored ? parseInt(stored, 10) || 0 : 0);
     } catch {
       setMyStrikes(0);
     }
-  }, [strikeStorageKey]);
+  }
+
+  const [strikesBySession, setStrikesBySession] = useState<Record<string, number>>({});
+  const [officialWarning, setOfficialWarning] = useState<{
+    message: string;
+    issuedBy: string;
+    timestamp: number;
+  } | null>(null);
 
   // Sync activeTab with URL Hash & Storage
   const setActiveTab = (tab: ActiveTabType) => {
@@ -310,8 +312,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
   // Realtime Channel & Presence setup (Only re-instantiate when room changes)
   useEffect(() => {
-    const manager = RealtimeChannelManager.getInstance(activeRoomCode, sessionId);
-    setChannelManager(manager);
+    const manager = channelManager;
 
     const unPresence = manager.on('presence_sync', (presenceList) => {
       setAttendees(presenceList);
@@ -459,7 +460,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       unStrikesReset();
       unWarningIssued();
     };
-  }, [activeRoomCode, sessionId, strikeStorageKey]);
+  }, [channelManager, activeRoomCode, sessionId, strikeStorageKey]);
 
   // Keep presence updated whenever name or role changes
   useEffect(() => {

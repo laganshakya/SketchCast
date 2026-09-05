@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play,
   Plus,
@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Code,
   RefreshCw,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { QuizQuestion } from '../../types';
@@ -37,6 +38,7 @@ import {
   type TrendingTechStory,
 } from '../../lib/meshApi';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
+import { QuizImportExportModal } from './QuizImportExportModal';
 
 interface QuizHostPanelProps {
   onStartQuiz: (question: QuizQuestion) => void;
@@ -83,6 +85,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const completedStorageKey = `sketchcast_completed_quiz_ids_${(roomCode || 'SKT-789').toUpperCase().trim()}`;
 
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
+  const [showImportExportModal, setShowImportExportModal] = useState<boolean>(false);
   const [modalTab, setModalTab] = useState<'editor' | 'ai'>('ai');
   const [hostQuestions, setHostQuestions] = useState<QuizQuestion[]>(() => {
     try {
@@ -107,31 +110,33 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     createBlankDraftQuestion(1),
   ]);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // AI Quiz Generation form state
   const [aiTopic, setAiTopic] = useState('');
   const [aiCount, setAiCount] = useState<number>(3);
   const [aiDifficulty, setAiDifficulty] = useState<'Junior' | 'Mid' | 'Senior' | 'Principal'>('Senior');
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
   const [aiSuccessNote, setAiSuccessNote] = useState<string | null>(null);
+  const [aiToolStatus, setAiToolStatus] = useState<string | null>(null);
+  const [groundingSources, setGroundingSources] = useState<Array<{ title: string; url: string }>>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Real-Time AI Tool State (Consolidated: Prompt with auto web search, URL/GitHub Scraper, HN Trends)
   const [aiToolMode, setAiToolMode] = useState<'topic' | 'url_scraper' | 'hackernews'>('topic');
   const [aiAutoWebSearch, setAiAutoWebSearch] = useState<boolean>(true);
   const [aiUrlInput, setAiUrlInput] = useState<string>('');
+
+  // Hacker News Stories State
   const [hnStories, setHnStories] = useState<TrendingTechStory[]>([]);
   const [selectedHnStory, setSelectedHnStory] = useState<TrendingTechStory | null>(null);
   const [isLoadingHnStories, setIsLoadingHnStories] = useState(false);
-  const [aiToolStatus, setAiToolStatus] = useState<string | null>(null);
-  const [groundingSources, setGroundingSources] = useState<Array<{ title: string; url: string }>>([]);
 
-  const loadHackerNewsStories = async () => {
+  const loadHackerNewsStories = useCallback(async () => {
     setIsLoadingHnStories(true);
     try {
-      const stories = await fetchTrendingTechNews(5);
+      const stories = await fetchTrendingTechNews(8);
       setHnStories(stories);
-      if (stories.length > 0) {
+      if (stories.length > 0 && !selectedHnStory) {
         setSelectedHnStory(stories[0]);
       }
     } catch {
@@ -139,42 +144,43 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     } finally {
       setIsLoadingHnStories(false);
     }
-  };
+  }, [selectedHnStory]);
 
   // Track completed questions when revealed
+  const lastRecordedCompletedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (activeQuestionId && isRevealed) {
-      setCompletedIds((prev) => {
-        if (!prev.includes(activeQuestionId)) {
-          const next = [...prev, activeQuestionId];
-          try {
-            localStorage.setItem(completedStorageKey, JSON.stringify(next));
-          } catch {
-            // ignore
-          }
-          return next;
+    if (activeQuestionId && isRevealed && lastRecordedCompletedRef.current !== activeQuestionId) {
+      lastRecordedCompletedRef.current = activeQuestionId;
+      try {
+        const stored = localStorage.getItem(completedStorageKey);
+        const list: string[] = stored ? JSON.parse(stored) : [];
+        if (!list.includes(activeQuestionId)) {
+          const next = [...list, activeQuestionId];
+          localStorage.setItem(completedStorageKey, JSON.stringify(next));
+          setTimeout(() => {
+            setCompletedIds(next);
+          }, 0);
         }
-        return prev;
-      });
+      } catch {
+        // ignore
+      }
     }
   }, [activeQuestionId, isRevealed, completedStorageKey]);
 
-  // Reload queue and completed IDs when roomCode changes
-  useEffect(() => {
+  // Reload queue and completed IDs ONLY when roomCode actually changes (without effect cascading renders)
+  const [prevQueueKey, setPrevQueueKey] = useState(queueStorageKey);
+  if (prevQueueKey !== queueStorageKey) {
+    setPrevQueueKey(queueStorageKey);
     try {
       const stored = localStorage.getItem(queueStorageKey) || localStorage.getItem('sketchcast_host_quiz_queue');
-      if (stored) {
-        setHostQuestions(JSON.parse(stored));
-      } else {
-        setHostQuestions([]);
-      }
+      setHostQuestions(stored ? JSON.parse(stored) : []);
       const storedCompleted = localStorage.getItem(completedStorageKey);
       setCompletedIds(storedCompleted ? JSON.parse(storedCompleted) : []);
     } catch {
       setHostQuestions([]);
       setCompletedIds([]);
     }
-  }, [queueStorageKey, completedStorageKey]);
+  }
 
   const persistQuestions = (questions: QuizQuestion[]) => {
     setHostQuestions(questions);
@@ -401,6 +407,19 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
           </h3>
         </div>
         <div className="flex items-center space-x-1.5 shrink-0">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              playClickSound();
+              setShowImportExportModal(true);
+            }}
+            className="h-8 px-2 sm:px-2.5 bg-[#1A1E2B] hover:bg-neo-cyan hover:text-black text-slate-200 text-[11px] sm:text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
+            title="Import or Export Quiz (Kahoot CSV, SketchCast CSV/JSON)"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+            <span>PORT</span>
+          </motion.button>
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.96 }}
@@ -1194,6 +1213,20 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Quiz Cartridge Import / Export Modal */}
+      {showImportExportModal && (
+        <QuizImportExportModal
+          isOpen={showImportExportModal}
+          onClose={() => setShowImportExportModal(false)}
+          questions={hostQuestions}
+          onImportQuestions={(imported) => {
+            const updated = [...imported, ...hostQuestions];
+            persistQuestions(updated);
+          }}
+          roomCode={roomCode}
+        />
       )}
     </div>
   );

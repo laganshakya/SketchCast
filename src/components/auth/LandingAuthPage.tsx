@@ -46,7 +46,16 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState<'host' | 'attendee'>('attendee');
-  const [roomKey, setRoomKey] = useState(roomCode || 'SKT-789');
+  const [roomKey, setRoomKey] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const queryRoom = params.get('room');
+      if (queryRoom && queryRoom.trim()) {
+        return queryRoom.trim().toUpperCase();
+      }
+    }
+    return roomCode || 'SKT-789';
+  });
   const [showQRPreview, setShowQRPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,17 +65,6 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   const [verificationSentEmail, setVerificationSentEmail] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
-
-  // Check URL query param for room on load
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const queryRoom = params.get('room');
-      if (queryRoom && queryRoom.trim()) {
-        setRoomKey(queryRoom.trim().toUpperCase());
-      }
-    }
-  }, []);
 
   // Countdown timer for resending verification email
   useEffect(() => {

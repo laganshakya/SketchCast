@@ -13,7 +13,16 @@ import {
 import { motion } from 'motion/react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { isAudioMuted, toggleAudioMute, playClickSound, playPopSound } from '../../lib/soundFx';
+import {
+  isAudioMuted,
+  toggleAudioMute,
+  getAudioPack,
+  toggleAudioPack,
+  onAudioPackChange,
+  playClickSound,
+  playPopSound,
+  type AudioPackType,
+} from '../../lib/soundFx';
 
 interface AppHeaderProps {
   room: Room;
@@ -47,6 +56,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [muted, setMuted] = useState(isAudioMuted());
+  const [audioPack, setAudioPackState] = useState<AudioPackType>(getAudioPack());
+
+  React.useEffect(() => {
+    return onAudioPackChange((nextPack) => {
+      setAudioPackState(nextPack);
+    });
+  }, []);
+
+  const handleToggleAudioPack = () => {
+    const next = toggleAudioPack();
+    setAudioPackState(next);
+    playPopSound();
+  };
 
   const handleToggleMute = () => {
     const next = toggleAudioMute();
@@ -157,6 +179,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* ================= RIGHT: Audio, Presence & Mobile Room Pill ================= */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0 min-w-0">
+          {/* Audio Pack Profile Switcher (8-Bit Arcade vs Modern Hi-Fi) */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleToggleAudioPack}
+            className={`h-8 px-2 flex items-center space-x-1 border-2 border-black brutal-shadow-sm font-mono text-[10px] font-black tracking-wider transition-all cursor-pointer shrink-0 ${
+              audioPack === 'arcade'
+                ? 'bg-neo-yellow text-black hover:bg-yellow-300'
+                : 'bg-neo-cyan text-black hover:bg-cyan-300'
+            }`}
+            title={`Active Sound Pack: ${audioPack.toUpperCase()} (Click to switch to ${audioPack === 'arcade' ? 'Modern Hi-Fi' : '8-Bit Arcade'})`}
+          >
+            <span>{audioPack === 'arcade' ? '⚡ 8-BIT' : '🎵 HI-FI'}</span>
+          </motion.button>
+
           {/* Tactile Audio SFX Toggle Button */}
           <motion.button
             whileHover={{ scale: 1.06 }}

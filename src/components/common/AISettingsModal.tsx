@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Bot,
@@ -34,16 +34,25 @@ interface AISettingsModalProps {
 }
 
 export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClose, roomCode }) => {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => getStoredMeshKey());
   const [showKey, setShowKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(getStoredMeshModel());
-  const [customModelInput, setCustomModelInput] = useState('');
-  const [qaSafeguard, setQaSafeguard] = useState(isQASafeguardEnabled());
+  const [selectedModel, setSelectedModel] = useState(() => getStoredMeshModel());
+  const [customModelInput, setCustomModelInput] = useState(() => {
+    const existingModel = getStoredMeshModel();
+    if (existingModel && existingModel !== 'auto' && !MESH_MODEL_OPTIONS.some((m) => m.id === existingModel)) {
+      return existingModel;
+    }
+    return '';
+  });
+  const [qaSafeguard, setQaSafeguard] = useState(() => isQASafeguardEnabled());
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Synchronize state when modal is opened without triggering useEffect cascading renders
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       const existingKey = getStoredMeshKey();
       setApiKey(existingKey);
@@ -52,14 +61,13 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
       setQaSafeguard(isQASafeguardEnabled());
       setTestResult(null);
       setSaveStatus(null);
-      // If it's 'auto' or matches a preset, custom model input is cleared
       if (existingModel && existingModel !== 'auto' && !MESH_MODEL_OPTIONS.some((m) => m.id === existingModel)) {
         setCustomModelInput(existingModel);
       } else {
         setCustomModelInput('');
       }
     }
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
 

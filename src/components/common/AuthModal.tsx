@@ -59,16 +59,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setDisplayName(userName);
-      setErrorMessage(null);
-      setSuccessMessage(null);
-      setVerificationSentEmail(null);
-      setResendStatus(null);
-    }
-  }, [isOpen, userName]);
-
-  useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
       setResendCooldown((prev) => prev - 1);

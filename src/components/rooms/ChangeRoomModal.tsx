@@ -30,26 +30,36 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
   const [myRooms, setMyRooms] = useState<Room[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
 
-  const loadMyRooms = useCallback(async () => {
-    setIsLoadingRooms(true);
-    try {
-      const allRooms = await dbFetchRooms();
-      const owned = allRooms.filter((r) => isUserRoomAdmin(r, currentUser, userName));
-      setMyRooms(owned);
-    } catch {
-      setMyRooms([]);
-    } finally {
-      setIsLoadingRooms(false);
-    }
-  }, [currentUser, userName]);
-
   useEffect(() => {
-    if (isOpen) {
-      setTargetRoomCode('');
-      setErrorMessage(null);
-      loadMyRooms();
-    }
-  }, [isOpen, loadMyRooms]);
+    if (!isOpen) return;
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (!isCancelled) setIsLoadingRooms(true);
+    });
+    dbFetchRooms()
+      .then((allRooms) => {
+        if (isCancelled) return;
+        const owned = allRooms.filter((r) => isUserRoomAdmin(r, currentUser, userName));
+        setMyRooms(owned);
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        setMyRooms([]);
+      })
+      .finally(() => {
+        if (isCancelled) return;
+        setIsLoadingRooms(false);
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [isOpen, currentUser, userName]);
+
+  const handleClose = useCallback(() => {
+    setTargetRoomCode('');
+    setErrorMessage(null);
+    onClose();
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -64,17 +74,17 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
       setErrorMessage(`You are already in Room [${cleanCode}].`);
       return;
     }
+    handleClose();
     onSwitchRoom(cleanCode);
-    onClose();
   };
 
   const handleSelectOwnRoom = (roomCode: string, title?: string) => {
     if (roomCode.toUpperCase().trim() === currentRoomCode.toUpperCase().trim()) {
-      onClose();
+      handleClose();
       return;
     }
+    handleClose();
     onSwitchRoom(roomCode, title);
-    onClose();
   };
 
   return (
@@ -99,7 +109,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
               whileTap={{ scale: 0.9 }}
               onClick={() => {
                 playClickSound();
-                onClose();
+                handleClose();
               }}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
               title="Close modal"

@@ -71,8 +71,22 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   }, [currentUser, userName]);
 
   useEffect(() => {
-    loadRooms();
-  }, [loadRooms]);
+    let isMounted = true;
+    dbFetchRooms().then((remoteRooms) => {
+      if (!isMounted) return;
+      if (remoteRooms && remoteRooms.length > 0) {
+        const myRooms = remoteRooms.filter((r) => isUserRoomAdmin(r, currentUser, userName));
+        setRooms(myRooms);
+      } else {
+        setRooms([]);
+      }
+    }).catch(() => {
+      if (isMounted) setRooms([]);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, userName]);
 
   const generateUniqueCode = (existingRoomsList: Room[] = rooms): string => {
     const prefixes = ['SKT', 'ARENA', 'DEV', 'TECH', 'ARCH', 'CYBER', 'NODE', 'FLOW', 'VOTE', 'PULSE', 'STAGE', 'LAB'];

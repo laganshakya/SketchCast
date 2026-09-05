@@ -42,6 +42,11 @@ export interface MeshCompletionOptions {
 
 export const MESH_DIRECT_URL = 'https://api.meshapi.ai/v1';
 
+export function getSupabaseEdgeFunctionUrl(): string {
+  const supabaseUrl = (import.meta.env?.VITE_SUPABASE_URL as string) || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
+  return `${supabaseUrl}/functions/v1/mesh-ai`;
+}
+
 // In browser, use Vite proxy `/api/mesh/v1` to eliminate CORS preflight/blocking
 export function getMeshApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -188,10 +193,6 @@ export async function callMeshChatCompletion(
   options: MeshCompletionOptions = {}
 ): Promise<string> {
   const apiKey = options.apiKey || getStoredMeshKey();
-  if (!apiKey) {
-    throw new Error('Mesh API Key missing. Please click "AI SETTINGS" in the header to enter your rsk_... key.');
-  }
-
   const rawModel = options.model || getStoredMeshModel();
   const model = (rawModel === 'auto' || rawModel === MESH_MODELS.AUTO)
     ? MESH_MODELS.GPT_4O_MINI
@@ -214,7 +215,39 @@ export async function callMeshChatCompletion(
     payload.response_format = { type: 'json_object' };
   }
 
-  // Attempt proxy endpoint first (avoids browser CORS in local dev)
+  // --- Tier 1: Supabase Edge Function (Keeps API key 100% server-side in production) ---
+  const edgeFunctionUrl = getSupabaseEdgeFunctionUrl();
+  const supabaseAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
+
+  if (edgeFunctionUrl) {
+    try {
+      const edgeRes = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (edgeRes.ok) {
+        const edgeJson = await edgeRes.json().catch(() => null);
+        const edgeContent = edgeJson?.choices?.[0]?.message?.content;
+        if (edgeContent) {
+          return edgeContent;
+        }
+      }
+    } catch {
+      // Fallback seamlessly to local Vite proxy / direct Mesh API gateway
+    }
+  }
+
+  if (!apiKey) {
+    throw new Error('Mesh API Key missing. Please click "AI SETTINGS" in the header to enter your rsk_... key.');
+  }
+
+  // --- Tier 2 & 3: Local Dev Proxy / Direct Mesh API Fallback ---
   const proxyUrl = `${getMeshApiBaseUrl()}/chat/completions`;
   const directUrl = `${MESH_DIRECT_URL}/chat/completions`;
 
