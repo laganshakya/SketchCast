@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   ClipboardList,
   Award,
+  Presentation,
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -214,6 +215,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       textColor: 'text-black',
       badge: activeSurveysCount && activeSurveysCount > 0 ? 'LIVE' : null,
       desc: 'Multi-question audience feedback',
+    },
+    {
+      id: 'slides' as ActiveTabType,
+      label: 'Slide Studio',
+      icon: Presentation,
+      bgColor: 'bg-neo-cyan',
+      textColor: 'text-black',
+      badge: 'NEW',
+      desc: 'Interactive deck presentations',
     },
   ];
 

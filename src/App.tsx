@@ -29,12 +29,13 @@ import { SurveyTab } from './components/survey/SurveyTab';
 import { FloatingReactionsOverlay } from './components/common/FloatingReactionsOverlay';
 import { MasterclassCertificateModal } from './components/certificate/MasterclassCertificateModal';
 import { CertificateVerificationModal, type VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
+import { SlidesArenaView } from './components/slides/SlidesArenaView';
 import { useSurveys } from './hooks/useSurveys';
 import { playFanfare, playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
 import { calculateUserBadges } from './lib/badgeSystem';
 import { isUserRoomAdmin, dbFetchRooms } from './lib/supabase';
 import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
-import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
+import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList, Presentation } from 'lucide-react';
 
 function parseVerificationUrl(): VerifiedCertPayload | null {
   if (typeof window === 'undefined') return null;
@@ -1044,6 +1045,42 @@ export function App() {
               />
             </motion.div>
           )}
+
+          {/* TAB 7: Interactive Slide Presentation Studio */}
+          {activeTab === 'slides' && (
+            <motion.div
+              key="tab-slides"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <SlidesArenaView
+                roomCode={room.code}
+                isHost={isHostOrAdmin}
+                channelManager={channelManager}
+                userName={userName}
+                sessionId={sessionId}
+                onActivateQuizQuestion={() => {
+                  setActiveTab('quiz');
+                }}
+                onActivatePoll={() => {
+                  setActiveTab('polls');
+                }}
+                quizState={quizState}
+                timeRemaining={timeRemaining}
+                userStreak={userStreak}
+                onStartQuizRound={startQuizRound}
+                onRevealQuizAnswer={revealAnswer}
+                onSelectQuizOption={selectOption}
+                polls={polls}
+                userPollVotes={userVotes}
+                onVoteOnPoll={voteOnPoll}
+                onCreatePoll={createPoll}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
       </div>
@@ -1118,6 +1155,22 @@ export function App() {
           {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
             <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
           )}
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.94 }}
+          onClick={() => {
+            playWhoosh();
+            setActiveTab('slides');
+          }}
+          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
+            activeTab === 'slides'
+              ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Presentation className="w-4 h-4 mb-0.5" />
+          <span>SLIDES</span>
         </motion.button>
 
         <motion.button

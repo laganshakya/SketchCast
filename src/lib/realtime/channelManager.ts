@@ -19,6 +19,8 @@ import type {
   Survey,
   SurveyResponse,
   AudienceReaction,
+  SlideDeck,
+  SlideReactionBurst,
 } from '../../types';
 import type { QuestionCluster } from '../meshApi';
 
@@ -83,6 +85,9 @@ export type RealtimeEventMap = {
   session_report_published: { reportMarkdown: string; generatedAt: number; publishedBy: string };
   qa_cluster_update: QuestionCluster[];
   room_audio_pack_update: { pack: 'arcade' | 'hifi'; updatedBy: string };
+  slide_deck_sync: { roomId: string; activeDeck: SlideDeck; currentSlideIndex: number; isPresenting: boolean; updatedBy: string };
+  slide_reaction_burst: SlideReactionBurst;
+  slide_deck_sync_request: { roomId: string; requesterSessionId: string; requesterName: string };
 };
 
 export type EventKey = keyof RealtimeEventMap;
@@ -202,6 +207,10 @@ export class RealtimeChannelManager {
       'audience_reaction',
       'session_report_published',
       'qa_cluster_update',
+      'room_audio_pack_update',
+      'slide_deck_sync',
+      'slide_reaction_burst',
+      'slide_deck_sync_request',
     ];
 
     broadcastEvents.forEach((ev) => {
