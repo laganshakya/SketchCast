@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LivePoll } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { dbFetchPolls, dbInsertPoll, dbUpdatePoll, dbDeletePoll } from '../lib/supabase';
+import { dbFetchPolls, dbInsertPoll, dbUpdatePoll, dbDeletePoll, dbVoteOnPoll } from '../lib/supabase';
 
 export function usePollsEngine({
   channelManager,
@@ -230,8 +230,16 @@ export function usePollsEngine({
         });
 
         persistPolls(nextPolls);
-        if (targetUpdatedPoll) dbUpdatePoll(targetUpdatedPoll);
         if (channelManager) channelManager.broadcast('poll_update', nextPolls);
+
+        // Atomic DB mutation via stored procedure with fallback
+        dbVoteOnPoll(pollId, null, optionId).then((serverPoll) => {
+          if (serverPoll) {
+            setPolls((prev) => prev.map((p) => (p.id === pollId ? { ...p, ...serverPoll } : p)));
+          }
+        }).catch(() => {
+          if (targetUpdatedPoll) dbUpdatePoll(targetUpdatedPoll);
+        });
         return;
       }
 
@@ -269,13 +277,18 @@ export function usePollsEngine({
 
       persistPolls(nextPolls);
 
-      if (targetUpdatedPoll) {
-        dbUpdatePoll(targetUpdatedPoll);
-      }
-
       if (channelManager) {
         channelManager.broadcast('poll_update', nextPolls);
       }
+
+      // Atomic DB mutation via stored procedure with fallback
+      dbVoteOnPoll(pollId, optionId, currentVotedOption || null).then((serverPoll) => {
+        if (serverPoll) {
+          setPolls((prev) => prev.map((p) => (p.id === pollId ? { ...p, ...serverPoll } : p)));
+        }
+      }).catch(() => {
+        if (targetUpdatedPoll) dbUpdatePoll(targetUpdatedPoll);
+      });
     },
     [channelManager, persistPolls, persistUserVotes]
   );

@@ -221,10 +221,10 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                     return (
                       <motion.button
                         key={option.id}
-                        whileHover={isVoted || isVotingThisPoll ? {} : { scale: 1.01, x: 2 }}
-                        whileTap={isVoted || isVotingThisPoll ? {} : { scale: 0.98 }}
+                        whileHover={isVotingThisPoll ? {} : { scale: 1.01, x: 2 }}
+                        whileTap={isVotingThisPoll ? {} : { scale: 0.98 }}
                         onClick={() => {
-                          if (!isVoted && !isVotingThisPoll) {
+                          if (!isVotingThisPoll) {
                             playPopSound();
                             setVotingPollId(poll.id);
                             setTimeout(() => {
@@ -233,10 +233,11 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                             onVote(poll.id, option.id);
                           }
                         }}
-                        disabled={isVoted || isVotingThisPoll}
+                        disabled={isVotingThisPoll}
+                        title={isVoted ? 'Click to withdraw your vote' : 'Click to vote for this option'}
                         className={`w-full p-3 border-2 border-black text-left transition-all relative overflow-hidden flex items-center justify-between group ${
                           isVoted
-                            ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow text-white cursor-default'
+                            ? 'bg-[#1C2030] border-neo-yellow brutal-shadow-yellow text-white cursor-pointer hover:bg-[#22283d]'
                             : isVotingThisPoll
                             ? 'bg-[#12141D] text-slate-400 brutal-shadow-sm opacity-70 cursor-not-allowed pointer-events-none'
                             : 'bg-[#12141D] hover:bg-[#191D2B] text-slate-200 hover:text-white brutal-shadow-sm cursor-pointer'

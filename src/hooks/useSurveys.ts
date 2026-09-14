@@ -3,6 +3,12 @@ import type { Survey, SurveyResponse, SurveyQuestion } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import { synthesizeSurveySentimentAndTakeaways } from '../lib/meshApi';
 import { playPopSound, playWhoosh, playFanfare } from '../lib/soundFx';
+import {
+  dbFetchSurveys,
+  dbUpsertSurvey,
+  dbFetchSurveyResponses,
+  dbInsertSurveyResponse,
+} from '../lib/supabase';
 
 export const PRESET_SURVEY_TEMPLATES: Omit<Survey, 'id' | 'room_id' | 'created_at' | 'responses_count' | 'status' | 'author_name'>[] = [
   {
@@ -156,6 +162,23 @@ export function useSurveys(
 
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
 
+  // Load from Supabase DB on initialization and room change
+  useEffect(() => {
+    dbFetchSurveys(cleanRoomCode).then((remoteSurveys) => {
+      if (remoteSurveys && remoteSurveys.length > 0) {
+        setSurveys(remoteSurveys);
+      }
+    });
+    dbFetchSurveyResponses(cleanRoomCode).then((remoteResponses) => {
+      if (remoteResponses && Object.keys(remoteResponses).length > 0) {
+        setResponsesBySurvey((prev) => ({
+          ...prev,
+          ...remoteResponses,
+        }));
+      }
+    });
+  }, [cleanRoomCode]);
+
   // 2. LocalStorage Persistence
   useEffect(() => {
     try {
@@ -269,6 +292,9 @@ export function useSurveys(
         return updated;
       });
 
+      // Persist to Supabase DB
+      dbUpsertSurvey(newSurvey);
+
       playPopSound();
       return newSurvey;
     },
@@ -281,6 +307,9 @@ export function useSurveys(
       setSurveys((prev) => {
         const updated = prev.map((s) => (s.id === surveyId ? { ...s, status: 'active' as const } : s));
         const target = updated.find((s) => s.id === surveyId);
+        if (target) {
+          dbUpsertSurvey(target);
+        }
         if (channelManager) {
           channelManager.broadcast('survey_list_update', updated);
           if (target) {
@@ -304,6 +333,10 @@ export function useSurveys(
     (surveyId: string) => {
       setSurveys((prev) => {
         const updated = prev.map((s) => (s.id === surveyId ? { ...s, status: 'closed' as const } : s));
+        const target = updated.find((s) => s.id === surveyId);
+        if (target) {
+          dbUpsertSurvey(target);
+        }
         if (channelManager) {
           channelManager.broadcast('survey_list_update', updated);
         }
@@ -384,6 +417,9 @@ export function useSurveys(
 
       playFanfare();
       setIncomingSurveyAlert((prev) => (prev?.surveyId === surveyId ? null : prev));
+
+      // Persist response to Supabase DB
+      dbInsertSurveyResponse(response);
     },
     [userSubmittedIds, cleanRoomCode, sessionId, userName, channelManager]
   );
@@ -420,6 +456,9 @@ export function useSurveys(
           }
           return updated;
         });
+
+        // Persist AI summary to Supabase DB
+        dbUpsertSurvey({ ...targetSurvey, aiSummary: summary });
 
         playPopSound();
         return summary;

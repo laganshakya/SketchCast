@@ -26,6 +26,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import {
   signInWithEmail,
   signUpWithEmail,
+  signInAnonymously,
   resendVerificationEmail,
   isEmailVerified,
   signOutUser
@@ -41,7 +42,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   onAuthenticated,
   roomCode,
 }) => {
-  const [tab, setTab] = useState<'signin' | 'signup'>('signin');
+  const [tab, setTab] = useState<'guest' | 'signin' | 'signup'>('guest');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -75,12 +76,21 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const handleTabChange = (nextTab: 'signin' | 'signup') => {
+  const handleTabChange = (nextTab: 'guest' | 'signin' | 'signup') => {
     setTab(nextTab);
     setErrorMessage(null);
     setSuccessMessage(null);
     setVerificationSentEmail(null);
     setResendStatus(null);
+  };
+
+  const generateRandomGuestHandle = () => {
+    const adjectives = ['Pixel', 'Cyber', 'Async', 'Quantum', 'Turbo', 'Hyper', 'Neon', 'Binary', 'Vector', 'Cloud'];
+    const nouns = ['Coder', 'Hacker', 'Architect', 'Wizard', 'Ninja', 'Engineer', 'Dev', 'Explorer', 'Pilot', 'Builder'];
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const num = Math.floor(10 + Math.random() * 90);
+    setDisplayName(`${adj}${noun}_${num}`);
   };
 
   const generateRandomRoomKey = () => {
@@ -125,7 +135,17 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
     }
 
     try {
-      if (tab === 'signin') {
+      if (tab === 'guest') {
+        const name = displayName.trim() || 'TechAttendee_' + Math.floor(100 + Math.random() * 900);
+        try {
+          await signInAnonymously(name);
+        } catch {
+          // Graceful fallback if anonymous auth not enabled in Supabase project
+        }
+        setSuccessMessage(`Entering Room [${cleanRoomKey}] as Guest...`);
+        setTimeout(() => onAuthenticated(name, 'attendee', cleanRoomKey), 350);
+        return;
+      } else if (tab === 'signin') {
         const { user, session, error } = await signInWithEmail(email, password);
         if (error) {
           const errMsg = error.message.toLowerCase();
@@ -348,8 +368,24 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             </div>
           ) : (
             <>
-              {/* Tab Switcher */}
-              <div className="grid grid-cols-2 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
+              {/* Tab Switcher: Guest, Sign In, Host Register */}
+              <div className="grid grid-cols-3 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-[11px] sm:text-xs">
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    playClickSound();
+                    handleTabChange('guest');
+                  }}
+                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                    tab === 'guest'
+                      ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Zap className="w-3 h-3" />
+                  <span>GUEST</span>
+                </motion.button>
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.95 }}
@@ -357,13 +393,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signin');
                   }}
-                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
+                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signin'
-                      ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
+                      ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  SIGN IN
+                  <Lock className="w-3 h-3" />
+                  <span>SIGN IN</span>
                 </motion.button>
                 <motion.button
                   type="button"
@@ -372,13 +409,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signup');
                   }}
-                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center ${
+                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signup'
-                      ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
+                      ? 'bg-neo-pink text-white border border-black brutal-shadow-sm'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  CREATE ACCOUNT
+                  <Crown className="w-3 h-3" />
+                  <span>REGISTER</span>
                 </motion.button>
               </div>
 
@@ -420,12 +458,12 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     <label className="text-xs font-black uppercase flex items-center gap-1.5 text-black">
                       <Key className="w-3.5 h-3.5 text-amber-600" />
                       <span>
-                        {role === 'host'
+                        {tab !== 'guest' && role === 'host'
                           ? 'HOST ROOM KEY (AUTO-ASSIGNED):'
                           : 'ROOM KEY / PASSCODE TO JOIN:'}
                       </span>
                     </label>
-                    {role === 'host' ? (
+                    {tab !== 'guest' && role === 'host' ? (
                       <motion.button
                         type="button"
                         whileHover={{ scale: 1.05 }}
@@ -446,7 +484,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     )}
                   </div>
 
-                  {role === 'host' ? (
+                  {tab !== 'guest' && role === 'host' ? (
                     <div className="flex items-center bg-white border-2 border-black px-2.5 sm:px-3 py-1.5 sm:py-2">
                       <Lock className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
                       <span className="text-sm sm:text-base font-black tracking-widest text-black flex-1 select-all">
@@ -468,125 +506,187 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   )}
 
                   <p className="text-[9px] sm:text-[10px] text-slate-600 font-bold mt-1">
-                    {role === 'host'
+                    {tab !== 'guest' && role === 'host'
                       ? 'Auto-generated collision-free room code for your live session.'
                       : 'Enter the Room Key provided by your Host or loaded from the QR code.'}
                   </p>
                 </div>
 
-                {tab === 'signup' && (
-                  <div>
-                    <label className="text-xs font-black uppercase block mb-1">Your Display Name</label>
-                    <div className="relative">
-                      <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                {/* GUEST MODE SPECIFIC FIELDS */}
+                {tab === 'guest' ? (
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-black uppercase flex items-center gap-1.5">
+                          <UserIcon className="w-3.5 h-3.5 text-black" />
+                          <span>YOUR ALIAS / SCREEN NAME:</span>
+                        </label>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playPopSound();
+                            generateRandomGuestHandle();
+                          }}
+                          className="text-[9px] sm:text-[10px] bg-black text-white hover:bg-neo-yellow hover:text-black px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors cursor-pointer"
+                        >
+                          <RefreshCw className="w-3 h-3" /> RANDOM ALIAS
+                        </motion.button>
+                      </div>
                       <input
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="e.g. Elena Rostova"
-                        className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                        required
+                        placeholder="e.g. NeonCoder_99 (or leave blank for auto)"
+                        className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
                       />
+                      <p className="text-[10px] text-slate-600 font-mono mt-1">
+                        This handle appears on live quizzes, audience polls & Q&A.
+                      </p>
                     </div>
-                  </div>
+
+                    <div className="p-2.5 bg-neo-mint/15 border-2 border-black text-[11px] font-mono text-emerald-950 flex items-center space-x-2">
+                      <Zap className="w-4 h-4 text-emerald-800 shrink-0 fill-emerald-800" />
+                      <span>Frictionless 1-click access: No password or email needed!</span>
+                    </div>
+
+                    <div className="pt-2">
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => playWhoosh()}
+                        disabled={isLoading}
+                        className="w-full py-2.5 sm:py-3 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                      >
+                        <Zap className="w-4 h-4 fill-black" />
+                        <span>
+                          {isLoading
+                            ? 'CONNECTING TO ARENA...'
+                            : `ENTER ROOM [${roomKey.toUpperCase() || 'ROOM'}] AS GUEST`}
+                        </span>
+                        <ArrowRight className="w-4 h-4 stroke-3" />
+                      </motion.button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {tab === 'signup' && (
+                      <div>
+                        <label className="text-xs font-black uppercase block mb-1">Your Display Name</label>
+                        <div className="relative">
+                          <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                          <input
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="e.g. Elena Rostova"
+                            className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-xs font-black uppercase block mb-1">Email Address</label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@company.com"
+                          className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-black uppercase block mb-1">Password</label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                          required
+                          minLength={6}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Role Selection */}
+                    <div>
+                      <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => {
+                            playPopSound();
+                            setRole('attendee');
+                          }}
+                          className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                            role === 'attendee'
+                              ? 'bg-neo-mint text-black brutal-shadow-sm'
+                              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                          }`}
+                        >
+                          <UserIcon className="w-3.5 h-3.5" />
+                          <span>ATTENDEE</span>
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => {
+                            playPopSound();
+                            setRole('host');
+                          }}
+                          className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                            role === 'host'
+                              ? 'bg-neo-yellow text-black brutal-shadow-sm'
+                              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                          }`}
+                        >
+                          <Crown className="w-3.5 h-3.5" />
+                          <span>HOST / ADMIN</span>
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="pt-2">
+                      <motion.button
+                        type="submit"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => playWhoosh()}
+                        disabled={isLoading}
+                        className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer ${
+                          tab === 'signin'
+                            ? 'bg-neo-yellow hover:bg-[#FFF04D]'
+                            : 'bg-neo-cyan hover:bg-[#33F3FF]'
+                        }`}
+                      >
+                        <span>
+                          {isLoading
+                            ? 'VERIFYING & CONNECTING...'
+                            : tab === 'signin'
+                            ? `LOG IN & JOIN [${roomKey.toUpperCase() || 'ROOM'}]`
+                            : `REGISTER & SEND VERIFICATION EMAIL`}
+                        </span>
+                        <ArrowRight className="w-4 h-4 stroke-3" />
+                      </motion.button>
+                    </div>
+                  </>
                 )}
-
-                <div>
-                  <label className="text-xs font-black uppercase block mb-1">Email Address</label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@company.com"
-                      className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-black uppercase block mb-1">Password</label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                </div>
-
-                {/* Role Selection */}
-                <div>
-                  <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => {
-                        playPopSound();
-                        setRole('attendee');
-                      }}
-                      className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
-                        role === 'attendee'
-                          ? 'bg-neo-mint text-black brutal-shadow-sm'
-                          : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                      }`}
-                    >
-                      <UserIcon className="w-3.5 h-3.5" />
-                      <span>ATTENDEE</span>
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => {
-                        playPopSound();
-                        setRole('host');
-                      }}
-                      className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
-                        role === 'host'
-                          ? 'bg-neo-yellow text-black brutal-shadow-sm'
-                          : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                      }`}
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      <span>HOST / ADMIN</span>
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <motion.button
-                    type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => playWhoosh()}
-                    disabled={isLoading}
-                    className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer ${
-                      tab === 'signin'
-                        ? 'bg-neo-yellow hover:bg-[#FFF04D]'
-                        : 'bg-neo-cyan hover:bg-[#33F3FF]'
-                    }`}
-                  >
-                    <span>
-                      {isLoading
-                        ? 'VERIFYING & CONNECTING...'
-                        : tab === 'signin'
-                        ? `LOG IN & JOIN [${roomKey.toUpperCase() || 'ROOM'}]`
-                        : `REGISTER & SEND VERIFICATION EMAIL`}
-                    </span>
-                    <ArrowRight className="w-4 h-4 stroke-3" />
-                  </motion.button>
-                </div>
               </form>
             </>
           )}

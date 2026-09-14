@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js';
-import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence } from '../types';
+import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence, Survey, SurveyResponse } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
@@ -435,6 +435,20 @@ export async function dbUpdateQuestionUpvotes(questionId: string, count: number)
   }
 }
 
+export async function dbIncrementQuestionUpvote(questionId: string, delta: number): Promise<number | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('increment_question_upvote', {
+      p_question_id: questionId,
+      p_delta: delta,
+    });
+    if (error || typeof data !== 'number') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export async function dbUpdateQuestionStatus(questionId: string, status: string) {
   if (!supabase) return;
   try {
@@ -517,6 +531,34 @@ export async function dbUpdatePoll(poll: LivePoll) {
       .eq('id', poll.id);
   } catch {
     // fallback
+  }
+}
+
+export async function dbVoteOnPoll(
+  pollId: string,
+  newOptionId: string | null,
+  oldOptionId?: string | null
+): Promise<LivePoll | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc('vote_on_poll', {
+      p_poll_id: pollId,
+      p_new_option_id: newOptionId,
+      p_old_option_id: oldOptionId || null,
+    });
+    if (error || !data) return null;
+    return {
+      id: data.id,
+      room_id: data.room_id,
+      question: data.question,
+      options: data.options,
+      totalVotes: data.total_votes,
+      author_name: data.author_name,
+      created_at: data.created_at,
+      aiConsensusNote: data.ai_consensus_note || undefined,
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -685,5 +727,120 @@ export async function dbCleanupStaleAttendees(roomCode?: string) {
     await query;
   } catch {
     // silent catch
+  }
+}
+
+// ================= SURVEYS & RESPONSES =================
+export async function dbFetchSurveys(roomId: string): Promise<Survey[]> {
+  if (!supabase) return [];
+  try {
+    const targetKey = roomId.toUpperCase().trim();
+    const { data, error } = await supabase
+      .from('surveys')
+      .select('*')
+      .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((row: any) => ({
+      id: row.id,
+      room_id: row.room_id,
+      title: row.title,
+      description: row.description || '',
+      questions: row.questions || [],
+      status: row.status || 'active',
+      created_at: row.created_at,
+      responses_count: row.responses_count || 0,
+      author_name: row.author_name || 'Room Host',
+      aiSummary: row.ai_summary || undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function dbUpsertSurvey(survey: Survey) {
+  if (!supabase) return;
+  try {
+    const payload: any = {
+      id: survey.id,
+      room_id: survey.room_id.toUpperCase().trim(),
+      title: survey.title,
+      description: survey.description,
+      questions: survey.questions,
+      status: survey.status,
+      responses_count: survey.responses_count,
+      author_name: survey.author_name,
+      created_at: survey.created_at,
+    };
+    if (survey.aiSummary) {
+      payload.ai_summary = survey.aiSummary;
+    }
+    await supabase.from('surveys').upsert(payload);
+  } catch {
+    // ignore
+  }
+}
+
+export async function dbFetchSurveyResponses(roomId: string): Promise<Record<string, SurveyResponse[]>> {
+  if (!supabase) return {};
+  try {
+    const targetKey = roomId.toUpperCase().trim();
+    const { data, error } = await supabase
+      .from('survey_responses')
+      .select('*')
+      .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`)
+      .order('submitted_at', { ascending: true });
+
+    if (error || !data) return {};
+    const grouped: Record<string, SurveyResponse[]> = {};
+    data.forEach((row: any) => {
+      const resp: SurveyResponse = {
+        id: row.id,
+        survey_id: row.survey_id,
+        room_id: row.room_id,
+        session_id: row.session_id,
+        attendee_name: row.user_name || 'Attendee',
+        answers: row.answers || {},
+        submitted_at: row.submitted_at ? new Date(row.submitted_at).getTime() : Date.now(),
+      };
+      if (!grouped[row.survey_id]) {
+        grouped[row.survey_id] = [];
+      }
+      grouped[row.survey_id].push(resp);
+    });
+    return grouped;
+  } catch {
+    return {};
+  }
+}
+
+export async function dbInsertSurveyResponse(response: SurveyResponse) {
+  if (!supabase) return;
+  try {
+    await supabase.from('survey_responses').insert({
+      id: response.id,
+      survey_id: response.survey_id,
+      room_id: response.room_id.toUpperCase().trim(),
+      session_id: response.session_id,
+      user_name: response.attendee_name,
+      answers: response.answers,
+      submitted_at: new Date(response.submitted_at).toISOString(),
+    });
+
+    const { data: currentSurvey } = await supabase
+      .from('surveys')
+      .select('responses_count')
+      .eq('id', response.survey_id)
+      .single();
+
+    if (currentSurvey) {
+      await supabase
+        .from('surveys')
+        .update({ responses_count: (currentSurvey.responses_count || 0) + 1 })
+        .eq('id', response.survey_id);
+    }
+  } catch {
+    // ignore
   }
 }

@@ -8,6 +8,7 @@ import {
   dbUpsertAttendeePresence,
   dbFetchActiveRoomAttendees,
   dbRemoveAttendeePresence,
+  dbFetchSurveys,
 } from '../supabase';
 import type {
   AttendeePresence,
@@ -286,6 +287,19 @@ export class RealtimeChannelManager {
             if (board) this.emitLocal('leaderboard_update', board);
           }
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'surveys' },
+        async (payload: any) => {
+          if (
+            (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) ||
+            (payload.old && (payload.old.room_id === this.roomId || payload.old.room_id === `room-${this.roomId}`))
+          ) {
+            const surveys = await dbFetchSurveys(this.roomId);
+            if (surveys) this.emitLocal('survey_list_update', surveys);
+          }
+        }
       );
 
     // 3. Supabase In-Memory Presence Handlers
@@ -364,14 +378,14 @@ export class RealtimeChannelManager {
     }
   }
 
-  // --- LAYER 2: PostgreSQL Presence & State Sync Engine (4-Second Pulse) ---
+  // --- LAYER 2: Presence Heartbeat & Event-Driven Sync Engine ---
   private startAdaptivePulseEngine() {
     if (typeof window !== 'undefined') {
-      const pulse = async () => {
+      const presenceHeartbeat = () => {
         try {
           this.ensureConnected();
 
-          // 1. Heartbeat to Postgres DB table
+          // 1. Lightweight presence heartbeat to Postgres DB table
           if (this.myPresence) {
             dbUpsertAttendeePresence(
               this.roomId,
@@ -385,25 +399,31 @@ export class RealtimeChannelManager {
           if (this.myPresence && this.supabaseChannel && this.isSubscribed) {
             this.supabaseChannel.track(this.myPresence).catch(() => {});
           }
-
-          // 3. Sync full active roster & room states from DB
-          await this.syncAllFromDatabase();
         } catch {
           // silent catch
         }
       };
 
-      // Run immediate pulse
-      pulse();
+      // Initial comprehensive state sync on joining room
+      this.syncAllFromDatabase();
+      presenceHeartbeat();
 
-      // Pulse every 4 seconds for ultra-responsive live presence & continuous state sync
-      this.pulseTimer = window.setInterval(pulse, 4000);
+      // Lightweight presence heartbeat every 15 seconds (eliminates 4-second multi-table polling storm)
+      this.pulseTimer = window.setInterval(presenceHeartbeat, 15000);
+
+      // Periodic slow drift reconciliation (every 60s) to guarantee synchronization under network jitter
+      const driftTimer = window.setInterval(() => {
+        if (!this.isSubscribed || document.visibilityState === 'visible') {
+          this.syncAllFromDatabase();
+        }
+      }, 60000);
 
       // Sync immediately when window gets focus or tab becomes visible
       const onFocusOrVisible = () => {
         if (document.visibilityState === 'visible') {
           this.ensureConnected();
-          pulse();
+          presenceHeartbeat();
+          this.syncAllFromDatabase();
         }
       };
       window.addEventListener('focus', onFocusOrVisible);
@@ -411,6 +431,7 @@ export class RealtimeChannelManager {
 
       // Cleanup presence on tab close / reload
       window.addEventListener('beforeunload', () => {
+        window.clearInterval(driftTimer);
         this.leaveRoom();
       });
     }
@@ -437,7 +458,19 @@ export class RealtimeChannelManager {
       this.syncPollsFromDatabase(),
       this.syncQuestionsFromDatabase(),
       this.syncLeaderboardFromDatabase(),
+      this.syncSurveysFromDatabase(),
     ]);
+  }
+
+  public async syncSurveysFromDatabase() {
+    try {
+      const surveys = await dbFetchSurveys(this.roomId);
+      if (surveys && surveys.length > 0) {
+        this.emitLocal('survey_list_update', surveys);
+      }
+    } catch {
+      // silent fallback
+    }
   }
 
   public async syncFromDatabasePresence() {

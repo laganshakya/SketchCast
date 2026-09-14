@@ -85,7 +85,46 @@ create table if not exists public.leaderboard (
   polls_voted int default 0,
   streak int default 0,
   avatar_color text default '#FFE600',
+  fastest_answer_seconds numeric,
   updated_at timestamptz default now()
+);
+
+-- Migration safety for leaderboard
+alter table if exists public.leaderboard add column if not exists fastest_answer_seconds numeric;
+
+-- 6. Room Attendees Table (Live Presence & Attendee Roster)
+create table if not exists public.room_attendees (
+  id text primary key, -- session_id
+  room_code text not null,
+  user_name text not null,
+  user_role text default 'attendee',
+  joined_at timestamptz default now(),
+  last_active timestamptz default now()
+);
+
+-- 7. Surveys Table (Interactive Post-Event and Mid-Session Feedback)
+create table if not exists public.surveys (
+  id text primary key,
+  room_id text not null,
+  title text not null,
+  description text default '',
+  questions jsonb not null default '[]'::jsonb,
+  status text default 'active', -- 'active' | 'closed' | 'draft'
+  responses_count int default 0,
+  author_name text default 'Room Host',
+  ai_summary jsonb,
+  created_at timestamptz default now()
+);
+
+-- 8. Survey Responses Table (Audience Submissions)
+create table if not exists public.survey_responses (
+  id text primary key,
+  survey_id text references public.surveys(id) on delete cascade,
+  room_id text not null,
+  session_id text not null,
+  user_name text default 'Attendee',
+  answers jsonb not null default '{}'::jsonb,
+  submitted_at timestamptz default now()
 );
 
 -- ==============================================================================
@@ -107,6 +146,11 @@ create index if not exists idx_quiz_rounds_room_active on public.quiz_rounds (ro
 
 create index if not exists idx_leaderboard_room_score on public.leaderboard (room_id, score desc);
 
+create index if not exists idx_room_attendees_code on public.room_attendees (room_code, last_active desc);
+create index if not exists idx_surveys_room on public.surveys (room_id, created_at desc);
+create index if not exists idx_survey_responses_survey on public.survey_responses (survey_id, submitted_at desc);
+create index if not exists idx_survey_responses_room on public.survey_responses (room_id);
+
 -- ==============================================================================
 -- 7. Row Level Security (RLS) & Clean Unified Policies
 -- ==============================================================================
@@ -116,6 +160,9 @@ alter table public.questions enable row level security;
 alter table public.polls enable row level security;
 alter table public.quiz_rounds enable row level security;
 alter table public.leaderboard enable row level security;
+alter table public.room_attendees enable row level security;
+alter table public.surveys enable row level security;
+alter table public.survey_responses enable row level security;
 
 -- Drop legacy open policies if present
 drop policy if exists "rooms_unified_access" on public.rooms;
@@ -235,14 +282,142 @@ create policy "leaderboard_delete_host" on public.leaderboard for delete using (
   )
 );
 
+-- 7.6 Room Attendees: Public presence
+drop policy if exists "room_attendees_select_public" on public.room_attendees;
+create policy "room_attendees_select_public" on public.room_attendees for select using (true);
+
+drop policy if exists "room_attendees_upsert_public" on public.room_attendees;
+create policy "room_attendees_upsert_public" on public.room_attendees for insert with check (true);
+
+drop policy if exists "room_attendees_update_public" on public.room_attendees;
+create policy "room_attendees_update_public" on public.room_attendees for update using (true) with check (true);
+
+drop policy if exists "room_attendees_delete_public" on public.room_attendees;
+create policy "room_attendees_delete_public" on public.room_attendees for delete using (true);
+
+-- 7.7 Surveys & Responses
+drop policy if exists "surveys_select_public" on public.surveys;
+create policy "surveys_select_public" on public.surveys for select using (true);
+
+drop policy if exists "surveys_insert_public" on public.surveys;
+create policy "surveys_insert_public" on public.surveys for insert with check (true);
+
+drop policy if exists "surveys_update_public" on public.surveys;
+create policy "surveys_update_public" on public.surveys for update using (true) with check (true);
+
+drop policy if exists "surveys_delete_public" on public.surveys;
+create policy "surveys_delete_public" on public.surveys for delete using (true);
+
+drop policy if exists "survey_responses_select_public" on public.survey_responses;
+create policy "survey_responses_select_public" on public.survey_responses for select using (true);
+
+drop policy if exists "survey_responses_insert_public" on public.survey_responses;
+create policy "survey_responses_insert_public" on public.survey_responses for insert with check (true);
+
 -- ==============================================================================
--- 8. Realtime Replication Publication
+-- 8. Stored Procedures (Atomic Real-Time Mutations)
+-- ==============================================================================
+
+-- 8.1 Atomic Quiz Vote Increment
+create or replace function public.increment_quiz_vote(p_round_id text, p_option_id text)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_votes jsonb;
+  v_current_count int;
+begin
+  select votes_distribution into v_votes from public.quiz_rounds where id = p_round_id for update;
+  if not found then
+    return null;
+  end if;
+  if v_votes is null then
+    v_votes := '{"A":0,"B":0,"C":0,"D":0}'::jsonb;
+  end if;
+  v_current_count := coalesce((v_votes->>p_option_id)::int, 0) + 1;
+  v_votes := jsonb_set(v_votes, array[p_option_id], to_jsonb(v_current_count));
+  update public.quiz_rounds set votes_distribution = v_votes where id = p_round_id;
+  return v_votes;
+end;
+$$;
+
+-- 8.2 Atomic Poll Vote Mutation (Supports option selection, option switch, or un-vote)
+create or replace function public.vote_on_poll(
+  p_poll_id text,
+  p_new_option_id text,
+  p_old_option_id text default null
+)
+returns public.polls
+language plpgsql
+security definer
+as $$
+declare
+  v_poll public.polls;
+  v_options jsonb;
+  v_new_options jsonb := '[]'::jsonb;
+  v_elem jsonb;
+  v_total int := 0;
+begin
+  select * into v_poll from public.polls where id = p_poll_id for update;
+  if not found then
+    return null;
+  end if;
+
+  v_options := v_poll.options;
+  for v_elem in select * from jsonb_array_elements(v_options)
+  loop
+    if p_new_option_id is not null and v_elem->>'id' = p_new_option_id then
+      v_elem := jsonb_set(v_elem, '{votesCount}', to_jsonb(coalesce((v_elem->>'votesCount')::int, 0) + 1));
+    elsif p_old_option_id is not null and v_elem->>'id' = p_old_option_id then
+      v_elem := jsonb_set(v_elem, '{votesCount}', to_jsonb(greatest(0, coalesce((v_elem->>'votesCount')::int, 0) - 1)));
+    end if;
+    v_total := v_total + coalesce((v_elem->>'votesCount')::int, 0);
+    v_new_options := v_new_options || jsonb_build_array(v_elem);
+  end loop;
+
+  update public.polls
+  set options = v_new_options, total_votes = v_total
+  where id = p_poll_id
+  returning * into v_poll;
+
+  return v_poll;
+end;
+$$;
+
+-- 8.3 Atomic Question Upvote Mutation
+create or replace function public.increment_question_upvote(p_question_id text, p_delta int)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  v_new_count int;
+begin
+  update public.questions
+  set upvotes_count = greatest(0, coalesce(upvotes_count, 0) + p_delta)
+  where id = p_question_id
+  returning upvotes_count into v_new_count;
+  return v_new_count;
+end;
+$$;
+
+-- ==============================================================================
+-- 9. Realtime Replication Publication
 -- ==============================================================================
 
 do $$
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    alter publication supabase_realtime add table public.rooms, public.questions, public.polls, public.quiz_rounds, public.leaderboard;
+    alter publication supabase_realtime add table 
+      public.rooms, 
+      public.questions, 
+      public.polls, 
+      public.quiz_rounds, 
+      public.leaderboard,
+      public.room_attendees,
+      public.surveys,
+      public.survey_responses;
   end if;
 exception
   when duplicate_object then null;

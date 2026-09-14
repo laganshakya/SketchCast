@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
@@ -17,18 +17,21 @@ import { QuestionFeed } from './components/qa/QuestionFeed';
 import { QuestionModal } from './components/qa/QuestionModal';
 import { QRCodeModal } from './components/common/QRCodeModal';
 import { AuthModal } from './components/common/AuthModal';
-import { RoomsAdminView } from './components/rooms/RoomsAdminView';
-import { ChangeRoomModal } from './components/rooms/ChangeRoomModal';
-import { ActiveAttendeesModal } from './components/common/ActiveAttendeesModal';
-import { AISettingsModal } from './components/common/AISettingsModal';
-import { AISessionReportModal } from './components/common/AISessionReportModal';
-import { SpotlightRouletteModal } from './components/common/SpotlightRouletteModal';
-import { SpotlightCelebrationModal } from './components/common/SpotlightCelebrationModal';
-import { ChampionSocialCardModal } from './components/quiz/ChampionSocialCardModal';
 import { SurveyTab } from './components/survey/SurveyTab';
 import { FloatingReactionsOverlay } from './components/common/FloatingReactionsOverlay';
-import { MasterclassCertificateModal } from './components/certificate/MasterclassCertificateModal';
-import { CertificateVerificationModal, type VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
+import type { VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
+
+// Dynamic lazy-loaded modals and admin views for minimal initial bundle
+const RoomsAdminView = lazy(() => import('./components/rooms/RoomsAdminView').then((m) => ({ default: m.RoomsAdminView })));
+const ChangeRoomModal = lazy(() => import('./components/rooms/ChangeRoomModal').then((m) => ({ default: m.ChangeRoomModal })));
+const ActiveAttendeesModal = lazy(() => import('./components/common/ActiveAttendeesModal').then((m) => ({ default: m.ActiveAttendeesModal })));
+const AISettingsModal = lazy(() => import('./components/common/AISettingsModal').then((m) => ({ default: m.AISettingsModal })));
+const AISessionReportModal = lazy(() => import('./components/common/AISessionReportModal').then((m) => ({ default: m.AISessionReportModal })));
+const SpotlightRouletteModal = lazy(() => import('./components/common/SpotlightRouletteModal').then((m) => ({ default: m.SpotlightRouletteModal })));
+const SpotlightCelebrationModal = lazy(() => import('./components/common/SpotlightCelebrationModal').then((m) => ({ default: m.SpotlightCelebrationModal })));
+const ChampionSocialCardModal = lazy(() => import('./components/quiz/ChampionSocialCardModal').then((m) => ({ default: m.ChampionSocialCardModal })));
+const MasterclassCertificateModal = lazy(() => import('./components/certificate/MasterclassCertificateModal').then((m) => ({ default: m.MasterclassCertificateModal })));
+const CertificateVerificationModal = lazy(() => import('./components/certificate/CertificateVerificationModal').then((m) => ({ default: m.CertificateVerificationModal })));
 import { useSurveys } from './hooks/useSurveys';
 import { playFanfare, playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
 import { calculateUserBadges } from './lib/badgeSystem';
@@ -1031,17 +1034,19 @@ export function App() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="flex-1 flex flex-col overflow-y-auto"
             >
-              <RoomsAdminView
-                currentRoomCode={room.code}
-                onSwitchRoom={handleSwitchRoom}
-                onOpenQRCodeForRoom={handleOpenQRForRoom}
-                onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
-                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-                userName={userName}
-                currentUser={currentUser}
-                isHost={isHostOrAdmin}
-                hasGeneratedReport={Boolean(sessionReport)}
-              />
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Rooms Admin...</div>}>
+                <RoomsAdminView
+                  currentRoomCode={room.code}
+                  onSwitchRoom={handleSwitchRoom}
+                  onOpenQRCodeForRoom={handleOpenQRForRoom}
+                  onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
+                  onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                  userName={userName}
+                  currentUser={currentUser}
+                  isHost={isHostOrAdmin}
+                  hasGeneratedReport={Boolean(sessionReport)}
+                />
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1184,108 +1189,110 @@ export function App() {
         onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
       />
 
-      <ChangeRoomModal
-        isOpen={isChangeRoomModalOpen}
-        onClose={() => setIsChangeRoomModalOpen(false)}
-        onSwitchRoom={handleSwitchRoom}
-        currentRoomCode={room.code}
-        currentUser={currentUser}
-        userName={userName}
-        onOpenRoomsHub={() => setActiveTab('rooms')}
-      />
-
-      <ActiveAttendeesModal
-        isOpen={isActiveAttendeesModalOpen}
-        onClose={() => setIsActiveAttendeesModalOpen(false)}
-        attendees={attendees}
-        leaderboard={leaderboard}
-        currentSessionId={sessionId}
-        isHost={userRole === 'host'}
-        roomCode={room.code}
-        room={room}
-        onPromoteToAdmin={promoteToAdmin}
-        onDemoteFromAdmin={demoteFromAdmin}
-        onRefresh={() => channelManager?.pingPresence()}
-        mutedSessionIds={mutedSessionIds}
-        strikesBySession={strikesBySession}
-        onMuteAttendee={muteAttendee}
-        onUnmuteAttendee={unmuteAttendee}
-        onBanAttendee={banAttendee}
-        onSendWarning={sendAttendeeWarning}
-        onResetStrikes={resetAttendeeStrikes}
-      />
-
-      <AISettingsModal
-        isOpen={isAISettingsModalOpen}
-        onClose={() => setIsAISettingsModalOpen(false)}
-        roomCode={room.code}
-      />
-
-      <AISessionReportModal
-        isOpen={isAISessionReportModalOpen}
-        onClose={() => setIsAISessionReportModalOpen(false)}
-        roomTitle={room.title}
-        roomCode={room.code}
-        totalAttendees={activeViewerCount}
-        quizzes={queuedQuizzes}
-        polls={polls}
-        questions={questions}
-        leaderboard={leaderboard}
-        isHost={isHostOrAdmin}
-        initialReportMarkdown={sessionReport}
-        onReportGenerated={handlePublishReport}
-        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-      />
-
-      {/* Host Attendee Spotlight Roulette Wheel Modal */}
-      <SpotlightRouletteModal
-        isOpen={isSpotlightModalOpen}
-        onClose={() => setIsSpotlightModalOpen(false)}
-        attendees={attendees}
-        leaderboard={leaderboard}
-        currentUserName={userName}
-        room={room}
-        onSelectWinner={handleSelectSpotlightWinner}
-      />
-
-      {/* Realtime Spotlight Winner Celebration Modal (Shown on Winner screen) */}
-      <SpotlightCelebrationModal
-        isOpen={isSpotlightCelebrationOpen}
-        onClose={() => setIsSpotlightCelebrationOpen(false)}
-        winner={celebrationWinner}
-        isMe={celebrationWinner?.targetSessionId === sessionId}
-      />
-
-      {/* Champion High-DPI Social Card Export Modal */}
-      {socialCardData && (
-        <ChampionSocialCardModal
-          isOpen={isSocialCardModalOpen}
-          onClose={() => setIsSocialCardModalOpen(false)}
-          cardData={socialCardData}
+      <Suspense fallback={null}>
+        <ChangeRoomModal
+          isOpen={isChangeRoomModalOpen}
+          onClose={() => setIsChangeRoomModalOpen(false)}
+          onSwitchRoom={handleSwitchRoom}
+          currentRoomCode={room.code}
+          currentUser={currentUser}
+          userName={userName}
+          onOpenRoomsHub={() => setActiveTab('rooms')}
         />
-      )}
 
-      {/* Masterclass Certificate Pass Modal */}
-      <MasterclassCertificateModal
-        isOpen={isCertificateModalOpen}
-        onClose={() => setIsCertificateModalOpen(false)}
-        recipientName={userName}
-        roomTitle={room.title}
-        roomCode={room.code}
-        score={myScore}
-        rank={myRank}
-        totalAttendees={leaderboard.length || attendees.length || 1}
-        badges={myBadges}
-      />
-
-      {/* Public Verified Certificate Modal */}
-      {verifiedCertData && (
-        <CertificateVerificationModal
-          certData={verifiedCertData}
-          onClose={handleCloseVerification}
-          onEnterArena={handleEnterArenaFromCert}
+        <ActiveAttendeesModal
+          isOpen={isActiveAttendeesModalOpen}
+          onClose={() => setIsActiveAttendeesModalOpen(false)}
+          attendees={attendees}
+          leaderboard={leaderboard}
+          currentSessionId={sessionId}
+          isHost={userRole === 'host'}
+          roomCode={room.code}
+          room={room}
+          onPromoteToAdmin={promoteToAdmin}
+          onDemoteFromAdmin={demoteFromAdmin}
+          onRefresh={() => channelManager?.pingPresence()}
+          mutedSessionIds={mutedSessionIds}
+          strikesBySession={strikesBySession}
+          onMuteAttendee={muteAttendee}
+          onUnmuteAttendee={unmuteAttendee}
+          onBanAttendee={banAttendee}
+          onSendWarning={sendAttendeeWarning}
+          onResetStrikes={resetAttendeeStrikes}
         />
-      )}
+
+        <AISettingsModal
+          isOpen={isAISettingsModalOpen}
+          onClose={() => setIsAISettingsModalOpen(false)}
+          roomCode={room.code}
+        />
+
+        <AISessionReportModal
+          isOpen={isAISessionReportModalOpen}
+          onClose={() => setIsAISessionReportModalOpen(false)}
+          roomTitle={room.title}
+          roomCode={room.code}
+          totalAttendees={activeViewerCount}
+          quizzes={queuedQuizzes}
+          polls={polls}
+          questions={questions}
+          leaderboard={leaderboard}
+          isHost={isHostOrAdmin}
+          initialReportMarkdown={sessionReport}
+          onReportGenerated={handlePublishReport}
+          onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+        />
+
+        {/* Host Attendee Spotlight Roulette Wheel Modal */}
+        <SpotlightRouletteModal
+          isOpen={isSpotlightModalOpen}
+          onClose={() => setIsSpotlightModalOpen(false)}
+          attendees={attendees}
+          leaderboard={leaderboard}
+          currentUserName={userName}
+          room={room}
+          onSelectWinner={handleSelectSpotlightWinner}
+        />
+
+        {/* Realtime Spotlight Winner Celebration Modal (Shown on Winner screen) */}
+        <SpotlightCelebrationModal
+          isOpen={isSpotlightCelebrationOpen}
+          onClose={() => setIsSpotlightCelebrationOpen(false)}
+          winner={celebrationWinner}
+          isMe={celebrationWinner?.targetSessionId === sessionId}
+        />
+
+        {/* Champion High-DPI Social Card Export Modal */}
+        {socialCardData && (
+          <ChampionSocialCardModal
+            isOpen={isSocialCardModalOpen}
+            onClose={() => setIsSocialCardModalOpen(false)}
+            cardData={socialCardData}
+          />
+        )}
+
+        {/* Masterclass Certificate Pass Modal */}
+        <MasterclassCertificateModal
+          isOpen={isCertificateModalOpen}
+          onClose={() => setIsCertificateModalOpen(false)}
+          recipientName={userName}
+          roomTitle={room.title}
+          roomCode={room.code}
+          score={myScore}
+          rank={myRank}
+          totalAttendees={leaderboard.length || attendees.length || 1}
+          badges={myBadges}
+        />
+
+        {/* Public Verified Certificate Modal */}
+        {verifiedCertData && (
+          <CertificateVerificationModal
+            certData={verifiedCertData}
+            onClose={handleCloseVerification}
+            onEnterArena={handleEnterArenaFromCert}
+          />
+        )}
+      </Suspense>
 
       {/* Official Host Warning Modal */}
       {officialWarning && (

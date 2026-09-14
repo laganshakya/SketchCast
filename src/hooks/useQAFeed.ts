@@ -5,6 +5,7 @@ import {
   dbFetchQuestions,
   dbInsertQuestion,
   dbUpdateQuestionUpvotes,
+  dbIncrementQuestionUpvote,
   dbUpdateQuestionStatus,
   dbUpdateQuestionTalkingPoints,
 } from '../lib/supabase';
@@ -130,6 +131,7 @@ export function useQAFeed({
   const toggleUpvote = useCallback(
     (questionId: string) => {
       const hasUpvoted = upvotedIds.has(questionId);
+      const delta = hasUpvoted ? -1 : 1;
       const nextUpvoted = new Set(upvotedIds);
 
       if (hasUpvoted) {
@@ -139,11 +141,11 @@ export function useQAFeed({
       }
       persistUpvotes(nextUpvoted);
 
+      // Optimistic local update
       setQuestions((prev) => {
         const next = prev.map((q) => {
           if (q.id === questionId) {
-            const newCount = hasUpvoted ? Math.max(0, q.upvotes_count - 1) : q.upvotes_count + 1;
-            dbUpdateQuestionUpvotes(questionId, newCount);
+            const newCount = Math.max(0, q.upvotes_count + delta);
             if (channelManager) {
               channelManager.broadcast('question_upvote', {
                 questionId,
@@ -160,6 +162,23 @@ export function useQAFeed({
           channelManager.broadcast('question_list', next);
         }
         return next;
+      });
+
+      // Atomic DB increment via stored procedure with fallback
+      dbIncrementQuestionUpvote(questionId, delta).then((serverCount) => {
+        if (serverCount !== null) {
+          setQuestions((prev) =>
+            prev.map((q) => (q.id === questionId ? { ...q, upvotes_count: serverCount } : q))
+          );
+        }
+      }).catch(() => {
+        setQuestions((prev) => {
+          const targetQ = prev.find((q) => q.id === questionId);
+          if (targetQ) {
+            dbUpdateQuestionUpvotes(questionId, targetQ.upvotes_count);
+          }
+          return prev;
+        });
       });
     },
     [upvotedIds, channelManager, sessionId, persistUpvotes]
