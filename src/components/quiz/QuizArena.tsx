@@ -56,7 +56,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   eliminatedOptionIds = [],
   onActivatePowerUp,
 }) => {
-  const { question, isRevealed, userSelectedOption, isCorrect, pointsEarned, votesDistribution } = quizState;
+  const {
+    question,
+    isRevealed,
+    userSelectedOption,
+    isCorrect,
+    pointsEarned,
+    pointsBreakdown,
+    votesDistribution,
+  } = quizState;
 
   const totalVotes = Object.values(votesDistribution || {}).reduce((a, b) => a + b, 0);
   const lastRemainingRef = useRef<number>(timeRemaining);
@@ -162,6 +170,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   const timerPercentage = Math.max(0, (timeRemaining / (quizState.totalSeconds || 25)) * 100);
 
+  // Realtime points value calculation as the clock counts down
+  const currentStreakMultiplier = userStreak >= 3 ? 2.0 : userStreak >= 2 ? 1.5 : 1.0;
+  const currentTimeRatio = Math.max(0.1, timeRemaining / (quizState.totalSeconds || 25));
+  const currentSpeedBonus = Math.round(currentTimeRatio * 150);
+  let livePointsValue = Math.round((100 + currentSpeedBonus) * currentStreakMultiplier);
+  if (activePowerUp === 'double-down') {
+    livePointsValue *= 2;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -216,22 +233,60 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           )}
 
+          {/* Live Speed Points Value Gauge (ticking down live) */}
+          {!isRevealed && userSelectedOption === null && (
+            <motion.div
+              key={livePointsValue}
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              className={`px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-black border-2 border-black brutal-shadow-sm flex items-center gap-1 transition-colors ${
+                timerPercentage > 60
+                  ? 'bg-neo-mint text-black'
+                  : timerPercentage > 25
+                  ? 'bg-neo-yellow text-black'
+                  : 'bg-neo-pink text-white animate-pulse'
+              }`}
+              title="Potential score if answered right now (100 Base + Speed Bonus × Streak Multiplier)"
+            >
+              <Zap className="w-3 h-3 stroke-[2.5] fill-current" />
+              <span>VALUE: +{livePointsValue} PTS</span>
+            </motion.div>
+          )}
 
-
+          {/* Animated Streak Combo Flame Meter */}
           {userStreak > 0 && (
             <motion.div
-              animate={{ scale: [1, 1.08, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className={`px-1.5 sm:px-2 py-0.5 border border-black brutal-shadow-sm flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold ${
+              animate={
                 userStreak >= 3
-                  ? 'bg-neo-pink text-white animate-pulse'
-                  : userStreak >= 2
-                  ? 'bg-[#FF8833] text-black'
+                  ? { scale: [1, 1.08, 1], rotate: [-1, 1, -1] }
+                  : { scale: [1, 1.05, 1] }
+              }
+              transition={{ repeat: Infinity, duration: userStreak >= 3 ? 0.9 : 1.5 }}
+              className={`px-2 py-0.5 border-2 border-black brutal-shadow-sm flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase ${
+                userStreak >= 3
+                  ? 'bg-neo-pink text-white ring-2 ring-neo-yellow shadow-[0_0_12px_rgba(255,42,109,0.5)]'
+                  : userStreak === 2
+                  ? 'bg-[#FF8833] text-black ring-1 ring-black'
                   : 'bg-neo-yellow text-black'
               }`}
+              title={`Consecutive correct streak: ${userStreak}`}
             >
-              <Flame className={`w-3 h-3 ${userStreak >= 3 ? 'fill-white text-white' : 'fill-black text-black'}`} />
-              <span>{userStreak}X STREAK {userStreak >= 3 ? '(2.0x)' : userStreak >= 2 ? '(1.5x)' : ''}</span>
+              <Flame
+                className={`w-3.5 h-3.5 ${
+                  userStreak >= 3
+                    ? 'fill-neo-yellow text-neo-yellow animate-bounce'
+                    : userStreak === 2
+                    ? 'fill-black text-black'
+                    : 'fill-black text-black'
+                }`}
+              />
+              <span>
+                {userStreak >= 3
+                  ? `⚡ ${userStreak}X OVERDRIVE (2.0x)`
+                  : userStreak === 2
+                  ? `🔥 2X COMBO (1.5x)`
+                  : `1X STREAK`}
+              </span>
             </motion.div>
           )}
 
@@ -415,6 +470,90 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               CORRECT OPTION: [{question.correctOptionId}]
             </div>
           </div>
+
+          {/* Detailed Speed & Streak Points Breakdown Card */}
+          {userSelectedOption && isCorrect && pointsBreakdown && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="p-3 sm:p-3.5 bg-white border-2 border-black brutal-shadow-sm font-mono"
+            >
+              <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-200">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-slate-700 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-neo-orange fill-neo-orange" />
+                  <span>POINTS BREAKDOWN & METRICS</span>
+                </span>
+                <span className="text-xs sm:text-sm font-black text-black">
+                  AWARDED: +{pointsEarned} PTS
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* 1. Base Score */}
+                <div className="p-2 bg-[#F8F9FC] border border-slate-300 flex flex-col justify-between">
+                  <span className="text-[9px] font-bold text-slate-500 uppercase">BASE VALUE</span>
+                  <span className="text-sm sm:text-base font-heavy text-black leading-tight mt-0.5">
+                    +{pointsBreakdown.basePoints} PTS
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">Correct response</span>
+                </div>
+
+                {/* 2. Speed Bonus */}
+                <div className="p-2 bg-[#F0FDF4] border border-[#86EFAC] flex flex-col justify-between">
+                  <span className="text-[9px] font-bold text-[#15803D] uppercase flex items-center gap-0.5">
+                    <Zap className="w-2.5 h-2.5 fill-current" /> SPEED BONUS
+                  </span>
+                  <span className="text-sm sm:text-base font-heavy text-[#15803D] leading-tight mt-0.5">
+                    +{pointsBreakdown.speedBonus} PTS
+                  </span>
+                  <span className="text-[9px] text-[#166534] font-bold mt-0.5">
+                    {pointsBreakdown.answerTimeSeconds}s response ⚡
+                  </span>
+                </div>
+
+                {/* 3. Streak Multiplier */}
+                <div
+                  className={`p-2 border flex flex-col justify-between ${
+                    pointsBreakdown.streakMultiplier > 1
+                      ? 'bg-[#FFF7ED] border-[#FDBA74] text-[#C2410C]'
+                      : 'bg-[#F8F9FC] border-slate-300 text-slate-700'
+                  }`}
+                >
+                  <span className="text-[9px] font-bold uppercase flex items-center gap-0.5">
+                    <Flame className="w-2.5 h-2.5 fill-current" /> STREAK MULTIPLIER
+                  </span>
+                  <span className="text-sm sm:text-base font-heavy leading-tight mt-0.5">
+                    ×{pointsBreakdown.streakMultiplier.toFixed(1)}
+                  </span>
+                  <span className="text-[9px] text-slate-500 mt-0.5">
+                    {pointsBreakdown.streakMultiplier > 1 ? `${userStreak} in a row 🔥` : '1st streak'}
+                  </span>
+                </div>
+
+                {/* 4. Double Down or Net Total */}
+                {pointsBreakdown.isDoubleDown ? (
+                  <div className="p-2 bg-[#FEF2F2] border border-[#FCA5A5] flex flex-col justify-between">
+                    <span className="text-[9px] font-bold text-[#B91C1C] uppercase">DOUBLE DOWN</span>
+                    <span className="text-sm sm:text-base font-heavy text-[#B91C1C] leading-tight mt-0.5">
+                      ×2.0 BUFF
+                    </span>
+                    <span className="text-[9px] text-[#991B1B] font-bold mt-0.5">Power-Up Active!</span>
+                  </div>
+                ) : (
+                  <div className="p-2 bg-neo-yellow/20 border-2 border-neo-yellow/70 flex flex-col justify-between">
+                    <span className="text-[9px] font-bold text-black uppercase flex items-center gap-0.5">
+                      <Trophy className="w-2.5 h-2.5 fill-black" /> TOTAL EARNED
+                    </span>
+                    <span className="text-sm sm:text-base font-heavy text-black leading-tight mt-0.5">
+                      +{pointsEarned} PTS
+                    </span>
+                    <span className="text-[9px] text-slate-600 mt-0.5">Added to score</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Standard Explanation */}
           <div className="p-3 sm:p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">

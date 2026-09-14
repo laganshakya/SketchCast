@@ -39,6 +39,15 @@ export interface QuizPack {
   questions: QuizQuestion[];
 }
 
+export interface PointsBreakdown {
+  basePoints: number;
+  speedBonus: number;
+  answerTimeSeconds: number;
+  streakMultiplier: number;
+  isDoubleDown: boolean;
+  total: number;
+}
+
 export interface QuizRoundState {
   isActive: boolean;
   question: QuizQuestion | null;
@@ -48,6 +57,7 @@ export interface QuizRoundState {
   userSelectedOption: string | null;
   isCorrect: boolean | null;
   pointsEarned: number;
+  pointsBreakdown?: PointsBreakdown | null;
   votesDistribution: Record<string, number>; // { 'A': 12, 'B': 4, ... }
   aiDeepDive?: string | null;
   updatedAt?: number;

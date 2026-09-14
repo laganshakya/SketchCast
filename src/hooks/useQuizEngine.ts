@@ -6,6 +6,7 @@ import type {
   LeaderboardEntry,
   PowerUpType,
   PowerUpInventory,
+  PointsBreakdown,
 } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import { playPowerUpSound, playStreakMultiplierSound } from '../lib/soundFx';
@@ -126,6 +127,7 @@ export function useQuizEngine({
             userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
             isCorrect: isSameQuestion ? prev.isCorrect : null,
             pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
+            pointsBreakdown: isSameQuestion ? prev.pointsBreakdown : null,
             votesDistribution: mergedVotes,
           };
         });
@@ -195,6 +197,7 @@ export function useQuizEngine({
           userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
           isCorrect: isSameQuestion ? prev.isCorrect : null,
           pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
+          pointsBreakdown: isSameQuestion ? prev.pointsBreakdown : null,
           votesDistribution: mergedVotes,
         };
 
@@ -441,6 +444,7 @@ export function useQuizEngine({
 
       const isCorrect = quizState.question?.correctOptionId === optionId;
       let points = 0;
+      let breakdown: PointsBreakdown | null = null;
 
       if (isCorrect) {
         const timeRatio = Math.max(0.1, timeRemaining / quizState.totalSeconds);
@@ -457,14 +461,25 @@ export function useQuizEngine({
         const nextStreak = userStreak + 1;
         // Streak multipliers: 1.5x at 2x streak, 2.0x at 3x+ streak
         const streakMultiplier = nextStreak >= 3 ? 2.0 : nextStreak >= 2 ? 1.5 : 1.0;
-        let basePoints = Math.round((100 + timeRatio * 150) * streakMultiplier);
+        const basePoints = 100;
+        const speedBonus = Math.round(timeRatio * 150);
+        const isDoubleDown = activePowerUp === 'double-down';
+        let calculatedPoints = Math.round((basePoints + speedBonus) * streakMultiplier);
 
         // Apply Double-Down 2x multiplier
-        if (activePowerUp === 'double-down') {
-          basePoints = basePoints * 2;
+        if (isDoubleDown) {
+          calculatedPoints = calculatedPoints * 2;
         }
 
-        points = basePoints;
+        points = calculatedPoints;
+        breakdown = {
+          basePoints,
+          speedBonus,
+          answerTimeSeconds,
+          streakMultiplier,
+          isDoubleDown,
+          total: points,
+        };
         setUserStreak(nextStreak);
         triggerConfetti();
 
@@ -565,6 +580,7 @@ export function useQuizEngine({
           userSelectedOption: optionId,
           isCorrect,
           pointsEarned: points,
+          pointsBreakdown: breakdown,
           votesDistribution: updatedVotes,
         };
         try {
