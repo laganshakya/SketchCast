@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Download, Copy, Check, Trophy } from 'lucide-react';
+import { X, Download, Copy, Check, Trophy, Share2, Smartphone, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ChampionSocialCardData } from '../../types';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
@@ -18,6 +18,8 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showShareToast, setShowShareToast] = useState<'linkedin' | 'twitter' | null>(null);
+  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const drawCard = useCallback(() => {
     const canvas = canvasRef.current;
@@ -203,16 +205,27 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
 
   if (!isOpen) return null;
 
-  const handleDownloadPNG = () => {
+  const getCardBlob = (): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return resolve(null);
+      canvas.toBlob((blob) => resolve(blob), 'image/png');
+    });
+  };
+
+  const handleDownloadPNG = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setDownloading(true);
     try {
-      const dataUrl = canvas.toDataURL('image/png');
+      const blob = await getCardBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `sketchcast-champion-${cardData.playerName.toLowerCase().replace(/\s+/g, '_')}.png`;
-      link.href = dataUrl;
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
     } catch {
       // ignore
     } finally {
@@ -220,32 +233,82 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     }
   };
 
-  const handleCopyImage = async () => {
+  const handleCopyImage = async (): Promise<boolean> => {
+    playPopSound();
     const canvas = canvasRef.current;
-    if (!canvas || !navigator.clipboard) return;
+    if (!canvas || !navigator.clipboard?.write) return false;
 
     try {
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        } catch {
-          // Fallback if clipboard write fails
-          handleDownloadPNG();
-        }
-      }, 'image/png');
+      const blob = await getCardBlob();
+      if (!blob) return false;
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      return true;
     } catch {
       handleDownloadPNG();
+      return false;
     }
   };
 
-  const shareText = `🏆 Just scored ${cardData.score} PTS on @SketchCast Live Keynote Arena! (#${cardData.rank} on Room ${cardData.roomCode})`;
-  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-  const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin)}`;
+  const handleShare = async (platform: 'linkedin' | 'twitter' | 'native') => {
+    playClickSound();
+    const filename = `sketchcast-champion-${cardData.playerName.toLowerCase().replace(/\s+/g, '_')}.png`;
+    const shareTitle = `SketchCast Champion: ${cardData.playerName}`;
+    const shareText = `🏆 Just scored ${cardData.score} PTS (Rank #${cardData.rank}) on SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Realtime architecture mastery unlocked.\nJoin the interactive arena: ${window.location.origin}`;
+
+    // 1. Explicit Native OS Share Sheet (only when user clicks 'SHARE CARD')
+    if (platform === 'native') {
+      const blob = await getCardBlob();
+      const file = blob
+        ? new File([blob], filename, { type: 'image/png' })
+        : null;
+
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            files: file && navigator.canShare?.({ files: [file] }) ? [file] : undefined,
+          });
+          return;
+        } catch (err: any) {
+          if (err?.name === 'AbortError') return;
+        }
+      }
+      await handleDownloadPNG();
+      return;
+    }
+
+    // 2. Direct Social Platform Web Intents - ALWAYS opens website directly without OS popup
+    if (platform === 'linkedin') {
+      const textParam = encodeURIComponent(shareText);
+      window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${textParam}`, '_blank');
+    } else if (platform === 'twitter') {
+      const textParam = encodeURIComponent(
+        `🏆 Just scored ${cardData.score} PTS (#${cardData.rank}) on @SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Interactive architecture challenge completed: ${window.location.origin}`
+      );
+      window.open(`https://twitter.com/intent/tweet?text=${textParam}`, '_blank');
+    }
+
+    // 3. Desktop Flow: Concurrently copy image to clipboard and trigger PNG download for easy Ctrl+V pasting
+    getCardBlob().then(async (blob) => {
+      if (blob) {
+        await handleCopyImage();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    setShowShareToast(platform);
+    setTimeout(() => setShowShareToast(null), 8000);
+  };
 
   return (
     <AnimatePresence>
@@ -297,6 +360,35 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
               </div>
             </div>
 
+            {/* Desktop Share Guidance Toast */}
+            <AnimatePresence>
+              {showShareToast && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-3.5 p-2.5 sm:p-3 bg-neo-yellow text-black border-2 border-black font-mono text-xs font-bold flex items-center justify-between brutal-shadow shrink-0"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 shrink-0 text-black" />
+                    <span className="leading-tight">
+                      <strong>Card Image Copied & Downloaded!</strong> Press{' '}
+                      <kbd className="px-1 py-0.5 bg-black text-neo-yellow border border-black text-[10px] font-black">
+                        Ctrl+V
+                      </kbd>{' '}
+                      to paste the graphic card directly into your {showShareToast === 'linkedin' ? 'LinkedIn' : 'X'} post.
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowShareToast(null)}
+                    className="p-1 hover:bg-black hover:text-white border border-black cursor-pointer ml-2 shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Canvas Preview Container */}
             <div className="p-2 sm:p-3 bg-[#0B0D14] border-2 border-black brutal-shadow-sm mb-4 flex items-center justify-center overflow-hidden">
               <canvas
@@ -340,28 +432,44 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
                 </motion.button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <motion.a
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  href={tweetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
-                >
-                  <span>🐦 SHARE ON X (TWITTER)</span>
-                </motion.a>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                {canNativeShare && (
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handleShare('native')}
+                    className="py-2.5 px-3 bg-neo-mint hover:bg-[#00E58D] text-black border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm col-span-1 sm:col-span-2 md:col-span-1"
+                    title="Share with Graphic Card via Native Apps"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>📱 SHARE CARD</span>
+                  </motion.button>
+                )}
 
-                <motion.a
+                <motion.button
+                  type="button"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
-                  href={linkedInUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-2 px-3 bg-[#1A1E2B] hover:bg-[#252B3D] text-slate-200 border-2 border-black text-[11px] font-bold uppercase flex items-center justify-center space-x-1.5 transition-all text-center"
+                  onClick={() => handleShare('twitter')}
+                  className="py-2.5 px-3 bg-black hover:bg-slate-900 text-white border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm"
+                  title="Share on X (Twitter) with Champion Card"
                 >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>🐦 SHARE ON X</span>
+                </motion.button>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => handleShare('linkedin')}
+                  className="py-2.5 px-3 bg-[#0077B5] hover:bg-[#006396] text-white border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm"
+                  title="Share on LinkedIn with Champion Card"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
                   <span>💼 SHARE ON LINKEDIN</span>
-                </motion.a>
+                </motion.button>
               </div>
             </div>
           </motion.div>

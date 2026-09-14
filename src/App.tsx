@@ -325,20 +325,34 @@ export function App() {
   }, [channelManager]);
 
   // Calculate current user's performance and credentials for Masterclass Certificate
-  const myLeaderboardIndex = leaderboard.findIndex((e) => e.session_id === sessionId);
+  const myLeaderboardIndex = leaderboard.findIndex(
+    (e) =>
+      Boolean(sessionId && e.session_id === sessionId) ||
+      Boolean(userName && e.name && e.name.trim().toLowerCase() === userName.trim().toLowerCase())
+  );
   const myLeaderboardEntry = myLeaderboardIndex >= 0 ? leaderboard[myLeaderboardIndex] : undefined;
   const myRank = myLeaderboardIndex >= 0 ? myLeaderboardIndex + 1 : 1;
   const myScore = myLeaderboardEntry ? myLeaderboardEntry.score : 0;
 
-  const myBadges = calculateUserBadges({
-    correctQuizzes: myLeaderboardEntry?.correct_quizzes || 0,
-    totalQuizzesAnswered: myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes : 0,
-    streak: userStreak,
-    rank: myRank,
-    pollsVoted: userVotes ? Object.keys(userVotes).length : 0,
+  const myBadges = useMemo(() => {
+    return calculateUserBadges({
+      correctQuizzes: myLeaderboardEntry?.correct_quizzes || 0,
+      totalQuizzesAnswered: myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes : 0,
+      streak: userStreak,
+      rank: myRank,
+      pollsVoted: userVotes ? Object.keys(userVotes).length : 0,
+      fastestAnswerSeconds,
+      isTopInquirer: questions.slice(0, 3).some((q) => q.author_name.toLowerCase() === userName.toLowerCase()),
+    });
+  }, [
+    myLeaderboardEntry,
+    userStreak,
+    myRank,
+    userVotes,
     fastestAnswerSeconds,
-    isTopInquirer: questions.slice(0, 3).some((q) => q.author_name.toLowerCase() === userName.toLowerCase()),
-  });
+    questions,
+    userName,
+  ]);
 
   const handlePublishReport = (markdown: string) => {
     setSessionReport(markdown);
@@ -359,6 +373,13 @@ export function App() {
   const isHostOrAdmin = useMemo(() => {
     return userRole === 'host' || isUserRoomAdmin(room, currentUser, userName);
   }, [userRole, room, currentUser, userName]);
+
+  // Safeguard: Ensure attendees cannot be on the host-only 'rooms' tab
+  useEffect(() => {
+    if (activeTab === 'rooms' && userRole !== 'host' && !isHostOrAdmin) {
+      setActiveTab('quiz');
+    }
+  }, [activeTab, userRole, isHostOrAdmin, setActiveTab]);
 
   // Safeguard Strike Alert for Host / Admins
   const [violationAlert, setViolationAlert] = useState<{
@@ -990,6 +1011,7 @@ export function App() {
               <LeaderboardPodium
                 leaderboard={leaderboard}
                 currentUserSessionId={sessionId}
+                currentUserName={userName}
                 onExportCard={handleOpenSocialCard}
                 onOpenCertificate={() => setIsCertificateModalOpen(true)}
               />

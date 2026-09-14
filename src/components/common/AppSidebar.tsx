@@ -13,7 +13,6 @@ import {
   ChevronRight,
   X,
   Sparkles,
-  Lock,
   Crown,
   Settings,
   LogOut,
@@ -115,6 +114,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     playClickSound();
     if (userRole === 'host') {
       setUserRole('attendee');
+      if (activeTab === 'rooms') {
+        setActiveTab('quiz');
+      }
     } else {
       if (!currentUser || currentUser.is_anonymous) {
         setHostNoticeMessage('Host privileges require verified sign in. Opening auth...');
@@ -228,7 +230,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       textColor: 'text-black',
       badge: 'HUB',
       desc: 'Manage broadcast arenas',
-      requiresHost: false,
+      requiresHost: true,
       action: () => handleSelectTab('rooms'),
     },
     {
@@ -280,6 +282,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       action: () => handleAction(onOpenCertificate),
     },
   ];
+
+  // Filter host tools: completely hide host-only admin controls from attendees
+  const visibleHostToolItems = hostToolItems.filter((item) => {
+    if (userRole === 'host') return true;
+    return !item.requiresHost;
+  });
 
   // User avatar initial
   const userInitial = (userName.trim()[0] || 'U').toUpperCase();
@@ -425,114 +433,110 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="h-px bg-slate-800" />
           </div>
 
-          {/* Section 2: HOST STUDIO & MANAGEMENT */}
-          <div className="p-2 sm:p-2.5 space-y-1.5">
-            {!collapsed ? (
-              <div className="px-2 py-1 text-[10px] font-mono font-black tracking-wider text-slate-400 uppercase flex items-center justify-between">
-                <span>HOST STUDIO & AI</span>
-                {userRole === 'host' ? (
-                  <span className="px-1 py-0.2 bg-neo-yellow text-black border border-black text-[8px] font-black">
-                    HOST
-                  </span>
-                ) : (
-                  <span className="px-1 py-0.2 bg-slate-800 text-slate-400 border border-slate-700 text-[8px] font-bold">
-                    LOCKED
-                  </span>
-                )}
-              </div>
-            ) : (
-              <div className="h-1.5" />
-            )}
+          {/* Section 2: HOST STUDIO / PARTICIPANT PASS */}
+          {visibleHostToolItems.length > 0 && (
+            <div className="p-2 sm:p-2.5 space-y-1.5">
+              {!collapsed ? (
+                <div className="px-2 py-1 text-[10px] font-mono font-black tracking-wider text-slate-400 uppercase flex items-center justify-between">
+                  {userRole === 'host' ? (
+                    <>
+                      <span>HOST STUDIO & AI</span>
+                      <span className="px-1 py-0.2 bg-neo-yellow text-black border border-black text-[8px] font-black">
+                        HOST
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>CREDENTIALS & PASS</span>
+                      <span className="px-1 py-0.2 bg-neo-mint text-black border border-black text-[8px] font-black">
+                        PASS
+                      </span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="h-1.5" />
+              )}
 
-            <div className="space-y-1">
-              {hostToolItems.map((item) => {
-                const Icon = item.icon;
-                const isLocked = item.requiresHost && userRole !== 'host';
-                const isActive = item.type === 'tab' && activeTab === item.id;
+              <div className="space-y-1">
+                {visibleHostToolItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.type === 'tab' && activeTab === item.id;
 
-                return (
-                  <motion.button
-                    key={item.id}
-                    whileHover={!isLocked ? { scale: 1.02, x: collapsed ? 0 : 2 } : {}}
-                    whileTap={!isLocked ? { scale: 0.97 } : {}}
-                    onClick={() => {
-                      if (isLocked) {
-                        playClickSound(0.7);
-                        setHostNoticeMessage('Host privileges required for this tool.');
-                        setShowHostNotice(true);
-                        setTimeout(() => setShowHostNotice(false), 2500);
-                        return;
+                  return (
+                    <motion.button
+                      key={item.id}
+                      whileHover={{ scale: 1.02, x: collapsed ? 0 : 2 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        item.action();
+                      }}
+                      title={
+                        collapsed
+                          ? `${item.label} - ${item.desc}`
+                          : undefined
                       }
-                      item.action();
-                    }}
-                    disabled={isLocked}
-                    title={
-                      isLocked
-                        ? `${item.label} (Host exclusive feature)`
-                        : collapsed
-                        ? `${item.label} - ${item.desc}`
-                        : undefined
-                    }
-                    className={`w-full group flex items-center border-2 border-black transition-all text-left ${
-                      collapsed
-                        ? 'justify-center p-2 h-11'
-                        : 'px-2.5 py-2 space-x-2.5 min-h-10'
-                    } ${
-                      isLocked
-                        ? 'bg-[#10131D] text-slate-600 border-slate-800 opacity-60 cursor-not-allowed'
-                        : isActive
-                        ? `${item.bgColor} ${item.textColor} brutal-shadow-sm font-black -translate-x-px -translate-y-px cursor-pointer`
-                        : 'bg-[#151926] hover:bg-[#1E2336] text-slate-300 hover:text-white cursor-pointer'
-                    }`}
-                  >
-                    {/* Icon */}
-                    <div className="relative shrink-0 flex items-center justify-center">
-                      <div
-                        className={`w-7 h-7 flex items-center justify-center border border-black ${
-                          isLocked
-                            ? 'bg-slate-900 text-slate-600 border-slate-800'
-                            : isActive
-                            ? 'bg-black/20 text-current'
-                            : 'bg-[#10131D] text-slate-300 group-hover:text-white'
-                        }`}
-                      >
-                        {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Icon className="w-4 h-4" />}
-                      </div>
-                    </div>
-
-                    {/* Label & Details */}
-                    {!collapsed && (
-                      <div className="min-w-0 flex-1 flex items-center justify-between">
-                        <div className="min-w-0">
-                          <div
-                            className={`font-mono text-xs uppercase tracking-wide truncate ${
-                              isActive ? 'font-black' : 'font-bold'
-                            }`}
-                          >
-                            {item.label}
-                          </div>
+                      className={`w-full group flex items-center border-2 border-black transition-all text-left ${
+                        collapsed
+                          ? 'justify-center p-2 h-11'
+                          : 'px-2.5 py-2 space-x-2.5 min-h-10'
+                      } ${
+                        isActive
+                          ? `${item.bgColor} ${item.textColor} brutal-shadow-sm font-black -translate-x-px -translate-y-px cursor-pointer`
+                          : 'bg-[#151926] hover:bg-[#1E2336] text-slate-300 hover:text-white cursor-pointer'
+                      }`}
+                    >
+                      {/* Icon */}
+                      <div className="relative shrink-0 flex items-center justify-center">
+                        <div
+                          className={`w-7 h-7 flex items-center justify-center border border-black ${
+                            isActive
+                              ? 'bg-black/20 text-current'
+                              : 'bg-[#10131D] text-slate-300 group-hover:text-white'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
                         </div>
 
-                        {item.badge && (
-                          <span
-                            className={`ml-1.5 px-1.5 py-0.2 font-mono text-[9px] font-black border border-black shrink-0 ${
-                              isLocked
-                                ? 'bg-slate-800 text-slate-500 border-slate-700'
-                                : isActive
-                                ? 'bg-black text-white'
-                                : 'bg-slate-800 text-slate-300'
-                            }`}
-                          >
+                        {collapsed && item.badge && (
+                          <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-neo-pink text-white font-mono font-black text-[9px] border border-black flex items-center justify-center rounded-full">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                    )}
-                  </motion.button>
-                );
-              })}
+
+                      {/* Label & Details */}
+                      {!collapsed && (
+                        <div className="min-w-0 flex-1 flex items-center justify-between">
+                          <div className="min-w-0">
+                            <div
+                              className={`font-mono text-xs uppercase tracking-wide truncate ${
+                                isActive ? 'font-black' : 'font-bold'
+                              }`}
+                            >
+                              {item.label}
+                            </div>
+                          </div>
+
+                          {item.badge && (
+                            <span
+                              className={`ml-1.5 px-1.5 py-0.2 font-mono text-[9px] font-black border border-black shrink-0 ${
+                                isActive
+                                  ? 'bg-black text-white'
+                                  : 'bg-slate-800 text-slate-300'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Section 3: FUTURE FEATURES EXTENSION HOOK */}
           {!collapsed && (

@@ -9,6 +9,7 @@ interface LeaderboardPodiumProps {
   leaderboard: LeaderboardEntry[];
   compact?: boolean;
   currentUserSessionId?: string;
+  currentUserName?: string;
   onExportCard?: (entry: LeaderboardEntry, rank: number) => void;
   onOpenCertificate?: () => void;
 }
@@ -17,6 +18,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
   leaderboard,
   compact = false,
   currentUserSessionId,
+  currentUserName,
   onExportCard,
   onOpenCertificate,
 }) => {
@@ -179,7 +181,13 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
           </div>
         ) : (
           leaderboard.map((entry, index) => {
-            const isMe = entry.session_id === currentUserSessionId;
+            const isMe =
+              Boolean(currentUserSessionId && entry.session_id === currentUserSessionId) ||
+              Boolean(
+                currentUserName &&
+                entry.name &&
+                entry.name.trim().toLowerCase() === currentUserName.trim().toLowerCase()
+              );
             const rank = index + 1;
             const badges = calculateUserBadges({
               correctQuizzes: entry.correct_quizzes,

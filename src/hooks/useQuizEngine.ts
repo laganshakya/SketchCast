@@ -474,7 +474,12 @@ export function useQuizEngine({
         }
 
         setLeaderboard((prev) => {
-          const exists = prev.find((u) => u.session_id === sessionId);
+          const cleanUserName = (userName || '').trim().toLowerCase();
+          const exists = prev.find(
+            (u) =>
+              Boolean(sessionId && u.session_id === sessionId) ||
+              Boolean(cleanUserName && u.name && u.name.trim().toLowerCase() === cleanUserName)
+          );
           let updatedBoard: LeaderboardEntry[];
           let updatedEntry: LeaderboardEntry;
           if (exists) {
@@ -488,7 +493,7 @@ export function useQuizEngine({
               fastest_answer_seconds: Math.min(exists.fastest_answer_seconds || 999, answerTimeSeconds),
             };
             updatedBoard = prev
-              .map((u) => (u.session_id === sessionId ? updatedEntry : u))
+              .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
               .sort((a, b) => b.score - a.score);
           } else {
             updatedEntry = {
@@ -515,7 +520,12 @@ export function useQuizEngine({
           // Double down penalty (-50 pts)
           points = -50;
           setLeaderboard((prev) => {
-            const exists = prev.find((u) => u.session_id === sessionId);
+            const cleanUserName = (userName || '').trim().toLowerCase();
+            const exists = prev.find(
+              (u) =>
+                Boolean(sessionId && u.session_id === sessionId) ||
+                Boolean(cleanUserName && u.name && u.name.trim().toLowerCase() === cleanUserName)
+            );
             if (exists) {
               const updatedEntry = {
                 ...exists,
@@ -523,7 +533,7 @@ export function useQuizEngine({
                 streak: 0,
               };
               const updatedBoard = prev
-                .map((u) => (u.session_id === sessionId ? updatedEntry : u))
+                .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
                 .sort((a, b) => b.score - a.score);
               dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
               if (channelManager) {
