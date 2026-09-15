@@ -101,19 +101,17 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     const maxName = cardData.playerName.length > 22 ? cardData.playerName.slice(0, 20) + '..' : cardData.playerName;
     ctx.fillText(maxName.toUpperCase(), 40, 220);
 
-    // 7. Stat Cards Grid (4 Stat Boxes)
+    // 7. Stat Cards Grid (2 Stat Boxes)
     const stats = [
-      { label: 'FINAL SCORE', value: `${cardData.score} PTS`, color: '#FFE600' },
       { label: 'QUIZZES SOLVED', value: `${cardData.correctQuizzes} / ${cardData.totalQuizzes || cardData.correctQuizzes}`, color: '#00F59B' },
-      { label: 'MAX STREAK', value: `${cardData.maxStreak}X COMBO`, color: '#FF8833' },
       { label: 'POLLS PARTICIPATED', value: `${cardData.pollsVoted} VOTES`, color: '#00F0FF' },
     ];
 
-    const boxWidth = 260;
+    const boxWidth = 320;
     const boxHeight = 110;
     const boxStartX = 40;
-    const boxStartY = 260;
-    const gap = 24;
+    const boxStartY = 280;
+    const gap = 32;
 
     stats.forEach((st, idx) => {
       const bx = boxStartX + idx * (boxWidth + gap);
@@ -128,62 +126,13 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
 
       // Value
       ctx.fillStyle = st.color;
-      ctx.font = '900 28px "JetBrains Mono", monospace';
-      ctx.fillText(st.value, bx + 16, by + 50);
+      ctx.font = '900 32px "JetBrains Mono", monospace';
+      ctx.fillText(st.value, bx + 24, by + 56);
 
       // Label
       ctx.fillStyle = '#94A3B8';
-      ctx.font = 'bold 13px "JetBrains Mono", monospace';
-      ctx.fillText(st.label, bx + 16, by + 86);
-    });
-
-    // 8. Badges Banner Row
-    ctx.fillStyle = '#1C202E';
-    ctx.fillRect(40, 400, width - 80, 110);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(40, 400, width - 80, 110);
-
-    ctx.fillStyle = '#94A3B8';
-    ctx.font = 'bold 13px "JetBrains Mono", monospace';
-    ctx.fillText('UNLOCKED ACHIEVEMENTS & BADGES:', 56, 430);
-
-    const badgeList = cardData.badges.length > 0 ? cardData.badges : [
-      { icon: '⚡', name: 'Speed Demon', desc: 'Fast answers' },
-      { icon: '🔥', name: 'On Fire', desc: '3x Streak' },
-      { icon: '👑', name: 'Podium Champ', desc: 'Top 3' },
-      { icon: '🗳️', name: 'Democracy Hero', desc: 'Active Voter' },
-    ];
-
-    badgeList.slice(0, 4).forEach((b, idx) => {
-      const bbx = 56 + idx * 270;
-      const bby = 445;
-
-      const rarityColor =
-        b.rarity === 'legendary'
-          ? '#FFE600'
-          : b.rarity === 'epic'
-          ? '#FF2A6D'
-          : b.rarity === 'rare'
-          ? '#00F0FF'
-          : '#475569';
-
-      ctx.fillStyle = '#0F111A';
-      ctx.fillRect(bbx, bby, 250, 48);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = rarityColor;
-      ctx.strokeRect(bbx, bby, 250, 48);
-
-      ctx.font = '20px sans-serif';
-      ctx.fillText(b.icon, bbx + 10, bby + 32);
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 14px "JetBrains Mono", monospace';
-      ctx.fillText(b.name, bbx + 42, bby + 26);
-
-      ctx.fillStyle = '#94A3B8';
-      ctx.font = '10px "JetBrains Mono", monospace';
-      ctx.fillText(b.desc, bbx + 42, bby + 40);
+      ctx.font = 'bold 15px "JetBrains Mono", monospace';
+      ctx.fillText(st.label, bx + 24, by + 90);
     });
 
     // 9. Footer Watermark
@@ -257,7 +206,7 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     playClickSound();
     const filename = `sketchcast-champion-${cardData.playerName.toLowerCase().replace(/\s+/g, '_')}.png`;
     const shareTitle = `SketchCast Champion: ${cardData.playerName}`;
-    const shareText = `🏆 Just scored ${cardData.score} PTS (Rank #${cardData.rank}) on SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Realtime architecture mastery unlocked.\nJoin the interactive arena: ${window.location.origin}`;
+    const shareText = `🏆 Answered ${cardData.correctQuizzes} correctly (Rank #${cardData.rank}) on SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Realtime architecture mastery unlocked.\nJoin the interactive arena: ${window.location.origin}`;
 
     // 1. Explicit Native OS Share Sheet (only when user clicks 'SHARE CARD')
     if (platform === 'native') {
@@ -288,7 +237,7 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${textParam}`, '_blank');
     } else if (platform === 'twitter') {
       const textParam = encodeURIComponent(
-        `🏆 Just scored ${cardData.score} PTS (#${cardData.rank}) on @SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Interactive architecture challenge completed: ${window.location.origin}`
+        `🏆 Answered ${cardData.correctQuizzes} correctly (#${cardData.rank}) on @SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Interactive architecture challenge completed: ${window.location.origin}`
       );
       window.open(`https://twitter.com/intent/tweet?text=${textParam}`, '_blank');
     }

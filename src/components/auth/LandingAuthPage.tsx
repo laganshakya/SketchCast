@@ -221,7 +221,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
               </div>
               <div>
                 <div className="text-xs font-black uppercase text-white">TECH QUIZZING</div>
-                <div className="text-[11px] text-slate-400">Timed speed rounds & leaderboard streaks</div>
+                <div className="text-[11px] text-slate-400">Collaborative live architecture sessions</div>
               </div>
             </div>
 
@@ -250,7 +250,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                 <Trophy className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-black uppercase text-white">HIGH SCORES</div>
+                    <div className="text-xs font-black uppercase text-white">READY TO PARTICIPATE</div>
                 <div className="text-[11px] text-slate-400">Top 3 visual podium & player rankings</div>
               </div>
             </div>

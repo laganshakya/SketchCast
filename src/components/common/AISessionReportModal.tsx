@@ -413,7 +413,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
 
     const top3Leaderboard = leaderboard.slice(0, 3).map((u) => ({
       name: u.name,
-      score: u.score,
+      score: u.correct_quizzes,
     }));
 
     try {
@@ -485,7 +485,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
         pollsCount: polls.length,
         questionsCount: questions.length,
         leaderboardEntries: leaderboard.length,
-        topScore: leaderboard[0]?.score || 0,
+        topScore: leaderboard[0]?.correct_quizzes || 0,
       },
       reportMarkdown: activeMarkdown,
       quizzes: quizzes.map((q) => ({
@@ -570,7 +570,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
                       <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
                       <li>{polls.length} Live Community Polls</li>
                       <li>{questions.length} Audience Q&A Submissions</li>
-                      <li>{leaderboard.length} Leaderboard participants (Top score: {leaderboard[0]?.score || 0} pts)</li>
+                      <li>{leaderboard.length} Leaderboard participants (Top correct: {leaderboard[0]?.correct_quizzes || 0})</li>
                     </ul>
                   </div>
 

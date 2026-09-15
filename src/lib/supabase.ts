@@ -102,8 +102,52 @@ export function onAuthChange(callback: (user: User | null, session: Session | nu
 }
 
 // ================= ROOMS MANAGEMENT & ISOLATION =================
+
+export function markRoomAsCreatedByMe(roomCode: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = roomCode.toUpperCase().trim();
+    const stored = localStorage.getItem('sketchcast_my_created_rooms');
+    const list: string[] = stored ? JSON.parse(stored) : [];
+    if (!list.includes(key)) {
+      list.push(key);
+      localStorage.setItem('sketchcast_my_created_rooms', JSON.stringify(list));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function isRoomCreatedByMe(roomCode: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const key = (roomCode || '').toUpperCase().trim();
+    const stored = localStorage.getItem('sketchcast_my_created_rooms');
+    const list: string[] = stored ? JSON.parse(stored) : [];
+    return list.includes(key);
+  } catch {
+    return false;
+  }
+}
+
+export function unmarkRoomAsCreatedByMe(roomCode: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = (roomCode || '').toUpperCase().trim();
+    const stored = localStorage.getItem('sketchcast_my_created_rooms');
+    if (stored) {
+      const list: string[] = JSON.parse(stored);
+      const filtered = list.filter((c) => c.toUpperCase().trim() !== key);
+      localStorage.setItem('sketchcast_my_created_rooms', JSON.stringify(filtered));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function isUserRoomAdmin(room: Room | null | undefined, user?: User | null, userName?: string): boolean {
   if (!room) return false;
+  const roomCode = (room.code || '').toUpperCase().trim();
   const cleanName = (userName || '').trim().toLowerCase();
   const cleanEmail = (user?.email || '').trim().toLowerCase();
   const userId = user?.id;
@@ -112,15 +156,18 @@ export function isUserRoomAdmin(room: Room | null | undefined, user?: User | nul
   if (userId && room.host_id && room.host_id === userId) return true;
   if (cleanEmail && room.host_email && room.host_email.trim().toLowerCase() === cleanEmail) return true;
 
-  // Fallback for legacy room with no host_id/host_email configured
-  if (!room.host_id && !room.host_email && cleanName && room.host_name && room.host_name.trim().toLowerCase() === cleanName) {
+  // 2. Locally created on this device / browser session
+  if (roomCode && isRoomCreatedByMe(roomCode)) return true;
+
+  // 3. Fallback for host_name match (covers guest hosts and legacy creations)
+  if (cleanName && room.host_name && room.host_name.trim().toLowerCase() === cleanName) {
     return true;
   }
 
-  // 2. Co-Admin match in room.admins array
+  // 4. Co-Admin match in room.admins array
   const admins = room.admins || [];
   if (admins.length > 0) {
-    return admins.some((adminIdentifier) => {
+    const matched = admins.some((adminIdentifier) => {
       if (!adminIdentifier) return false;
       const cleanAdmin = adminIdentifier.trim().toLowerCase();
       if (userId && (adminIdentifier === userId || cleanAdmin === userId.toLowerCase())) return true;
@@ -128,6 +175,20 @@ export function isUserRoomAdmin(room: Room | null | undefined, user?: User | nul
       if (cleanName && cleanAdmin === cleanName) return true;
       return false;
     });
+    if (matched) return true;
+  }
+
+  // 5. Fallback check from localStorage room admins cache
+  try {
+    const localAdmins = localStorage.getItem(`sketchcast_room_admins_${roomCode}`);
+    if (localAdmins) {
+      const parsed: string[] = JSON.parse(localAdmins);
+      if (parsed.some((a) => a && (a.toLowerCase() === cleanName || (cleanEmail && a.toLowerCase() === cleanEmail)))) {
+        return true;
+      }
+    }
+  } catch {
+    // ignore
   }
 
   return false;
@@ -170,6 +231,7 @@ export async function dbFetchRooms(): Promise<Room[]> {
   }
 
   if (!supabase) return localRooms;
+
   try {
     const { data, error } = await supabase
       .from('rooms')
@@ -177,7 +239,8 @@ export async function dbFetchRooms(): Promise<Room[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data) return localRooms;
-    return data.map((r: any) => {
+
+    const remoteRooms: Room[] = data.map((r: any) => {
       let admins = r.admins || [];
       if (!admins || admins.length === 0) {
         try {
@@ -200,7 +263,28 @@ export async function dbFetchRooms(): Promise<Room[]> {
         admins,
         ai_model: aiModel,
       };
-    }) as Room[];
+    });
+
+    // Merge remote and local rooms so rooms created offline/locally are never lost
+    const mergedMap = new Map<string, Room>();
+    for (const r of remoteRooms) {
+      mergedMap.set(r.code.toUpperCase().trim(), r);
+    }
+    for (const l of localRooms) {
+      const key = l.code.toUpperCase().trim();
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, l);
+      }
+    }
+
+    const merged = Array.from(mergedMap.values());
+    try {
+      localStorage.setItem('sketchcast_local_rooms', JSON.stringify(merged));
+    } catch {
+      // ignore
+    }
+
+    return merged;
   } catch {
     return localRooms;
   }
@@ -211,9 +295,22 @@ export async function dbFetchMyRooms(user?: User | null, userName?: string): Pro
   return allRooms.filter((r) => isUserRoomAdmin(r, user, userName));
 }
 
-export async function dbCreateRoom(room: Room) {
+export async function dbCreateRoom(room: Room): Promise<Room> {
   const targetKey = room.code.toUpperCase().trim();
+  markRoomAsCreatedByMe(targetKey);
+
+  // 1. Immediately store to local storage so the room exists instantly on this client
   try {
+    const stored = localStorage.getItem('sketchcast_local_rooms');
+    let localRooms: Room[] = stored ? JSON.parse(stored) : [];
+    const idx = localRooms.findIndex((r) => r.code.toUpperCase().trim() === targetKey);
+    if (idx >= 0) {
+      localRooms[idx] = room;
+    } else {
+      localRooms.unshift(room);
+    }
+    localStorage.setItem('sketchcast_local_rooms', JSON.stringify(localRooms));
+
     if (room.admins && room.admins.length > 0) {
       localStorage.setItem(`sketchcast_room_admins_${targetKey}`, JSON.stringify(room.admins));
     }
@@ -224,28 +321,44 @@ export async function dbCreateRoom(room: Room) {
     // ignore
   }
 
-  if (!supabase) return;
-  try {
-    await supabase.from('rooms').upsert({
-      id: room.id,
-      code: targetKey,
-      title: room.title.trim(),
-      host_id: room.host_id,
-      host_name: room.host_name,
-      host_email: room.host_email || null,
-      admins: room.admins || [],
-      ai_model: room.ai_model || null,
-      created_at: room.created_at,
-    });
-  } catch {
-    // fallback
+  // 2. Sync to Supabase cloud database
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('rooms').upsert({
+        id: room.id,
+        code: targetKey,
+        title: room.title.trim(),
+        host_id: room.host_id || null,
+        host_name: room.host_name,
+        host_email: room.host_email || null,
+        admins: room.admins || [],
+        ai_model: room.ai_model || null,
+        created_at: room.created_at,
+      });
+      if (error) {
+        console.warn('Supabase dbCreateRoom error, preserved in local storage:', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase upsert exception, preserved in local storage:', err);
+    }
   }
+
+  return room;
 }
 
 export async function dbUpdateRoomAdmins(roomCode: string, admins: string[]) {
   const targetKey = roomCode.toUpperCase().trim();
   try {
     localStorage.setItem(`sketchcast_room_admins_${targetKey}`, JSON.stringify(admins));
+    const stored = localStorage.getItem('sketchcast_local_rooms');
+    if (stored) {
+      const localRooms: Room[] = JSON.parse(stored);
+      const room = localRooms.find((r) => r.code.toUpperCase().trim() === targetKey);
+      if (room) {
+        room.admins = admins;
+        localStorage.setItem('sketchcast_local_rooms', JSON.stringify(localRooms));
+      }
+    }
   } catch {
     // ignore
   }
@@ -263,6 +376,15 @@ export async function dbUpdateRoomAIModel(roomCode: string, aiModel: string) {
   try {
     localStorage.setItem(`sketchcast_room_ai_model_${targetKey}`, aiModel);
     localStorage.setItem('sketchcast_mesh_selected_model', aiModel);
+    const stored = localStorage.getItem('sketchcast_local_rooms');
+    if (stored) {
+      const localRooms: Room[] = JSON.parse(stored);
+      const room = localRooms.find((r) => r.code.toUpperCase().trim() === targetKey);
+      if (room) {
+        room.ai_model = aiModel;
+        localStorage.setItem('sketchcast_local_rooms', JSON.stringify(localRooms));
+      }
+    }
   } catch {
     // ignore
   }
@@ -276,13 +398,31 @@ export async function dbUpdateRoomAIModel(roomCode: string, aiModel: string) {
 }
 
 export async function dbDeleteRoom(roomId: string, roomCode: string) {
+  const targetKey = (roomCode || '').toUpperCase().trim();
+
+  // 1. Remove from local storage & my created rooms
+  unmarkRoomAsCreatedByMe(targetKey);
+  try {
+    const stored = localStorage.getItem('sketchcast_local_rooms');
+    if (stored) {
+      const localRooms: Room[] = JSON.parse(stored);
+      const filtered = localRooms.filter((r) => r.code.toUpperCase().trim() !== targetKey && r.id !== roomId);
+      localStorage.setItem('sketchcast_local_rooms', JSON.stringify(filtered));
+    }
+    localStorage.removeItem(`sketchcast_room_admins_${targetKey}`);
+    localStorage.removeItem(`sketchcast_room_ai_model_${targetKey}`);
+  } catch {
+    // ignore
+  }
+
   if (!supabase) return;
   try {
-    await supabase.from('rooms').delete().eq('id', roomId);
-    await supabase.from('questions').delete().or(`room_id.eq.${roomId},room_id.eq.${roomCode}`);
-    await supabase.from('polls').delete().or(`room_id.eq.${roomId},room_id.eq.${roomCode}`);
-    await supabase.from('quiz_rounds').delete().or(`room_id.eq.${roomId},room_id.eq.${roomCode}`);
-    await supabase.from('leaderboard').delete().or(`room_id.eq.${roomId},room_id.eq.${roomCode}`);
+    await supabase.from('rooms').delete().or(`id.eq.${roomId},code.eq.${targetKey}`);
+    await supabase.from('questions').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
+    await supabase.from('polls').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
+    await supabase.from('quiz_rounds').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
+    await supabase.from('leaderboard').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
+    await supabase.from('surveys').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
   } catch {
     // fallback
   }
@@ -310,7 +450,7 @@ export async function dbFetchActiveQuizRound(roomId: string): Promise<QuizRoundS
       isRevealed: round.is_revealed,
       userSelectedOption: null,
       isCorrect: null,
-      pointsEarned: 0,
+
       votesDistribution: round.votes_distribution || { A: 0, B: 0, C: 0, D: 0 },
     };
   } catch {
@@ -594,12 +734,9 @@ export async function dbFetchLeaderboard(roomId: string): Promise<LeaderboardEnt
         deduplicated.push({
           session_id: row.session_id,
           name: row.name,
-          score: row.score || 0,
           correct_quizzes: row.correct_quizzes || 0,
           polls_voted: row.polls_voted || 0,
-          streak: row.streak || 0,
           avatar_color: row.avatar_color || '#FF2A6D',
-          fastest_answer_seconds: row.fastest_answer_seconds || undefined,
         });
       }
     });
@@ -632,17 +769,11 @@ export async function dbUpsertLeaderboardEntry(entry: LeaderboardEntry, roomId: 
       session_id: targetSessionId,
       room_id: targetKey,
       name: cleanName,
-      score: entry.score,
       correct_quizzes: entry.correct_quizzes,
       polls_voted: entry.polls_voted,
-      streak: entry.streak,
       avatar_color: entry.avatar_color,
       updated_at: new Date().toISOString(),
     };
-
-    if (entry.fastest_answer_seconds) {
-      basePayload.fastest_answer_seconds = entry.fastest_answer_seconds;
-    }
 
     const { error } = await supabase.from('leaderboard').upsert(basePayload);
     if (error && (error.message?.includes('column') || error.code === 'PGRST204')) {

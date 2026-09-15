@@ -86,6 +86,20 @@ export function useQAFeed({
     });
   }, [currentRoomKey, getStoredPoints]);
 
+  // When roomCode switches, immediately reset questions and reload upvotedIds for the new room
+  const [prevRoomKey, setPrevRoomKey] = useState(currentRoomKey);
+  if (prevRoomKey !== currentRoomKey) {
+    setPrevRoomKey(currentRoomKey);
+    try {
+      const primary = localStorage.getItem(`sketchcast_upvotes_${sessionId}_${currentRoomKey}`);
+      const fallback = localStorage.getItem(`sketchcast_upvotes_name_${encodeURIComponent(userName)}_${currentRoomKey}`);
+      setUpvotedIds(primary ? new Set(JSON.parse(primary)) : fallback ? new Set(JSON.parse(fallback)) : new Set());
+    } catch {
+      setUpvotedIds(new Set());
+    }
+    setQuestions([]);
+  }
+
   // Load from Supabase DB on initialization, roomCode change, and tab switch to 'qa'
   useEffect(() => {
     syncQuestionsFromDB();

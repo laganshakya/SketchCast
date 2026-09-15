@@ -318,7 +318,6 @@ export const SpotlightRouletteModal: React.FC<SpotlightRouletteModalProps> = ({
             rewardPerk: selectedPerk.name,
             rewardIcon: selectedPerk.icon,
             rewardDesc: selectedPerk.description,
-            bonusPoints: selectedPerk.id === 'bonus-points' ? 500 : undefined,
             timestamp: Date.now(),
           });
         }

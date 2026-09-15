@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import confetti from 'canvas-confetti';
+
 import type {
   QuizQuestion,
   QuizRoundState,
   LeaderboardEntry,
-  PowerUpType,
-  PowerUpInventory,
-  PointsBreakdown,
 } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { playPowerUpSound, playStreakMultiplierSound } from '../lib/soundFx';
+
 import {
   dbFetchLeaderboard,
   dbUpsertLeaderboardEntry,
@@ -36,24 +33,8 @@ export function useQuizEngine({
 }) {
   const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
   const quizStorageKey = `sketchcast_active_quiz_round_${currentRoomKey}`;
-  const powerUpsStorageKey = `sketchcast_powerups_${currentRoomKey}_${sessionId}`;
 
-  const [powerUpInventory, setPowerUpInventory] = useState<PowerUpInventory>(() => {
-    try {
-      const stored = localStorage.getItem(powerUpsStorageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // ignore
-    }
-    return { '50-50': 1, 'double-down': 1, 'streak-shield': 1, 'time-freeze': 1 };
-  });
 
-  const [activePowerUp, setActivePowerUp] = useState<PowerUpType | null>(null);
-  const [eliminatedOptionIds, setEliminatedOptionIds] = useState<string[]>([]);
-  const isTimeFrozenRef = useRef<boolean>(false);
-  const freezeTimeoutRef = useRef<number | null>(null);
   const votedUsersRef = useRef<Set<string>>(new Set());
 
   const [quizState, setQuizState] = useState<QuizRoundState>(() => {
@@ -74,7 +55,6 @@ export function useQuizEngine({
       isRevealed: false,
       userSelectedOption: null,
       isCorrect: null,
-      pointsEarned: 0,
       votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
     };
   });
@@ -86,16 +66,6 @@ export function useQuizEngine({
   }, [leaderboard]);
 
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
-  const [userStreak, setUserStreak] = useState<number>(0);
-
-  const [fastestAnswerSeconds, setFastestAnswerSeconds] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(`sketchcast_fastest_${currentRoomKey}`);
-      return saved ? parseFloat(saved) : 999;
-    } catch {
-      return 999;
-    }
-  });
 
   const timerRef = useRef<number | null>(null);
 
@@ -126,13 +96,11 @@ export function useQuizEngine({
             ...remoteRound,
             userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
             isCorrect: isSameQuestion ? prev.isCorrect : null,
-            pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
-            pointsBreakdown: isSameQuestion ? prev.pointsBreakdown : null,
             votesDistribution: mergedVotes,
           };
         });
 
-        if (remoteRound.endTime && !isTimeFrozenRef.current) {
+        if (remoteRound.endTime) {
           const remaining = Math.max(0, Math.ceil((remoteRound.endTime - Date.now()) / 1000));
           setTimeRemaining(remaining);
         }
@@ -145,11 +113,45 @@ export function useQuizEngine({
           isRevealed: false,
           userSelectedOption: null,
           isCorrect: null,
-          pointsEarned: 0,
           votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
         });
       }
     });
+  }, [currentRoomKey]);
+
+  // When roomCode switches, immediately reset quiz state and clear previous room's voted users
+  const [prevRoomKey, setPrevRoomKey] = useState(currentRoomKey);
+  if (prevRoomKey !== currentRoomKey) {
+    setPrevRoomKey(currentRoomKey);
+    try {
+      const stored = localStorage.getItem(quizStorageKey);
+      setQuizState(stored ? JSON.parse(stored) : {
+        isActive: false,
+        question: null,
+        endTime: null,
+        totalSeconds: 25,
+        isRevealed: false,
+        userSelectedOption: null,
+        isCorrect: null,
+        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+      });
+    } catch {
+      setQuizState({
+        isActive: false,
+        question: null,
+        endTime: null,
+        totalSeconds: 25,
+        isRevealed: false,
+        userSelectedOption: null,
+        isCorrect: null,
+        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+      });
+    }
+    setLeaderboard([]);
+  }
+
+  useEffect(() => {
+    votedUsersRef.current.clear();
   }, [currentRoomKey]);
 
   // Load from Supabase DB on mount, when roomCode changes, or when active tab switches to quiz/leaderboard
@@ -173,12 +175,8 @@ export function useQuizEngine({
 
         const isSameQuestion = prev.question?.id === remoteState.question?.id;
 
-        // Reset power-ups and registered votes if this is a new question round
+        // Reset registered votes if this is a new question round
         if (!isSameQuestion) {
-          setActivePowerUp(null);
-          setEliminatedOptionIds([]);
-          isTimeFrozenRef.current = false;
-          if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
           votedUsersRef.current.clear();
         }
 
@@ -196,8 +194,6 @@ export function useQuizEngine({
           ...remoteState,
           userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
           isCorrect: isSameQuestion ? prev.isCorrect : null,
-          pointsEarned: isSameQuestion ? prev.pointsEarned : 0,
-          pointsBreakdown: isSameQuestion ? prev.pointsBreakdown : null,
           votesDistribution: mergedVotes,
         };
 
@@ -207,7 +203,7 @@ export function useQuizEngine({
           // ignore
         }
 
-        if (next.endTime && !isTimeFrozenRef.current) {
+        if (next.endTime) {
           const remaining = Math.max(0, Math.ceil((next.endTime - Date.now()) / 1000));
           setTimeRemaining(remaining);
         }
@@ -292,8 +288,6 @@ export function useQuizEngine({
   useEffect(() => {
     if (quizState.isActive && quizState.endTime && !quizState.isRevealed) {
       const updateTimer = () => {
-        // If this specific attendee used Time Freeze, their local countdown is frozen
-        if (isTimeFrozenRef.current) return;
         const remaining = Math.max(0, Math.ceil((quizState.endTime! - Date.now()) / 1000));
         setTimeRemaining(remaining);
 
@@ -315,90 +309,11 @@ export function useQuizEngine({
     }
   }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer, userRole]);
 
-  const triggerConfetti = () => {
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#FFE600', '#FF2A6D', '#00F0FF', '#00F59B', '#9B5DE5'],
-      });
-    } catch {
-      // ignore
-    }
-  };
-
-  const activatePowerUp = useCallback(
-    (type: PowerUpType) => {
-      if (
-        !quizState.isActive ||
-        quizState.isRevealed ||
-        quizState.userSelectedOption ||
-        (powerUpInventory[type] || 0) <= 0 ||
-        activePowerUp === type
-      ) {
-        return;
-      }
-
-      // Deduct inventory
-      const nextInventory = {
-        ...powerUpInventory,
-        [type]: Math.max(0, (powerUpInventory[type] || 0) - 1),
-      };
-      setPowerUpInventory(nextInventory);
-      try {
-        localStorage.setItem(powerUpsStorageKey, JSON.stringify(nextInventory));
-      } catch {
-        // ignore
-      }
-
-      playPowerUpSound(type);
-
-      if (type === '50-50') {
-        if (quizState.question) {
-          const wrongOpts = quizState.question.options
-            .filter((o) => o.id !== quizState.question!.correctOptionId)
-            .map((o) => o.id);
-          // Randomly pick up to 2 wrong options to prune
-          const shuffled = [...wrongOpts].sort(() => 0.5 - Math.random());
-          const toEliminate = shuffled.slice(0, 2);
-          setEliminatedOptionIds(toEliminate);
-        }
-      } else if (type === 'double-down') {
-        setActivePowerUp('double-down');
-      } else if (type === 'streak-shield') {
-        setActivePowerUp('streak-shield');
-      } else if (type === 'time-freeze') {
-        setActivePowerUp('time-freeze');
-        setTimeRemaining((prev) => prev + 5);
-        isTimeFrozenRef.current = true;
-        if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
-        freezeTimeoutRef.current = window.setTimeout(() => {
-          isTimeFrozenRef.current = false;
-        }, 5000);
-      }
-    },
-    [
-      quizState.isActive,
-      quizState.isRevealed,
-      quizState.userSelectedOption,
-      quizState.question,
-      powerUpInventory,
-      activePowerUp,
-      powerUpsStorageKey,
-    ]
-  );
-
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
       const duration = question.timeLimitSeconds || 25;
       const endTime = Date.now() + duration * 1000;
 
-      // Reset tactical power-up states for new round
-      setActivePowerUp(null);
-      setEliminatedOptionIds([]);
-      isTimeFrozenRef.current = false;
-      if (freezeTimeoutRef.current) clearTimeout(freezeTimeoutRef.current);
       votedUsersRef.current.clear();
 
       const nextState: QuizRoundState = {
@@ -409,7 +324,6 @@ export function useQuizEngine({
         isRevealed: false,
         userSelectedOption: null,
         isCorrect: null,
-        pointsEarned: 0,
         votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
         updatedAt: Date.now(),
       };
@@ -443,51 +357,8 @@ export function useQuizEngine({
       votedUsersRef.current.add(sessionId);
 
       const isCorrect = quizState.question?.correctOptionId === optionId;
-      let points = 0;
-      let breakdown: PointsBreakdown | null = null;
 
       if (isCorrect) {
-        const timeRatio = Math.max(0.1, timeRemaining / quizState.totalSeconds);
-        const answerTimeSeconds = Number(Math.max(0.2, quizState.totalSeconds - timeRemaining).toFixed(1));
-        if (answerTimeSeconds < fastestAnswerSeconds) {
-          setFastestAnswerSeconds(answerTimeSeconds);
-          try {
-            localStorage.setItem(`sketchcast_fastest_${currentRoomKey}`, String(answerTimeSeconds));
-          } catch {
-            // ignore
-          }
-        }
-
-        const nextStreak = userStreak + 1;
-        // Streak multipliers: 1.5x at 2x streak, 2.0x at 3x+ streak
-        const streakMultiplier = nextStreak >= 3 ? 2.0 : nextStreak >= 2 ? 1.5 : 1.0;
-        const basePoints = 100;
-        const speedBonus = Math.round(timeRatio * 150);
-        const isDoubleDown = activePowerUp === 'double-down';
-        let calculatedPoints = Math.round((basePoints + speedBonus) * streakMultiplier);
-
-        // Apply Double-Down 2x multiplier
-        if (isDoubleDown) {
-          calculatedPoints = calculatedPoints * 2;
-        }
-
-        points = calculatedPoints;
-        breakdown = {
-          basePoints,
-          speedBonus,
-          answerTimeSeconds,
-          streakMultiplier,
-          isDoubleDown,
-          total: points,
-        };
-        setUserStreak(nextStreak);
-        triggerConfetti();
-
-        // Custom Sound Fanfare based on streak
-        if (nextStreak >= 2) {
-          playStreakMultiplierSound(streakMultiplier);
-        }
-
         setLeaderboard((prev) => {
           const cleanUserName = (userName || '').trim().toLowerCase();
           const exists = prev.find(
@@ -501,27 +372,21 @@ export function useQuizEngine({
             updatedEntry = {
               ...exists,
               name: userName,
-              score: exists.score + points,
               correct_quizzes: exists.correct_quizzes + 1,
-              streak: nextStreak,
               avatar_color: userRole === 'host' ? '#FFE600' : exists.avatar_color || '#FF2A6D',
-              fastest_answer_seconds: Math.min(exists.fastest_answer_seconds || 999, answerTimeSeconds),
             };
             updatedBoard = prev
               .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
-              .sort((a, b) => b.score - a.score);
+              .sort((a, b) => b.correct_quizzes - a.correct_quizzes);
           } else {
             updatedEntry = {
               session_id: sessionId,
               name: userName,
-              score: points,
               correct_quizzes: 1,
               polls_voted: 0,
-              streak: nextStreak,
               avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
-              fastest_answer_seconds: answerTimeSeconds,
             };
-            updatedBoard = [...prev, updatedEntry].sort((a, b) => b.score - a.score);
+            updatedBoard = [...prev, updatedEntry].sort((a, b) => b.correct_quizzes - a.correct_quizzes);
           }
           dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
           if (channelManager) {
@@ -529,44 +394,6 @@ export function useQuizEngine({
           }
           return updatedBoard;
         });
-      } else {
-        // Incorrect answer handling
-        if (activePowerUp === 'double-down') {
-          // Double down penalty (-50 pts)
-          points = -50;
-          setLeaderboard((prev) => {
-            const cleanUserName = (userName || '').trim().toLowerCase();
-            const exists = prev.find(
-              (u) =>
-                Boolean(sessionId && u.session_id === sessionId) ||
-                Boolean(cleanUserName && u.name && u.name.trim().toLowerCase() === cleanUserName)
-            );
-            if (exists) {
-              const updatedEntry = {
-                ...exists,
-                score: Math.max(0, exists.score - 50),
-                streak: 0,
-              };
-              const updatedBoard = prev
-                .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
-                .sort((a, b) => b.score - a.score);
-              dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
-              if (channelManager) {
-                channelManager.broadcast('leaderboard_update', updatedBoard);
-              }
-              return updatedBoard;
-            }
-            return prev;
-          });
-        }
-
-        // Streak Shield check
-        if (activePowerUp === 'streak-shield') {
-          // Shield protects the streak!
-          console.log('[PowerUp] Streak Shield protected user streak:', userStreak);
-        } else {
-          setUserStreak(0);
-        }
       }
 
       const updatedVotes = {
@@ -579,8 +406,6 @@ export function useQuizEngine({
           ...prev,
           userSelectedOption: optionId,
           isCorrect,
-          pointsEarned: points,
-          pointsBreakdown: breakdown,
           votesDistribution: updatedVotes,
         };
         try {
@@ -616,7 +441,6 @@ export function useQuizEngine({
           optionId,
           userId: sessionId,
           questionId: quizState.question?.id,
-          points,
         });
       }
     },
@@ -625,18 +449,13 @@ export function useQuizEngine({
       quizState.isRevealed,
       quizState.userSelectedOption,
       quizState.question,
-      quizState.totalSeconds,
       quizState.votesDistribution,
-      timeRemaining,
-      userStreak,
-      activePowerUp,
       sessionId,
       userName,
       userRole,
       currentRoomKey,
       quizStorageKey,
       channelManager,
-      fastestAnswerSeconds,
     ]
   );
 
@@ -658,66 +477,13 @@ export function useQuizEngine({
     [channelManager, quizStorageKey]
   );
 
-  const awardBonusPoints = useCallback(
-    async (targetSessionId: string, targetName: string, pointsBonus: number = 500) => {
-      if (!targetSessionId && !targetName) return;
-
-      const currentBoard = leaderboardRef.current;
-      const cleanTargetName = (targetName || '').trim().toLowerCase();
-      const exists = currentBoard.find(
-        (u) =>
-          (targetSessionId && u.session_id === targetSessionId) ||
-          (cleanTargetName && u.name.trim().toLowerCase() === cleanTargetName)
-      );
-
-      let updatedEntry: LeaderboardEntry;
-      let nextBoard: LeaderboardEntry[];
-
-      if (exists) {
-        updatedEntry = {
-          ...exists,
-          score: (exists.score || 0) + pointsBonus,
-        };
-        nextBoard = currentBoard
-          .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
-          .sort((a, b) => b.score - a.score);
-      } else {
-        updatedEntry = {
-          session_id: targetSessionId || `session_${Date.now()}`,
-          name: targetName || 'Attendee',
-          score: pointsBonus,
-          correct_quizzes: 0,
-          polls_voted: 0,
-          streak: 0,
-          avatar_color: '#00F59B',
-        };
-        nextBoard = [...currentBoard, updatedEntry].sort((a, b) => b.score - a.score);
-      }
-
-      setLeaderboard(nextBoard);
-      await dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
-
-      if (channelManager) {
-        channelManager.broadcast('leaderboard_update', nextBoard);
-      }
-    },
-    [channelManager, currentRoomKey]
-  );
-
   return {
     quizState,
     leaderboard,
     timeRemaining,
-    userStreak,
-    fastestAnswerSeconds,
-    powerUpInventory,
-    activePowerUp,
-    eliminatedOptionIds,
-    activatePowerUp,
     startQuizRound,
     revealAnswer,
     selectOption,
     updateAIDeepDive,
-    awardBonusPoints,
   };
 }

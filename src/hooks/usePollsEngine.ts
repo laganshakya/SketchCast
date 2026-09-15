@@ -52,9 +52,24 @@ export function usePollsEngine({
     pollsRef.current = polls;
   }, [polls]);
 
+  // When roomCode switches, immediately load or reset polls and userVotes for the new room
+  const [prevRoomKey, setPrevRoomKey] = useState(currentRoomKey);
+  if (prevRoomKey !== currentRoomKey) {
+    setPrevRoomKey(currentRoomKey);
+    try {
+      const stored = localStorage.getItem(pollStorageKey);
+      setPolls(stored ? JSON.parse(stored) : []);
+      const storedVotes = localStorage.getItem(voteStorageKey) || localStorage.getItem(voteNameStorageKey);
+      setUserVotes(storedVotes ? JSON.parse(storedVotes) : {});
+    } catch {
+      setPolls([]);
+      setUserVotes({});
+    }
+  }
+
   const syncPollsFromDB = useCallback(() => {
     dbFetchPolls(currentRoomKey).then((remotePolls) => {
-      if (remotePolls && remotePolls.length > 0) {
+      if (remotePolls) {
         setPolls((currentPolls) => {
           const merged = remotePolls.map((rp) => {
             const current = currentPolls.find((cp) => cp.id === rp.id);

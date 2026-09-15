@@ -3,7 +3,6 @@ import { X, Crown, User, Radio, Sparkles, UserX, RefreshCw, VolumeX, Volume2, Al
 import { motion, AnimatePresence } from 'motion/react';
 import type { AttendeePresence, Room, LeaderboardEntry } from '../../types';
 import { isUserRoomAdmin } from '../../lib/supabase';
-import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
 
 interface ActiveAttendeesModalProps {
@@ -181,14 +180,6 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                 
                 const lbEntryIndex = (leaderboard || []).findIndex((e) => e.session_id === attendee.session_id);
                 const lbEntry = lbEntryIndex >= 0 ? leaderboard![lbEntryIndex] : null;
-                const attendeeBadges = lbEntry
-                  ? calculateUserBadges({
-                      correctQuizzes: lbEntry.correct_quizzes,
-                      streak: lbEntry.streak,
-                      rank: lbEntryIndex + 1,
-                      pollsVoted: lbEntry.polls_voted,
-                    })
-                  : [];
 
                 return (
                   <div
@@ -229,19 +220,6 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                               YOU
                             </span>
                           )}
-                          {attendeeBadges.slice(0, 2).map((badge) => {
-                            const style = getRarityBadgeStyle(badge.rarity);
-                            return (
-                              <span
-                                key={badge.id}
-                                className={`flex items-center space-x-0.5 text-[8px] font-mono font-black uppercase px-1 py-0.2 border ${style.bg} ${style.text} ${style.border} shrink-0`}
-                                title={`${badge.name}: ${badge.desc}`}
-                              >
-                                <span>{badge.icon}</span>
-                                <span>{badge.name}</span>
-                              </span>
-                            );
-                          })}
                         </div>
                         <div className="flex items-center space-x-1.5 sm:space-x-2 text-[9px] sm:text-[10px] text-slate-700 font-bold mt-1 flex-wrap">
                           <span
@@ -274,7 +252,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                           )}
                           {lbEntry && (
                             <span className="text-black font-mono font-black bg-neo-yellow/50 px-1.5 py-0.2 border border-black text-[9px]">
-                              {lbEntry.score} PTS
+                              {lbEntry.correct_quizzes} CORRECT
                             </span>
                           )}
                           <span className="text-emerald-800 font-black flex items-center gap-1 shrink-0">

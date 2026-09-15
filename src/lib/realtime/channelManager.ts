@@ -25,7 +25,7 @@ import type { QuestionCluster } from '../meshApi';
 
 export type RealtimeEventMap = {
   quiz_round_state: QuizRoundState;
-  quiz_vote: { optionId: string; userId: string; points: number; questionId?: string };
+  quiz_vote: { optionId: string; userId: string; questionId?: string };
   leaderboard_update: LeaderboardEntry[];
   poll_update: LivePoll[];
   poll_vote: { pollId: string; optionId: string; voterSession: string };
@@ -244,7 +244,7 @@ export class RealtimeChannelManager {
               isRevealed: round.is_revealed,
               userSelectedOption: null,
               isCorrect: null,
-              pointsEarned: 0,
+
               votesDistribution: round.votes_distribution || { A: 0, B: 0, C: 0, D: 0 },
               updatedAt: round.created_at ? new Date(round.created_at).getTime() : Date.now(),
             };

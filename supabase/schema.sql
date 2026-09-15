@@ -80,17 +80,11 @@ create table if not exists public.leaderboard (
   session_id text primary key,
   room_id text references public.rooms(id) on delete cascade,
   name text not null,
-  score int default 0,
   correct_quizzes int default 0,
   polls_voted int default 0,
-  streak int default 0,
   avatar_color text default '#FFE600',
-  fastest_answer_seconds numeric,
   updated_at timestamptz default now()
 );
-
--- Migration safety for leaderboard
-alter table if exists public.leaderboard add column if not exists fastest_answer_seconds numeric;
 
 -- 6. Room Attendees Table (Live Presence & Attendee Roster)
 create table if not exists public.room_attendees (
@@ -144,7 +138,7 @@ create index if not exists idx_polls_room_created on public.polls (room_id, crea
 create index if not exists idx_quiz_rounds_room_created on public.quiz_rounds (room_id, created_at desc);
 create index if not exists idx_quiz_rounds_room_active on public.quiz_rounds (room_id, is_active);
 
-create index if not exists idx_leaderboard_room_score on public.leaderboard (room_id, score desc);
+create index if not exists idx_leaderboard_room_correct on public.leaderboard (room_id, correct_quizzes desc);
 
 create index if not exists idx_room_attendees_code on public.room_attendees (room_code, last_active desc);
 create index if not exists idx_surveys_room on public.surveys (room_id, created_at desc);
@@ -171,33 +165,34 @@ drop policy if exists "polls_unified_access" on public.polls;
 drop policy if exists "quiz_rounds_unified_access" on public.quiz_rounds;
 drop policy if exists "leaderboard_unified_access" on public.leaderboard;
 
--- 7.1 Rooms Table: Public read, Authenticated creation, Host-only update & delete
+-- 7.1 Rooms Table: Public read, Public creation, Host/Creator-only update & delete
 drop policy if exists "rooms_select_public" on public.rooms;
 create policy "rooms_select_public" on public.rooms for select using (true);
 
 drop policy if exists "rooms_insert_auth" on public.rooms;
-create policy "rooms_insert_auth" on public.rooms for insert with check (
-  auth.role() = 'authenticated' or auth.uid() is not null or host_id is null
-);
+create policy "rooms_insert_auth" on public.rooms for insert with check (true);
 
 drop policy if exists "rooms_update_host" on public.rooms;
 create policy "rooms_update_host" on public.rooms for update using (
   auth.uid()::text = host_id or 
   auth.jwt()->>'email' = host_email or 
   auth.jwt()->>'email' = any(admins) or 
-  host_id is null
+  host_id is null or
+  host_id like 'host_%'
 ) with check (
   auth.uid()::text = host_id or 
   auth.jwt()->>'email' = host_email or 
   auth.jwt()->>'email' = any(admins) or 
-  host_id is null
+  host_id is null or
+  host_id like 'host_%'
 );
 
 drop policy if exists "rooms_delete_host" on public.rooms;
 create policy "rooms_delete_host" on public.rooms for delete using (
   auth.uid()::text = host_id or 
   auth.jwt()->>'email' = host_email or 
-  host_id is null
+  host_id is null or
+  host_id like 'host_%'
 );
 
 -- 7.2 Quiz Rounds: Public read, Host-only start/delete, Controlled reveal and vote updates

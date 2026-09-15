@@ -162,6 +162,47 @@ export function useSurveys(
 
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
 
+  const createDefaultSurvey = useCallback((code: string): Survey => ({
+    id: `survey_${code}_default`,
+    room_id: code,
+    title: PRESET_SURVEY_TEMPLATES[0].title,
+    description: PRESET_SURVEY_TEMPLATES[0].description,
+    questions: PRESET_SURVEY_TEMPLATES[0].questions as SurveyQuestion[],
+    status: 'active',
+    created_at: new Date().toISOString(),
+    responses_count: 0,
+    author_name: 'Room Host',
+  }), []);
+
+  // When roomCode switches, immediately load or reset surveys, responses, and submitted state for the new room
+  const [prevRoomKey, setPrevRoomKey] = useState(cleanRoomCode);
+  if (prevRoomKey !== cleanRoomCode) {
+    setPrevRoomKey(cleanRoomCode);
+    try {
+      const stored = localStorage.getItem(surveysKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSurveys(parsed);
+        } else {
+          setSurveys([createDefaultSurvey(cleanRoomCode)]);
+        }
+      } else {
+        setSurveys([createDefaultSurvey(cleanRoomCode)]);
+      }
+
+      const storedResponses = localStorage.getItem(responsesKey);
+      setResponsesBySurvey(storedResponses ? JSON.parse(storedResponses) : {});
+
+      const storedSubmitted = localStorage.getItem(submittedKey);
+      setUserSubmittedIds(storedSubmitted ? new Set(JSON.parse(storedSubmitted)) : new Set());
+    } catch {
+      setSurveys([createDefaultSurvey(cleanRoomCode)]);
+      setResponsesBySurvey({});
+      setUserSubmittedIds(new Set());
+    }
+  }
+
   // Load from Supabase DB on initialization and room change
   useEffect(() => {
     dbFetchSurveys(cleanRoomCode).then((remoteSurveys) => {
@@ -170,11 +211,8 @@ export function useSurveys(
       }
     });
     dbFetchSurveyResponses(cleanRoomCode).then((remoteResponses) => {
-      if (remoteResponses && Object.keys(remoteResponses).length > 0) {
-        setResponsesBySurvey((prev) => ({
-          ...prev,
-          ...remoteResponses,
-        }));
+      if (remoteResponses) {
+        setResponsesBySurvey(remoteResponses);
       }
     });
   }, [cleanRoomCode]);

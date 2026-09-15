@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists, isRoomCreatedByMe } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { playPopSound } from '../lib/soundFx';
 
@@ -297,10 +297,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           localStorage.setItem(ROLE_KEY, 'attendee');
         }
       } else {
-        // Room not in DB yet
-        setUserRoleState('attendee');
-        sessionStorage.setItem(ROLE_KEY, 'attendee');
-        localStorage.setItem(ROLE_KEY, 'attendee');
+        // Room not in DB yet - preserve host status if created on this browser
+        if (isRoomCreatedByMe(activeRoomCode)) {
+          setUserRoleState('host');
+          sessionStorage.setItem(ROLE_KEY, 'host');
+          localStorage.setItem(ROLE_KEY, 'host');
+        }
       }
     });
   }, [activeRoomCode, userName, currentUser]);
@@ -646,7 +648,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     }
   };
 
-  const handleAuthenticated = async (name: string, requestedRole: 'host' | 'attendee', customRoomCode?: string) => {
+  const handleAuthenticated = async (
+    name: string,
+    requestedRole: 'host' | 'attendee',
+    customRoomCode?: string,
+    customRoomTitle?: string
+  ) => {
     const targetRoomCode = (customRoomCode || activeRoomCode || 'SKT-789').toUpperCase().trim();
     
     setUserName(name);
@@ -654,15 +661,21 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     // Fetch rooms to determine real permissions for this specific room
     const allRooms = await dbFetchRooms();
     let currentRoom = allRooms.find((r) => r.code.toUpperCase() === targetRoomCode);
-    let effectiveRole: 'host' | 'attendee' = 'attendee';
+    let effectiveRole: 'host' | 'attendee' = requestedRole;
 
     if (currentRoom) {
       const isAuthorized = isUserRoomAdmin(currentRoom, currentUser, name);
-      effectiveRole = isAuthorized ? 'host' : 'attendee';
+      effectiveRole = isAuthorized ? 'host' : (requestedRole === 'host' && isRoomCreatedByMe(targetRoomCode) ? 'host' : 'attendee');
+      if (customRoomTitle && currentRoom.title !== customRoomTitle) {
+        currentRoom = { ...currentRoom, title: customRoomTitle };
+      }
       setRoom(currentRoom);
     } else {
-      if (requestedRole === 'host') {
+      if (requestedRole === 'host' || isRoomCreatedByMe(targetRoomCode)) {
         currentRoom = await dbEnsureRoomExists(targetRoomCode, currentUser, name);
+        if (customRoomTitle) {
+          currentRoom = { ...currentRoom, title: customRoomTitle };
+        }
         effectiveRole = 'host';
         setRoom(currentRoom);
       } else {
@@ -670,7 +683,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         setRoom({
           id: `room-${targetRoomCode}`,
           code: targetRoomCode,
-          title: `Tech Arena // ${targetRoomCode}`,
+          title: customRoomTitle || `Tech Arena // ${targetRoomCode}`,
           host_id: 'host-external',
           host_name: 'Room Host',
           created_at: new Date().toISOString(),

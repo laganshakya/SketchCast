@@ -1,22 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Share2, Check, ExternalLink, Sparkles, Trophy, ShieldCheck, Printer, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
+import { X, Share2, Check, ExternalLink, Trophy, ShieldCheck, Printer, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
-import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
-import type { AchievementBadge } from '../../types';
 
 export interface VerifiedCertPayload {
   certId: string;
   roomCode: string;
-  score: number;
+  correctQuizzes: number;
   recipientName: string;
   roomTitle: string;
   rank: number;
   totalAttendees: number;
   issueDate?: string;
-  badges?: AchievementBadge[];
 }
 
 interface CertificateVerificationModalProps {
@@ -36,7 +33,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   const {
     certId,
     roomCode,
-    score,
+
     recipientName,
     roomTitle,
     rank = 1,
@@ -48,18 +45,8 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
     }),
   } = certData;
 
-  // Reconstruct earned badges based on rank and score if not provided
-  const badges: AchievementBadge[] = certData.badges && certData.badges.length > 0
-    ? certData.badges
-    : calculateUserBadges({
-        correctQuizzes: score > 0 ? Math.ceil(score / 500) : 0,
-        streak: score >= 1000 ? 3 : 1,
-        rank: rank,
-        pollsVoted: 1,
-      });
-
   const verificationUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&score=${score}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
+    ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
     : `https://sketchcast.live/?verify_cert=${certId}`;
 
   // Launch celebration confetti and fanfare on verification render
@@ -87,7 +74,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   const handleShareLinkedIn = () => {
     playClickSound();
     const text = encodeURIComponent(
-      `🎓 Verified Certificate: Completed the "${roomTitle}" technical masterclass on SketchCast!\nScore: ${score} PTS (Rank #${rank}).\nOfficial Credential ID: ${certId}\nVerify here: ${verificationUrl}`
+      `🎓 Verified Certificate: Completed the "${roomTitle}" technical masterclass on SketchCast!\nRank #${rank} out of ${totalAttendees}.\nOfficial Credential ID: ${certId}\nVerify here: ${verificationUrl}`
     );
     window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${text}`, '_blank');
   };
@@ -95,7 +82,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   const handleShareTwitter = () => {
     playClickSound();
     const text = encodeURIComponent(
-      `Just verified my Masterclass Pass of Merit for "${roomTitle}" on @SketchCast! ⚡ Score: ${score} PTS (Rank #${rank}). Credential ID: ${certId}\n${verificationUrl}`
+      `Just verified my Masterclass Pass of Merit for "${roomTitle}" on @SketchCast! ⚡ (Rank #${rank}). Credential ID: ${certId}\n${verificationUrl}`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
@@ -206,38 +193,9 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
               </p>
             </div>
 
-            {/* Earned Badges */}
-            {badges.length > 0 && (
-              <div className="py-2 px-3 bg-[#131622] border-2 border-black">
-                <div className="text-[9px] sm:text-[10px] font-mono font-black uppercase text-slate-400 mb-1.5 flex items-center justify-center gap-1">
-                  <Sparkles className="w-3 h-3 text-neo-yellow" />
-                  <span>ACCREDITED COMPETENCY BADGES</span>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                  {badges.map((b) => {
-                    const style = getRarityBadgeStyle(b.rarity);
-                    return (
-                      <span
-                        key={b.id}
-                        className={`flex items-center space-x-1 text-[9px] sm:text-[10px] font-mono font-black uppercase px-2 py-0.5 border ${style.bg} ${style.text} ${style.border} ${style.glow}`}
-                        title={b.desc}
-                      >
-                        <span>{b.icon}</span>
-                        <span>{b.name}</span>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Credentials & QR */}
             <div className="pt-3 border-t-2 border-black flex items-center justify-between flex-wrap gap-4 text-left">
               <div className="space-y-1 font-mono text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400">FINAL SCORE:</span>
-                  <span className="font-heavy text-neo-yellow text-sm">{score} PTS</span>
-                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-400">SESSION RANK:</span>
                   <span className="font-heavy text-neo-cyan text-xs">

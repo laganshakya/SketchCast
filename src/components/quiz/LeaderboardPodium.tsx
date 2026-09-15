@@ -2,7 +2,6 @@ import React from 'react';
 import { Trophy, Medal, Crown, CheckCircle, Vote, Share2, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { LeaderboardEntry } from '../../types';
-import { calculateUserBadges, getRarityBadgeStyle } from '../../lib/badgeSystem';
 import { playPopSound } from '../../lib/soundFx';
 
 interface LeaderboardPodiumProps {
@@ -107,7 +106,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                     {top3[1].name}
                   </span>
                   <span className="font-mono font-black text-neo-cyan text-[10px] sm:text-xs">
-                    {top3[1].score} PTS
+                    {top3[1].correct_quizzes} CORRECT
                   </span>
                 </div>
                 <div className="w-full h-16 xs:h-20 sm:h-24 bg-neo-cyan/20 border-2 border-black border-b-0 flex items-center justify-center font-heavy text-xl sm:text-2xl text-neo-cyan brutal-shadow-sm">
@@ -135,7 +134,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                     {top3[0].name}
                   </span>
                   <span className="font-mono font-black text-white text-[10px] sm:text-xs bg-black px-1.5 py-0.5 border border-neo-yellow">
-                    {top3[0].score} PTS
+                    {top3[0].correct_quizzes} CORRECT
                   </span>
                 </div>
                 <div className="w-full h-24 xs:h-28 sm:h-36 bg-neo-yellow/25 border-3 border-black border-b-0 flex flex-col items-center justify-center font-heavy text-2xl sm:text-4xl text-neo-yellow brutal-shadow">
@@ -162,7 +161,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                     {top3[2].name}
                   </span>
                   <span className="font-mono font-black text-neo-orange text-[10px] sm:text-xs">
-                    {top3[2].score} PTS
+                    {top3[2].correct_quizzes} CORRECT
                   </span>
                 </div>
                 <div className="w-full h-12 xs:h-16 sm:h-20 bg-neo-orange/20 border-2 border-black border-b-0 flex items-center justify-center font-heavy text-lg sm:text-xl text-neo-orange brutal-shadow-sm">
@@ -188,13 +187,6 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                 entry.name &&
                 entry.name.trim().toLowerCase() === currentUserName.trim().toLowerCase()
               );
-            const rank = index + 1;
-            const badges = calculateUserBadges({
-              correctQuizzes: entry.correct_quizzes,
-              streak: entry.streak,
-              rank,
-              pollsVoted: entry.polls_voted,
-            });
 
             return (
               <motion.div
@@ -219,19 +211,6 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                           YOU
                         </span>
                       )}
-                      {badges.slice(0, 2).map((badge) => {
-                        const style = getRarityBadgeStyle(badge.rarity);
-                        return (
-                          <span
-                            key={badge.id}
-                            className={`flex items-center space-x-0.5 text-[8px] xs:text-[9px] font-mono font-black uppercase px-1 sm:px-1.5 py-0.2 border ${style.bg} ${style.text} ${style.border} ${style.glow} shrink-0 cursor-help`}
-                            title={`${badge.name}: ${badge.desc}`}
-                          >
-                            <span>{badge.icon}</span>
-                            <span>{badge.name}</span>
-                          </span>
-                        );
-                      })}
                     </div>
                     <div className="flex items-center space-x-1.5 xs:space-x-2 text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 mt-0.5 flex-wrap">
                       <span className="flex items-center gap-0.5 font-bold">
@@ -248,7 +227,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                 <div className="flex items-center space-x-2 shrink-0">
                   <div className="text-right">
                     <span className="text-[11px] sm:text-xs md:text-sm font-mono font-black text-neo-yellow">
-                      {entry.score} PTS
+                      {entry.correct_quizzes} CORRECT
                     </span>
                   </div>
 

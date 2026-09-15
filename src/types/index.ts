@@ -39,15 +39,6 @@ export interface QuizPack {
   questions: QuizQuestion[];
 }
 
-export interface PointsBreakdown {
-  basePoints: number;
-  speedBonus: number;
-  answerTimeSeconds: number;
-  streakMultiplier: number;
-  isDoubleDown: boolean;
-  total: number;
-}
-
 export interface QuizRoundState {
   isActive: boolean;
   question: QuizQuestion | null;
@@ -56,8 +47,6 @@ export interface QuizRoundState {
   isRevealed: boolean;
   userSelectedOption: string | null;
   isCorrect: boolean | null;
-  pointsEarned: number;
-  pointsBreakdown?: PointsBreakdown | null;
   votesDistribution: Record<string, number>; // { 'A': 12, 'B': 4, ... }
   aiDeepDive?: string | null;
   updatedAt?: number;
@@ -110,12 +99,9 @@ export interface QuestionCluster {
 export interface LeaderboardEntry {
   session_id: string;
   name: string;
-  score: number;
   correct_quizzes: number;
   polls_voted: number;
-  streak: number;
   avatar_color: string;
-  fastest_answer_seconds?: number;
 }
 
 export interface AttendeePresence {
@@ -125,37 +111,6 @@ export interface AttendeePresence {
   joined_at: number;
   last_active: number;
 }
-
-// --- Gamification & Power-Ups ---
-export type PowerUpType = '50-50' | 'double-down' | 'streak-shield' | 'time-freeze';
-
-export interface PowerUpInventory {
-  '50-50': number;
-  'double-down': number;
-  'streak-shield': number;
-  'time-freeze': number;
-}
-
-export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
-
-export interface AchievementBadge {
-  id: string;
-  name: string;
-  icon: string;
-  desc: string;
-  rarity: BadgeRarity;
-  unlockedAt?: number;
-}
-
-export type BadgeType =
-  | 'speed_demon'
-  | 'on_fire'
-  | 'podium_champ'
-  | 'democracy_hero'
-  | 'flawless_architect'
-  | 'keynote_influencer'
-  | 'spotlight_star'
-  | 'tactician';
 
 export interface SpotlightRewardPerk {
   id: string;
@@ -173,21 +128,17 @@ export interface SpotlightWinner {
   rewardPerk?: string;
   rewardIcon?: string;
   rewardDesc?: string;
-  bonusPoints?: number;
   timestamp: number;
 }
 
 export interface ChampionSocialCardData {
   playerName: string;
   rank: number;
-  score: number;
   correctQuizzes: number;
   totalQuizzes: number;
   pollsVoted: number;
-  maxStreak: number;
   roomCode: string;
   roomTitle?: string;
-  badges: { icon: string; name: string; desc: string; rarity?: BadgeRarity }[];
 }
 
 // --- Survey Types ---
@@ -248,10 +199,8 @@ export interface MasterclassCertificate {
   recipientName: string;
   roomTitle: string;
   roomCode: string;
-  score: number;
   rank: number;
   totalAttendees: number;
-  badges: AchievementBadge[];
   issuedAt: string;
   verificationUrl: string;
 }

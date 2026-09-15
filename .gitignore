@@ -39,3 +39,4 @@ Thumbs.db
 # Temporary artifacts & Media storage
 .tempmediaStorage
 scratch/
+*.md

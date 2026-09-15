@@ -16,9 +16,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import confetti from 'canvas-confetti';
-import type { AchievementBadge } from '../../types';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
-import { getRarityBadgeStyle } from '../../lib/badgeSystem';
 
 interface MasterclassCertificateModalProps {
   isOpen: boolean;
@@ -26,10 +24,8 @@ interface MasterclassCertificateModalProps {
   recipientName: string;
   roomTitle: string;
   roomCode: string;
-  score: number;
   rank?: number;
   totalAttendees?: number;
-  badges?: AchievementBadge[];
 }
 
 export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalProps> = ({
@@ -38,10 +34,8 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   recipientName,
   roomTitle,
   roomCode,
-  score,
   rank = 1,
   totalAttendees = 12,
-  badges = [],
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
@@ -64,8 +58,8 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   });
 
   const verificationUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&score=${score}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
-    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&score=${score}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`;
+    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
+    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`;
 
   // Check if device supports native Web Share API
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -176,38 +170,6 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     ctx.font = '900 17px "Space Grotesk", sans-serif';
     ctx.fillText(`"${roomTitle.toUpperCase()}" (ROOM #${roomCode.toUpperCase()})`, width / 2, 376);
 
-    // 9. Badges Ribbon
-    if (badges.length > 0) {
-      const badgeY = 406;
-      ctx.fillStyle = '#10131E';
-      ctx.fillRect(160, badgeY, width - 320, 50);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#000000';
-      ctx.strokeRect(160, badgeY, width - 320, 50);
-
-      ctx.fillStyle = '#64748B';
-      ctx.font = 'bold 9px "JetBrains Mono", monospace';
-      ctx.fillText('ACCREDITED BADGES EARNED IN SESSION', width / 2, badgeY + 16);
-
-      const displayBadges = badges.slice(0, 4);
-      const totalWidth = displayBadges.length * 160;
-      let startX = (width - totalWidth) / 2;
-
-      displayBadges.forEach((b) => {
-        ctx.fillStyle = '#1B2032';
-        ctx.fillRect(startX, badgeY + 22, 150, 22);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#384260';
-        ctx.strokeRect(startX, badgeY + 22, 150, 22);
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 10px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${b.icon} ${b.name.toUpperCase()}`, startX + 75, badgeY + 37);
-        startX += 160;
-      });
-    }
-
     // 10. Footer Details Grid
     const footerY = 485;
     ctx.textAlign = 'left';
@@ -215,13 +177,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     // Left Details Column
     ctx.fillStyle = '#64748B';
     ctx.font = 'bold 11px "JetBrains Mono", monospace';
-    ctx.fillText('FINAL SCORE:', 70, footerY + 28);
-    ctx.fillStyle = '#FFE600';
-    ctx.font = '900 24px "JetBrains Mono", monospace';
-    ctx.fillText(`${score} PTS`, 190, footerY + 30);
 
-    ctx.fillStyle = '#64748B';
-    ctx.font = 'bold 11px "JetBrains Mono", monospace';
     ctx.fillText('SESSION RANK:', 70, footerY + 65);
     ctx.fillStyle = '#33F3FF';
     ctx.font = '900 15px "JetBrains Mono", monospace';
@@ -269,7 +225,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     ctx.font = '11px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('Verified Realtime Keynote Session • Powered by SketchCast Live & Supabase', width / 2, height - 16);
-  }, [certId, recipientName, roomCode, roomTitle, score, rank, totalAttendees, badges, issueDate]);
+  }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate]);
 
   // Launch celebration fanfare and confetti EXACTLY ONCE per modal opening
   const celebrationFiredRef = useRef(false);
@@ -356,7 +312,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   const handleShare = async (platform: 'linkedin' | 'twitter' | 'native') => {
     playClickSound();
     const shareTitle = `SketchCast Masterclass Pass: ${roomTitle}`;
-    const shareText = `🎓 Proud to complete the "${roomTitle}" live technical masterclass on SketchCast!\nScored ${score} PTS (Rank #${rank}) and earned verifiable achievement badges.\nVerify credential: ${verificationUrl}`;
+    const shareText = `🎓 Proud to complete the "${roomTitle}" live technical masterclass on SketchCast!\nRank #${rank} out of ${totalAttendees}.\nVerify credential: ${verificationUrl}`;
     const filename = `sketchcast-certificate-${recipientName.toLowerCase().replace(/\s+/g, '_')}.png`;
 
     // 1. Explicit Native OS Share Sheet (only when user clicks 'SHARE PASS')
@@ -391,7 +347,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
       window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${textParam}`, '_blank');
     } else if (platform === 'twitter') {
       const textParam = encodeURIComponent(
-        `Just mastered the live architecture challenges in "${roomTitle}" on @SketchCast! ⚡ Scored ${score} PTS (Rank #${rank}). Check my verifiable pass: ${verificationUrl}`
+        `Just mastered the live architecture challenges in "${roomTitle}" on @SketchCast! ⚡ (Rank #${rank}). Check my verifiable pass: ${verificationUrl}`
       );
       window.open(`https://twitter.com/intent/tweet?text=${textParam}`, '_blank');
     }
@@ -555,39 +511,10 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
                   </p>
                 </div>
 
-                {/* Earned Badges Ribbon */}
-                {badges.length > 0 && (
-                  <div className="py-2.5 px-3 bg-[#131622] border-2 border-black">
-                    <div className="text-[10px] font-mono font-black uppercase text-slate-400 mb-2 flex items-center justify-center gap-1">
-                      <Sparkles className="w-3 h-3 text-neo-yellow" />
-                      <span>LIVE BADGES ACCREDITED</span>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                      {badges.map((b) => {
-                        const style = getRarityBadgeStyle(b.rarity);
-                        return (
-                          <span
-                            key={b.id}
-                            className={`flex items-center space-x-1 text-[9px] sm:text-[10px] font-mono font-black uppercase px-2 py-0.5 border ${style.bg} ${style.text} ${style.border} ${style.glow}`}
-                            title={b.desc}
-                          >
-                            <span>{b.icon}</span>
-                            <span>{b.name}</span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {/* Footer Credentials & Verifiable QR */}
                 <div className="pt-3 sm:pt-4 border-t-2 border-black flex items-center justify-between flex-wrap gap-3 sm:gap-4 text-left">
                   {/* Performance stats */}
                   <div className="space-y-1 font-mono text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">FINAL SCORE:</span>
-                      <span className="font-heavy text-neo-yellow text-sm sm:text-base">{score} PTS</span>
-                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400">SESSION RANK:</span>
                       <span className="font-heavy text-neo-cyan text-xs sm:text-sm">

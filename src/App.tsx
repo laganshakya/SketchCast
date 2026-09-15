@@ -34,8 +34,8 @@ const MasterclassCertificateModal = lazy(() => import('./components/certificate/
 const CertificateVerificationModal = lazy(() => import('./components/certificate/CertificateVerificationModal').then((m) => ({ default: m.CertificateVerificationModal })));
 import { useSurveys } from './hooks/useSurveys';
 import { playFanfare, playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
-import { calculateUserBadges } from './lib/badgeSystem';
-import { isUserRoomAdmin, dbFetchRooms } from './lib/supabase';
+
+import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
 import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
@@ -49,7 +49,7 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
   }
   if (verifyCert && verifyCert.trim()) {
     const roomCode = (params.get('room') || 'ARENA').toUpperCase().trim();
-    const score = Number(params.get('score') || 0);
+    const correctQuizzes = Number(params.get('correct') || params.get('score') || 0);
     const recipientName = params.get('name') || 'Masterclass Attendee';
     const rawTitle = params.get('title');
     const rank = Number(params.get('rank') || 1);
@@ -62,7 +62,7 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
     return {
       certId: verifyCert.trim(),
       roomCode,
-      score,
+      correctQuizzes,
       recipientName,
       roomTitle: rawTitle || `Masterclass Architecture Session (${roomCode})`,
       rank,
@@ -137,16 +137,9 @@ export function App() {
     quizState,
     leaderboard,
     timeRemaining,
-    userStreak,
-    powerUpInventory,
-    activePowerUp,
-    eliminatedOptionIds,
-    activatePowerUp,
     startQuizRound,
     revealAnswer,
     selectOption,
-    awardBonusPoints,
-    fastestAnswerSeconds,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -324,35 +317,10 @@ export function App() {
     };
   }, [channelManager]);
 
-  // Calculate current user's performance and credentials for Masterclass Certificate
-  const myLeaderboardIndex = leaderboard.findIndex(
-    (e) =>
-      Boolean(sessionId && e.session_id === sessionId) ||
-      Boolean(userName && e.name && e.name.trim().toLowerCase() === userName.trim().toLowerCase())
-  );
-  const myLeaderboardEntry = myLeaderboardIndex >= 0 ? leaderboard[myLeaderboardIndex] : undefined;
-  const myRank = myLeaderboardIndex >= 0 ? myLeaderboardIndex + 1 : 1;
-  const myScore = myLeaderboardEntry ? myLeaderboardEntry.score : 0;
 
-  const myBadges = useMemo(() => {
-    return calculateUserBadges({
-      correctQuizzes: myLeaderboardEntry?.correct_quizzes || 0,
-      totalQuizzesAnswered: myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes : 0,
-      streak: userStreak,
-      rank: myRank,
-      pollsVoted: userVotes ? Object.keys(userVotes).length : 0,
-      fastestAnswerSeconds,
-      isTopInquirer: questions.slice(0, 3).some((q) => q.author_name.toLowerCase() === userName.toLowerCase()),
-    });
-  }, [
-    myLeaderboardEntry,
-    userStreak,
-    myRank,
-    userVotes,
-    fastestAnswerSeconds,
-    questions,
-    userName,
-  ]);
+
+
+
 
   const handlePublishReport = (markdown: string) => {
     setSessionReport(markdown);
@@ -432,9 +400,11 @@ export function App() {
     }
   };
 
-  // Handle switching rooms from Rooms Admin Hub
-  const handleSwitchRoom = (newCode: string, _newTitle?: string) => {
-    handleAuthenticated(userName, userRole, newCode);
+  // Handle switching rooms from Rooms Admin Hub or ChangeRoomModal
+  const handleSwitchRoom = async (newCode: string, newTitle?: string) => {
+    const isOwner = isRoomCreatedByMe(newCode);
+    const targetRole = isOwner ? 'host' : userRole;
+    await handleAuthenticated(userName, targetRole, newCode, newTitle);
     setActiveTab('quiz');
   };
 
@@ -524,47 +494,20 @@ export function App() {
       setIsSpotlightCelebrationOpen(true);
     }
 
-    // Award +500 (or specified) bonus points to the winner in the leaderboard
-    const isBonusPerk =
-      winner.perkId === 'bonus-points' ||
-      Boolean(winner.bonusPoints && winner.bonusPoints > 0) ||
-      Boolean(winner.rewardPerk && (winner.rewardPerk.includes('500') || winner.rewardPerk.toLowerCase().includes('boost')));
-
-    if (isBonusPerk) {
-      const pointsToAward = winner.bonusPoints || 500;
-      awardBonusPoints(winner.targetSessionId, winner.targetName, pointsToAward);
-    }
-
     if (channelManager) {
       channelManager.broadcast('attendee_spotlight', winner);
     }
   };
 
   const handleOpenSocialCard = (entry: LeaderboardEntry, rank: number) => {
-    const earnedBadges = calculateUserBadges({
-      correctQuizzes: entry.correct_quizzes,
-      streak: entry.streak,
-      rank,
-      pollsVoted: entry.polls_voted,
-      isSpotlightWinner: celebrationWinner?.targetSessionId === entry.session_id,
-    });
-
     setSocialCardData({
       playerName: entry.name,
       rank,
-      score: entry.score,
       correctQuizzes: entry.correct_quizzes,
       totalQuizzes: queuedQuizzes.length || entry.correct_quizzes,
       pollsVoted: entry.polls_voted,
-      maxStreak: entry.streak,
       roomCode: room.code,
       roomTitle: room.title,
-      badges: earnedBadges.map((b) => ({
-        icon: b.icon,
-        name: b.name,
-        desc: b.desc,
-        rarity: b.rarity,
-      })),
     });
     setIsSocialCardModalOpen(true);
   };
@@ -911,17 +854,12 @@ export function App() {
                 <QuizArena
                   quizState={quizState}
                   timeRemaining={timeRemaining}
-                  userStreak={userStreak}
                   onSelectOption={selectOption}
                   onRevealAnswer={revealAnswer}
                   onNextQuestion={handleNextQuestion}
                   hasNextQuestion={hasNextQuestion}
                   onViewScores={() => setActiveTab('leaderboard')}
                   isHost={userRole === 'host'}
-                  powerUpInventory={powerUpInventory}
-                  activePowerUp={activePowerUp}
-                  eliminatedOptionIds={eliminatedOptionIds}
-                  onActivatePowerUp={activatePowerUp}
                 />
               </div>
 
@@ -1300,10 +1238,15 @@ export function App() {
           recipientName={userName}
           roomTitle={room.title}
           roomCode={room.code}
-          score={myScore}
-          rank={myRank}
+          rank={
+            leaderboard.findIndex(
+              (e) => e.session_id === sessionId || (e.name && userName && e.name.toLowerCase() === userName.toLowerCase())
+            ) >= 0 ? 
+            leaderboard.findIndex(
+              (e) => e.session_id === sessionId || (e.name && userName && e.name.toLowerCase() === userName.toLowerCase())
+            ) + 1 : 1
+          }
           totalAttendees={leaderboard.length || attendees.length || 1}
-          badges={myBadges}
         />
 
         {/* Public Verified Certificate Modal */}
