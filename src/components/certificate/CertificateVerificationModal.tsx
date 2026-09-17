@@ -14,6 +14,8 @@ export interface VerifiedCertPayload {
   rank: number;
   totalAttendees: number;
   issueDate?: string;
+  score?: number;
+  hostName?: string;
 }
 
 interface CertificateVerificationModalProps {
@@ -33,11 +35,13 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   const {
     certId,
     roomCode,
-
+    correctQuizzes = 0,
     recipientName,
     roomTitle,
     rank = 1,
     totalAttendees = 1,
+    score = 0,
+    hostName = 'Arena Host',
     issueDate = new Date().toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -46,7 +50,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   } = certData;
 
   const verificationUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
+    ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`
     : `https://sketchcast.live/?verify_cert=${certId}`;
 
   // Launch celebration confetti and fanfare on verification render
@@ -54,10 +58,10 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
     playCertificateFanfare();
     try {
       confetti({
-        particleCount: 140,
-        spread: 90,
+        particleCount: 100,
+        spread: 80,
         origin: { y: 0.45 },
-        colors: ['#FFE600', '#00F59B', '#FF4782', '#33F3FF', '#FFFFFF'],
+        colors: ['#3B82F6', '#60A5FA', '#1D4ED8', '#FAFAFA', '#71717A'],
       });
     } catch {
       // ignore
@@ -93,133 +97,163 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-md overflow-y-auto font-sans">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md overflow-y-auto font-sans">
       <motion.div
-        initial={{ scale: 0.94, y: 15, opacity: 0 }}
+        initial={{ scale: 0.96, y: 10, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.94, y: 15, opacity: 0 }}
+        exit={{ scale: 0.96, y: 10, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-        className="w-full max-w-2xl bg-[#0D0F17] border-4 border-black brutal-shadow-lg text-white my-auto overflow-hidden flex flex-col"
+        className="w-full max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col font-sans"
       >
         {/* Verification Status Banner */}
-        <div className="p-3 sm:p-3.5 bg-[#00F59B] text-black border-b-4 border-black flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 bg-black text-[#00F59B] border-2 border-black flex items-center justify-center font-black shrink-0">
-              <ShieldCheck className="w-5 h-5 text-[#00F59B]" />
+        <div className="p-4 sm:p-5 bg-[#141418] text-[#FAFAFA] border-b border-white/[0.08] flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold shrink-0">
+              <ShieldCheck className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-heavy uppercase tracking-tight leading-none text-black">
-                  OFFICIAL CREDENTIAL VERIFIED
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-base font-semibold text-white font-display">
+                  Official Credential Verified
                 </h2>
-                <span className="px-1.5 py-0.2 bg-black text-[#00F59B] font-mono text-[9px] font-black uppercase border border-black flex items-center gap-1">
-                  <CheckCircle2 className="w-2.5 h-2.5 text-[#00F59B]" />
-                  <span>AUTHENTIC</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[11px] font-medium border border-blue-500/20 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-blue-400" />
+                  <span>Authentic</span>
                 </span>
               </div>
-              <span className="text-[10px] font-mono font-bold tracking-wider text-slate-800 block mt-0.5">
-                VERIFIED VIA SKETCHCAST ED25519 REAL-TIME MERIT LEDGER
+              <span className="text-xs text-zinc-400 block mt-0.5">
+                Verified via SketchCast Real-Time Merit Ledger
               </span>
             </div>
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               playClickSound();
               onClose();
             }}
-            className="p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer"
+            className="p-2 rounded-xl bg-zinc-800/40 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/[0.06] transition-colors cursor-pointer"
             title="Close Verification"
           >
-            <X className="w-4 h-4 stroke-3" />
+            <X className="w-4 h-4" />
           </motion.button>
         </div>
 
         {/* Certificate Printable Pass */}
-        <div className="p-3 sm:p-5 bg-[#121420] overflow-y-auto max-h-[72vh]">
+        <div className="p-4 sm:p-6 bg-[#0B0B0E] overflow-y-auto max-h-[72vh]">
           <div
             ref={certCardRef}
-            className="relative bg-[#0A0C14] border-4 border-black p-5 sm:p-7 brutal-shadow-yellow text-center space-y-4 overflow-hidden"
+            className="relative bg-[#121216] rounded-2xl border border-white/[0.1] p-5 sm:p-8 text-center space-y-4 overflow-hidden shadow-2xl"
             style={{
-              backgroundImage: 'radial-gradient(#2A3048 1.5px, transparent 1.5px)',
+              backgroundImage: 'radial-gradient(#27272A 1.5px, transparent 1.5px)',
               backgroundSize: '16px 16px',
             }}
           >
             {/* Top Stamps */}
-            <div className="absolute top-2 left-2 px-2 py-0.5 bg-neo-pink text-white font-mono text-[9px] font-black uppercase border border-black">
-              ACC-NO: {certId.slice(-8)}
-            </div>
-            <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#00F59B] text-black font-mono text-[9px] font-black uppercase border border-black flex items-center gap-1">
-              <Lock className="w-2.5 h-2.5" />
-              <span>CRYPTOGRAPHICALLY SEALED</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono border border-blue-500/20">
+                ID: {certId.slice(-8)}
+              </div>
+              <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20 flex items-center gap-1.5">
+                <Lock className="w-3 h-3" />
+                <span>Cryptographically Sealed</span>
+              </div>
             </div>
 
             {/* Issuer Seal Icon */}
             <div className="pt-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-neo-yellow text-black border-3 border-black brutal-shadow-sm -rotate-2">
-                <Trophy className="w-7 h-7 fill-black" />
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <Trophy className="w-7 h-7" />
               </div>
             </div>
 
             {/* Headers */}
             <div className="space-y-1">
-              <div className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-neo-yellow">
-                SKETCHCAST INTERACTIVE ARCHITECTURE ARENA
+              <div className="text-xs font-medium text-blue-400">
+                SketchCast Interactive Architecture Arena
               </div>
-              <h1 className="text-xl sm:text-3xl font-heavy uppercase tracking-tight text-white leading-tight">
-                MASTERCLASS PASS OF MERIT
+              <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-white leading-tight font-display">
+                Masterclass Pass of Merit
               </h1>
-              <p className="text-[10px] sm:text-xs font-mono text-slate-400">
+              <p className="text-xs text-zinc-400">
                 This official certificate verifies that attendee
               </p>
             </div>
 
             {/* Recipient Name Highlight */}
-            <div className="py-2.5 border-y-2 border-neo-yellow/30 bg-black/50">
-              <span className="text-2xl sm:text-4xl font-heavy uppercase tracking-wider text-neo-yellow font-display drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <div className="py-3 rounded-xl border border-white/[0.08] bg-[#0D0D10]">
+              <span className="text-2xl sm:text-4xl font-bold tracking-tight text-white font-display">
                 {recipientName}
               </span>
             </div>
 
             {/* Event Description & Masterclass Title */}
             <div className="space-y-1 max-w-lg mx-auto">
-              <p className="text-[10px] sm:text-xs font-mono text-slate-300 leading-relaxed">
-                has actively engaged in the live technical challenges, audience collaboration, and architecture design session for
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                has actively engaged in the live technical challenges, audience consensus, and architecture design session for
               </p>
-              <p className="text-sm sm:text-base font-heavy uppercase tracking-tight text-neo-mint">
-                "{roomTitle}" (ROOM #{roomCode})
+              <p className="text-sm sm:text-base font-semibold text-blue-400 font-display">
+                &ldquo;{roomTitle}&rdquo; (Room #{roomCode})
               </p>
             </div>
 
-            {/* Credentials & QR */}
-            <div className="pt-3 border-t-2 border-black flex items-center justify-between flex-wrap gap-4 text-left">
-              <div className="space-y-1 font-mono text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400">SESSION RANK:</span>
-                  <span className="font-heavy text-neo-cyan text-xs">
-                    RANK #{rank} OF {totalAttendees} ATTENDEES
+            {/* Credentials & QR - Balanced Grid Layout */}
+            <div className="pt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-left">
+              {/* Performance stats grid */}
+              <div className="flex-1 grid grid-cols-2 gap-2 sm:gap-2.5">
+                {/* Stat 1: Session Rank */}
+                <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                  <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Session Rank</span>
+                  <span className="text-xs sm:text-sm font-bold text-blue-400 font-mono mt-0.5">
+                    Rank #{rank} of {totalAttendees}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400">ISSUED ON:</span>
-                  <span className="font-bold text-white text-xs">{issueDate}</span>
+
+                {/* Stat 2: Total Score */}
+                <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                  <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Score Earned</span>
+                  <span className="text-xs sm:text-sm font-bold text-white font-mono mt-0.5">
+                    {score} PTS
+                  </span>
+                </div>
+
+                {/* Stat 3: Challenges Completed */}
+                <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                  <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Challenges</span>
+                  <span className="text-xs sm:text-sm font-bold text-emerald-400 font-mono mt-0.5">
+                    {correctQuizzes} Correct
+                  </span>
+                </div>
+
+                {/* Stat 4: Session Host */}
+                <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                  <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Session Host</span>
+                  <span className="text-xs sm:text-sm font-bold text-zinc-200 truncate mt-0.5" title={hostName}>
+                    {hostName}
+                  </span>
+                </div>
+
+                {/* Full-width metadata info */}
+                <div className="col-span-2 pt-1 flex items-center justify-between text-[10px] sm:text-[11px] text-zinc-500 font-mono">
+                  <span>Issued: <strong className="text-zinc-400 font-normal">{issueDate}</strong></span>
+                  <span className="truncate max-w-[180px] sm:max-w-none">ID: <strong className="text-zinc-400 font-normal">{certId.slice(0, 16)}...</strong></span>
                 </div>
               </div>
 
-              {/* QR matrix & Verifier code */}
-              <div className="flex items-center gap-2.5 bg-white p-2 border-2 border-black brutal-shadow-sm shrink-0">
+              {/* QR matrix & Verifier code - Enlarged (100px) */}
+              <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-zinc-200 shadow-md shrink-0 self-center sm:self-auto">
                 <QRCodeSVG
                   value={verificationUrl}
-                  size={68}
+                  size={100}
                   level="M"
                   includeMargin={false}
                 />
-                <div className="font-mono text-[9px] text-black font-bold uppercase space-y-0.5 leading-tight">
-                  <div className="font-black text-[#059669]">● VERIFIED VALID</div>
-                  <div className="text-slate-800 font-heavy">ID: {certId.slice(0, 16)}</div>
-                  <div className="text-slate-500">SKETCHCAST AUTH</div>
+                <div className="mt-2 text-center leading-tight">
+                  <div className="text-[11px] font-bold text-emerald-600">● Verified Valid</div>
+                  <div className="text-[9px] text-zinc-500 font-mono">ID: {certId.slice(0, 14)}</div>
+                  <div className="text-[9px] font-semibold text-blue-600">SketchCast Live</div>
                 </div>
               </div>
             </div>
@@ -227,61 +261,61 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
         </div>
 
         {/* Action Controls Footer */}
-        <div className="p-3 sm:p-3.5 bg-neo-card border-t-4 border-black flex items-center justify-between flex-wrap gap-2 font-mono">
+        <div className="p-4 bg-[#141418] border-t border-white/[0.08] flex items-center justify-between flex-wrap gap-2.5">
           <div className="flex items-center gap-2 flex-wrap">
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleCopyLink}
-              className="px-3 py-1.5 bg-neo-yellow text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white font-medium text-xs border border-white/[0.06] flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
-              <span>{copied ? 'LINK COPIED!' : 'COPY VERIFY LINK'}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-blue-400" /> : <ExternalLink className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied!' : 'Copy Verify Link'}</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-neo-cyan text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white font-medium text-xs border border-white/[0.06] flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>PRINT / PDF PASS</span>
+              <span>Print Pass</span>
             </motion.button>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleShareLinkedIn}
-              className="px-2.5 py-1.5 bg-[#0077B5] text-white font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Share2 className="w-3 h-3" />
-              <span className="hidden sm:inline">LINKEDIN</span>
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">LinkedIn</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleShareTwitter}
-              className="px-2.5 py-1.5 bg-[#1DA1F2] text-white font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs border border-white/[0.08] flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Share2 className="w-3 h-3" />
-              <span className="hidden sm:inline">X / TWITTER</span>
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">X / Twitter</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playPopSound();
                 onEnterArena(roomCode);
               }}
-              className="px-3 py-1.5 bg-[#00F59B] text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
               title="Enter live interactive session"
             >
-              <span>ENTER LIVE ARENA</span>
+              <span>Enter Live Arena</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </motion.button>
           </div>

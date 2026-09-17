@@ -16,7 +16,6 @@ import type {
   LivePoll,
   QuizRoundState,
   LeaderboardEntry,
-  SpotlightWinner,
   Survey,
   SurveyResponse,
   AudienceReaction,
@@ -33,7 +32,6 @@ export type RealtimeEventMap = {
   question_list: Question[];
   question_upvote: { questionId: string; upvotesCount: number; voterSession: string };
   room_admin_promoted: { roomId: string; targetSessionId: string; targetName: string; action: 'promote' | 'demote' };
-  attendee_spotlight: SpotlightWinner;
   presence_sync: AttendeePresence[];
   presence_ping: AttendeePresence;
   presence_pong: AttendeePresence;
@@ -188,7 +186,6 @@ export class RealtimeChannelManager {
       'question_list',
       'question_upvote',
       'room_admin_promoted',
-      'attendee_spotlight',
       'presence_ping',
       'presence_pong',
       'presence_leave',

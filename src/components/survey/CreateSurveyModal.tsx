@@ -232,32 +232,32 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md font-sans">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md font-sans">
         <motion.div
-          initial={{ scale: 0.94, opacity: 0 }}
+          initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.94, opacity: 0 }}
-          className="bg-[#12151F] text-white w-full max-w-5xl border-4 border-black brutal-shadow-lg flex flex-col max-h-[92vh] overflow-hidden font-mono"
+          exit={{ scale: 0.96, opacity: 0 }}
+          className="bg-[#101014] text-[#FAFAFA] w-full max-w-5xl rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
         >
           {/* Header */}
-          <div className="p-3.5 sm:p-4 bg-neo-yellow border-b-4 border-black flex items-center justify-between shrink-0 text-black">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 bg-black text-neo-yellow border-2 border-black flex items-center justify-center brutal-shadow-xs font-heavy shrink-0">
-                <FileText className="w-5 h-5" />
+          <div className="p-4 sm:p-5 bg-[#141418] border-b border-white/[0.08] flex items-center justify-between shrink-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-sm sm:text-base font-heavy uppercase tracking-tight text-black leading-tight">
-                    AUDIENCE SURVEY STUDIO
+                  <h2 className="text-sm sm:text-base font-semibold text-white tracking-tight font-display">
+                    Audience Survey Studio
                   </h2>
-                  <span className="px-2 py-0.5 bg-black text-neo-mint text-[10px] font-black uppercase">
-                    STEP {step} OF 2: {step === 1 ? 'START METHOD' : 'QUESTIONS & PREVIEW'}
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[11px] font-medium border border-blue-500/20">
+                    Step {step} of 2: {step === 1 ? 'Presets' : 'Questions'}
                   </span>
                 </div>
-                <p className="text-[11px] font-mono text-slate-900 font-bold">
+                <p className="text-xs text-zinc-400">
                   {step === 1
-                    ? 'Choose how to start: 1-click templates, AI copilot, or clean blank scratch.'
-                    : 'Configure survey questions and inspect live attendee phone preview.'}
+                    ? 'Choose a preset, prompt AI copilot, or build from scratch.'
+                    : 'Compose questions and preview how they appear on attendee screens.'}
                 </p>
               </div>
             </div>
@@ -270,10 +270,10 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                     playClickSound();
                     setStep(1);
                   }}
-                  className="px-2.5 py-1 bg-black text-white hover:bg-neo-cyan hover:text-black text-xs font-heavy uppercase border-2 border-black cursor-pointer flex items-center space-x-1 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] cursor-pointer flex items-center space-x-1.5 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>TEMPLATES</span>
+                  <span>Presets</span>
                 </button>
               )}
 
@@ -282,10 +282,10 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                   playClickSound();
                   onClose();
                 }}
-                className="p-1.5 bg-black text-white hover:bg-neo-pink hover:text-black transition-colors border-2 border-black cursor-pointer"
+                className="p-2 rounded-xl bg-zinc-800/40 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/[0.06] transition-colors cursor-pointer"
                 title="Close modal"
               >
-                <X className="w-4 h-4 stroke-[3]" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -294,28 +294,28 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
           <div className="flex-1 overflow-y-auto">
             {/* STEP 1: CHOOSE STARTING POINT */}
             {step === 1 ? (
-              <div className="p-4 sm:p-8 space-y-6 max-w-4xl mx-auto font-mono">
+              <div className="p-4 sm:p-8 space-y-6 max-w-4xl mx-auto">
                 <div className="text-center space-y-1">
-                  <h3 className="text-lg sm:text-2xl font-heavy uppercase tracking-tight text-white">
-                    HOW WOULD YOU LIKE TO CREATE YOUR SURVEY?
+                  <h3 className="text-lg sm:text-xl font-semibold text-white tracking-tight font-display">
+                    Create Audience Survey
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    Pick a curated preset, prompt Mesh AI, or start with a clean blank canvas.
+                  <p className="text-xs sm:text-sm text-zinc-400">
+                    Select a curated template, generate with AI, or start from a blank canvas.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Card 1: 1-Click Presets */}
-                  <div className="p-4 bg-[#181C28] border-3 border-black brutal-shadow-sm flex flex-col justify-between space-y-4 hover:border-neo-yellow transition-all">
+                  <div className="p-5 rounded-2xl bg-[#141418] border border-white/[0.08] flex flex-col justify-between space-y-4 hover:border-blue-500/30 transition-all">
                     <div className="space-y-2">
-                      <div className="w-8 h-8 bg-neo-yellow text-black border-2 border-black flex items-center justify-center font-heavy">
-                        <Zap className="w-4 h-4 fill-black" />
+                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center">
+                        <Zap className="w-4 h-4 fill-blue-400/30 text-blue-400" />
                       </div>
-                      <h4 className="font-heavy text-sm uppercase text-white tracking-tight">
-                        ⚡ 1-CLICK PRESETS
+                      <h4 className="font-semibold text-sm text-white tracking-tight font-display">
+                        Curated Templates
                       </h4>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Industry-tested multi-question survey templates ready for instant launch.
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        Session-ready multi-question templates ready for immediate presentation.
                       </p>
                     </div>
 
@@ -325,7 +325,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                           key={i}
                           type="button"
                           onClick={() => handleApplyTemplate(i)}
-                          className="w-full p-2 bg-[#202535] hover:bg-neo-yellow hover:text-black text-left border border-slate-700 text-xs font-bold uppercase cursor-pointer transition-colors block truncate"
+                          className="w-full p-2.5 rounded-xl bg-[#1A1A20] hover:bg-blue-600/10 hover:border-blue-500/30 text-zinc-300 hover:text-white text-left border border-white/[0.06] text-xs font-medium cursor-pointer transition-colors block truncate"
                         >
                           {tpl.title}
                         </button>
@@ -334,37 +334,37 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                   </div>
 
                   {/* Card 2: AI Prompt Copilot */}
-                  <div className="p-4 bg-[#1A1828] border-3 border-black brutal-shadow-pink flex flex-col justify-between space-y-4 hover:border-neo-pink transition-all">
+                  <div className="p-5 rounded-2xl bg-[#141418] border border-blue-500/30 flex flex-col justify-between space-y-4 hover:border-blue-500/60 transition-all relative">
                     <div className="space-y-2">
-                      <div className="w-8 h-8 bg-neo-pink text-white border-2 border-black flex items-center justify-center font-heavy">
-                        <Sparkles className="w-4 h-4 fill-white" />
+                      <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 fill-blue-400/30 text-blue-400" />
                       </div>
-                      <h4 className="font-heavy text-sm uppercase text-white tracking-tight">
-                        ✨ MESH AI COPILOT
+                      <h4 className="font-semibold text-sm text-white tracking-tight font-display">
+                        AI Survey Generator
                       </h4>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Describe your topic or technical session to automatically draft tailored questions.
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                        Enter any topic or tech stack to automatically generate relevant questions.
                       </p>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <input
                         type="text"
                         value={aiTopicPrompt}
                         onChange={(e) => setAiTopicPrompt(e.target.value)}
-                        placeholder="e.g. Distributed caching..."
+                        placeholder="e.g. Distributed caching architectures..."
                         disabled={isGeneratingAI}
-                        className="w-full p-2 bg-[#0E1017] border border-black text-white text-xs font-bold focus:outline-none focus:border-neo-pink select-text"
+                        className="w-full px-3 py-2 rounded-xl bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
                         onKeyDown={(e) => e.key === 'Enter' && handleGenerateWithAI()}
                       />
 
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {['Kafka vs RabbitMQ', 'React 19 Deep Dive', 'Security Review'].map((tag) => (
                           <button
                             key={tag}
                             type="button"
                             onClick={() => handleGenerateWithAI(tag)}
-                            className="px-1.5 py-0.5 bg-[#0E1017] hover:bg-neo-pink hover:text-white text-[9px] text-slate-400 font-bold border border-slate-700 cursor-pointer"
+                            className="px-2 py-0.5 rounded-full bg-zinc-800/60 hover:bg-blue-500/15 hover:text-blue-400 text-[10px] text-zinc-400 border border-white/[0.06] cursor-pointer transition-colors"
                           >
                             +{tag}
                           </button>
@@ -375,17 +375,17 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                         type="button"
                         onClick={() => handleGenerateWithAI()}
                         disabled={!aiTopicPrompt.trim() || isGeneratingAI}
-                        className="w-full py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                        className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20"
                       >
                         {isGeneratingAI ? (
                           <>
                             <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                            <span>DRAFTING QUESTIONS...</span>
+                            <span>Synthesizing questions...</span>
                           </>
                         ) : (
                           <>
                             <Zap className="w-3.5 h-3.5 fill-white" />
-                            <span>GENERATE WITH AI →</span>
+                            <span>Generate with AI →</span>
                           </>
                         )}
                       </button>
@@ -393,93 +393,93 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                   </div>
 
                   {/* Card 3: Start from Scratch */}
-                  <div className="p-4 bg-[#181C28] border-3 border-black brutal-shadow-sm flex flex-col justify-between space-y-4 hover:border-neo-cyan transition-all">
+                  <div className="p-5 rounded-2xl bg-[#141418] border border-white/[0.08] flex flex-col justify-between space-y-4 hover:border-blue-500/30 transition-all">
                     <div className="space-y-2">
-                      <div className="w-8 h-8 bg-neo-cyan text-black border-2 border-black flex items-center justify-center font-heavy">
-                        <Plus className="w-4 h-4 stroke-[3]" />
+                      <div className="w-9 h-9 rounded-xl bg-zinc-800/60 text-zinc-300 border border-white/[0.06] flex items-center justify-center">
+                        <Plus className="w-4 h-4" />
                       </div>
-                      <h4 className="font-heavy text-sm uppercase text-white tracking-tight">
-                        ✍️ BLANK SCRATCH
+                      <h4 className="font-semibold text-sm text-white tracking-tight font-display">
+                        Blank Survey
                       </h4>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Start with a clean blank slate and create your custom ratings, choice, and text questions.
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        Start with a clean slate and custom-build your ratings, multiple-choice, and text prompts.
                       </p>
                     </div>
 
                     <button
                       type="button"
                       onClick={handleStartBlank}
-                      className="w-full py-2 bg-neo-cyan hover:bg-[#33F3FF] text-black text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer flex items-center justify-center space-x-1 transition-colors"
+                      className="w-full py-2.5 rounded-xl bg-zinc-800/70 hover:bg-zinc-700 text-zinc-200 hover:text-white text-xs font-medium border border-white/[0.08] cursor-pointer flex items-center justify-center space-x-1 transition-colors"
                     >
-                      <span>START FROM SCRATCH →</span>
+                      <span>Start from Scratch →</span>
                     </button>
                   </div>
                 </div>
               </div>
             ) : (
               /* STEP 2: QUESTIONS & LIVE ATTENDEE PREVIEW */
-              <div className="flex flex-col lg:flex-row h-full overflow-hidden font-mono">
+              <div className="flex flex-col lg:flex-row h-full overflow-hidden">
                 {/* Left Area: Question Builder Form */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 border-b-4 lg:border-b-0 lg:border-r-4 border-black">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-white/[0.08]">
                   {/* Survey Title & Description Inputs */}
-                  <div className="space-y-2.5 bg-[#181C28] p-3.5 border-2 border-black">
+                  <div className="space-y-3 bg-[#141418] p-4 rounded-xl border border-white/[0.08]">
                     <div>
-                      <label className="block text-[11px] font-heavy uppercase text-neo-yellow mb-1">
-                        SURVEY TITLE
+                      <label className="block text-[11px] font-medium text-zinc-400 mb-1.5">
+                        Survey Title
                       </label>
                       <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Survey Title..."
-                        className="w-full p-2 bg-[#0E1017] border border-black text-white text-xs font-bold focus:outline-none focus:border-neo-yellow select-text"
+                        className="w-full px-3 py-2 rounded-lg bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-heavy uppercase text-slate-400 mb-1">
-                        DESCRIPTION / CONTEXT
+                      <label className="block text-[11px] font-medium text-zinc-400 mb-1.5">
+                        Description / Context
                       </label>
                       <input
                         type="text"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Description for attendees..."
-                        className="w-full p-2 bg-[#0E1017] border border-black text-white text-xs font-bold focus:outline-none focus:border-neo-yellow select-text"
+                        className="w-full px-3 py-2 rounded-lg bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
                       />
                     </div>
                   </div>
 
                   {/* Add Question Toolbar */}
-                  <div className="flex items-center justify-between border-b-2 border-slate-700 pb-2">
-                    <span className="font-heavy text-xs uppercase text-neo-cyan">
-                      QUESTIONS ({questions.length})
+                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <span className="font-semibold text-xs text-white">
+                      Questions ({questions.length})
                     </span>
 
                     <div className="flex items-center space-x-1.5">
                       <button
                         type="button"
                         onClick={() => handleAddQuestion('rating')}
-                        className="px-2 py-1 bg-neo-mint hover:bg-neo-cyan text-black text-[10px] font-heavy uppercase border border-black cursor-pointer flex items-center space-x-1"
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs font-medium cursor-pointer flex items-center space-x-1 transition-colors"
                       >
-                        <Star className="w-3 h-3 fill-black" />
-                        <span>+ RATING</span>
+                        <Star className="w-3 h-3 fill-blue-400/30" />
+                        <span>+ Rating</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAddQuestion('choice')}
-                        className="px-2 py-1 bg-neo-yellow hover:bg-white text-black text-[10px] font-heavy uppercase border border-black cursor-pointer flex items-center space-x-1"
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs font-medium cursor-pointer flex items-center space-x-1 transition-colors"
                       >
                         <CheckSquare className="w-3 h-3" />
-                        <span>+ CHOICE</span>
+                        <span>+ Choice</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAddQuestion('text')}
-                        className="px-2 py-1 bg-neo-cyan hover:bg-neo-pink hover:text-white text-black text-[10px] font-heavy uppercase border border-black cursor-pointer flex items-center space-x-1"
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs font-medium cursor-pointer flex items-center space-x-1 transition-colors"
                       >
                         <MessageSquare className="w-3 h-3" />
-                        <span>+ TEXT</span>
+                        <span>+ Text</span>
                       </button>
                     </div>
                   </div>
@@ -490,23 +490,23 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                       <div
                         key={q.id}
                         onClick={() => setPreviewActiveQuestionIndex(idx)}
-                        className={`p-3 bg-[#181C28] border-2 cursor-pointer transition-all space-y-2 ${
+                        className={`p-4 rounded-xl bg-[#141418] border transition-all space-y-3 cursor-pointer ${
                           previewActiveQuestionIndex === idx
-                            ? 'border-neo-yellow brutal-shadow-xs'
-                            : 'border-black hover:border-slate-600'
+                            ? 'border-blue-500/60 ring-1 ring-blue-500/30'
+                            : 'border-white/[0.08] hover:border-white/[0.15]'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <span className="w-5 h-5 bg-black text-neo-yellow border border-black text-[10px] font-heavy flex items-center justify-center">
+                            <span className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold flex items-center justify-center">
                               {idx + 1}
                             </span>
-                            <span className="px-1.5 py-0.2 bg-black text-neo-mint text-[9px] font-heavy uppercase border border-slate-700">
+                            <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px] uppercase font-medium">
                               {q.type}
                             </span>
                             {previewActiveQuestionIndex === idx && (
-                              <span className="text-[9px] text-neo-yellow font-bold uppercase">
-                                • In Phone Preview
+                              <span className="text-[11px] text-blue-400 font-medium">
+                                • Previewing
                               </span>
                             )}
                           </div>
@@ -519,28 +519,28 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                               type="button"
                               onClick={() => handleMoveQuestion(idx, 'up')}
                               disabled={idx === 0}
-                              className="p-1 hover:text-neo-yellow disabled:opacity-20 cursor-pointer"
+                              className="p-1 rounded text-zinc-400 hover:text-white disabled:opacity-20 cursor-pointer"
                               title="Move Up"
                             >
-                              <ChevronUp className="w-3 h-3" />
+                              <ChevronUp className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleMoveQuestion(idx, 'down')}
                               disabled={idx === questions.length - 1}
-                              className="p-1 hover:text-neo-yellow disabled:opacity-20 cursor-pointer"
+                              className="p-1 rounded text-zinc-400 hover:text-white disabled:opacity-20 cursor-pointer"
                               title="Move Down"
                             >
-                              <ChevronDown className="w-3 h-3" />
+                              <ChevronDown className="w-3.5 h-3.5" />
                             </button>
                             {questions.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => handleRemoveQuestion(q.id)}
-                                className="p-1 text-red-400 hover:text-red-200 cursor-pointer"
+                                className="p-1 rounded text-red-400 hover:text-red-300 cursor-pointer"
                                 title="Delete question"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
@@ -551,30 +551,30 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                           value={q.title}
                           onChange={(e) => handleUpdateTitle(q.id, e.target.value)}
                           placeholder="Enter question prompt..."
-                          className="w-full p-1.5 bg-[#0E1017] border border-black text-white text-xs font-bold focus:outline-none focus:border-neo-yellow select-text"
+                          className="w-full px-3 py-2 rounded-lg bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
                         />
 
                         {/* Choice options builder */}
                         {q.type === 'choice' && q.options && (
-                          <div className="pl-2 space-y-1 pt-1 border-l-2 border-slate-700">
+                          <div className="pl-3 space-y-2 pt-1 border-l border-white/[0.08]">
                             {q.options.map((opt, optIdx) => (
-                              <div key={optIdx} className="flex items-center space-x-1.5">
-                                <span className="w-4 h-4 bg-black text-neo-yellow border border-black text-[9px] font-heavy flex items-center justify-center shrink-0">
+                              <div key={optIdx} className="flex items-center space-x-2">
+                                <span className="w-5 h-5 rounded-md bg-blue-500/10 text-blue-400 text-xs font-semibold flex items-center justify-center shrink-0">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
                                 <input
                                   type="text"
                                   value={opt}
                                   onChange={(e) => handleUpdateOption(q.id, optIdx, e.target.value)}
-                                  className="flex-1 p-1 bg-[#0E1017] border border-black text-white text-xs font-medium focus:border-neo-mint select-text"
+                                  className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:border-blue-500 select-text"
                                 />
                                 {q.options && q.options.length > 2 && (
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveOption(q.id, optIdx)}
-                                    className="text-red-400 hover:text-red-200 p-0.5 cursor-pointer"
+                                    className="text-red-400 hover:text-red-300 p-1 cursor-pointer"
                                   >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                               </div>
@@ -583,7 +583,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleAddOption(q.id)}
-                                className="text-[10px] font-heavy uppercase text-neo-mint hover:underline flex items-center space-x-1 mt-1 cursor-pointer"
+                                className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 mt-1 font-medium cursor-pointer"
                               >
                                 <Plus className="w-3 h-3" />
                                 <span>Add Option</span>
@@ -597,47 +597,47 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                 </div>
 
                 {/* Right Area: Live Attendee Phone Preview */}
-                <div className="w-full lg:w-88 bg-[#0A0C14] p-4 flex flex-col items-center justify-center shrink-0">
-                  <div className="flex items-center space-x-1.5 font-heavy text-xs text-slate-400 uppercase mb-2">
-                    <Smartphone className="w-3.5 h-3.5 text-neo-mint" />
-                    <span>LIVE ATTENDEE MOBILE PREVIEW</span>
+                <div className="w-full lg:w-88 bg-[#0B0B0E] p-5 flex flex-col items-center justify-center shrink-0 border-t lg:border-t-0 border-white/[0.08]">
+                  <div className="flex items-center space-x-1.5 font-medium text-xs text-zinc-400 mb-3">
+                    <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Attendee Mobile Preview</span>
                   </div>
 
-                  <div className="w-full max-w-xs bg-[#151822] border-4 border-black brutal-shadow-lg p-3.5 flex flex-col justify-between min-h-[380px] text-left">
+                  <div className="w-full max-w-xs bg-[#141418] rounded-2xl border border-white/[0.08] shadow-2xl p-4 flex flex-col justify-between min-h-[380px] text-left">
                     <div className="space-y-3">
                       {/* Simulated Phone Header */}
-                      <div className="flex items-center justify-between pb-2 border-b-2 border-slate-700 text-[10px] text-slate-400">
-                        <span className="font-bold text-neo-yellow uppercase">SKETCHCAST LIVE</span>
-                        <span className="font-mono">
+                      <div className="flex items-center justify-between pb-2 border-b border-white/[0.08] text-xs text-zinc-400">
+                        <span className="font-semibold text-blue-400">SketchCast</span>
+                        <span>
                           Q {previewActiveQuestionIndex + 1}/{questions.length}
                         </span>
                       </div>
 
                       {/* Survey Title */}
                       <div className="space-y-0.5">
-                        <h4 className="font-heavy text-xs uppercase text-white tracking-tight line-clamp-2">
+                        <h4 className="font-semibold text-xs text-white tracking-tight line-clamp-2 font-display">
                           {title || 'Tech Survey'}
                         </h4>
-                        <p className="text-[10px] text-slate-400 line-clamp-1">
+                        <p className="text-[11px] text-zinc-400 line-clamp-1">
                           {description || 'Audience feedback'}
                         </p>
                       </div>
 
                       {/* Active Question Preview */}
-                      <div className="p-3 bg-[#1B2030] border-2 border-black brutal-shadow-xs space-y-2.5">
-                        <span className="font-bold text-xs text-white leading-snug block">
+                      <div className="p-3.5 rounded-xl bg-[#0D0D10] border border-white/[0.06] space-y-3">
+                        <span className="font-medium text-xs text-white leading-snug block">
                           {currentPreviewQ?.title || 'Question prompt'}
                         </span>
 
                         {currentPreviewQ?.type === 'rating' && (
-                          <div className="flex justify-center space-x-1.5 py-2">
+                          <div className="flex justify-center space-x-2 py-2">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <button
                                 key={star}
                                 type="button"
                                 className="p-1 hover:scale-110 transition-transform cursor-pointer"
                               >
-                                <Star className="w-5 h-5 fill-neo-yellow text-black" />
+                                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
                               </button>
                             ))}
                           </div>
@@ -648,9 +648,9 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                             {currentPreviewQ.options.map((opt, oIdx) => (
                               <div
                                 key={oIdx}
-                                className="p-1.5 bg-[#0E1017] border border-slate-700 text-xs text-slate-200 flex items-center space-x-2 font-medium"
+                                className="p-2 rounded-lg bg-[#18181D] border border-white/[0.06] text-xs text-zinc-200 flex items-center space-x-2"
                               >
-                                <span className="w-4 h-4 bg-black text-neo-yellow border border-black text-[9px] font-heavy flex items-center justify-center shrink-0">
+                                <span className="w-4 h-4 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-semibold flex items-center justify-center shrink-0">
                                   {String.fromCharCode(65 + oIdx)}
                                 </span>
                                 <span className="truncate">{opt}</span>
@@ -660,19 +660,19 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                         )}
 
                         {currentPreviewQ?.type === 'text' && (
-                          <div className="p-2 bg-[#0E1017] border border-slate-700 text-[10px] text-slate-400 italic">
-                            Attendee types encrypted feedback here...
+                          <div className="p-2.5 rounded-lg bg-[#18181D] border border-white/[0.06] text-xs text-zinc-500 italic">
+                            Attendee submits feedback here...
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-800 flex justify-between items-center text-[10px]">
-                      <span className="text-neo-mint font-bold flex items-center space-x-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>Interactive live card</span>
+                    <div className="pt-3 border-t border-white/[0.08] flex justify-between items-center text-xs">
+                      <span className="text-blue-400 flex items-center space-x-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Live Sync Active</span>
                       </span>
-                      <span className="text-slate-500">Real-time sync</span>
+                      <span className="text-zinc-500">Realtime</span>
                     </div>
                   </div>
                 </div>
@@ -681,7 +681,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-3 sm:p-4 bg-[#0E1017] border-t-4 border-black flex flex-col-reverse xs:flex-row items-center justify-between gap-2.5 shrink-0">
+          <div className="p-4 bg-[#141418] border-t border-white/[0.08] flex flex-col-reverse xs:flex-row items-center justify-between gap-3 shrink-0">
             <div>
               {step === 2 && (
                 <button
@@ -690,9 +690,9 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                     playClickSound();
                     setStep(1);
                   }}
-                  className="px-3 py-1.5 bg-[#181C28] hover:bg-slate-700 text-slate-300 text-xs font-heavy uppercase border border-slate-700 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] cursor-pointer transition-colors"
                 >
-                  ← BACK TO TEMPLATES
+                  ← Back to Presets
                 </button>
               )}
             </div>
@@ -704,26 +704,26 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                   playClickSound();
                   onClose();
                 }}
-                className="px-4 py-2 bg-[#1B2030] hover:bg-slate-700 text-slate-200 text-xs font-heavy uppercase border-2 border-black cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] cursor-pointer transition-colors"
               >
-                CANCEL
+                Cancel
               </button>
               {step === 2 && (
                 <>
                   <button
                     type="button"
                     onClick={() => handleSubmit(false)}
-                    className="px-4 py-2 bg-neo-cyan hover:bg-[#33F3FF] text-black text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium border border-white/[0.08] cursor-pointer transition-colors"
                   >
-                    SAVE DRAFT
+                    Save Draft
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSubmit(true)}
-                    className="px-5 py-2 bg-neo-yellow hover:bg-neo-mint text-black text-xs font-heavy uppercase border-3 border-black brutal-shadow flex items-center justify-center space-x-1.5 cursor-pointer transition-all"
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-lg shadow-blue-500/20"
                   >
-                    <Rocket className="w-4 h-4 text-black stroke-[3]" />
-                    <span>LAUNCH NOW</span>
+                    <Rocket className="w-4 h-4" />
+                    <span>Launch Now</span>
                   </button>
                 </>
               )}

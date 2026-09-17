@@ -8,7 +8,6 @@ import {
   Layers,
   Bot,
   FileText,
-  RotateCw,
   ChevronLeft,
   ChevronRight,
   X,
@@ -39,7 +38,6 @@ export interface AppSidebarProps {
   onOpenAuthModal: () => void;
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
-  onOpenSpotlightRoulette?: () => void;
   onOpenCertificate?: () => void;
   onSignOut: () => void;
   isOpenMobile: boolean;
@@ -60,13 +58,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenAuthModal,
   onOpenAISettings,
   onOpenAISummary,
-  onOpenSpotlightRoulette,
   onOpenCertificate,
   onSignOut,
   isOpenMobile,
   onCloseMobile,
 }) => {
-  // Desktop collapsed state initialized from localStorage
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('sketchcast_sidebar_collapsed');
@@ -136,7 +132,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     }
   };
 
-  // Close collapsed profile popover on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (collapsedProfileRef.current && !collapsedProfileRef.current.contains(e.target as Node)) {
@@ -147,7 +142,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile drawer on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpenMobile) {
@@ -158,7 +152,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpenMobile, onCloseMobile]);
 
-  // Prevent background scrolling when mobile drawer is open
   useEffect(() => {
     if (isOpenMobile) {
       document.body.style.overflow = 'hidden';
@@ -176,8 +169,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       id: 'quiz' as ActiveTabType,
       label: 'Quiz Arena',
       icon: Zap,
-      bgColor: 'bg-neo-yellow',
-      textColor: 'text-black',
       badge: null,
       desc: 'Real-time competitive quizzes',
     },
@@ -185,8 +176,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       id: 'polls' as ActiveTabType,
       label: 'Live Polls',
       icon: Vote,
-      bgColor: 'bg-neo-pink',
-      textColor: 'text-white',
       badge: null,
       desc: 'Instant audience consensus',
     },
@@ -194,8 +183,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       id: 'qa' as ActiveTabType,
       label: 'Q&A Feed',
       icon: HelpCircle,
-      bgColor: 'bg-neo-cyan',
-      textColor: 'text-black',
       badge: questionsCount > 0 ? questionsCount : null,
       desc: 'Crowd questions & upvotes',
     },
@@ -203,8 +190,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       id: 'leaderboard' as ActiveTabType,
       label: 'Leaderboard',
       icon: Trophy,
-      bgColor: 'bg-neo-mint',
-      textColor: 'text-black',
       badge: null,
       desc: 'Top players podium & stats',
     },
@@ -212,8 +197,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       id: 'surveys' as ActiveTabType,
       label: 'Surveys',
       icon: ClipboardList,
-      bgColor: 'bg-[#FFF04D]',
-      textColor: 'text-black',
       badge: activeSurveysCount && activeSurveysCount > 0 ? 'LIVE' : null,
       desc: 'Multi-question audience feedback',
     },
@@ -226,56 +209,42 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       type: 'tab',
       label: 'Rooms Hub',
       icon: Layers,
-      bgColor: 'bg-neo-mint',
-      textColor: 'text-black',
       badge: 'HUB',
       desc: 'Manage broadcast arenas',
       requiresHost: true,
       action: () => handleSelectTab('rooms'),
     },
     {
-      id: 'ai-settings',
-      type: 'action',
-      label: 'AI Engine Settings',
+      id: 'ai-settings' as ActiveTabType,
+      type: 'tab',
+      label: 'AI Settings',
       icon: Bot,
-      bgColor: 'bg-neo-pink',
-      textColor: 'text-white',
       badge: 'AI',
-      desc: 'Keys, models & prompts',
+      desc: 'Keys, models & moderation',
       requiresHost: true,
-      action: () => handleAction(onOpenAISettings),
+      action: () => {
+        handleSelectTab('ai-settings');
+        onOpenAISettings?.();
+      },
     },
     {
-      id: 'ai-report',
-      type: 'action',
+      id: 'session-report' as ActiveTabType,
+      type: 'tab',
       label: 'Masterclass Report',
       icon: FileText,
-      bgColor: 'bg-neo-yellow',
-      textColor: 'text-black',
-      badge: hasGeneratedReport ? 'READY' : 'DOC',
-      desc: hasGeneratedReport ? 'View AI session report' : 'Instant AI session synthesis',
+      badge: hasGeneratedReport ? 'READY' : 'AI',
+      desc: hasGeneratedReport ? 'View executive report' : 'AI session synthesis',
       requiresHost: !hasGeneratedReport,
-      action: () => handleAction(onOpenAISummary),
-    },
-    {
-      id: 'spotlight-roulette',
-      type: 'action',
-      label: 'Spotlight Roulette',
-      icon: RotateCw,
-      bgColor: 'bg-neo-cyan',
-      textColor: 'text-black',
-      badge: 'LIVE',
-      desc: 'Audience giveaway wheel',
-      requiresHost: true,
-      action: () => handleAction(onOpenSpotlightRoulette),
+      action: () => {
+        handleSelectTab('session-report');
+        onOpenAISummary?.();
+      },
     },
     {
       id: 'certificate-pass',
       type: 'action',
       label: 'Masterclass Pass',
       icon: Award,
-      bgColor: 'bg-neo-yellow',
-      textColor: 'text-black',
       badge: 'PASS',
       desc: 'Verifiable credential & pass',
       requiresHost: false,
@@ -283,29 +252,26 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     },
   ];
 
-  // Filter host tools: completely hide host-only admin controls from attendees
   const visibleHostToolItems = hostToolItems.filter((item) => {
     if (userRole === 'host') return true;
     return !item.requiresHost;
   });
 
-  // User avatar initial
   const userInitial = (userName.trim()[0] || 'U').toUpperCase();
 
-  // Core Render Content
   const renderSidebarContent = (mobile: boolean = false) => {
     const collapsed = mobile ? false : isCollapsed;
 
     return (
-      <div className="flex flex-col h-full overflow-hidden font-sans select-none relative">
+      <div className="flex flex-col h-full overflow-hidden font-sans select-none relative bg-[#0E0E11]">
         {/* Host Requirement Notice Toast */}
         <AnimatePresence>
           {showHostNotice && (
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              className="absolute top-2 inset-x-2 z-50 p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-[11px] font-bold brutal-shadow flex items-center space-x-1.5 text-center shadow-xl"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="absolute top-2 inset-x-2 z-50 p-2.5 bg-red-950/90 text-red-400 border border-red-500/30 rounded-xl font-mono text-[11px] font-bold flex items-center space-x-2 text-center shadow-lg"
             >
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{hostNoticeMessage}</span>
@@ -315,22 +281,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
         {/* Mobile Header with Logo and Close Button */}
         {mobile && (
-          <div className="p-3 border-b-2 border-black bg-[#151926] flex items-center justify-between shrink-0">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs -rotate-2">
-                <Zap className="w-4 h-4 fill-black stroke-black" />
+          <div className="p-3 border-b border-white/[0.08] bg-[#121215] flex items-center justify-between shrink-0">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
+                <Zap className="w-4 h-4 fill-white stroke-white" />
               </div>
-              <span className="font-heavy text-sm tracking-tight text-white uppercase font-mono">
-                SKETCH<span className="text-neo-yellow">CAST</span>
+              <span className="font-display font-extrabold text-sm tracking-tight text-white uppercase">
+                SKETCH<span className="text-blue-500">CAST</span>
               </span>
             </div>
             <motion.button
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.94 }}
               onClick={() => {
                 playPopSound();
                 onCloseMobile();
               }}
-              className="p-1.5 bg-[#1B2030] hover:bg-neo-pink text-white border-2 border-black brutal-shadow-sm cursor-pointer transition-colors"
+              className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] cursor-pointer transition-colors"
               title="Close Menu"
             >
               <X className="w-4 h-4" />
@@ -339,16 +305,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         )}
 
         {/* Scrollable Navigation Items */}
-        <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
+        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 p-2">
           {/* Section 1: LIVE ARENA TABS */}
-          <div className="p-2 sm:p-2.5 space-y-1.5">
+          <div className="space-y-1">
             {!collapsed ? (
-              <div className="px-2 py-1 text-[10px] font-mono font-black tracking-wider text-slate-400 uppercase flex items-center justify-between">
-                <span>LIVE ARENA</span>
-                <span className="text-[9px] text-slate-500 font-mono">V2.0</span>
+              <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase flex items-center justify-between">
+                <span>CHANNELS</span>
+                <span className="text-[9px] text-blue-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  LIVE
+                </span>
               </div>
             ) : (
-              <div className="h-1.5" />
+              <div className="h-1" />
             )}
 
             <div className="space-y-1">
@@ -359,66 +328,53 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 return (
                   <motion.button
                     key={item.id}
-                    whileHover={{ scale: 1.02, x: collapsed ? 0 : 2 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelectTab(item.id)}
                     title={collapsed ? `${item.label} (${item.desc})` : undefined}
-                    className={`w-full group flex items-center border-2 border-black transition-all cursor-pointer text-left ${
+                    className={`w-full group flex items-center rounded-xl transition-all cursor-pointer text-left ${
                       collapsed
-                        ? 'justify-center p-2 h-11'
-                        : 'px-2.5 py-2 space-x-2.5 min-h-10'
+                        ? 'justify-center p-2 h-10'
+                        : 'px-3 py-2 space-x-2.5 min-h-[40px]'
                     } ${
                       isActive
-                        ? `${item.bgColor} ${item.textColor} brutal-shadow-sm font-black -translate-x-px -translate-y-px`
-                        : 'bg-[#151926] hover:bg-[#1E2336] text-slate-300 hover:text-white'
+                        ? 'bg-blue-500/10 text-white border border-blue-500/25 shadow-sm'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
                     }`}
                   >
                     {/* Icon container */}
                     <div className="relative shrink-0 flex items-center justify-center">
                       <div
-                        className={`w-7 h-7 flex items-center justify-center border border-black ${
-                          isActive
-                            ? 'bg-black/20 text-current'
-                            : 'bg-[#10131D] text-slate-300 group-hover:text-white'
+                        className={`w-5 h-5 flex items-center justify-center transition-colors ${
+                          isActive ? 'text-blue-400' : 'text-zinc-400 group-hover:text-white'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
 
-                      {/* Collapsed view badge indicator */}
                       {collapsed && item.badge !== null && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-neo-pink text-white font-mono font-black text-[9px] border border-black flex items-center justify-center rounded-full">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-blue-600 text-white font-mono font-bold text-[8px] flex items-center justify-center ring-2 ring-[#0E0E11]">
                           {item.badge}
                         </span>
                       )}
                     </div>
 
-                    {/* Expanded view label & description */}
+                    {/* Expanded view label */}
                     {!collapsed && (
                       <div className="min-w-0 flex-1 flex items-center justify-between">
-                        <div className="min-w-0">
-                          <div
-                            className={`font-mono text-xs uppercase tracking-wide truncate ${
-                              isActive ? 'font-black' : 'font-bold'
-                            }`}
-                          >
-                            {item.label}
-                          </div>
+                        <div
+                          className={`font-mono text-xs uppercase tracking-wide truncate ${
+                            isActive ? 'font-bold text-white' : 'font-medium text-zinc-400 group-hover:text-zinc-200'
+                          }`}
+                        >
+                          {item.label}
                         </div>
 
-                        {/* Question count or active indicator */}
                         {item.badge !== null ? (
-                          <span
-                            className={`ml-1.5 px-1.5 py-0.5 font-mono text-[9px] font-black border border-black rounded-full shrink-0 ${
-                              isActive
-                                ? 'bg-black text-white'
-                                : 'bg-neo-pink text-white'
-                            }`}
-                          >
+                          <span className="ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold bg-blue-600 text-white shrink-0">
                             {item.badge}
                           </span>
                         ) : isActive ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                         ) : null}
                       </div>
                     )}
@@ -428,34 +384,33 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="px-3 my-0.5">
-            <div className="h-px bg-slate-800" />
+          <div className="px-2 my-1">
+            <div className="h-px bg-white/[0.06]" />
           </div>
 
-          {/* Section 2: HOST STUDIO / PARTICIPANT PASS */}
+          {/* Section 2: HOST STUDIO / PASS */}
           {visibleHostToolItems.length > 0 && (
-            <div className="p-2 sm:p-2.5 space-y-1.5">
+            <div className="space-y-1">
               {!collapsed ? (
-                <div className="px-2 py-1 text-[10px] font-mono font-black tracking-wider text-slate-400 uppercase flex items-center justify-between">
+                <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase flex items-center justify-between">
                   {userRole === 'host' ? (
                     <>
-                      <span>HOST STUDIO & AI</span>
-                      <span className="px-1 py-0.2 bg-neo-yellow text-black border border-black text-[8px] font-black">
+                      <span>HOST TOOLS</span>
+                      <span className="px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[8px] font-bold">
                         HOST
                       </span>
                     </>
                   ) : (
                     <>
-                      <span>CREDENTIALS & PASS</span>
-                      <span className="px-1 py-0.2 bg-neo-mint text-black border border-black text-[8px] font-black">
+                      <span>CREDENTIALS</span>
+                      <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.06] text-[8px] font-bold">
                         PASS
                       </span>
                     </>
                   )}
                 </div>
               ) : (
-                <div className="h-1.5" />
+                <div className="h-1" />
               )}
 
               <div className="space-y-1">
@@ -466,66 +421,49 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   return (
                     <motion.button
                       key={item.id}
-                      whileHover={{ scale: 1.02, x: collapsed ? 0 : 2 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         item.action();
                       }}
-                      title={
+                      title={collapsed ? `${item.label} - ${item.desc}` : undefined}
+                      className={`w-full group flex items-center rounded-xl transition-all text-left ${
                         collapsed
-                          ? `${item.label} - ${item.desc}`
-                          : undefined
-                      }
-                      className={`w-full group flex items-center border-2 border-black transition-all text-left ${
-                        collapsed
-                          ? 'justify-center p-2 h-11'
-                          : 'px-2.5 py-2 space-x-2.5 min-h-10'
+                          ? 'justify-center p-2 h-10'
+                          : 'px-3 py-2 space-x-2.5 min-h-[40px]'
                       } ${
                         isActive
-                          ? `${item.bgColor} ${item.textColor} brutal-shadow-sm font-black -translate-x-px -translate-y-px cursor-pointer`
-                          : 'bg-[#151926] hover:bg-[#1E2336] text-slate-300 hover:text-white cursor-pointer'
+                          ? 'bg-blue-500/10 text-white border border-blue-500/25 shadow-sm cursor-pointer'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent cursor-pointer'
                       }`}
                     >
-                      {/* Icon */}
                       <div className="relative shrink-0 flex items-center justify-center">
                         <div
-                          className={`w-7 h-7 flex items-center justify-center border border-black ${
-                            isActive
-                              ? 'bg-black/20 text-current'
-                              : 'bg-[#10131D] text-slate-300 group-hover:text-white'
+                          className={`w-5 h-5 flex items-center justify-center transition-colors ${
+                            isActive ? 'text-blue-400' : 'text-zinc-400 group-hover:text-white'
                           }`}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
 
                         {collapsed && item.badge && (
-                          <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 bg-neo-pink text-white font-mono font-black text-[9px] border border-black flex items-center justify-center rounded-full">
+                          <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-[#18181D] text-blue-400 border border-white/[0.08] font-mono text-[8px] flex items-center justify-center ring-2 ring-[#0E0E11]">
                             {item.badge}
                           </span>
                         )}
                       </div>
 
-                      {/* Label & Details */}
                       {!collapsed && (
                         <div className="min-w-0 flex-1 flex items-center justify-between">
-                          <div className="min-w-0">
-                            <div
-                              className={`font-mono text-xs uppercase tracking-wide truncate ${
-                                isActive ? 'font-black' : 'font-bold'
-                              }`}
-                            >
-                              {item.label}
-                            </div>
+                          <div
+                            className={`font-mono text-xs uppercase tracking-wide truncate ${
+                              isActive ? 'font-bold text-white' : 'font-medium text-zinc-400 group-hover:text-zinc-200'
+                            }`}
+                          >
+                            {item.label}
                           </div>
 
                           {item.badge && (
-                            <span
-                              className={`ml-1.5 px-1.5 py-0.2 font-mono text-[9px] font-black border border-black shrink-0 ${
-                                isActive
-                                  ? 'bg-black text-white'
-                                  : 'bg-slate-800 text-slate-300'
-                              }`}
-                            >
+                            <span className="ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold bg-zinc-800 text-zinc-400 border border-white/[0.06] shrink-0">
                               {item.badge}
                             </span>
                           )}
@@ -538,29 +476,26 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           )}
 
-          {/* Section 3: FUTURE FEATURES EXTENSION HOOK */}
           {!collapsed && (
-            <div className="p-2.5 m-2.5 bg-[#10131E] border-2 border-black/80 brutal-shadow-sm font-mono text-xs">
-              <div className="flex items-center space-x-1.5 text-neo-yellow font-black text-[10px] uppercase">
-                <Sparkles className="w-3 h-3 fill-neo-yellow" />
-                <span>UPCOMING LABS</span>
+            <div className="p-3 mx-1 mt-2 bg-[#121215] rounded-xl border border-white/[0.06] font-mono text-xs">
+              <div className="flex items-center space-x-1.5 text-blue-400 font-bold text-[10px] uppercase">
+                <Sparkles className="w-3 h-3 text-blue-400" />
+                <span>INTERACTIVE ARENA</span>
               </div>
-              <div className="text-[10px] text-slate-400 mt-1 leading-snug">
-                Interactive Whiteboard & Stage Games arriving soon.
+              <div className="text-[11px] text-zinc-500 mt-1 leading-relaxed font-sans">
+                Real-time synchronized interactive audience engagement.
               </div>
             </div>
           )}
         </div>
 
         {/* ================= PINNED BOTTOM SECTION ================= */}
-        <div className="border-t-2 border-black bg-[#0E111A] shrink-0 p-2 space-y-1.5">
-          {/* Desktop Collapse / Expand Toggle Button */}
+        <div className="border-t border-white/[0.08] bg-[#0E0E11] shrink-0 p-2 space-y-2">
           {!mobile && (
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ scale: 0.98 }}
               onClick={toggleCollapse}
-              className="w-full h-7 flex items-center justify-center space-x-1.5 bg-[#171B2A] hover:bg-neo-yellow hover:text-black text-slate-300 border-2 border-black brutal-shadow-sm font-mono text-[11px] font-bold transition-all cursor-pointer"
+              className="w-full h-8 rounded-lg flex items-center justify-center space-x-1.5 bg-[#121215] hover:bg-[#18181D] text-zinc-400 hover:text-white border border-white/[0.06] font-mono text-[11px] transition-colors cursor-pointer"
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar to Icon Rail'}
             >
               {isCollapsed ? (
@@ -574,52 +509,53 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </motion.button>
           )}
 
-          {/* ================= USER PROFILE & ACCOUNT SECTION ================= */}
           {collapsed ? (
-            /* COLLAPSED DESKTOP VIEW: Compact Avatar Button + Popover */
+            /* COLLAPSED VIEW */
             <div className="relative" ref={collapsedProfileRef}>
               <motion.button
-                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   playPopSound();
                   setIsCollapsedProfileOpen(!isCollapsedProfileOpen);
                 }}
-                className={`w-full h-11 flex items-center justify-center border-2 border-black brutal-shadow-sm transition-all relative cursor-pointer ${
-                  userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                className={`w-full h-10 rounded-xl flex items-center justify-center border transition-colors relative cursor-pointer ${
+                  userRole === 'host'
+                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                    : 'bg-[#121215] border-white/[0.08] text-white'
                 }`}
                 title={`Signed in as ${userName} (${userRole})`}
               >
-                <span className="font-heavy text-xs">{userInitial}</span>
+                <span className="font-mono font-bold text-xs">{userInitial}</span>
                 <span
-                  className={`absolute -top-1 -right-1 w-2.5 h-2.5 border border-black rounded-full ${
-                    userRole === 'host' ? 'bg-neo-pink' : 'bg-neo-mint'
+                  className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
+                    userRole === 'host' ? 'bg-blue-500' : 'bg-emerald-500'
                   }`}
                 />
               </motion.button>
 
-              {/* Popover */}
               <AnimatePresence>
                 {isCollapsedProfileOpen && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.92, x: 10 }}
+                    initial={{ opacity: 0, scale: 0.95, x: 10 }}
                     animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.92, x: 10 }}
-                    className="absolute bottom-0 left-16 w-56 bg-[#141722] border-3 border-black brutal-shadow-lg p-2.5 space-y-2 z-50 font-mono text-xs shadow-2xl"
+                    exit={{ opacity: 0, scale: 0.95, x: 10 }}
+                    className="absolute bottom-0 left-14 w-60 bg-[#121215] border border-white/[0.08] rounded-2xl p-2.5 space-y-2 z-50 font-mono text-xs shadow-modal"
                   >
-                    <div className="p-2 bg-[#0C0E14] border-2 border-black space-y-0.5">
+                    <div className="p-2.5 bg-[#0A0A0C] rounded-xl border border-white/[0.06] space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase">SIGNED IN</span>
+                        <span className="text-[9px] text-zinc-500 font-bold uppercase">SIGNED IN</span>
                         <span
-                          className={`px-1 py-0.2 text-[8px] font-black uppercase border border-black ${
-                            userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                          className={`px-1.5 py-0.2 rounded-full text-[8px] font-bold uppercase border ${
+                            userRole === 'host'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                              : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                           }`}
                         >
                           {userRole}
                         </span>
                       </div>
-                      <div className="font-heavy text-white truncate text-xs">{userName}</div>
-                      <div className="text-[9px] text-slate-400 truncate">{currentUser?.email || 'Guest Participant'}</div>
+                      <div className="font-bold text-white truncate text-xs">{userName}</div>
+                      <div className="text-[9px] text-zinc-500 truncate">{currentUser?.email || 'Guest Participant'}</div>
                     </div>
 
                     <div className="space-y-1">
@@ -628,9 +564,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           handleRoleToggle();
                         }}
-                        className="w-full p-1.5 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-200 border border-black flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <Crown className="w-3.5 h-3.5" />
+                        <Crown className="w-3.5 h-3.5 text-blue-400" />
                         <span>Switch to {userRole === 'host' ? 'Attendee' : 'Host'}</span>
                       </button>
 
@@ -639,9 +575,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           onOpenAuthModal();
                         }}
-                        className="w-full p-1.5 bg-[#1C2030] hover:bg-neo-cyan hover:text-black text-slate-200 border border-black flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <Settings className="w-3.5 h-3.5" />
+                        <Settings className="w-3.5 h-3.5 text-zinc-400" />
                         <span>Account & Auth</span>
                       </button>
 
@@ -650,7 +586,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           onSignOut();
                         }}
-                        className="w-full p-1.5 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border border-neo-pink/60 flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Log Out</span>
@@ -661,42 +597,45 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            /* EXPANDED & MOBILE VIEW: Full User Card Pinned at Bottom */
-            <div className="bg-[#141724] border-2 border-black p-2 brutal-shadow-sm space-y-2">
-              {/* User Details Row */}
-              <div className="flex items-center space-x-2 min-w-0">
+            /* EXPANDED VIEW */
+            <div className="bg-[#121215] border border-white/[0.08] rounded-xl p-2.5 space-y-2">
+              <div className="flex items-center space-x-2.5 min-w-0">
                 <div
-                  className={`w-7 h-7 shrink-0 flex items-center justify-center font-heavy text-xs border border-black brutal-shadow-sm ${
-                    userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                  className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-mono font-bold text-xs border ${
+                    userRole === 'host'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                      : 'bg-[#18181D] text-white border-white/[0.08]'
                   }`}
                 >
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-black text-white truncate">{userName}</span>
+                    <span className="font-mono text-xs font-bold text-white truncate">{userName}</span>
                     <span
-                      className={`px-1 py-0.2 text-[8px] font-mono font-black uppercase border border-black ml-1 shrink-0 ${
-                        userRole === 'host' ? 'bg-neo-yellow text-black' : 'bg-neo-cyan text-black'
+                      className={`px-1.5 py-0.2 rounded-full text-[8px] font-mono font-bold uppercase border ml-1 shrink-0 ${
+                        userRole === 'host'
+                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                          : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                       }`}
                     >
                       {userRole}
                     </span>
                   </div>
-                  <div className="text-[9px] text-slate-400 truncate">
+                  <div className="text-[10px] text-zinc-500 truncate">
                     {currentUser?.email || 'Guest Participant'}
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons Row */}
-              <div className="flex items-center space-x-1 pt-1 border-t border-slate-800">
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-1 pt-2 border-t border-white/[0.06]">
                 <button
                   onClick={handleRoleToggle}
-                  className="flex-1 py-1 px-1.5 bg-[#1C2132] hover:bg-neo-yellow hover:text-black text-slate-200 border border-black font-mono text-[10px] font-bold flex items-center justify-center space-x-1 cursor-pointer transition-colors"
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] font-mono text-[10px] font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                   title={`Switch to ${userRole === 'host' ? 'Attendee' : 'Host'}`}
                 >
-                  <Crown className="w-3 h-3 shrink-0" />
+                  <Crown className="w-3 h-3 text-blue-400 shrink-0" />
                   <span className="truncate">{userRole === 'host' ? 'Attendee' : 'Host'}</span>
                 </button>
 
@@ -706,10 +645,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onCloseMobile();
                     onOpenAuthModal();
                   }}
-                  className="p-1 bg-[#1C2132] hover:bg-neo-cyan hover:text-black text-slate-300 border border-black cursor-pointer transition-colors"
-                  title="Account Settings & Authentication"
+                  className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.06] cursor-pointer transition-colors"
+                  title="Account Settings"
                 >
-                  <Settings className="w-3 h-3" />
+                  <Settings className="w-3.5 h-3.5" />
                 </button>
 
                 <button
@@ -718,10 +657,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onCloseMobile();
                     onSignOut();
                   }}
-                  className="p-1 bg-neo-pink/20 hover:bg-neo-pink text-neo-pink hover:text-white border border-neo-pink/50 cursor-pointer transition-colors"
+                  className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 cursor-pointer transition-colors"
                   title="Log Out"
                 >
-                  <LogOut className="w-3 h-3" />
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -733,20 +672,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <>
-      {/* ================= DESKTOP SIDEBAR ================= */}
+      {/* DESKTOP SIDEBAR */}
       <aside
-        className={`hidden md:flex flex-col bg-[#11131B] border-r-2 border-black shrink-0 relative transition-all duration-200 z-30 ${
-          isCollapsed ? 'w-[72px]' : 'w-60'
+        className={`hidden md:flex flex-col bg-[#0E0E11] border-r border-white/[0.08] shrink-0 relative transition-all duration-200 z-30 ${
+          isCollapsed ? 'w-16' : 'w-60'
         }`}
       >
         {renderSidebarContent(false)}
       </aside>
 
-      {/* ================= MOBILE SLIDE-OVER DRAWER ================= */}
+      {/* MOBILE SLIDE-OVER DRAWER */}
       <AnimatePresence>
         {isOpenMobile && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -756,16 +694,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 playClickSound();
                 onCloseMobile();
               }}
-              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-xs z-50 cursor-pointer"
+              className="md:hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 cursor-pointer"
             />
 
-            {/* Slide-in Drawer */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="md:hidden fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-[#11131B] border-r-3 border-black brutal-shadow-lg z-50 flex flex-col shadow-2xl"
+              className="md:hidden fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-[#0E0E11] border-r border-white/[0.08] rounded-r-2xl z-50 flex flex-col shadow-modal overflow-hidden"
             >
               {renderSidebarContent(true)}
             </motion.div>

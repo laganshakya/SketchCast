@@ -12,7 +12,6 @@ import {
   Radio,
   CheckCircle,
   AlertCircle,
-  Flame,
   Crown,
   Key,
   QrCode,
@@ -21,15 +20,12 @@ import {
   Send,
   Check
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   signInWithEmail,
   signUpWithEmail,
   signInAnonymously,
   resendVerificationEmail,
-  isEmailVerified,
-  signOutUser
 } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
@@ -85,8 +81,8 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   };
 
   const generateRandomGuestHandle = () => {
-    const adjectives = ['Pixel', 'Cyber', 'Async', 'Quantum', 'Turbo', 'Hyper', 'Neon', 'Binary', 'Vector', 'Cloud'];
-    const nouns = ['Coder', 'Hacker', 'Architect', 'Wizard', 'Ninja', 'Engineer', 'Dev', 'Explorer', 'Pilot', 'Builder'];
+    const adjectives = ['Pixel', 'Cyber', 'Async', 'Quantum', 'Turbo', 'Hyper', 'Vector', 'Cloud', 'Logic', 'Matrix'];
+    const nouns = ['Coder', 'Hacker', 'Architect', 'Engineer', 'Dev', 'Explorer', 'Pilot', 'Builder', 'Kernel', 'Node'];
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
     const num = Math.floor(10 + Math.random() * 90);
@@ -138,190 +134,190 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
       if (tab === 'guest') {
         const name = displayName.trim() || 'TechAttendee_' + Math.floor(100 + Math.random() * 900);
         try {
-          await signInAnonymously(name);
+          await signInAnonymously();
         } catch {
-          // Graceful fallback if anonymous auth not enabled in Supabase project
+          // ignore
         }
-        setSuccessMessage(`Entering Room [${cleanRoomKey}] as Guest...`);
-        setTimeout(() => onAuthenticated(name, 'attendee', cleanRoomKey), 350);
-        return;
+        playPopSound();
+        onAuthenticated(name, 'attendee', cleanRoomKey);
       } else if (tab === 'signin') {
-        const { user, session, error } = await signInWithEmail(email, password);
+        const { user, error } = await signInWithEmail(email.trim(), password);
         if (error) {
-          const errMsg = error.message.toLowerCase();
-          if (errMsg.includes('email not confirmed') || errMsg.includes('not verified') || errMsg.includes('unconfirmed')) {
-            setVerificationSentEmail(email);
-            setErrorMessage('Your email address is not verified yet. Please check your inbox.');
-          } else {
-            setErrorMessage(error.message);
-          }
-        } else if (user) {
-          // Strictly verify email confirmation status
-          if (!isEmailVerified(user) && !session) {
-            await signOutUser();
-            setVerificationSentEmail(email);
-            setErrorMessage('Your email is not verified yet. Please check your inbox.');
-          } else {
-            const name = user.user_metadata?.display_name || user.email?.split('@')[0] || (role === 'host' ? 'Host Admin' : 'TechAttendee');
-            setSuccessMessage(`Welcome, ${name}! Entering Room [${cleanRoomKey}] as ${role.toUpperCase()}...`);
-            setTimeout(() => onAuthenticated(name, role, cleanRoomKey), 500);
-          }
+          throw error;
         }
+
+        const resolvedName =
+          user?.user_metadata?.full_name ||
+          user?.user_metadata?.name ||
+          email.split('@')[0] ||
+          'Host';
+
+        playPopSound();
+        onAuthenticated(resolvedName, role, cleanRoomKey);
       } else if (tab === 'signup') {
-        const name = displayName.trim() || (role === 'host' ? 'Host Admin' : 'TechAttendee');
-        const { user, session, error } = await signUpWithEmail(email, password, name);
+        const name = displayName.trim() || email.split('@')[0] || 'Host';
+        const { session, error } = await signUpWithEmail(email.trim(), password, name);
         if (error) {
-          setErrorMessage(error.message);
-        } else if (user) {
-          if (!isEmailVerified(user) && !session) {
-            // Require user to check inbox and verify email
-            setVerificationSentEmail(email);
-            setResendCooldown(60);
-          } else {
-            setSuccessMessage(`Account verified & created! Entering Room [${cleanRoomKey}]...`);
-            setTimeout(() => onAuthenticated(name, role, cleanRoomKey), 500);
-          }
+          throw error;
+        }
+
+        if (session) {
+          playPopSound();
+          onAuthenticated(name, role, cleanRoomKey);
+        } else {
+          setVerificationSentEmail(email.trim());
+          setSuccessMessage('Account created! Please check your email inbox to verify your address.');
+          setResendCooldown(60);
         }
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Authentication failed. Please try again.');
+      console.error('[LandingAuthPage] Auth error:', err);
+      setErrorMessage(err?.message || 'Authentication failed. Please check credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-screen bg-retro-grid text-slate-100 flex flex-col justify-between select-none overflow-y-auto font-sans">
-      {/* Top Retro Hazard Bar */}
-      <div className="h-2 w-full hazard-stripes shrink-0" />
+    <div className="min-h-screen w-full flex flex-col justify-between bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] font-sans selection:bg-[#3B82F6] selection:text-white">
+      {/* Clean Top Bar */}
+      <div className="border-b border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <span className="text-blue-400 font-bold tracking-wider uppercase">ARENA LIVE</span>
+          <span className="text-zinc-600">/</span>
+          <span className="text-zinc-400 uppercase">REALTIME AUDIENCE GATEWAY</span>
+        </div>
+        <div className="text-[11px] text-zinc-500 font-mono">
+          SKETCHCAST v2.4
+        </div>
+      </div>
 
-      {/* Main Hero & Auth Container */}
-      <div className="max-w-6xl mx-auto w-full p-4 sm:p-6 md:p-8 flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-        {/* Left Hero Brand & Features */}
-        <div className="flex-1 space-y-5 max-w-xl text-left">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 bg-neo-card border-2 border-black brutal-shadow-sm font-mono text-xs text-neo-mint">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-neo-mint" />
-            <span className="font-extrabold uppercase">LIVE AUDIENCE ENGAGEMENT ARENA</span>
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-8 md:p-12 gap-8 lg:gap-16 max-w-6xl mx-auto w-full">
+        {/* Left Hero Brand & Exaggerated Typography */}
+        <div className="flex-1 space-y-6 max-w-xl text-left">
+          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-mono text-xs text-blue-400">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400" />
+            <span className="font-bold uppercase tracking-wider">LIVE AUDIENCE ENGAGEMENT ARENA</span>
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-heavy uppercase tracking-tight text-white leading-none">
-              SKETCH<span className="text-neo-yellow">CAST</span>
+          <div className="space-y-3">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-none uppercase">
+              SKETCH<span className="text-blue-500">CAST</span>
             </h1>
-            <p className="text-sm sm:text-base font-mono font-bold text-slate-300">
-              Interactive audience platform for <span className="bg-neo-yellow text-black px-1 border border-black">Live Quizzing</span>, <span className="bg-neo-cyan text-black px-1 border border-black">Community Polls</span>, and <span className="bg-neo-pink text-white px-1 border border-black">Q&A Upvotes</span>.
+            <p className="text-sm sm:text-base font-sans text-zinc-400 leading-relaxed max-w-lg">
+              High-velocity interactive audience engagement platform designed for modern tech events: real-time quizzing, live consensus polling, and crowdsourced technical Q&A.
             </p>
           </div>
 
           {/* Feature Highlights Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 font-mono">
-            <div className="p-3 bg-neo-card border-2 border-black brutal-shadow-sm flex items-start space-x-2.5">
-              <div className="p-1.5 bg-neo-yellow text-black border border-black shrink-0">
-                <Zap className="w-4 h-4 fill-black stroke-black" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                <Zap className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-black uppercase text-white">TECH QUIZZING</div>
-                <div className="text-[11px] text-slate-400">Collaborative live architecture sessions</div>
+                <div className="text-xs font-mono font-bold uppercase text-white">TECH QUIZZING</div>
+                <div className="text-xs text-zinc-400 mt-1 leading-snug">Real-time competitive rounds with instant takeaway analysis</div>
               </div>
             </div>
 
-            <div className="p-3 bg-neo-card border-2 border-black brutal-shadow-sm flex items-start space-x-2.5">
-              <div className="p-1.5 bg-neo-cyan text-black border border-black shrink-0">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <Vote className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-black uppercase text-white">LIVE POLLS</div>
-                <div className="text-[11px] text-slate-400">Instant animated percentage distribution</div>
+                <div className="text-xs font-mono font-bold uppercase text-white">LIVE POLLS</div>
+                <div className="text-xs text-zinc-400 mt-1 leading-snug">Instant audience consensus with AI sentiment synthesis</div>
               </div>
             </div>
 
-            <div className="p-3 bg-neo-card border-2 border-black brutal-shadow-sm flex items-start space-x-2.5">
-              <div className="p-1.5 bg-neo-pink text-white border border-black shrink-0">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <HelpCircle className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-black uppercase text-white">Q&A UPVOTING</div>
-                <div className="text-[11px] text-slate-400">Crowdsourced triage & stage spotlight</div>
+                <div className="text-xs font-mono font-bold uppercase text-white">Q&A UPVOTING</div>
+                <div className="text-xs text-zinc-400 mt-1 leading-snug">Crowdsourced question triage & live stage spotlight</div>
               </div>
             </div>
 
-            <div className="p-3 bg-neo-card border-2 border-black brutal-shadow-sm flex items-start space-x-2.5">
-              <div className="p-1.5 bg-neo-mint text-black border border-black shrink-0">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <Trophy className="w-4 h-4" />
               </div>
               <div>
-                    <div className="text-xs font-black uppercase text-white">READY TO PARTICIPATE</div>
-                <div className="text-[11px] text-slate-400">Top 3 visual podium & player rankings</div>
+                <div className="text-xs font-mono font-bold uppercase text-white">RANKINGS PODIUM</div>
+                <div className="text-xs text-zinc-400 mt-1 leading-snug">Live podium & verifiable masterclass credentials</div>
               </div>
             </div>
           </div>
 
           {/* Quick QR Bar */}
-          <div className="flex flex-wrap items-center gap-2 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
             <button
               type="button"
               onClick={() => setShowQRPreview(true)}
-              className="px-3.5 py-2 bg-neo-card-darker hover:bg-[#1A1D29] text-slate-200 border-2 border-black font-mono text-xs font-bold brutal-shadow-sm transition-all flex items-center space-x-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-[#121215] hover:bg-[#18181D] text-white border border-white/[0.08] font-mono text-xs font-bold transition-colors flex items-center space-x-2 cursor-pointer"
             >
-              <QrCode className="w-4 h-4 text-neo-yellow" />
+              <QrCode className="w-4 h-4 text-blue-400" />
               <span>SHOW ROOM QR CODE</span>
             </button>
-            <div className="inline-flex items-center space-x-2 text-xs font-mono font-bold text-slate-400 bg-neo-card-darker px-3 py-2 border border-black">
+            <div className="inline-flex items-center space-x-2 text-xs font-mono text-zinc-400 bg-[#121215] px-4 py-2.5 rounded-xl border border-white/[0.08]">
               <span>ACTIVE KEY:</span>
-              <span className="text-neo-yellow font-black">{roomKey}</span>
+              <span className="text-blue-400 font-bold">{roomKey}</span>
             </div>
           </div>
         </div>
 
-        {/* Right Neo-Brutalist Auth Box */}
-        <div className="w-full max-w-md bg-neo-cream text-black p-4 sm:p-6 md:p-7 border-4 border-black brutal-shadow-lg relative font-sans">
+        {/* Right Modern Auth Box */}
+        <div className="w-full max-w-md bg-[#121215] text-[#FAFAFA] p-6 sm:p-8 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans">
           {/* Header */}
-          <div className="flex items-center space-x-3 mb-3.5 sm:mb-4">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
-              <Shield className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          <div className="flex items-center space-x-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-mono shrink-0">
+              <Shield className="w-5 h-5 stroke-[2]" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black">
+              <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold">
+                GATEWAY ACCESS
+              </div>
+              <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
                 {verificationSentEmail ? 'EMAIL VERIFICATION' : 'ENTER ARENA'}
               </h2>
-              <p className="text-[11px] sm:text-xs font-mono text-slate-700">
-                {verificationSentEmail
-                  ? 'Confirm your email to activate account'
-                  : 'Host & Attendee Verified Access'}
-              </p>
             </div>
           </div>
 
           {/* Verification Pending Screen */}
           {verificationSentEmail ? (
             <div className="space-y-4 font-mono">
-              <div className="p-4 bg-amber-50 border-2 border-black space-y-3">
-                <div className="flex items-center space-x-2 text-amber-900 font-heavy text-sm">
-                  <Mail className="w-5 h-5 text-amber-600 animate-bounce shrink-0" />
-                  <span>CONFIRMATION LINK SENT!</span>
+              <div className="p-4 bg-[#0A0A0C] rounded-xl border border-white/[0.08] space-y-3">
+                <div className="flex items-center space-x-2 text-blue-400 font-bold text-sm">
+                  <Mail className="w-5 h-5 animate-pulse shrink-0" />
+                  <span>CONFIRMATION LINK SENT</span>
                 </div>
-                <p className="text-xs text-slate-700 leading-relaxed">
-                  We've sent a verification link to:
+                <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                  Verification link transmitted to:
                   <br />
-                  <strong className="text-black bg-neo-yellow px-1 border border-black break-all text-xs">
+                  <strong className="text-white bg-[#18181D] px-2 py-0.5 rounded-lg border border-white/[0.08] break-all text-xs inline-block mt-1 font-mono">
                     {verificationSentEmail}
                   </strong>
                 </p>
-                <div className="text-[11px] text-slate-600 space-y-1 bg-white p-2.5 border border-black">
-                  <div className="font-black text-black">NEXT STEPS:</div>
-                  <div>1. Check your email inbox (and Spam/Junk folder).</div>
-                  <div>2. Click the confirmation link to activate your account.</div>
-                  <div>3. Return here and sign in with your password.</div>
+                <div className="text-[11px] text-zinc-400 space-y-1 bg-[#121215] p-3 rounded-lg border border-white/[0.06]">
+                  <div className="font-bold text-white font-mono">NEXT STEPS:</div>
+                  <div>1. Check your email inbox.</div>
+                  <div>2. Click confirmation link to verify.</div>
+                  <div>3. Return here and sign in.</div>
                 </div>
               </div>
 
               {resendStatus && (
-                <div className={`p-2.5 text-xs font-bold border-2 border-black flex items-center space-x-2 ${
+                <div className={`p-2.5 rounded-xl text-xs font-mono font-bold border flex items-center space-x-2 ${
                   resendStatus.includes('sent')
-                    ? 'bg-neo-mint text-black'
-                    : 'bg-neo-pink text-white'
+                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
+                    : 'bg-red-950/40 text-red-400 border-red-500/30'
                 }`}>
-                  {resendStatus.includes('sent') ? <Check className="w-4 h-4 shrink-0 stroke-3" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  {resendStatus.includes('sent') ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                   <span>{resendStatus}</span>
                 </div>
               )}
@@ -331,12 +327,12 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   type="button"
                   onClick={() => handleResendVerification(verificationSentEmail)}
                   disabled={resendCooldown > 0}
-                  className="w-full py-2.5 bg-neo-cyan hover:bg-[#33F3FF] disabled:bg-slate-200 disabled:text-slate-500 text-black text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                  className="w-full py-2.5 bg-[#18181D] hover:bg-[#22222A] disabled:opacity-50 text-[#FAFAFA] text-xs font-mono font-bold uppercase rounded-xl border border-white/[0.08] flex items-center justify-center space-x-2 cursor-pointer transition-colors"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>
                     {resendCooldown > 0
-                      ? `RESEND AVAILABLE IN ${resendCooldown}S`
+                      ? `RESEND IN ${resendCooldown}S`
                       : 'RESEND VERIFICATION EMAIL'}
                   </span>
                 </button>
@@ -347,150 +343,118 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     setVerificationSentEmail(null);
                     setTab('signin');
                   }}
-                  className="w-full py-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow active:translate-x-px active:translate-y-px active:shadow-none flex items-center justify-center space-x-1.5 cursor-pointer"
+                  className="w-full py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
                 >
-                  <span>I'VE CONFIRMED MY EMAIL ➔ SIGN IN</span>
-                  <ArrowRight className="w-4 h-4 stroke-3" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setVerificationSentEmail(null);
-                    setEmail('');
-                    setPassword('');
-                  }}
-                  className="w-full py-2 text-center text-xs font-bold text-slate-600 hover:text-black uppercase cursor-pointer"
-                >
-                  Use a different email address
+                  <span>CONFIRMED ➔ SIGN IN</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           ) : (
             <>
-              {/* Tab Switcher: Guest, Sign In, Host Register */}
-              <div className="grid grid-cols-3 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-[11px] sm:text-xs">
-                <motion.button
+              {/* Tab Switcher */}
+              <div className="grid grid-cols-3 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl mb-4 font-mono text-xs">
+                <button
                   type="button"
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     playClickSound();
                     handleTabChange('guest');
                   }}
-                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'guest'
-                      ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Zap className="w-3 h-3" />
+                  <Zap className="w-3 h-3 text-blue-400" />
                   <span>GUEST</span>
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                   type="button"
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     playClickSound();
                     handleTabChange('signin');
                   }}
-                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signin'
-                      ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Lock className="w-3 h-3" />
+                  <Lock className="w-3 h-3 text-blue-400" />
                   <span>SIGN IN</span>
-                </motion.button>
-                <motion.button
+                </button>
+                <button
                   type="button"
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     playClickSound();
                     handleTabChange('signup');
                   }}
-                  className={`py-2 font-black uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signup'
-                      ? 'bg-neo-pink text-white border border-black brutal-shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Crown className="w-3 h-3" />
+                  <Crown className="w-3 h-3 text-blue-400" />
                   <span>REGISTER</span>
-                </motion.button>
+                </button>
               </div>
 
               {/* Feedback Banners */}
               {errorMessage && (
-                <div className="p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-start space-x-2">
+                <div className="p-3 bg-red-950/40 text-red-400 border border-red-500/30 rounded-xl font-mono text-xs mb-3 flex items-start space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <div>{errorMessage}</div>
-                    {errorMessage.toLowerCase().includes('not verified') && email && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => {
-                          playClickSound();
-                          handleResendVerification(email);
-                        }}
-                        className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
-                      >
-                        Resend Verification Email
-                      </motion.button>
-                    )}
                   </div>
                 </div>
               )}
               {successMessage && (
-                <div className="p-2.5 bg-neo-mint text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 shrink-0 stroke-3" />
+                <div className="p-3 bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 rounded-xl font-mono text-xs mb-3 flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
                   <span>{successMessage}</span>
                 </div>
               )}
 
               {/* Auth Form */}
-              <form onSubmit={handleSubmit} className="space-y-3 font-mono">
-                {/* ROOM KEY / PASSCODE FIELD */}
-                <div className="p-2.5 sm:p-3 bg-amber-50 border-2 border-black">
+              <form onSubmit={handleSubmit} className="space-y-3.5 font-mono">
+                {/* ROOM KEY FIELD */}
+                <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-xl">
                   <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                    <label className="text-xs font-black uppercase flex items-center gap-1.5 text-black">
-                      <Key className="w-3.5 h-3.5 text-amber-600" />
+                    <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-zinc-300">
+                      <Key className="w-3.5 h-3.5 text-blue-400" />
                       <span>
                         {tab !== 'guest' && role === 'host'
-                          ? 'HOST ROOM KEY (AUTO-ASSIGNED):'
-                          : 'ROOM KEY / PASSCODE TO JOIN:'}
+                          ? 'HOST ROOM KEY (ASSIGNED):'
+                          : 'ROOM KEY / PASSCODE:'}
                       </span>
                     </label>
                     {tab !== 'guest' && role === 'host' ? (
-                      <motion.button
+                      <button
                         type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.94 }}
                         onClick={() => {
                           playPopSound();
                           generateRandomRoomKey();
                         }}
-                        className="text-[9px] sm:text-[10px] bg-black text-white hover:bg-neo-pink px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors cursor-pointer"
-                        title="Shuffle unique room key"
+                        className="text-[10px] bg-[#18181D] text-blue-400 hover:bg-[#22222A] px-2 py-0.5 rounded-md font-bold uppercase flex items-center gap-1 border border-white/[0.08] transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3 h-3" /> SHUFFLE
-                      </motion.button>
+                      </button>
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-bold uppercase">
+                      <span className="text-[10px] text-zinc-500 font-mono">
                         REQUIRED
                       </span>
                     )}
                   </div>
 
                   {tab !== 'guest' && role === 'host' ? (
-                    <div className="flex items-center bg-white border-2 border-black px-2.5 sm:px-3 py-1.5 sm:py-2">
-                      <Lock className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-                      <span className="text-sm sm:text-base font-black tracking-widest text-black flex-1 select-all">
+                    <div className="flex items-center bg-[#18181D] border border-white/[0.08] rounded-lg px-3 py-2">
+                      <Lock className="w-4 h-4 text-zinc-500 mr-2 shrink-0" />
+                      <span className="text-sm font-bold tracking-widest text-white flex-1 select-all">
                         {roomKey}
                       </span>
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase px-1.5 sm:px-2 py-0.5 bg-neo-mint text-black border border-black">
+                      <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                         UNIQUE
                       </span>
                     </div>
@@ -500,16 +464,10 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                       value={roomKey}
                       onChange={(e) => setRoomKey(e.target.value.toUpperCase())}
                       placeholder="e.g. SKT-789 or ARCH-101"
-                      className="w-full px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-white border-2 border-black text-black font-black tracking-wider focus:outline-none focus:bg-neo-yellow/20"
+                      className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold tracking-wider focus:outline-none focus:border-blue-500"
                       required
                     />
                   )}
-
-                  <p className="text-[9px] sm:text-[10px] text-slate-600 font-bold mt-1">
-                    {tab !== 'guest' && role === 'host'
-                      ? 'Auto-generated collision-free room code for your live session.'
-                      : 'Enter the Room Key provided by your Host or loaded from the QR code.'}
-                  </p>
                 </div>
 
                 {/* GUEST MODE SPECIFIC FIELDS */}
@@ -517,173 +475,147 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   <>
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-black uppercase flex items-center gap-1.5">
-                          <UserIcon className="w-3.5 h-3.5 text-black" />
-                          <span>YOUR ALIAS / SCREEN NAME:</span>
+                        <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-zinc-300">
+                          <UserIcon className="w-3.5 h-3.5 text-blue-400" />
+                          <span>YOUR SCREEN ALIAS:</span>
                         </label>
-                        <motion.button
+                        <button
                           type="button"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.94 }}
                           onClick={() => {
                             playPopSound();
                             generateRandomGuestHandle();
                           }}
-                          className="text-[9px] sm:text-[10px] bg-black text-white hover:bg-neo-yellow hover:text-black px-2 py-0.5 font-black uppercase flex items-center gap-1 border border-black transition-colors cursor-pointer"
+                          className="text-[10px] bg-[#18181D] text-blue-400 hover:bg-[#22222A] px-2 py-0.5 rounded-md font-bold uppercase flex items-center gap-1 border border-white/[0.08] transition-colors cursor-pointer"
                         >
-                          <RefreshCw className="w-3 h-3" /> RANDOM ALIAS
-                        </motion.button>
+                          <RefreshCw className="w-3 h-3" /> RANDOM
+                        </button>
                       </div>
                       <input
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="e.g. NeonCoder_99 (or leave blank for auto)"
-                        className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                        placeholder="e.g. PixelDev_42 (or leave blank for random)"
+                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
                       />
-                      <p className="text-[10px] text-slate-600 font-mono mt-1">
-                        This handle appears on live quizzes, audience polls & Q&A.
-                      </p>
                     </div>
 
-                    <div className="p-2.5 bg-neo-mint/15 border-2 border-black text-[11px] font-mono text-emerald-950 flex items-center space-x-2">
-                      <Zap className="w-4 h-4 text-emerald-800 shrink-0 fill-emerald-800" />
-                      <span>Frictionless 1-click access: No password or email needed!</span>
+                    <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-[11px] font-mono text-zinc-400 flex items-center space-x-2">
+                      <Zap className="w-4 h-4 text-blue-400 shrink-0" />
+                      <span>Frictionless 1-click access: No password or signup required.</span>
                     </div>
 
                     <div className="pt-2">
-                      <motion.button
+                      <button
                         type="submit"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.97 }}
                         onClick={() => playWhoosh()}
                         disabled={isLoading}
-                        className="w-full py-2.5 sm:py-3 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                        className="w-full py-3 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
                       >
-                        <Zap className="w-4 h-4 fill-black" />
+                        <Zap className="w-4 h-4" />
                         <span>
                           {isLoading
                             ? 'CONNECTING TO ARENA...'
-                            : `ENTER ROOM [${roomKey.toUpperCase() || 'ROOM'}] AS GUEST`}
+                            : `ENTER ROOM [${roomKey.toUpperCase() || 'ROOM'}]`}
                         </span>
-                        <ArrowRight className="w-4 h-4 stroke-3" />
-                      </motion.button>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </>
                 ) : (
                   <>
                     {tab === 'signup' && (
                       <div>
-                        <label className="text-xs font-black uppercase block mb-1">Your Display Name</label>
-                        <div className="relative">
-                          <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                          <input
-                            type="text"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            placeholder="e.g. Elena Rostova"
-                            className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                            required
-                          />
-                        </div>
+                        <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Full Name / Alias</label>
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="e.g. Elena Rostova"
+                          className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                          required
+                        />
                       </div>
                     )}
 
                     <div>
-                      <label className="text-xs font-black uppercase block mb-1">Email Address</label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="you@company.com"
-                          className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                          required
-                        />
-                      </div>
+                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Email Address</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@company.com"
+                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                        required
+                      />
                     </div>
 
                     <div>
-                      <label className="text-xs font-black uppercase block mb-1">Password</label>
-                      <div className="relative">
-                        <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
-                          required
-                          minLength={6}
-                        />
-                      </div>
+                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Password</label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                        required
+                        minLength={6}
+                      />
                     </div>
 
                     {/* Role Selection */}
                     <div>
-                      <label className="text-xs font-black uppercase block mb-1">Select Arena Role:</label>
+                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Arena Role:</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <motion.button
+                        <button
                           type="button"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.96 }}
                           onClick={() => {
                             playPopSound();
                             setRole('attendee');
                           }}
-                          className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                          className={`py-2 rounded-lg text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
                             role === 'attendee'
-                              ? 'bg-neo-mint text-black brutal-shadow-sm'
-                              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                              : 'bg-[#18181D] text-zinc-400 border-white/[0.08] hover:text-white'
                           }`}
                         >
                           <UserIcon className="w-3.5 h-3.5" />
                           <span>ATTENDEE</span>
-                        </motion.button>
-                        <motion.button
+                        </button>
+                        <button
                           type="button"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.96 }}
                           onClick={() => {
                             playPopSound();
                             setRole('host');
                           }}
-                          className={`py-1.5 sm:py-2 text-xs font-black uppercase border-2 border-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                          className={`py-2 rounded-lg text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
                             role === 'host'
-                              ? 'bg-neo-yellow text-black brutal-shadow-sm'
-                              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                              : 'bg-[#18181D] text-zinc-400 border-white/[0.08] hover:text-white'
                           }`}
                         >
                           <Crown className="w-3.5 h-3.5" />
                           <span>HOST / ADMIN</span>
-                        </motion.button>
+                        </button>
                       </div>
                     </div>
 
                     {/* Submit Button */}
                     <div className="pt-2">
-                      <motion.button
+                      <button
                         type="submit"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.97 }}
                         onClick={() => playWhoosh()}
                         disabled={isLoading}
-                        className={`w-full py-2.5 sm:py-3 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 transition-all cursor-pointer ${
-                          tab === 'signin'
-                            ? 'bg-neo-yellow hover:bg-[#FFF04D]'
-                            : 'bg-neo-cyan hover:bg-[#33F3FF]'
-                        }`}
+                        className="w-full py-3 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
                       >
                         <span>
                           {isLoading
-                            ? 'VERIFYING & CONNECTING...'
+                            ? 'AUTHENTICATING...'
                             : tab === 'signin'
-                            ? `LOG IN & JOIN [${roomKey.toUpperCase() || 'ROOM'}]`
-                            : `REGISTER & SEND VERIFICATION EMAIL`}
+                            ? `SIGN IN & ENTER [${roomKey.toUpperCase() || 'ROOM'}]`
+                            : 'REGISTER ACCOUNT'}
                         </span>
-                        <ArrowRight className="w-4 h-4 stroke-3" />
-                      </motion.button>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </>
                 )}
@@ -695,28 +627,28 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fadeIn font-sans">
-          <div className="bg-neo-cream text-black w-full max-w-xs p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative text-center max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm font-sans">
+          <div className="bg-[#121215] text-[#FAFAFA] w-full max-w-xs p-6 rounded-2xl border border-white/[0.08] shadow-modal relative text-center">
             <button
               onClick={() => setShowQRPreview(false)}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer"
+              className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+              <X className="w-4 h-4" />
             </button>
 
             <div className="flex flex-col items-center mb-3">
-              <div className="w-12 h-12 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center mb-2 -rotate-3">
-                <QrCode className="w-6 h-6 stroke-[2.5]" />
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mb-2">
+                <QrCode className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-heavy uppercase tracking-tight text-black">
-                SCAN TO ENTER
+              <h3 className="text-base font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
+                MOBILE ACCESS QR
               </h3>
-              <p className="text-xs font-mono text-slate-700">
+              <p className="text-xs font-mono text-zinc-400">
                 Scan with phone camera to auto-join
               </p>
             </div>
 
-            <div className="p-3 bg-white border-4 border-black inline-block mx-auto mb-3 brutal-shadow-sm">
+            <div className="p-3 bg-white rounded-xl border border-white/[0.08] inline-block mx-auto mb-3">
               <QRCodeSVG
                 value={currentJoinUrl}
                 size={160}
@@ -727,11 +659,11 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
               />
             </div>
 
-            <div className="bg-neo-card-darker text-white p-2 border-2 border-black font-mono">
-              <div className="text-[9px] font-extrabold text-neo-yellow uppercase mb-0.5">
+            <div className="bg-[#0A0A0C] text-[#FAFAFA] p-3 rounded-xl border border-white/[0.08] font-mono">
+              <div className="text-[10px] font-bold text-zinc-500 uppercase mb-0.5">
                 ROOM PASSCODE
               </div>
-              <div className="text-xl font-black tracking-wider text-neo-cyan">
+              <div className="text-lg font-bold tracking-wider text-blue-400">
                 {roomKey.toUpperCase() || 'SKT-789'}
               </div>
             </div>
@@ -739,12 +671,12 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         </div>
       )}
 
-      {/* Bottom Retro Footer */}
-      <footer className="border-t-2 border-black bg-[#11131B] px-3 sm:px-4 py-2 sm:h-10 flex items-center justify-between flex-wrap gap-2 text-[10px] sm:text-[11px] font-mono text-slate-400 shrink-0">
-        <div>SKETCHCAST // SUPABASE REALTIME V2.6</div>
-        <div className="flex items-center gap-1">
-          <Flame className="w-3.5 h-3.5 text-neo-yellow" />
-          <span>NEO-BRUTALISM RETRO ARENA</span>
+      {/* Bottom Minimalist Footer */}
+      <footer className="border-t border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-zinc-500 shrink-0">
+        <div>SKETCHCAST • SUPABASE REALTIME SYNC</div>
+        <div className="flex items-center gap-2 text-zinc-400">
+          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+          <span>EXAGGERATED MINIMALISM & KINETIC TYPOGRAPHY</span>
         </div>
       </footer>
     </div>

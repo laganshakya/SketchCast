@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Download, Copy, Check, Trophy, Share2, Smartphone, Sparkles } from 'lucide-react';
+import { X, Download, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ChampionSocialCardData } from '../../types';
-import { playClickSound, playPopSound } from '../../lib/soundFx';
+import { playClickSound } from '../../lib/soundFx';
 
 interface ChampionSocialCardModalProps {
   isOpen: boolean;
@@ -16,10 +16,7 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
   cardData,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [showShareToast, setShowShareToast] = useState<'linkedin' | 'twitter' | null>(null);
-  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const drawCard = useCallback(() => {
     const canvas = canvasRef.current;
@@ -33,11 +30,11 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     canvas.height = height;
 
     // 1. Deep Background
-    ctx.fillStyle = '#0E111B';
+    ctx.fillStyle = '#0A0A0C';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Subtle Grid Matrix
-    ctx.strokeStyle = '#181E2E';
+    // 2. Blueprint Grid Matrix
+    ctx.strokeStyle = '#181820';
     ctx.lineWidth = 1;
     for (let x = 0; x < width; x += 40) {
       ctx.beginPath();
@@ -52,97 +49,154 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       ctx.stroke();
     }
 
-    // 3. Thick Outer Border
-    ctx.lineWidth = 12;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(6, 6, width - 12, height - 12);
+    // 3. Precision Border
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#27272A';
+    ctx.strokeRect(16, 16, width - 32, height - 32);
 
     // 4. Header Bar
-    ctx.fillStyle = '#1A1E2C';
-    ctx.fillRect(12, 12, width - 24, 70);
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(12, 12, width - 24, 70);
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(20, 20, width - 40, 64);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#27272A';
+    ctx.strokeRect(20, 20, width - 40, 64);
 
     // Header Title
-    ctx.fillStyle = '#FFE600';
-    ctx.font = '900 24px "Inter", "Outfit", sans-serif';
-    ctx.fillText('⚡ SKETCHCAST LIVE 2.0 // ARENA CHAMPIONSHIP', 36, 56);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = '700 20px "Space Grotesk", sans-serif';
+    const headerTitle = cardData.roomTitle
+      ? `SKETCHCAST LIVE • ${cardData.roomTitle.toUpperCase()}`
+      : 'SKETCHCAST LIVE • ARENA CHAMPIONSHIP';
+    const truncatedHeader = headerTitle.length > 42 ? headerTitle.slice(0, 40) + '...' : headerTitle;
+    ctx.fillText(truncatedHeader, 44, 58);
 
     // Room Code Pill in Header
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(width - 240, 24, 200, 44);
-    ctx.fillStyle = '#00F59B';
-    ctx.font = 'bold 18px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#181822';
+    ctx.fillRect(width - 240, 32, 196, 40);
+    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeRect(width - 240, 32, 196, 40);
+    ctx.fillStyle = '#3B82F6';
+    ctx.font = '700 16px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`ROOM: ${cardData.roomCode}`, width - 140, 52);
+    ctx.fillText(`ROOM: ${cardData.roomCode}`, width - 142, 57);
     ctx.textAlign = 'left';
 
     // 5. Rank Badge & Trophy
     const isFirst = cardData.rank === 1;
     const isSecond = cardData.rank === 2;
     const isThird = cardData.rank === 3;
-    const rankColor = isFirst ? '#FFE600' : isSecond ? '#00F0FF' : isThird ? '#FF8833' : '#9B5DE5';
-    const rankText = isFirst ? '#1 GOLD CHAMPION' : isSecond ? '#2 SILVER MEDALIST' : isThird ? '#3 BRONZE PODIUM' : `TOP PLAYER #${cardData.rank}`;
+    const rankText = isFirst
+      ? '#01 GOLD CHAMPION'
+      : isSecond
+      ? '#02 SILVER MEDALIST'
+      : isThird
+      ? '#03 BRONZE PODIUM'
+      : `TOP PLAYER #${String(cardData.rank).padStart(2, '0')}`;
 
-    ctx.fillStyle = rankColor;
-    ctx.fillRect(40, 115, 340, 48);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(40, 115, 340, 48);
-
-    ctx.fillStyle = '#000000';
-    ctx.font = '900 20px "JetBrains Mono", monospace';
-    ctx.fillText(rankText, 56, 146);
+    ctx.fillStyle = '#3B82F6';
+    ctx.fillRect(44, 115, 340, 44);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 18px "Space Grotesk", sans-serif';
+    ctx.fillText(rankText, 60, 143);
 
     // 6. Player Name
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 52px "Inter", "Outfit", sans-serif';
-    const maxName = cardData.playerName.length > 22 ? cardData.playerName.slice(0, 20) + '..' : cardData.playerName;
-    ctx.fillText(maxName.toUpperCase(), 40, 220);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = '700 48px "Space Grotesk", sans-serif';
+    const maxName =
+      cardData.playerName.length > 22 ? cardData.playerName.slice(0, 20) + '..' : cardData.playerName;
+    ctx.fillText(maxName.toUpperCase(), 44, 212);
 
-    // 7. Stat Cards Grid (2 Stat Boxes)
+    // Subtitle under Player Name
+    ctx.fillStyle = '#71717A';
+    ctx.font = '500 15px "Space Grotesk", sans-serif';
+    const subtitleText = cardData.roomTitle
+      ? `${cardData.roomTitle} • Verified Realtime Arena Performance`
+      : 'Interactive Architecture Mastery • Verified Realtime Performance';
+    ctx.fillText(subtitleText, 44, 246);
+
+    // 7. Stat Cards Grid (4 Stat Boxes)
+    const effectiveScore =
+      cardData.score ?? cardData.correctQuizzes * 100 + (cardData.pollsVoted || 0) * 25;
+    const effectiveTotalAttendees = cardData.totalAttendees || 1;
+    const effectiveHost = cardData.hostName
+      ? cardData.hostName.length > 15
+        ? cardData.hostName.slice(0, 13) + '..'
+        : cardData.hostName
+      : 'MASTERCLASS HOST';
+
     const stats = [
-      { label: 'QUIZZES SOLVED', value: `${cardData.correctQuizzes} / ${cardData.totalQuizzes || cardData.correctQuizzes}`, color: '#00F59B' },
-      { label: 'POLLS PARTICIPATED', value: `${cardData.pollsVoted} VOTES`, color: '#00F0FF' },
+      {
+        label: `RANK (OF ${effectiveTotalAttendees} PLAYERS)`,
+        value: `#${String(cardData.rank).padStart(2, '0')}`,
+      },
+      {
+        label: 'TOTAL SCORE',
+        value: `${effectiveScore} PTS`,
+      },
+      {
+        label: 'QUIZZES COMPLETED',
+        value: `${cardData.correctQuizzes} SOLVED`,
+      },
+      {
+        label: 'SESSION HOST',
+        value: effectiveHost.toUpperCase(),
+      },
     ];
 
-    const boxWidth = 320;
+    const boxWidth = 260;
     const boxHeight = 110;
-    const boxStartX = 40;
-    const boxStartY = 280;
-    const gap = 32;
+    const boxStartX = 44;
+    const boxStartY = 285;
+    const gap = 24;
 
     stats.forEach((st, idx) => {
       const bx = boxStartX + idx * (boxWidth + gap);
       const by = boxStartY;
 
       // Box background
-      ctx.fillStyle = '#151824';
+      ctx.fillStyle = '#121216';
       ctx.fillRect(bx, by, boxWidth, boxHeight);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#27272A';
       ctx.strokeRect(bx, by, boxWidth, boxHeight);
 
+      // Subtle top accent line
+      ctx.fillStyle = idx === 0 ? '#3B82F6' : '#27272A';
+      ctx.fillRect(bx, by, boxWidth, 2);
+
       // Value
-      ctx.fillStyle = st.color;
-      ctx.font = '900 32px "JetBrains Mono", monospace';
-      ctx.fillText(st.value, bx + 24, by + 56);
+      ctx.fillStyle = '#60A5FA';
+      ctx.font = '700 24px "JetBrains Mono", monospace';
+      ctx.fillText(st.value, bx + 18, by + 52);
 
       // Label
-      ctx.fillStyle = '#94A3B8';
-      ctx.font = 'bold 15px "JetBrains Mono", monospace';
-      ctx.fillText(st.label, bx + 24, by + 90);
+      ctx.fillStyle = '#71717A';
+      ctx.font = '600 12px "Space Grotesk", sans-serif';
+      ctx.fillText(st.label, bx + 18, by + 84);
     });
 
-    // 9. Footer Watermark
-    ctx.fillStyle = '#64748B';
-    ctx.font = '12px "JetBrains Mono", monospace';
-    ctx.fillText('Verified Realtime Keynote Session • Powered by SketchCast Live & Supabase', 40, 580);
+    // 8. Divider Line
+    ctx.strokeStyle = '#27272A';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(44, 535);
+    ctx.lineTo(width - 44, 535);
+    ctx.stroke();
 
-    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // 9. Clean Verified Footer
+    ctx.fillStyle = '#71717A';
+    ctx.font = '600 13px "Space Grotesk", sans-serif';
+    ctx.fillText('⚡ VERIFIED LIVE ARENA • SKETCHCAST', 44, 575);
+
+    const dateStr = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
     ctx.textAlign = 'right';
-    ctx.fillText(`ISSUED: ${dateStr.toUpperCase()}`, width - 40, 580);
+    ctx.fillStyle = '#52525B';
+    ctx.font = '600 13px "JetBrains Mono", monospace';
+    ctx.fillText(`ISSUED: ${dateStr.toUpperCase()}`, width - 44, 575);
     ctx.textAlign = 'left';
   }, [cardData]);
 
@@ -182,83 +236,6 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     }
   };
 
-  const handleCopyImage = async (): Promise<boolean> => {
-    playPopSound();
-    const canvas = canvasRef.current;
-    if (!canvas || !navigator.clipboard?.write) return false;
-
-    try {
-      const blob = await getCardBlob();
-      if (!blob) return false;
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-      return true;
-    } catch {
-      handleDownloadPNG();
-      return false;
-    }
-  };
-
-  const handleShare = async (platform: 'linkedin' | 'twitter' | 'native') => {
-    playClickSound();
-    const filename = `sketchcast-champion-${cardData.playerName.toLowerCase().replace(/\s+/g, '_')}.png`;
-    const shareTitle = `SketchCast Champion: ${cardData.playerName}`;
-    const shareText = `🏆 Answered ${cardData.correctQuizzes} correctly (Rank #${cardData.rank}) on SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Realtime architecture mastery unlocked.\nJoin the interactive arena: ${window.location.origin}`;
-
-    // 1. Explicit Native OS Share Sheet (only when user clicks 'SHARE CARD')
-    if (platform === 'native') {
-      const blob = await getCardBlob();
-      const file = blob
-        ? new File([blob], filename, { type: 'image/png' })
-        : null;
-
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        try {
-          await navigator.share({
-            title: shareTitle,
-            text: shareText,
-            files: file && navigator.canShare?.({ files: [file] }) ? [file] : undefined,
-          });
-          return;
-        } catch (err: any) {
-          if (err?.name === 'AbortError') return;
-        }
-      }
-      await handleDownloadPNG();
-      return;
-    }
-
-    // 2. Direct Social Platform Web Intents - ALWAYS opens website directly without OS popup
-    if (platform === 'linkedin') {
-      const textParam = encodeURIComponent(shareText);
-      window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${textParam}`, '_blank');
-    } else if (platform === 'twitter') {
-      const textParam = encodeURIComponent(
-        `🏆 Answered ${cardData.correctQuizzes} correctly (#${cardData.rank}) on @SketchCast Live Keynote Arena in Room #${cardData.roomCode}! ⚡ Interactive architecture challenge completed: ${window.location.origin}`
-      );
-      window.open(`https://twitter.com/intent/tweet?text=${textParam}`, '_blank');
-    }
-
-    // 3. Desktop Flow: Concurrently copy image to clipboard and trigger PNG download for easy Ctrl+V pasting
-    getCardBlob().then(async (blob) => {
-      if (blob) {
-        await handleCopyImage();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-      }
-    });
-
-    setShowShareToast(platform);
-    setTimeout(() => setShowShareToast(null), 8000);
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -266,160 +243,73 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-sans"
         >
           <motion.div
-            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            initial={{ scale: 0.95, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 15, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[95vh] overflow-y-auto"
+            exit={{ scale: 0.95, y: 12, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-[#0E0E11] text-white w-full max-w-2xl p-5 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[95vh] overflow-y-auto"
           >
             {/* Close Button */}
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 bg-[#16161A] text-zinc-400 hover:text-white rounded-xl border border-white/[0.08] hover:border-zinc-700 transition-colors cursor-pointer z-10"
               title="Close modal"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+              <X className="w-4 h-4 stroke-2" />
             </motion.button>
 
             {/* Modal Header */}
-            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0">
-                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            <div className="flex items-start space-x-3 mb-5 pr-10">
+              <div className="w-10 h-10 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+                <Trophy className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                    EXPORT CHAMPION SOCIAL CARD
+                <div className="flex items-center space-x-2.5">
+                  <h3 className="text-base font-semibold text-white leading-tight">
+                    Export Champion Card
                   </h3>
-                  <span className="px-1.5 py-0.2 bg-black text-neo-mint font-mono text-[9px] font-black uppercase border border-black">
-                    HIGH RES 1200x630
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded-full border border-blue-500/20">
+                    1200 × 630
                   </span>
                 </div>
-                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-                  Ready-to-share graphic card for your LinkedIn, X (Twitter), or developer portfolio!
+                <p className="text-xs text-zinc-400 mt-1">
+                  Ready-to-share graphic card for LinkedIn, X (Twitter), or developer portfolio
                 </p>
               </div>
             </div>
 
-            {/* Desktop Share Guidance Toast */}
-            <AnimatePresence>
-              {showShareToast && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-3.5 p-2.5 sm:p-3 bg-neo-yellow text-black border-2 border-black font-mono text-xs font-bold flex items-center justify-between brutal-shadow shrink-0"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 shrink-0 text-black" />
-                    <span className="leading-tight">
-                      <strong>Card Image Copied & Downloaded!</strong> Press{' '}
-                      <kbd className="px-1 py-0.5 bg-black text-neo-yellow border border-black text-[10px] font-black">
-                        Ctrl+V
-                      </kbd>{' '}
-                      to paste the graphic card directly into your {showShareToast === 'linkedin' ? 'LinkedIn' : 'X'} post.
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setShowShareToast(null)}
-                    className="p-1 hover:bg-black hover:text-white border border-black cursor-pointer ml-2 shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {/* Canvas Preview Container */}
-            <div className="p-2 sm:p-3 bg-[#0B0D14] border-2 border-black brutal-shadow-sm mb-4 flex items-center justify-center overflow-hidden">
+            <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-2xl mb-4 flex items-center justify-center overflow-hidden">
               <canvas
                 ref={canvasRef}
-                className="w-full h-auto aspect-1200/630 border border-slate-800 brutal-shadow-sm"
+                className="w-full h-auto aspect-1200/630 rounded-xl border border-white/[0.05]"
               />
             </div>
 
-            {/* 1-Click Action Buttons */}
-            <div className="space-y-2 font-mono">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    playClickSound();
-                    handleDownloadPNG();
-                  }}
-                  disabled={downloading}
-                  className="py-2.5 px-4 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>{downloading ? 'GENERATING PNG...' : '📥 DOWNLOAD PNG IMAGE'}</span>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    playPopSound();
-                    handleCopyImage();
-                  }}
-                  className={`py-2.5 px-4 text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all ${
-                    copied ? 'bg-neo-mint text-black' : 'bg-neo-cyan hover:bg-[#33F3FF] text-black'
-                  }`}
-                >
-                  {copied ? <Check className="w-4 h-4 stroke-3" /> : <Copy className="w-4 h-4" />}
-                  <span>{copied ? 'IMAGE COPIED TO CLIPBOARD!' : '📋 COPY IMAGE TO CLIPBOARD'}</span>
-                </motion.button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
-                {canNativeShare && (
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => handleShare('native')}
-                    className="py-2.5 px-3 bg-neo-mint hover:bg-[#00E58D] text-black border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm col-span-1 sm:col-span-2 md:col-span-1"
-                    title="Share with Graphic Card via Native Apps"
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    <span>📱 SHARE CARD</span>
-                  </motion.button>
-                )}
-
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleShare('twitter')}
-                  className="py-2.5 px-3 bg-black hover:bg-slate-900 text-white border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm"
-                  title="Share on X (Twitter) with Champion Card"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>🐦 SHARE ON X</span>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleShare('linkedin')}
-                  className="py-2.5 px-3 bg-[#0077B5] hover:bg-[#006396] text-white border-2 border-black text-[11px] font-black uppercase flex items-center justify-center space-x-1.5 transition-all cursor-pointer brutal-shadow-sm"
-                  title="Share on LinkedIn with Champion Card"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>💼 SHARE ON LINKEDIN</span>
-                </motion.button>
-              </div>
+            {/* Primary Action Button: Download Champion Card */}
+            <div>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  playClickSound();
+                  handleDownloadPNG();
+                }}
+                disabled={downloading}
+                className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl border border-blue-400/30 flex items-center justify-center space-x-2.5 cursor-pointer transition-all shadow-[0_0_24px_rgba(59,130,246,0.25)] hover:shadow-[0_0_32px_rgba(59,130,246,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>{downloading ? 'Generating Champion Card...' : 'Download Champion Card'}</span>
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>

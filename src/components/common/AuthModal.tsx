@@ -154,143 +154,145 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-sans"
         >
           <motion.div
-            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            initial={{ scale: 0.95, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 15, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-neo-cream text-black w-full max-w-md p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[90vh] overflow-y-auto"
+            exit={{ scale: 0.95, y: 12, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-[#101014] text-white w-full max-w-md p-5 sm:p-6 rounded-2xl border border-white/[0.08] shadow-2xl relative font-sans max-h-[90vh] overflow-y-auto"
           >
             {/* Close Button */}
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 rounded-xl bg-zinc-800/40 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/[0.06] transition-colors cursor-pointer z-10"
               title="Close modal"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+              <X className="w-4 h-4 stroke-2" />
             </motion.button>
 
             {/* Modal Header */}
-            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 sm:mb-4 pr-8 sm:pr-10">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0 -rotate-2">
-                <Shield className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            <div className="flex items-start space-x-3 mb-5 pr-8">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                  {currentUser ? 'ACCOUNT & SESSION' : tab === 'signin' ? 'AUTHENTICATION & LOGIN' : 'CREATE ACCOUNT'}
+                <h3 className="text-sm sm:text-base font-semibold text-white leading-tight font-display">
+                  {currentUser ? 'Account Session' : tab === 'signin' ? 'Sign In' : 'Create Account'}
                 </h3>
-                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
-                  {currentUser ? 'Manage verified attendee profile' : 'Verified Attendee & Host Access'}
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  {currentUser ? 'Manage attendee profile and session' : 'Verified Attendee & Host Access'}
                 </p>
               </div>
             </div>
 
             {currentUser ? (
               /* Signed In Profile View */
-              <div className="space-y-3.5 font-mono">
-                <div className="p-3 bg-white border-2 border-black space-y-2">
-                  <div className="flex items-center space-x-2 text-emerald-800 font-bold text-xs">
-                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 stroke-3" />
-                    <span>AUTHENTICATED ACCOUNT</span>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-[#141418] border border-white/[0.08] space-y-2.5">
+                  <div className="flex items-center space-x-2 text-emerald-400 font-medium text-xs">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Authenticated Account</span>
                   </div>
 
-                  <div className="text-xs text-slate-700 space-y-1">
+                  <div className="text-xs text-zinc-300 space-y-1">
                     <div>
-                      <span className="text-slate-500 font-bold">Email:</span>{' '}
-                      <strong className="text-black">{currentUser.email}</strong>
+                      <span className="text-zinc-500 font-medium">Email:</span>{' '}
+                      <strong className="text-white font-mono">{currentUser.email}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 font-bold">Display Name:</span>{' '}
-                      <strong className="text-black">{userName}</strong>
+                      <span className="text-zinc-500 font-medium">Display Name:</span>{' '}
+                      <strong className="text-white">{userName}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* Arena Room Switcher in Settings */}
                 {onOpenChangeRoom && (
-                  <div className="p-3 bg-white border-2 border-black space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-slate-600 font-mono">CURRENT ARENA ROOM:</span>
-                      <span className="font-extrabold text-black font-mono bg-neo-yellow px-1.5 py-0.5 border border-black text-xs">
+                  <div className="p-4 rounded-xl bg-[#141418] border border-white/[0.08] space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-medium">
+                      <span className="text-zinc-400">Current Room:</span>
+                      <span className="font-semibold text-blue-400 font-mono bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20 text-xs">
                         {roomCode || 'SKT-789'}
                       </span>
                     </div>
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         playClickSound();
                         onClose();
                         onOpenChangeRoom();
                       }}
-                      className="w-full py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer transition-all"
+                      className="w-full py-2.5 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-white text-xs font-medium border border-white/[0.06] flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                     >
-                      <ArrowRightLeft className="w-3.5 h-3.5" />
-                      <span>CHANGE / SWITCH ARENA ROOM</span>
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Switch Arena Room</span>
                     </motion.button>
                   </div>
                 )}
 
-                <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-1">
+                <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-2 border-t border-white/[0.08]">
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       playClickSound();
                       onClose();
                     }}
-                    className="w-full xs:w-auto px-4 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
+                    className="w-full xs:w-auto px-4 py-2 rounded-xl text-xs font-medium border border-white/[0.06] bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white cursor-pointer text-center"
                   >
-                    CLOSE
+                    Close
                   </motion.button>
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleSignOut}
                     disabled={isLoading}
-                    className="w-full xs:w-auto px-4 py-2 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-1.5 cursor-pointer"
+                    className="w-full xs:w-auto px-4 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 text-xs font-medium border border-red-500/30 flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>SIGN OUT</span>
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
                   </motion.button>
                 </div>
               </div>
             ) : verificationSentEmail ? (
               /* Email Verification Pending View */
-              <div className="space-y-3.5 font-mono">
-                <div className="p-3.5 bg-amber-50 border-2 border-black space-y-2.5">
-                  <div className="flex items-center space-x-2 text-amber-900 font-heavy text-xs">
-                    <Mail className="w-4 h-4 text-amber-600 animate-bounce shrink-0" />
-                    <span>CONFIRMATION EMAIL SENT</span>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-2.5">
+                  <div className="flex items-center space-x-2 text-blue-400 font-medium text-xs">
+                    <Mail className="w-4 h-4 text-blue-400 shrink-0" />
+                    <span>Confirmation Email Sent</span>
                   </div>
-                  <p className="text-xs text-slate-700 leading-snug">
+                  <p className="text-xs text-zinc-300 leading-snug">
                     Please check your inbox (or Spam) at:
                     <br />
-                    <strong className="text-black bg-neo-yellow px-1 border border-black break-all text-xs font-black">
+                    <strong className="text-white bg-[#0D0D10] px-2 py-0.5 rounded border border-white/[0.08] break-all text-xs font-mono inline-block mt-1">
                       {verificationSentEmail}
                     </strong>
                   </p>
-                  <div className="text-[10px] text-slate-600 bg-white p-2 border border-black space-y-0.5">
+                  <div className="text-[11px] text-zinc-400 bg-[#141418] p-2.5 rounded-lg border border-white/[0.06] space-y-1">
                     <div>1. Click the verification link in your email.</div>
-                    <div>2. Return here and Sign In to start.</div>
+                    <div>2. Return here and sign in to access the room.</div>
                   </div>
                 </div>
 
                 {resendStatus && (
-                  <div className={`p-2 text-xs font-bold border-2 border-black flex items-center space-x-1.5 ${
-                    resendStatus.includes('sent') ? 'bg-neo-mint text-black' : 'bg-neo-pink text-white'
+                  <div className={`p-2.5 rounded-xl text-xs font-medium border flex items-center space-x-2 ${
+                    resendStatus.includes('sent')
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      : 'bg-red-500/15 text-red-400 border-red-500/30'
                   }`}>
-                    {resendStatus.includes('sent') ? <Check className="w-3.5 h-3.5 stroke-3 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
+                    {resendStatus.includes('sent') ? <Check className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
                     <span>{resendStatus}</span>
                   </div>
                 )}
@@ -298,111 +300,111 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="space-y-2 pt-1">
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleResend(verificationSentEmail)}
                     disabled={resendCooldown > 0}
-                    className="w-full py-2 bg-neo-cyan hover:bg-[#33F3FF] disabled:bg-slate-200 disabled:text-slate-500 text-black text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 disabled:text-zinc-600 text-zinc-200 text-xs font-medium border border-white/[0.06] flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="w-3.5 h-3.5 text-blue-400" />
                     <span>
                       {resendCooldown > 0
-                        ? `RESEND IN ${resendCooldown}S`
-                        : 'RESEND VERIFICATION EMAIL'}
+                        ? `Resend in ${resendCooldown}s`
+                        : 'Resend Verification Email'}
                     </span>
                   </motion.button>
 
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       playClickSound();
                       setVerificationSentEmail(null);
                       setTab('signin');
                     }}
-                    className="w-full py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-1 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center justify-center space-x-1 cursor-pointer transition-colors shadow-md shadow-blue-500/20"
                   >
-                    <span>I'VE VERIFIED ➔ SIGN IN</span>
-                    <ArrowRight className="w-3.5 h-3.5 stroke-3" />
+                    <span>I've Verified ➔ Sign In</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </motion.button>
                 </div>
               </div>
             ) : (
               <div>
                 {/* Tab Switcher */}
-                <div className="grid grid-cols-2 gap-1 p-1 bg-black border-2 border-black mb-3.5 sm:mb-4 font-mono text-xs">
+                <div className="grid grid-cols-2 gap-1 p-1 bg-[#141418] rounded-xl border border-white/[0.08] mb-4 text-xs font-medium">
                   <motion.button
                     type="button"
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       playClickSound();
                       setTab('signin');
                       setErrorMessage(null);
                     }}
-                    className={`py-1.5 font-black uppercase transition-all cursor-pointer text-center ${
+                    className={`py-2 rounded-lg font-medium transition-all cursor-pointer text-center ${
                       tab === 'signin'
-                        ? 'bg-neo-yellow text-black border border-black brutal-shadow-sm'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    SIGN IN
+                    Sign In
                   </motion.button>
                   <motion.button
                     type="button"
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       playClickSound();
                       setTab('signup');
                       setErrorMessage(null);
                     }}
-                    className={`py-1.5 font-black uppercase transition-all cursor-pointer text-center ${
+                    className={`py-2 rounded-lg font-medium transition-all cursor-pointer text-center ${
                       tab === 'signup'
-                        ? 'bg-neo-cyan text-black border border-black brutal-shadow-sm'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
-                    CREATE ACCOUNT
+                    Create Account
                   </motion.button>
                 </div>
 
                 {/* Quick Room Switcher */}
                 {onOpenChangeRoom && (
-                  <div className="mb-3.5 p-2 bg-[#1A1E2B] border-2 border-black flex items-center justify-between gap-2 text-xs font-mono">
-                    <div className="flex items-center space-x-1.5 min-w-0">
-                      <span className="text-slate-400 font-bold text-[10px]">CURRENT ROOM:</span>
-                      <span className="font-extrabold text-neo-yellow text-xs">{roomCode || 'SKT-789'}</span>
+                  <div className="mb-4 p-3 rounded-xl bg-[#141418] border border-white/[0.08] flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <span className="text-zinc-400 font-medium">Current Room:</span>
+                      <span className="font-semibold text-blue-400 font-mono bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">{roomCode || 'SKT-789'}</span>
                     </div>
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         playClickSound();
                         onClose();
                         onOpenChangeRoom();
                       }}
-                      className="px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[10px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-white text-xs font-medium border border-white/[0.06] flex items-center space-x-1 cursor-pointer transition-colors"
                     >
-                      <ArrowRightLeft className="w-3 h-3" />
-                      <span>SWITCH ROOM</span>
+                      <ArrowRightLeft className="w-3 h-3 text-blue-400" />
+                      <span>Switch Room</span>
                     </motion.button>
                   </div>
                 )}
 
                 {/* Error / Success Feedback */}
                 {errorMessage && (
-                  <div className="p-2.5 bg-neo-pink text-white border-2 border-black font-mono text-xs font-bold mb-3 flex items-start space-x-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="p-3 rounded-xl bg-red-500/15 text-red-300 border border-red-500/30 text-xs font-medium mb-3 flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
                     <div className="flex-1">
                       <div>{errorMessage}</div>
                       {errorMessage.toLowerCase().includes('not verified') && email && (
                         <motion.button
                           type="button"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => handleResend(email)}
-                          className="mt-1 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
+                          className="mt-1 px-2.5 py-1 rounded-lg bg-zinc-800 text-white text-[11px] font-medium border border-white/[0.08] cursor-pointer"
                         >
                           Resend Verification Link
                         </motion.button>
@@ -411,27 +413,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
                 {successMessage && (
-                  <div className="p-2.5 bg-neo-mint text-black border-2 border-black font-mono text-xs font-bold mb-3 flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 shrink-0 stroke-3" />
+                  <div className="p-3 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-medium mb-3 flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
                     <span>{successMessage}</span>
                   </div>
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleAuth} className="space-y-3 font-mono">
+                <form onSubmit={handleAuth} className="space-y-3.5">
                   {tab === 'signup' && (
                     <div>
-                      <label className="text-xs font-black uppercase block mb-1">
+                      <label className="text-xs font-medium block mb-1 text-zinc-300">
                         Display Name / Alias
                       </label>
                       <div className="relative">
-                        <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                         <input
                           type="text"
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
                           placeholder="e.g. Alex Chen"
-                          className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                          className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#0D0D10] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500"
                           required
                         />
                       </div>
@@ -439,63 +441,59 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   )}
 
                   <div>
-                    <label className="text-xs font-black uppercase block mb-1">Email Address</label>
+                    <label className="text-xs font-medium block mb-1 text-zinc-300">Email Address</label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@company.com"
-                        className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                        className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#0D0D10] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-xs font-black uppercase block mb-1">Password</label>
+                    <label className="text-xs font-medium block mb-1 text-zinc-300">Password</label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                       <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-white border-2 border-black text-black font-bold focus:outline-none focus:bg-neo-yellow/15"
+                        className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#0D0D10] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500"
                         required
                         minLength={6}
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-1.5 sm:pt-2">
+                  <div className="flex flex-col-reverse xs:flex-row justify-end gap-2 pt-2 border-t border-white/[0.08]">
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.96 }}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         playClickSound();
                         onClose();
                       }}
-                      className="w-full xs:w-auto px-4 py-2 text-xs font-mono font-bold uppercase border-2 border-black bg-slate-200 hover:bg-slate-300 text-black cursor-pointer text-center"
+                      className="w-full xs:w-auto px-4 py-2.5 text-xs font-medium border border-white/[0.06] bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl cursor-pointer text-center"
                     >
-                      CANCEL
+                      Cancel
                     </motion.button>
                     <motion.button
                       type="submit"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => playWhoosh()}
                       disabled={isLoading}
-                      className={`w-full xs:w-auto px-5 py-2 text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-1.5 cursor-pointer ${
-                        tab === 'signin'
-                          ? 'bg-neo-yellow hover:bg-[#FFF04D]'
-                          : 'bg-neo-cyan hover:bg-[#33F3FF]'
-                      }`}
+                      className="w-full xs:w-auto px-5 py-2.5 text-white text-xs font-medium rounded-xl border border-blue-500 bg-blue-600 hover:bg-blue-500 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-blue-500/20"
                     >
-                      <Sparkles className="w-4 h-4" />
-                      <span>{isLoading ? 'AUTHENTICATING...' : tab === 'signin' ? 'LOG IN' : 'REGISTER & VERIFY'}</span>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{isLoading ? 'Authenticating...' : tab === 'signin' ? 'Log In' : 'Register & Verify'}</span>
                     </motion.button>
                   </div>
                 </form>

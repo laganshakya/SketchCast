@@ -33,7 +33,25 @@ export function useQuizEngine({
 }) {
   const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
   const quizStorageKey = `sketchcast_active_quiz_round_${currentRoomKey}`;
+  const quizAnswersStorageKey = `sketchcast_quiz_user_answers_${currentRoomKey}`;
 
+  const [userQuizAnswers, setUserQuizAnswers] = useState<Record<string, string>>(() => {
+    try {
+      const stored = localStorage.getItem(quizAnswersStorageKey);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(quizAnswersStorageKey);
+      setUserQuizAnswers(stored ? JSON.parse(stored) : {});
+    } catch {
+      setUserQuizAnswers({});
+    }
+  }, [quizAnswersStorageKey]);
 
   const votedUsersRef = useRef<Set<string>>(new Set());
 
@@ -418,6 +436,20 @@ export function useQuizEngine({
 
       if (quizState.question) {
         const targetQId = quizState.question.id;
+        const targetQTitle = quizState.question.question?.trim().toLowerCase();
+        setUserQuizAnswers((prev) => {
+          const next = { ...prev, [targetQId]: optionId };
+          if (targetQTitle) {
+            next[targetQTitle] = optionId;
+          }
+          try {
+            localStorage.setItem(quizAnswersStorageKey, JSON.stringify(next));
+          } catch {
+            // ignore
+          }
+          return next;
+        });
+
         dbIncrementQuizVote(targetQId, optionId).then((serverVotes) => {
           if (serverVotes) {
             setQuizState((prev) => {
@@ -481,6 +513,7 @@ export function useQuizEngine({
     quizState,
     leaderboard,
     timeRemaining,
+    userQuizAnswers,
     startQuizRound,
     revealAnswer,
     selectOption,

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  Timer,
   CheckCircle,
   XCircle,
   Sparkles,
@@ -19,6 +18,7 @@ import {
   playErrorBuzz,
   playCountdownTick,
 } from '../../lib/soundFx';
+import { RollingCounter } from '../common/RollingCounter';
 
 interface QuizArenaProps {
   quizState: QuizRoundState;
@@ -72,10 +72,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           playSuccessFanfare();
           try {
             confetti({
-              particleCount: 70,
-              spread: 60,
+              particleCount: 50,
+              spread: 50,
               origin: { y: 0.6 },
-              colors: ['#00F59B', '#FFE600', '#FF4782', '#33F3FF'],
+              colors: ['#3B82F6', '#FAFAFA', '#10B981', '#60A5FA'],
             });
           } catch {
             // ignore
@@ -91,17 +91,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   if (!question) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-retro-dots">
-        <div className="w-16 h-16 bg-neo-yellow text-black border-2 border-black brutal-shadow flex items-center justify-center mb-4 -rotate-3">
-          <Sparkles className="w-8 h-8 stroke-black" />
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#121215] text-blue-400 border border-white/[0.08] flex items-center justify-center mb-4 shadow-sm">
+          <Sparkles className="w-6 h-6 text-blue-400" />
         </div>
-        <h3 className="text-2xl font-heavy text-white uppercase tracking-tight mb-2">
+        <div className="text-[11px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-1">
+          ARENA STANDBY
+        </div>
+        <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white uppercase tracking-tight mb-3">
           NO ACTIVE QUIZ ROUND
         </h3>
-        <p className="text-xs font-mono text-slate-400 max-w-md bg-neo-card p-3 border-2 border-black brutal-shadow-sm">
+        <p className="text-xs font-sans text-zinc-400 max-w-md bg-[#121215] p-4 rounded-xl border border-white/[0.08] leading-relaxed">
           {isHost
-            ? '> Launch a technical question from the host control panel to start live round.'
-            : '> Stand by. The host is queuing the next architecture challenge...'}
+            ? 'Launch a challenge from the host control console to begin the live round.'
+            : 'Standing by. The keynote host is queuing the next architecture challenge...'}
         </p>
       </div>
     );
@@ -113,105 +116,128 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     if (isRevealed) {
       if (isAnswer) {
-        return 'bg-neo-mint text-black border-2 border-black brutal-shadow-green font-bold ring-2 ring-[#00F59B]';
+        return 'bg-emerald-950/30 text-white border-2 border-emerald-500 shadow-sm font-bold';
       }
       if (isSelected && !isAnswer) {
-        return 'bg-neo-pink text-white border-2 border-black brutal-shadow-pink font-bold';
+        return 'bg-red-950/30 text-white border-2 border-red-500 shadow-sm font-bold';
       }
-      return 'bg-neo-card text-slate-500 border-2 border-slate-800 opacity-60';
+      return 'bg-[#101014] text-zinc-600 border border-white/[0.04] opacity-40';
     }
 
     if (isSelected) {
-      return 'bg-neo-yellow text-black border-2 border-black brutal-shadow-yellow font-bold translate-x-px translate-y-px';
+      return 'bg-blue-500/10 text-white border-2 border-blue-500 shadow-[0_0_24px_rgba(59,130,246,0.15)] font-bold';
     }
 
-    return 'bg-neo-card hover:bg-[#1C202E] text-slate-200 hover:text-white border-2 border-black brutal-shadow hover:-translate-x-px hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none';
+    return 'bg-[#121215] hover:bg-[#18181E] text-zinc-300 hover:text-white border border-white/[0.08] hover:border-blue-500/40';
   };
 
-  const getOptionBadgeColor = (optionId: string) => {
-    switch (optionId) {
-      case 'A':
-        return 'bg-neo-orange text-black';
-      case 'B':
-        return 'bg-neo-cyan text-black';
-      case 'C':
-        return 'bg-neo-purple text-white';
-      case 'D':
-        return 'bg-neo-yellow text-black';
-      default:
-        return 'bg-white text-black';
+  const getOptionBadgeClass = (optionId: string) => {
+    const isSelected = userSelectedOption === optionId;
+    const isAnswer = question.correctOptionId === optionId;
+
+    if (isRevealed) {
+      if (isAnswer) return 'bg-emerald-600 text-white border-emerald-500';
+      if (isSelected && !isAnswer) return 'bg-red-600 text-white border-red-500';
     }
+    if (isSelected) return 'bg-blue-600 text-white border-blue-500';
+    return 'bg-[#1A1A20] text-zinc-400 border-white/[0.08]';
   };
 
   const timerPercentage = Math.max(0, (timeRemaining / (quizState.totalSeconds || 25)) * 100);
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
       className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans"
     >
-      {/* Retro Window Top Frame Bar */}
-      <div className="bg-neo-card border-2 border-black brutal-shadow-sm px-2.5 sm:px-3.5 py-1.5 sm:py-2 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center space-x-2 min-w-0">
-          <div className="flex space-x-1.5 shrink-0">
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-pink border border-black" />
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-yellow border border-black" />
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-neo-mint border border-black" />
+      {/* Clean Top Status Bar */}
+      <div className="bg-[#121215] border border-white/[0.08] rounded-xl px-4 py-2.5 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="flex items-center space-x-2 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-blue-400 font-bold text-[10px] tracking-wider uppercase">LIVE ARENA</span>
           </div>
-          <span className="font-mono text-[11px] sm:text-xs font-bold text-slate-400 flex items-center gap-1 pl-1 sm:pl-2 truncate">
-            <span className="text-neo-yellow">SYS_ARENA //</span>
-            <span className="truncate">{question.category.toUpperCase().replace(/\s+/g, '_')}</span>
+          <span className="text-zinc-700">/</span>
+          <span className="text-zinc-300 text-[11px] font-semibold truncate uppercase tracking-wider">
+            {question.category.replace(/_/g, ' ')}
           </span>
         </div>
 
-        <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono shrink-0 flex-wrap">
-          {/* Digital Countdown Timer */}
-          <motion.div
-            animate={timeRemaining <= 5 && !isRevealed ? { scale: [1, 1.08, 1] } : {}}
-            transition={{ repeat: Infinity, duration: 0.8 }}
-            className={`px-2 sm:px-3 py-0.5 text-[11px] sm:text-xs font-mono font-black border-2 border-black brutal-shadow-sm flex items-center gap-1 sm:gap-1.5 ${
-              timeRemaining <= 5 && !isRevealed
-                ? 'bg-neo-pink text-white'
-                : 'bg-neo-yellow text-black'
-            }`}
-          >
-            <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
-            <span>{isRevealed ? 'REVEALED' : `${timeRemaining} SEC`}</span>
-          </motion.div>
+        <div className="flex items-center space-x-3 text-[11px] shrink-0">
+          <span className="text-zinc-500">
+            STATUS: <span className="text-zinc-200">{isRevealed ? 'RESOLVED' : 'ACTIVE'}</span>
+          </span>
+          <span className="text-zinc-700">/</span>
+          <span className="text-zinc-500">
+            VOTES: <span className="text-blue-400 font-bold">{totalVotes}</span>
+          </span>
         </div>
       </div>
 
-      {/* Progress Bar (Retro chunky blocks) */}
-      {!isRevealed && (
-        <div className="w-full h-2 sm:h-2.5 bg-neo-card-darker border-2 border-black brutal-shadow-sm overflow-hidden p-0.5">
-          <motion.div
-            className={`h-full ${timeRemaining <= 5 ? 'bg-neo-pink' : 'bg-neo-yellow'}`}
-            style={{ width: `${timerPercentage}%` }}
-            transition={{ duration: 0.3 }}
-          />
+      {/* Exaggerated Minimalist Countdown & Progress Section */}
+      <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold">
+            ROUND TIMER
+          </div>
+          <div className="flex items-baseline space-x-3">
+            <div className="font-timer text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-white">
+              {isRevealed ? (
+                <span className="text-blue-400 text-3xl sm:text-4xl md:text-5xl font-mono tracking-tight">
+                  REVEALED
+                </span>
+              ) : (
+                <RollingCounter value={timeRemaining} padZero={true} />
+              )}
+            </div>
+            {!isRevealed && (
+              <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+                SECONDS REMAINING
+              </span>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Question Prompt Card */}
+        {/* Minimal Progress Track */}
+        {!isRevealed && (
+          <div className="sm:w-64 w-full space-y-2 self-end sm:self-center">
+            <div className="flex justify-between text-[11px] font-mono text-zinc-500">
+              <span>TIME REMAINING</span>
+              <span className={timeRemaining <= 5 ? 'text-red-400 font-bold' : 'text-blue-400'}>
+                {Math.round(timerPercentage)}%
+              </span>
+            </div>
+            <div className="w-full h-2 bg-[#18181D] rounded-full border border-white/[0.06] overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${timeRemaining <= 5 ? 'bg-red-500' : 'bg-blue-500'}`}
+                style={{ width: `${timerPercentage}%` }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Question Prompt Card with Clean Typographic Hierarchy */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#181B26] p-4 sm:p-5 md:p-6 border-2 border-black brutal-shadow-lg relative overflow-hidden"
+        transition={{ duration: 0.25 }}
+        className="bg-[#121215] p-6 sm:p-8 rounded-2xl border border-white/[0.08] shadow-sm relative"
       >
-        {/* Corner Tag */}
-        <div className="absolute top-0 right-0 bg-neo-yellow text-black font-mono font-bold text-[9px] sm:text-[10px] uppercase px-2 sm:px-2.5 py-0.5 border-b-2 border-l-2 border-black">
-          Q_PROMPT
+        <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-3">
+          CHALLENGE QUESTION
         </div>
 
-        <h2 className="text-base sm:text-xl md:text-2xl font-heavy text-white uppercase leading-snug sm:leading-tight tracking-tight mt-1">
+        <h2 className="text-lg sm:text-2xl md:text-3xl font-display font-extrabold text-white leading-tight tracking-tight">
           {question.question}
         </h2>
       </motion.div>
 
-      {/* 4 Neo-Brutalist Option Cards (A, B, C, D) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+      {/* 4 Precision Option Cards (A, B, C, D) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {question.options.map((option) => {
           const voteCount = votesDistribution[option.id] || 0;
           const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
@@ -222,8 +248,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           return (
             <motion.button
               key={option.id}
-              whileHover={isDisabled ? {} : { scale: 1.015, x: 1 }}
-              whileTap={isDisabled ? {} : { scale: 0.98, y: 1 }}
+              whileTap={isDisabled ? {} : { scale: 0.98 }}
               onClick={() => {
                 if (!isDisabled) {
                   playPopSound();
@@ -231,47 +256,47 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 }
               }}
               disabled={isDisabled}
-              className={`p-3.5 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-19 sm:min-h-24 cursor-pointer ${getOptionButtonClass(
+              className={`p-4 sm:p-5 rounded-2xl text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[96px] cursor-pointer ${getOptionButtonClass(
                 option.id
               )}`}
             >
               {/* Fill bar for vote counts */}
               {(isRevealed || isHost) && (
                 <div
-                  className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-20 ${
-                    isAnswer ? 'bg-black' : 'bg-white'
+                  className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-15 ${
+                    isAnswer ? 'bg-emerald-500' : isSelected ? 'bg-red-500' : 'bg-blue-500'
                   }`}
                   style={{ width: `${votePct}%` }}
                 />
               )}
 
-              <div className="flex items-start justify-between relative z-10 gap-2.5 mb-1.5 sm:mb-2">
-                <div className="flex items-center space-x-2.5 sm:space-x-3">
+              <div className="flex items-start justify-between relative z-10 gap-3 mb-2">
+                <div className="flex items-center space-x-3">
                   <span
-                    className={`w-6 h-6 sm:w-7 sm:h-7 font-mono text-xs flex items-center justify-center border-2 border-black brutal-shadow-sm shrink-0 font-bold ${getOptionBadgeColor(
+                    className={`w-7 h-7 rounded-lg font-mono text-xs flex items-center justify-center border shrink-0 font-bold ${getOptionBadgeClass(
                       option.id
                     )}`}
                   >
                     {option.id}
                   </span>
-                  <span className="text-xs sm:text-sm font-bold leading-snug tracking-tight font-display">
+                  <span className="text-sm font-semibold leading-snug tracking-tight font-sans">
                     {option.text}
                   </span>
                 </div>
 
                 {isRevealed && isAnswer && (
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-black stroke-3 shrink-0" />
+                  <CheckCircle className="w-5 h-5 text-emerald-400 stroke-[2] shrink-0" />
                 )}
                 {isRevealed && isSelected && !isAnswer && (
-                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-3 shrink-0" />
+                  <XCircle className="w-5 h-5 text-red-400 stroke-[2] shrink-0" />
                 )}
               </div>
 
               {/* Vote statistics */}
               {(isRevealed || isHost) && (
-                <div className="flex justify-between items-center text-[11px] sm:text-xs font-mono font-bold pt-1.5 border-t border-black/30 relative z-10">
+                <div className="flex justify-between items-center text-[11px] font-mono pt-2 border-t border-white/[0.08] relative z-10 text-zinc-400">
                   <span>{voteCount} VOTES</span>
-                  <span className="text-xs sm:text-[13px]">{votePct}%</span>
+                  <span className="font-bold text-white">{votePct}%</span>
                 </div>
               )}
             </motion.button>
@@ -279,49 +304,47 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         })}
       </div>
 
-      {/* Retro Result & Architecture Takeaway Card */}
+      {/* Result & Explanation Card */}
       {isRevealed && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="bg-neo-cream text-black p-4 sm:p-5 border-2 border-black brutal-shadow-lg space-y-3"
+          className="bg-[#121215] border border-white/[0.08] rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-sm"
         >
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               {userSelectedOption ? (
                 isCorrect ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 sm:px-3 py-1 bg-neo-mint text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
-                      <span>CORRECT!</span>
-                    </span>
-                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-950/40 text-emerald-400 font-mono font-bold text-xs uppercase border border-emerald-500/30 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 stroke-[2]" />
+                    <span>CORRECT ANSWER</span>
+                  </span>
                 ) : (
-                  <span className="px-2.5 sm:px-3 py-1 bg-neo-pink text-white font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5">
-                    <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
+                  <span className="px-3 py-1 rounded-full bg-red-950/40 text-red-400 font-mono font-bold text-xs uppercase border border-red-500/30 flex items-center gap-1.5">
+                    <XCircle className="w-3.5 h-3.5 stroke-[2]" />
                     <span>INCORRECT ANSWER</span>
                   </span>
                 )
               ) : (
-                <span className="px-2.5 sm:px-3 py-1 bg-neo-yellow text-black font-mono font-extrabold text-[11px] sm:text-xs uppercase border-2 border-black brutal-shadow-sm">
-                  ANSWER REVEALED
+                <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-mono font-bold text-xs uppercase border border-blue-500/20">
+                  ROUND RESOLVED
                 </span>
               )}
             </div>
 
-            <div className="font-mono font-black text-[11px] sm:text-xs uppercase bg-black text-white px-2 sm:px-2.5 py-1 border border-black">
-              CORRECT OPTION: [{question.correctOptionId}]
+            <div className="font-mono font-bold text-xs uppercase bg-[#18181D] text-white px-3 py-1 rounded-full border border-white/[0.08]">
+              CORRECT OPTION: <span className="text-blue-400">[{question.correctOptionId}]</span>
             </div>
           </div>
 
-          {/* Standard Explanation */}
-          <div className="p-3 sm:p-3.5 bg-[#F4EFE0] border-2 border-black font-mono text-xs text-black leading-relaxed">
-            <div className="flex items-center space-x-1.5 font-black uppercase text-[10px] sm:text-[11px] mb-1 text-neo-pink">
-              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-3" />
-              <span>ARCHITECTURAL TAKEAWAY:</span>
+          {/* Architectural Explanation */}
+          <div className="p-4 bg-[#141418] rounded-xl border border-white/[0.06] font-sans text-xs sm:text-sm text-zinc-300 leading-relaxed">
+            <div className="flex items-center space-x-1.5 font-mono font-bold uppercase text-[11px] mb-1.5 text-blue-400">
+              <HelpCircle className="w-3.5 h-3.5 stroke-[2]" />
+              <span>KEY TAKEAWAY</span>
             </div>
-            <p className="font-medium text-slate-900 text-xs sm:text-sm">{question.explanation}</p>
+            <p className="font-normal text-zinc-300">{question.explanation}</p>
           </div>
         </motion.div>
       )}
@@ -331,47 +354,44 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <div className="flex items-center justify-end flex-wrap gap-2 pt-2">
           {!isRevealed ? (
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playClickSound();
                 onRevealAnswer();
               }}
-              className="w-full sm:w-auto px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
             >
               <Eye className="w-4 h-4" />
               <span>REVEAL CORRECT ANSWER</span>
             </motion.button>
           ) : hasNextQuestion && onNextQuestion ? (
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playClickSound();
                 onNextQuestion();
               }}
-              className="w-full sm:w-auto px-5 py-2.5 bg-neo-mint hover:bg-[#26F7A9] text-black text-xs font-mono font-extrabold uppercase border-2 border-black brutal-shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>NEXT QUESTION</span>
               <ArrowRight className="w-4 h-4" />
             </motion.button>
           ) : (
             <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
-              <span className="px-3 py-2 bg-[#1C2030] text-neo-mint border-2 border-black font-mono text-xs font-black uppercase flex items-center space-x-1.5 brutal-shadow-sm">
-                <CheckCircle className="w-4 h-4 text-neo-mint stroke-3" />
+              <span className="px-3.5 py-2 rounded-xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold uppercase flex items-center space-x-1.5">
+                <CheckCircle className="w-4 h-4 text-emerald-400 stroke-[2]" />
                 <span>QUIZ COMPLETED</span>
               </span>
               {onViewScores && (
                 <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     playClickSound();
                     onViewScores();
                   }}
-                  className="px-4 py-2 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1.5 cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] text-xs font-mono font-bold uppercase flex items-center space-x-1.5 cursor-pointer transition-colors"
                 >
-                  <Trophy className="w-4 h-4" />
+                  <Trophy className="w-4 h-4 text-blue-400" />
                   <span>VIEW LEADERBOARD</span>
                 </motion.button>
               )}

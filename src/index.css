@@ -1,23 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --color-neo-yellow: #FFE600;
-  --color-neo-pink: #FF2A6D;
-  --color-neo-cyan: #00F0FF;
-  --color-neo-mint: #00F59B;
-  --color-neo-orange: #FF6B35;
-  --color-neo-purple: #9B5DE5;
-  --color-neo-cream: #FFFDF5;
-  --color-neo-dark: #0D0F15;
-  --color-neo-card: #151822;
-  --color-neo-card-darker: #0E1017;
-  --color-neo-border: #2B3042;
-  --color-neo-border-hard: #000000;
+  /* Core Obsidian & Monolith Palette */
+  --color-obsidian: #0A0A0C;
+  --color-monolith: #121215;
+  --color-monolith-elevated: #18181D;
+  --color-monolith-subtle: #1E1E24;
+  --color-chalk: #FAFAFA;
+  --color-muted: #A1A1AA;
+  --color-dim: #71717A;
+  --color-hairline: #27272A;
+  --color-hairline-strong: #3F3F46;
 
-  --font-sans: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', 'Syne', sans-serif;
-  --font-heavy: 'Archivo Black', sans-serif;
-  --font-mono: 'Space Mono', 'JetBrains Mono', Menlo, monospace;
+  /* Surgical Accent */
+  --color-cobalt: #3B82F6;
+  --color-cobalt-dim: #1D4ED8;
+  --color-cobalt-light: #60A5FA;
+  --color-cobalt-glow: rgba(59, 130, 246, 0.15);
+
+  /* Semantic Technical Status Tokens */
+  --color-status-correct: #10B981;
+  --color-status-incorrect: #EF4444;
+  --color-status-warning: #F59E0B;
+
+  /* Seamless Legacy Neo-Brutalist Migration Mapping (Eliminates Flashy Rainbows) */
+  --color-neo-yellow: #3B82F6;       /* Replaced canary yellow with Electric Cobalt */
+  --color-neo-pink: #3B82F6;         /* Replaced neon pink with Electric Cobalt */
+  --color-neo-cyan: #60A5FA;         /* Replaced cyber cyan with Technical Blue */
+  --color-neo-mint: #10B981;         /* Replaced bright mint with Minimal Emerald */
+  --color-neo-orange: #F59E0B;       /* Replaced neon orange with Signal Amber */
+  --color-neo-purple: #3B82F6;       /* Replaced purple with Electric Cobalt */
+  --color-neo-cream: #121215;        /* Replaced cream with Monolith dark surface */
+  --color-neo-dark: #0A0A0C;         /* Replaced old dark with True Obsidian */
+  --color-neo-card: #121215;         /* Monolith card surface */
+  --color-neo-card-darker: #0E0E11;  /* Darker monolith base */
+  --color-neo-border: #27272A;       /* Hairline architectural border */
+  --color-neo-border-hard: #3F3F46;  /* Strong structural divider */
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Syne', 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
 }
 
 * {
@@ -29,21 +52,25 @@ html, body {
   padding: 0;
   height: 100%;
   width: 100%;
-  background-color: #0D0F15;
-  color: #F8FAFC;
-  user-select: none;
-  -webkit-user-select: none;
+  background-color: #0A0A0C;
+  color: #FAFAFA;
   touch-action: manipulation;
   font-family: var(--font-sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-input, textarea, select {
-  user-select: text;
-  -webkit-user-select: text;
+/* Fluid responsive container paddings */
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1rem, 4vw, 2.5rem);
+  padding-right: clamp(1rem, 4vw, 2.5rem);
 }
 
-/* Mobile Safe Area & Responsive Utilities */
+/* Mobile Safe Area Utilities */
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
 }
@@ -81,279 +108,205 @@ input:disabled,
   cursor: not-allowed !important;
 }
 
-/* Custom Semantic Cursor Utility Classes */
-.cursor-action {
-  cursor: pointer;
-}
-
-.cursor-copy-btn,
-[data-action="copy"],
-.btn-copy {
-  cursor: copy !important;
-}
-
-.cursor-help-tip,
-[data-tooltip],
-.badge-help {
-  cursor: help;
-}
-
-.cursor-drag-item,
-.draggable-card {
-  cursor: grab;
-}
-
-.cursor-drag-item:active,
-.draggable-card:active {
-  cursor: grabbing;
-}
-
-.cursor-zoom,
-[data-action="qr"],
-[data-action="inspect"] {
-  cursor: zoom-in;
-}
-
-.cursor-crosshair-tool,
-.canvas-tool {
-  cursor: crosshair;
-}
-
 input, textarea {
   user-select: text;
   -webkit-user-select: text;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   cursor: text;
 }
 
-/* Retro Grid Background */
-.bg-retro-grid {
-  background-color: #0D0F15;
-  background-image: radial-gradient(rgba(255, 230, 0, 0.08) 1px, transparent 0);
-  background-size: 24px 24px;
+/* Subtle architectural ambient canvas grid */
+.bg-ambient-canvas {
+  background-color: #0A0A0C;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-.bg-retro-dots {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 0);
-  background-size: 16px 16px;
-}
-
-/* Neo-Brutalist Hard Shadow & Border Utilities */
-.brutal-card {
-  background-color: #151822;
-  border: 2px solid #2B3042;
-  box-shadow: 4px 4px 0px #000000;
-}
-
-.brutal-card-pop {
-  background-color: #1A1E2B;
-  border: 2.5px solid #FFE600;
-  box-shadow: 5px 5px 0px #000000;
-}
-
+/* ================= MODERN MINIMALIST CONTAINERS ================= */
+.card-modern,
+.monolith-card,
+.brutal-card,
 .brutal-card-cream {
-  background-color: #FFFDF5;
-  color: #000000;
-  border: 2.5px solid #000000;
-  box-shadow: 4px 4px 0px #000000;
+  background-color: #121215;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
-.brutal-shadow-sm {
-  box-shadow: 2px 2px 0px #000000;
+.card-elevated,
+.monolith-card-elevated,
+.brutal-card-pop {
+  background-color: #18181D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.55);
 }
 
-.brutal-shadow {
-  box-shadow: 4px 4px 0px #000000;
+.card-active,
+.monolith-card-active {
+  background-color: #121215;
+  border: 1px solid rgba(59, 130, 246, 0.6);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px -2px rgba(59, 130, 246, 0.25);
 }
 
-.brutal-shadow-lg {
-  box-shadow: 6px 6px 0px #000000;
-}
-
-.brutal-shadow-yellow {
-  box-shadow: 4px 4px 0px #FFE600;
-}
-
-.brutal-shadow-pink {
-  box-shadow: 4px 4px 0px #FF2A6D;
-}
-
-.brutal-shadow-cyan {
-  box-shadow: 4px 4px 0px #00F0FF;
-}
-
+/* Neutralized Brutal Shadow Fallbacks */
+.brutal-shadow-sm,
+.brutal-shadow,
+.brutal-shadow-lg,
+.brutal-shadow-yellow,
+.brutal-shadow-pink,
+.brutal-shadow-cyan,
 .brutal-shadow-green {
-  box-shadow: 4px 4px 0px #00F59B;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45) !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Tactile Mechanical Button Feedback */
+/* ================= MODERN BUTTONS ================= */
+.btn-modern,
 .brutal-btn {
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px #000000;
-  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #18181D;
+  color: #FAFAFA;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+.btn-modern:hover,
 .brutal-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
-}
-
-.brutal-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
-}
-
-/* Specific Neo-Brutalist Color Buttons */
-.btn-neo-yellow {
-  background-color: #FFE600;
-  color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px #000000;
-  font-weight: 700;
-}
-
-.btn-neo-yellow:hover {
-  background-color: #FFF04D;
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
-}
-
-.btn-neo-yellow:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
-}
-
-.btn-neo-pink {
-  background-color: #FF2A6D;
+  background-color: #22222A;
+  border-color: rgba(255, 255, 255, 0.16);
   color: #FFFFFF;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px #000000;
-  font-weight: 700;
 }
 
-.btn-neo-pink:hover {
-  background-color: #FF4782;
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
+.btn-modern:active,
+.brutal-btn:active {
+  transform: scale(0.98);
 }
 
-.btn-neo-pink:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
+/* Cobalt Primary CTA */
+.btn-cobalt,
+.btn-neo-yellow,
+.btn-neo-pink,
+.btn-neo-cyan,
+.btn-neo-purple {
+  background-color: #3B82F6;
+  color: #FFFFFF;
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px -2px rgba(59, 130, 246, 0.35);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.btn-neo-cyan {
-  background-color: #00F0FF;
-  color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px #000000;
-  font-weight: 700;
+.btn-cobalt:hover,
+.btn-neo-yellow:hover,
+.btn-neo-pink:hover,
+.btn-neo-cyan:hover,
+.btn-neo-purple:hover {
+  background-color: #2563EB;
+  border-color: #1D4ED8;
+  box-shadow: 0 6px 20px -2px rgba(59, 130, 246, 0.5);
+  color: #FFFFFF;
 }
 
-.btn-neo-cyan:hover {
-  background-color: #33F3FF;
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
+.btn-cobalt:active,
+.btn-neo-yellow:active,
+.btn-neo-pink:active,
+.btn-neo-cyan:active,
+.btn-neo-purple:active {
+  transform: scale(0.98);
 }
 
-.btn-neo-cyan:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
+/* Minimalist Dark Ghost Button */
+.btn-neo-dark,
+.btn-monolith-ghost {
+  background-color: #141418;
+  color: #FAFAFA;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-neo-dark:hover,
+.btn-monolith-ghost:hover {
+  background-color: #1E1E24;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
 }
 
 .btn-neo-mint {
-  background-color: #00F59B;
-  color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0px #000000;
-  font-weight: 700;
-}
-
-.btn-neo-mint:hover {
-  background-color: #26F7A9;
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
-}
-
-.btn-neo-mint:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
-}
-
-.btn-neo-dark {
-  background-color: #1A1E2B;
-  color: #F8FAFC;
-  border: 2px solid #2B3042;
-  box-shadow: 3px 3px 0px #000000;
+  background-color: #10B981;
+  color: #FFFFFF;
+  border: 1px solid rgba(16, 185, 129, 0.8);
+  border-radius: 0.75rem;
   font-weight: 600;
 }
 
-.btn-neo-dark:hover {
-  background-color: #222738;
-  border-color: #FFE600;
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0px #000000;
+.btn-neo-mint:hover {
+  background-color: #059669;
 }
 
-.btn-neo-dark:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000000;
-}
-
-/* Retro Diagonal Hazard Striped Border */
-.hazard-stripes {
-  background: repeating-linear-gradient(
-    45deg,
-    #FFE600,
-    #FFE600 10px,
-    #000000 10px,
-    #000000 20px
-  );
-}
-
-.hazard-stripes-pink {
-  background: repeating-linear-gradient(
-    45deg,
-    #FF2A6D,
-    #FF2A6D 10px,
-    #000000 10px,
-    #000000 20px
-  );
-}
-
-/* Retro Vintage Sticker Badge */
-.retro-sticker {
+/* Modern Minimalist Status Pills */
+.status-pill {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-mono);
-  font-weight: 800;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border: 1.5px solid #000;
-  box-shadow: 2px 2px 0px #000;
-  border-radius: 4px;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #18181D;
+  color: #FAFAFA;
+  border-radius: 9999px;
 }
 
-/* Custom modern scrollbar */
+/* ================= EXAGGERATED MINIMALISM TYPOGRAPHY ================= */
+.font-monumental {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 7vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+
+.font-timer {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8.5vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.font-metric {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+/* Custom Sleek Dark Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0E1017;
-  border-left: 1px solid #1E2330;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FFE600;
-  border: 1px solid #000000;
-  box-shadow: 1px 1px 0px #000000;
-  border-radius: 2px;
+  background: #27272A;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF2A6D;
+  background: #3B82F6;
 }

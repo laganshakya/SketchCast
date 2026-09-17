@@ -61,7 +61,7 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
     });
 
     sectionsHtml.push(`
-      <div class="neo-card">
+      <div class="blueprint-card">
         ${currentSectionTitle ? `<div class="card-header"><h2>${currentSectionTitle}</h2></div>` : ''}
         <div class="card-body">
           ${formattedLines.join('\n')}
@@ -81,7 +81,7 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
       const titleText = trimmed.replace(/^#\s+/, '').replace(/[⚡🧠📊💬🏆🚀]/gu, '').trim();
       sectionsHtml.push(`
         <div class="hero-banner">
-          <div class="hero-tag">⚡ SKETCHCAST MASTERCLASS REPORT</div>
+          <div class="hero-tag">SKETCHCAST MASTERCLASS REPORT</div>
           <h1 class="hero-title">${titleText || roomTitle}</h1>
         </div>
       `);
@@ -102,20 +102,15 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
   <title>SketchCast Report - ${roomTitle} (${roomCode})</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --neo-yellow: #FFE600;
-      --neo-pink: #FF2A6D;
-      --neo-cyan: #00F0FF;
-      --neo-mint: #00F59B;
-      --neo-orange: #FF6B35;
-      --neo-purple: #9B5DE5;
-      --neo-cream: #FFFDF5;
-      --neo-dark: #0D0F15;
-      --neo-card: #151822;
-      --neo-card-darker: #0E1017;
-      --neo-border: #000000;
+      --bg-dark: #0A0A0C;
+      --card-dark: #121216;
+      --border-dark: #27272A;
+      --accent-cobalt: #3B82F6;
+      --text-main: #FAFAFA;
+      --text-muted: #A1A1AA;
     }
 
     * {
@@ -125,17 +120,15 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
     }
 
     body {
-      background-color: #0D0F15;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
-      background-size: 24px 24px;
-      color: #F8FAFC;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
       font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-      padding: 32px 16px;
+      padding: 40px 20px;
       line-height: 1.6;
     }
 
     .container {
-      max-width: 860px;
+      max-width: 880px;
       margin: 0 auto;
     }
 
@@ -143,108 +136,97 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
     .top-meta-bar {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 8px;
+      margin-bottom: 24px;
       align-items: center;
     }
 
     .meta-pill {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       text-transform: uppercase;
-      padding: 6px 12px;
-      border: 2px solid var(--neo-border);
-      box-shadow: 2px 2px 0px #000000;
-    }
-
-    .meta-time {
-      background-color: var(--neo-yellow);
-      color: #000000;
+      padding: 6px 14px;
+      border: 1px solid var(--border-dark);
+      background-color: var(--card-dark);
+      color: var(--text-muted);
     }
 
     .meta-room {
-      background-color: var(--neo-cyan);
-      color: #000000;
-    }
-
-    .meta-badge {
-      background-color: var(--neo-pink);
-      color: #FFFFFF;
+      border-color: rgba(59, 130, 246, 0.4);
+      color: var(--accent-cobalt);
     }
 
     /* Hero Banner */
     .hero-banner {
-      background-color: #1A1E2B;
-      border: 3px solid var(--neo-border);
-      box-shadow: 5px 5px 0px #000000;
-      padding: 24px;
+      background-color: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      padding: 28px;
       margin-bottom: 24px;
-      position: relative;
     }
 
     .hero-tag {
-      font-family: 'Space Mono', monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      font-weight: 800;
-      color: var(--neo-yellow);
+      font-weight: 700;
+      color: var(--accent-cobalt);
       margin-bottom: 8px;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
     }
 
     .hero-title {
-      font-family: 'Archivo Black', sans-serif;
-      font-size: 26px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
       line-height: 1.2;
       color: #FFFFFF;
       text-transform: uppercase;
       letter-spacing: -0.5px;
+      font-weight: 700;
     }
 
-    /* Section Neo-Cards */
-    .neo-card {
-      background-color: var(--neo-card);
-      border: 3px solid var(--neo-border);
-      box-shadow: 5px 5px 0px #000000;
+    /* Section Cards */
+    .blueprint-card {
+      background-color: var(--card-dark);
+      border: 1px solid var(--border-dark);
       margin-bottom: 24px;
       overflow: hidden;
     }
 
     .card-header {
-      background-color: #1F2433;
-      border-bottom: 2px solid var(--neo-border);
-      padding: 12px 20px;
+      background-color: #16161A;
+      border-bottom: 1px solid var(--border-dark);
+      padding: 14px 24px;
     }
 
     .card-header h2 {
-      font-family: 'Archivo Black', sans-serif;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 16px;
-      color: var(--neo-mint);
+      color: #FFFFFF;
       text-transform: uppercase;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.5px;
+      font-weight: 700;
     }
 
     .card-body {
-      padding: 20px;
+      padding: 24px;
       font-size: 14px;
-      color: #E2E8F0;
+      color: #D4D4D8;
     }
 
     .section-subtitle {
-      font-family: 'Space Mono', monospace;
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--neo-yellow);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-cobalt);
       text-transform: uppercase;
-      margin: 16px 0 10px 0;
-      border-left: 3px solid var(--neo-yellow);
-      padding-left: 8px;
+      margin: 20px 0 12px 0;
+      letter-spacing: 0.5px;
     }
 
     .paragraph {
-      margin-bottom: 12px;
-      font-weight: 500;
-      color: #CBD5E1;
+      margin-bottom: 14px;
+      font-weight: 400;
+      color: #A1A1AA;
     }
 
     .bullet-item {
@@ -253,89 +235,84 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
       gap: 10px;
       margin-bottom: 8px;
       font-size: 13px;
-      color: #E2E8F0;
+      color: #D4D4D8;
     }
 
     .bullet-arrow {
-      color: var(--neo-yellow);
-      font-weight: 800;
+      color: var(--accent-cobalt);
+      font-weight: 700;
       font-size: 14px;
-      line-height: 1;
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .numbered-item {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 10px;
       font-size: 13px;
-      background-color: #10131B;
-      padding: 10px 14px;
-      border: 1px solid #2B3042;
+      background-color: #0E0E12;
+      padding: 12px 16px;
+      border: 1px solid var(--border-dark);
     }
 
     .item-num {
-      font-family: 'Space Mono', monospace;
-      font-weight: 800;
-      color: var(--neo-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--accent-cobalt);
       flex-shrink: 0;
     }
 
     .divider {
       border: none;
-      height: 2px;
-      background-color: #262B3A;
-      margin: 16px 0;
+      height: 1px;
+      background-color: var(--border-dark);
+      margin: 20px 0;
     }
 
     strong {
       color: #FFFFFF;
-      font-weight: 800;
+      font-weight: 700;
     }
 
     .code-badge {
-      font-family: 'Space Mono', monospace;
-      background-color: #000000;
-      color: var(--neo-mint);
+      font-family: 'JetBrains Mono', monospace;
+      background-color: #1A1F2C;
+      color: var(--accent-cobalt);
       padding: 2px 6px;
-      border: 1px solid var(--neo-border);
+      border: 1px solid rgba(59, 130, 246, 0.3);
       font-size: 12px;
     }
 
     @media print {
       body {
         background-color: #FFFFFF !important;
-        background-image: none !important;
         color: #000000 !important;
         padding: 0 !important;
       }
       .container {
         max-width: 100% !important;
       }
-      .neo-card, .hero-banner {
+      .blueprint-card, .hero-banner {
         background-color: #FFFFFF !important;
         color: #000000 !important;
         box-shadow: none !important;
-        border: 2px solid #000000 !important;
+        border: 1px solid #CCCCCC !important;
         page-break-inside: avoid;
       }
       .card-header {
-        background-color: #F1F5F9 !important;
+        background-color: #F4F4F5 !important;
       }
       .card-header h2, .hero-title, strong {
         color: #000000 !important;
       }
       .card-body, .bullet-item, .paragraph {
-        color: #1E293B !important;
+        color: #27272A !important;
       }
       .numbered-item {
-        background-color: #F8FAFC !important;
-        border: 1px solid #CBD5E1 !important;
-      }
-      .meta-pill {
-        box-shadow: none !important;
+        background-color: #FAFAFA !important;
+        border: 1px solid #E4E4E7 !important;
       }
     }
   </style>
@@ -344,8 +321,8 @@ function parseMarkdownToStyledHtml(markdown: string, roomTitle: string, roomCode
   <div class="container">
     <div class="top-meta-bar">
       <div class="meta-pill meta-room">ROOM: ${roomCode}</div>
-      <div class="meta-pill meta-time">📅 ${timeStr}</div>
-      <div class="meta-pill meta-badge">SKETCHCAST MASTERCLASS</div>
+      <div class="meta-pill">DATE: ${timeStr}</div>
+      <div class="meta-pill">SKETCHCAST LIVE</div>
     </div>
     ${sectionsHtml.join('\n')}
   </div>
@@ -525,36 +502,36 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 15, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-neo-cream text-black w-full max-w-2xl p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative font-sans max-h-[92vh] overflow-y-auto flex flex-col"
+            className="bg-[#101014] text-[#FAFAFA] w-full max-w-2xl p-5 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[92vh] overflow-y-auto flex flex-col shadow-modal"
           >
             {/* Close button */}
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer z-10"
+              className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-xl bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors border border-white/[0.06] cursor-pointer z-10"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+              <X className="w-4 h-4" />
             </motion.button>
 
             {/* Modal Header */}
-            <div className="flex items-start space-x-2.5 sm:space-x-3 mb-3.5 pr-8 sm:pr-10">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy shrink-0 -rotate-2">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            <div className="flex items-start space-x-3 mb-4 pr-8 sm:pr-10">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center space-x-1.5 flex-wrap">
-                  <h3 className="text-base sm:text-lg font-heavy uppercase tracking-tight text-black leading-tight">
-                    AI MASTERCLASS SESSION REPORT
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <h3 className="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">
+                    AI Masterclass Session Report
                   </h3>
-                  <span className="px-1.5 py-0.2 bg-black text-neo-yellow font-mono text-[9px] font-black uppercase">
-                    MESH SYNTHESIS
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-semibold tracking-wide border border-blue-500/20">
+                    Mesh Synthesis
                   </span>
                 </div>
-                <p className="text-[11px] sm:text-xs font-mono text-slate-700 mt-0.5">
+                <p className="text-xs text-zinc-400 mt-1">
                   Generates an executive recap of all architecture quizzes, community polls, and top Q&A.
                 </p>
               </div>
@@ -563,10 +540,10 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             {/* Action / Trigger Banner */}
             {!activeMarkdown && !isGenerating && (
               isHost ? (
-                <div className="p-4 bg-white border-2 border-black brutal-shadow-sm font-mono space-y-3 mb-3">
-                  <div className="text-xs text-slate-800 leading-relaxed">
-                    <strong>Session Data to Synthesize:</strong>
-                    <ul className="list-disc pl-5 mt-1 space-y-0.5 text-[11px]">
+                <div className="p-4 sm:p-5 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-3 mb-4">
+                  <div className="text-xs text-[#FAFAFA] leading-relaxed">
+                    <strong className="text-white text-xs font-semibold block mb-1">Session Data to Synthesize:</strong>
+                    <ul className="list-disc pl-5 mt-1 space-y-1 text-xs text-zinc-400">
                       <li>{quizzes.length} Quizzes launched in Room {roomCode}</li>
                       <li>{polls.length} Live Community Polls</li>
                       <li>{questions.length} Audience Q&A Submissions</li>
@@ -576,25 +553,25 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
 
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       playWhoosh();
                       handleGenerateReport();
                     }}
-                    className="w-full py-2.5 bg-neo-pink hover:bg-[#FF4782] text-white text-xs font-black uppercase border-2 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all"
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-md shadow-blue-500/20"
                   >
                     <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>GENERATE MASTERCLASS REPORT</span>
+                    <span>Generate Masterclass Report</span>
                   </motion.button>
                 </div>
               ) : (
-                <div className="p-6 bg-white border-2 border-black brutal-shadow-sm font-mono text-center space-y-2 mb-3">
-                  <div className="w-12 h-12 bg-[#FAF8F5] border-2 border-black mx-auto flex items-center justify-center brutal-shadow-sm">
-                    <FileText className="w-6 h-6 text-slate-700" />
+                <div className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.08] text-center space-y-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 mx-auto flex items-center justify-center text-blue-400">
+                    <FileText className="w-6 h-6" />
                   </div>
-                  <h4 className="text-xs sm:text-sm font-heavy uppercase text-black">NO REPORT PUBLISHED YET</h4>
-                  <p className="text-xs text-slate-600 font-sans max-w-sm mx-auto">
+                  <h4 className="text-xs sm:text-sm font-semibold text-white">No Report Published Yet</h4>
+                  <p className="text-xs text-zinc-400 max-w-sm mx-auto">
                     The host has not generated or published the AI Session Report for Room {roomCode} yet. Once published, you can view and download it here!
                   </p>
                 </div>
@@ -602,23 +579,26 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             )}
 
             {isGenerating && (
-              <div className="p-8 bg-white border-2 border-black brutal-shadow-sm text-center font-mono space-y-3 mb-3">
-                <RefreshCw className="w-8 h-8 text-neo-pink mx-auto animate-spin" />
-                <h4 className="text-xs font-heavy uppercase">Synthesizing Executive Masterclass Report...</h4>
-                <p className="text-[11px] text-slate-600">Analyzing quiz takeaways, voting consensus, and top Q&A threads via Mesh API</p>
+              <div className="p-8 rounded-xl bg-white/[0.02] border border-white/[0.08] text-center space-y-3 mb-4">
+                <RefreshCw className="w-7 h-7 text-blue-400 mx-auto animate-spin" />
+                <h4 className="text-sm font-semibold text-white">Synthesizing Executive Masterclass Report...</h4>
+                <p className="text-xs text-zinc-400">Analyzing quiz takeaways, voting consensus, and top Q&A threads via Mesh API</p>
               </div>
             )}
 
             {errorMessage && (
-              <div className="p-2.5 mb-3 bg-neo-pink text-white font-mono text-xs font-bold border-2 border-black flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="p-3.5 mb-4 rounded-xl bg-red-500/10 text-red-300 text-xs border border-red-500/20 flex items-start space-x-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
                 <div className="flex-1">
                   <div>{errorMessage}</div>
                   {onOpenAISettings && isHost && errorMessage.includes('AI Settings') && (
                     <button
                       type="button"
-                      onClick={onOpenAISettings}
-                      className="mt-1.5 px-2 py-0.5 bg-white text-black text-[10px] font-black uppercase border border-black hover:bg-neo-yellow cursor-pointer"
+                      onClick={() => {
+                        onClose();
+                        onOpenAISettings();
+                      }}
+                      className="mt-2 px-3 py-1 rounded-lg bg-white/[0.06] text-white text-[11px] font-medium border border-white/[0.1] hover:border-blue-500 cursor-pointer"
                     >
                       Open AI Settings
                     </button>
@@ -629,92 +609,92 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
 
             {/* Report Content View */}
             {activeMarkdown && (
-              <div className="space-y-3 flex-1 flex flex-col min-h-0 font-mono">
+              <div className="space-y-3 flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-[11px] font-black uppercase text-emerald-800 flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5 stroke-3" />
-                    <span>REPORT GENERATED ({activeMarkdown.length} CHARS)</span>
+                  <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Report Ready ({activeMarkdown.length} chars)</span>
                   </span>
 
                   <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playPopSound();
                         handleCopy();
                       }}
-                      className="px-2 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium flex items-center space-x-1.5 cursor-pointer transition-all shadow-sm"
                       title="Copy formatted markdown to clipboard"
                     >
-                      {copied ? <CheckCircle className="w-3.5 h-3.5 stroke-3" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copied ? 'COPIED!' : 'COPY'}</span>
+                      {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
                     </motion.button>
 
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playClickSound();
                         handleDownloadMarkdown();
                       }}
-                      className="px-2 py-1 bg-neo-cyan hover:bg-[#33F3FF] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] flex items-center space-x-1 cursor-pointer transition-all"
                       title="Download as Markdown file"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-blue-400" />
                       <span>.MD</span>
                     </motion.button>
 
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playClickSound();
                         handleDownloadTxt();
                       }}
-                      className="px-2 py-1 bg-neo-mint hover:bg-[#26F7A9] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] flex items-center space-x-1 cursor-pointer transition-all"
                       title="Download as Plain Text file"
                     >
-                      <FileText className="w-3.5 h-3.5" />
+                      <FileText className="w-3.5 h-3.5 text-blue-400" />
                       <span>.TXT</span>
                     </motion.button>
 
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playClickSound();
                         handleDownloadHtml();
                       }}
-                      className="px-2 py-1 bg-neo-purple hover:bg-[#A855F7] text-white text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
-                      title="Download as styled Neo-Brutalist HTML report"
+                      className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] flex items-center space-x-1 cursor-pointer transition-all"
+                      title="Download styled HTML report"
                     >
-                      <Globe className="w-3.5 h-3.5" />
+                      <Globe className="w-3.5 h-3.5 text-blue-400" />
                       <span>.HTML</span>
                     </motion.button>
 
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playClickSound();
                         handleDownloadJson();
                       }}
-                      className="px-2 py-1 bg-neo-orange hover:bg-[#FF8833] text-black text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.06] flex items-center space-x-1 cursor-pointer transition-all"
                       title="Download full session structured JSON payload"
                     >
-                      <FileCode className="w-3.5 h-3.5" />
+                      <FileCode className="w-3.5 h-3.5 text-blue-400" />
                       <span>.JSON</span>
                     </motion.button>
                   </div>
                 </div>
 
-                <div className="p-3.5 bg-white border-2 border-black brutal-shadow-sm flex-1 overflow-y-auto max-h-96 text-xs text-slate-900 whitespace-pre-wrap font-mono leading-relaxed select-text">
+                <div className="p-4 rounded-xl bg-[#0B0B0E] border border-white/[0.08] flex-1 overflow-y-auto max-h-96 text-xs text-zinc-300 whitespace-pre-wrap font-mono leading-relaxed select-text">
                   {activeMarkdown}
                 </div>
 
@@ -722,16 +702,16 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
                   <div className="pt-2 flex justify-end">
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.03 }}
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         playWhoosh();
                         handleGenerateReport();
                       }}
-                      className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold uppercase border border-black flex items-center space-x-1 cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-colors"
                     >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>RE-GENERATE</span>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Re-generate</span>
                     </motion.button>
                   </div>
                 )}

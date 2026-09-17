@@ -5,7 +5,6 @@ import {
   Copy,
   Check,
   Zap,
-  Radio,
   ArrowRightLeft,
   Volume2,
   VolumeX,
@@ -40,7 +39,6 @@ interface AppHeaderProps {
   onOpenActiveAttendees?: () => void;
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
-  onOpenSpotlightRoulette?: () => void;
   onOpenMobileSidebar?: () => void;
   onSignOut?: () => void;
   currentUser?: SupabaseUser | null;
@@ -86,158 +84,140 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <header className="flex flex-col bg-[#11131B] border-b-2 border-black z-40 select-none shrink-0 font-sans relative w-full overflow-hidden">
-      {/* Top Retro Hazard Line */}
-      <div className="h-1.5 w-full hazard-stripes shrink-0" />
-
-      <div className="h-14 sm:h-15 px-2 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4 w-full relative">
-        {/* ================= LEFT: Mobile Hamburger, Brand & Room Pill ================= */}
-        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0 min-w-0">
-          {/* Mobile Drawer Toggle Button (< md) */}
+    <header className="flex flex-col bg-[#0A0A0C]/90 backdrop-blur-xl border-b border-white/[0.08] z-40 select-none shrink-0 font-sans relative w-full">
+      <div className="h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between gap-3 w-full relative">
+        {/* ================= LEFT: Navigation & Brand ================= */}
+        <div className="flex items-center space-x-2.5 sm:space-x-4 shrink-0 min-w-0">
+          {/* Mobile Drawer Toggle (< md) */}
           <motion.button
-            whileTap={{ scale: 0.92 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               playPopSound();
               onOpenMobileSidebar?.();
             }}
-            className="md:hidden p-2 bg-[#1A1E2B] hover:bg-neo-yellow hover:text-black text-white border-2 border-black brutal-shadow-sm flex items-center justify-center cursor-pointer transition-colors shrink-0"
-            title="Open Arena Navigation Menu"
+            className="md:hidden p-2 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0"
+            title="Open Arena Menu"
             aria-label="Open Navigation Menu"
           >
             <Menu className="w-4 h-4" />
           </motion.button>
 
-          {/* Logo */}
+          {/* Minimalist Brand Logo */}
           <motion.div
-            whileHover={{ scale: 1.04, rotate: -2 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center space-x-1.5 shrink-0 cursor-pointer"
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center space-x-2.5 shrink-0 cursor-pointer"
           >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-neo-yellow border-2 border-black brutal-shadow-sm flex items-center justify-center font-heavy text-black text-xs sm:text-sm -rotate-2 shrink-0">
-              <Zap className="w-4 h-4 fill-black stroke-black" />
+            <div className="w-8 h-8 bg-[#3B82F6] text-white rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-lg shadow-blue-500/25">
+              <Zap className="w-4 h-4 fill-white stroke-white" />
             </div>
-            <div className="flex items-center space-x-1">
-              <span className="text-xs sm:text-sm md:text-base font-heavy tracking-tight text-white uppercase shrink-0">
-                SKETCH<span className="text-neo-yellow">CAST</span>
+            <div className="flex items-baseline space-x-1.5">
+              <span className="text-sm sm:text-base font-display font-extrabold tracking-tight text-white uppercase shrink-0">
+                SKETCH<span className="text-[#3B82F6]">CAST</span>
               </span>
             </div>
           </motion.div>
 
-          <div className="h-5 w-0.5 bg-slate-800 hidden sm:block shrink-0" />
+          <div className="h-4 w-px bg-white/[0.08] hidden sm:block shrink-0" />
 
-          {/* Desktop/Tablet Unified Room & Actions Pill (>= sm) */}
-          <div className="hidden sm:flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0 overflow-hidden font-mono text-xs">
-            {/* Copy Code Action */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
+          {/* Desktop Room Code Pill */}
+          <div className="hidden sm:flex items-center bg-white/[0.03] border border-white/[0.08] rounded-full h-8 shrink-0 overflow-hidden text-xs">
+            <button
               onClick={handleCopyCode}
-              className="flex items-center space-x-1.5 px-2.5 h-full hover:bg-[#252B3D] transition-colors cursor-copy-btn text-slate-200"
+              className="flex items-center space-x-2 px-3 h-full hover:bg-white/[0.06] transition-colors text-[#FAFAFA]"
               title="Click to copy Room Code"
             >
-              <span className="text-slate-400 font-bold text-[10px]">ROOM:</span>
-              <span className="font-extrabold text-neo-yellow tracking-wider text-xs">
+              <span className="text-[#71717A] text-[11px]">ROOM</span>
+              <span className="font-semibold text-[#3B82F6] tracking-wide text-xs">
                 {room.code}
               </span>
               {copied ? (
-                <Check className="w-3.5 h-3.5 text-neo-mint shrink-0" />
+                <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <Copy className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
               )}
-            </motion.button>
+            </button>
 
             {/* QR Modal Trigger */}
-            <motion.button
-              whileTap={{ scale: 0.92 }}
+            <button
               onClick={() => {
                 playClickSound();
                 onOpenQRCode();
               }}
-              className="px-2 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+              className="px-2.5 h-full bg-white/[0.02] hover:bg-white/[0.08] text-[#FAFAFA] border-l border-white/[0.08] transition-colors flex items-center gap-1 font-medium text-[11px] cursor-pointer"
               title="Open Mobile Join QR Code"
             >
               <QrCode className="w-3.5 h-3.5" />
               <span className="hidden xl:inline">QR</span>
-            </motion.button>
+            </button>
 
-            {/* Change / Switch Room Trigger */}
+            {/* Switch Room Trigger */}
             {onOpenChangeRoom && (
-              <motion.button
-                whileTap={{ scale: 0.92 }}
+              <button
                 onClick={() => {
                   playClickSound();
                   onOpenChangeRoom();
                 }}
-                className="px-2 h-full bg-neo-card hover:bg-neo-pink hover:text-white text-slate-300 border-l-2 border-black transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+                className="px-2.5 h-full bg-white/[0.02] hover:bg-white/[0.08] text-[#A1A1AA] hover:text-[#FAFAFA] border-l border-white/[0.08] transition-colors flex items-center gap-1 font-medium text-[11px] cursor-pointer"
                 title="Switch to another Arena Room"
               >
-                <ArrowRightLeft className="w-3 h-3 stroke-[2.5]" />
+                <ArrowRightLeft className="w-3 h-3" />
                 <span className="hidden xl:inline">SWITCH</span>
-              </motion.button>
+              </button>
             )}
           </div>
         </div>
 
-        {/* ================= RIGHT: Audio, Presence & Mobile Room Pill ================= */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0 min-w-0">
-          {/* Audio Pack Profile Switcher (8-Bit Arcade vs Modern Hi-Fi) */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.92 }}
+        {/* ================= RIGHT: Telemetry, Audio, Presence ================= */}
+        <div className="flex items-center space-x-2 shrink-0 min-w-0">
+          {/* Audio Sound Profile Switcher */}
+          <button
             onClick={handleToggleAudioPack}
-            className={`h-8 px-2 flex items-center space-x-1 border-2 border-black brutal-shadow-sm font-mono text-[10px] font-black tracking-wider transition-all cursor-pointer shrink-0 ${
-              audioPack === 'arcade'
-                ? 'bg-neo-yellow text-black hover:bg-yellow-300'
-                : 'bg-neo-cyan text-black hover:bg-cyan-300'
-            }`}
-            title={`Active Sound Pack: ${audioPack.toUpperCase()} (Click to switch to ${audioPack === 'arcade' ? 'Modern Hi-Fi' : '8-Bit Arcade'})`}
+            className="h-8 px-3 flex items-center space-x-1.5 bg-white/[0.03] hover:bg-white/[0.06] text-[#FAFAFA] border border-white/[0.08] rounded-full text-xs font-medium transition-colors cursor-pointer shrink-0"
+            title={`Active Sound Pack: ${audioPack.toUpperCase()}`}
           >
-            <span>{audioPack === 'arcade' ? '⚡ 8-BIT' : '🎵 HI-FI'}</span>
-          </motion.button>
+            <span className="text-[#3B82F6]">{audioPack === 'arcade' ? '⚡ 8-BIT' : '🎵 HI-FI'}</span>
+          </button>
 
-          {/* Tactile Audio SFX Toggle Button */}
-          <motion.button
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.92 }}
+          {/* Mute Audio SFX */}
+          <button
             onClick={handleToggleMute}
-            className={`h-8 w-8 flex items-center justify-center border-2 border-black brutal-shadow-sm transition-all cursor-pointer shrink-0 ${
+            className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors cursor-pointer shrink-0 ${
               muted
-                ? 'bg-[#181B26] text-slate-500 hover:text-slate-300'
-                : 'bg-neo-yellow/20 hover:bg-neo-yellow text-neo-yellow hover:text-black border-neo-yellow/50 hover:border-black'
+                ? 'bg-white/[0.03] text-[#71717A] border-white/[0.08] hover:text-white'
+                : 'bg-white/[0.05] text-[#3B82F6] border-[#3B82F6]/40 shadow-sm shadow-blue-500/20'
             }`}
-            title={muted ? 'Unmute Sound Effects (SFX)' : 'Mute Sound Effects (SFX)'}
+            title={muted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
           >
             {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-          </motion.button>
+          </button>
 
-          {/* Live Online Presence Indicator (>= sm) */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.95 }}
+          {/* Live Online Presence Indicator */}
+          <button
             onClick={() => {
               playClickSound();
               onOpenActiveAttendees?.();
             }}
-            className="hidden sm:flex h-8 items-center space-x-1.5 px-2.5 bg-[#141824] hover:bg-[#1E2436] text-neo-mint border-2 border-black brutal-shadow-sm text-xs font-mono font-bold transition-all active:translate-x-px active:translate-y-px cursor-pointer shrink-0"
-            title="Click to view live participants & manage room admins"
+            className="hidden sm:flex h-8 items-center space-x-2 px-3 bg-white/[0.03] hover:bg-white/[0.06] text-[#FAFAFA] border border-white/[0.08] rounded-full text-xs font-medium transition-colors cursor-pointer shrink-0"
+            title="View live participants"
           >
-            <Radio className="w-3 h-3 animate-pulse text-neo-mint shrink-0" />
-            <span className="text-xs tracking-wide whitespace-nowrap">
-              {Math.max(1, activeViewerCount)} <span className="hidden lg:inline">ONLINE</span>
+            <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
+            <span className="text-xs whitespace-nowrap">
+              {Math.max(1, activeViewerCount)} <span className="text-[#71717A] hidden lg:inline">online</span>
             </span>
-          </motion.button>
+          </button>
 
-          {/* Mobile Room & QR Combo Pill (< sm) */}
-          <div className="sm:hidden flex items-center bg-[#1A1E2B] border-2 border-black brutal-shadow-sm h-8 shrink-0">
+          {/* Mobile Room & QR Pill (< sm) */}
+          <div className="sm:hidden flex items-center bg-white/[0.03] border border-white/[0.08] rounded-full h-8 shrink-0 overflow-hidden">
             <button
               onClick={handleCopyCode}
-              className="px-2 h-full text-[10px] font-mono font-extrabold text-neo-yellow hover:text-white flex items-center gap-1 cursor-copy-btn"
-              title="Click to copy Room Code"
+              className="px-2.5 h-full text-xs font-semibold text-[#3B82F6] flex items-center gap-1.5"
+              title="Copy Room Code"
             >
               <span>{room.code}</span>
               {copied ? (
-                <Check className="w-3 h-3 text-neo-mint shrink-0" />
+                <Check className="w-3 h-3 text-[#10B981] shrink-0" />
               ) : (
-                <Copy className="w-3 h-3 text-slate-400 shrink-0" />
+                <Copy className="w-3 h-3 text-[#71717A] shrink-0" />
               )}
             </button>
             <button
@@ -245,8 +225,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 playClickSound();
                 onOpenQRCode();
               }}
-              className="px-2 h-full bg-neo-cream text-black hover:bg-neo-yellow border-l-2 border-black transition-colors flex items-center cursor-pointer"
-              title="Open Mobile QR Code"
+              className="px-2 h-full bg-white/[0.03] text-[#FAFAFA] border-l border-white/[0.08] transition-colors flex items-center cursor-pointer"
+              title="Open QR Code"
             >
               <QrCode className="w-3 h-3" />
             </button>

@@ -121,14 +121,19 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   const [userRole, setUserRoleState] = useState<'host' | 'attendee'>(getStoredUserRole);
   const [activeRoomCode, setActiveRoomCode] = useState<string>(() => getStoredRoomCode(initialRoomCode));
   
-  const [room, setRoom] = useState<Room>(() => ({
-    id: `room-${getStoredRoomCode(initialRoomCode)}`,
-    code: getStoredRoomCode(initialRoomCode),
-    title: `NextGen Arena // ${getStoredRoomCode(initialRoomCode)}`,
-    host_id: 'host-root-1',
-    host_name: 'Alex Chen (Host)',
-    created_at: new Date().toISOString(),
-  }));
+  const [room, setRoom] = useState<Room>(() => {
+    const code = getStoredRoomCode(initialRoomCode);
+    const storedName = getStoredUserName();
+    const isHost = getStoredUserRole() === 'host' || isRoomCreatedByMe(code);
+    return {
+      id: `room-${code}`,
+      code,
+      title: `NextGen Arena // ${code}`,
+      host_id: isHost ? 'host-me' : 'host-external',
+      host_name: isHost && storedName ? storedName : '',
+      created_at: new Date().toISOString(),
+    };
+  });
 
   const [activeTab, setActiveTabState] = useState<ActiveTabType>(getInitialActiveTab);
   const [attendees, setAttendees] = useState<AttendeePresence[]>([]);
@@ -322,6 +327,35 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
     const unAdminPromote = manager.on('room_admin_promoted', (event) => {
       if (event.roomId.toUpperCase().trim() === activeRoomCode.toUpperCase().trim()) {
+        const targetClean = event.targetName.trim().toLowerCase();
+
+        // Update room.admins for ALL connected clients
+        setRoom((prev) => {
+          const currentAdmins = prev.admins || [];
+          let updatedAdmins: string[];
+          if (event.action === 'promote') {
+            updatedAdmins = currentAdmins.some((a) => a.toLowerCase() === targetClean)
+              ? currentAdmins
+              : [...currentAdmins, event.targetName];
+          } else {
+            updatedAdmins = currentAdmins.filter((a) => a.toLowerCase() !== targetClean);
+          }
+          return { ...prev, admins: updatedAdmins };
+        });
+
+        // Update role in local presence list
+        setAttendees((prev) =>
+          prev.map((a) => {
+            if (
+              a.session_id === event.targetSessionId ||
+              a.name.trim().toLowerCase() === targetClean
+            ) {
+              return { ...a, role: event.action === 'promote' ? 'host' : 'attendee' };
+            }
+            return a;
+          })
+        );
+
         const currentName = userNameRef.current;
         const isTarget = event.targetSessionId === sessionId || event.targetName.toLowerCase() === currentName.toLowerCase();
         if (isTarget) {
@@ -360,7 +394,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         if (event.action === 'mute') {
           setMutedSessionIds((prev) => {
             const next = new Set(prev);
-            next.add(event.targetSessionId);
+            if (event.targetSessionId) next.add(event.targetSessionId);
+            if (event.targetName) next.add(event.targetName.trim().toLowerCase());
             try {
               localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
             } catch {
@@ -375,7 +410,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         } else if (event.action === 'unmute') {
           setMutedSessionIds((prev) => {
             const next = new Set(prev);
-            next.delete(event.targetSessionId);
+            if (event.targetSessionId) next.delete(event.targetSessionId);
+            if (event.targetName) next.delete(event.targetName.trim().toLowerCase());
             try {
               localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
             } catch {
@@ -390,7 +426,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         } else if (event.action === 'ban') {
           setBannedSessionIds((prev) => {
             const next = new Set(prev);
-            next.add(event.targetSessionId);
+            if (event.targetSessionId) next.add(event.targetSessionId);
+            if (event.targetName) next.add(event.targetName.trim().toLowerCase());
             try {
               localStorage.setItem(`sketchcast_banned_${activeRoomCode}`, JSON.stringify(Array.from(next)));
             } catch {
@@ -398,7 +435,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
             }
             return next;
           });
-          setAttendees((prev) => prev.filter((a) => a.session_id !== event.targetSessionId));
+          setAttendees((prev) => prev.filter((a) => a.session_id !== event.targetSessionId && a.name.toLowerCase() !== event.targetName.toLowerCase()));
           if (isTarget) {
             setIsBanned(true);
             setBanNotice(`You have been banned from Room ${activeRoomCode} by the host for repeated policy violations.`);
@@ -491,6 +528,19 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   };
 
   const promoteToAdmin = async (targetSessionId: string, targetName: string) => {
+    const cleanTarget = targetName.trim().toLowerCase();
+
+    // 1. Immediately update local state
+    setRoom((prev) => {
+      const currentAdmins = prev.admins || [];
+      if (currentAdmins.some((a) => a.toLowerCase() === cleanTarget)) return prev;
+      return { ...prev, admins: [...currentAdmins, targetName] };
+    });
+    setAttendees((prev) =>
+      prev.map((a) => (a.name.trim().toLowerCase() === cleanTarget ? { ...a, role: 'host' } : a))
+    );
+
+    // 2. Broadcast to all clients
     if (channelManager) {
       channelManager.broadcast('room_admin_promoted', {
         roomId: activeRoomCode,
@@ -500,17 +550,29 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       });
     }
 
+    // 3. Persist to DB / storage
     const rooms = await dbFetchRooms();
     const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
     const existingAdmins = current?.admins || [];
-    if (!existingAdmins.some((a) => a.toLowerCase() === targetName.toLowerCase())) {
+    if (!existingAdmins.some((a) => a.toLowerCase() === cleanTarget)) {
       const updatedAdmins = [...existingAdmins, targetName];
       await dbUpdateRoomAdmins(activeRoomCode, updatedAdmins);
-      setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
     }
   };
 
   const demoteFromAdmin = async (targetSessionId: string, targetName: string) => {
+    const cleanTarget = targetName.trim().toLowerCase();
+
+    // 1. Immediately update local state
+    setRoom((prev) => {
+      const currentAdmins = prev.admins || [];
+      return { ...prev, admins: currentAdmins.filter((a) => a.toLowerCase() !== cleanTarget) };
+    });
+    setAttendees((prev) =>
+      prev.map((a) => (a.name.trim().toLowerCase() === cleanTarget ? { ...a, role: 'attendee' } : a))
+    );
+
+    // 2. Broadcast to all clients
     if (channelManager) {
       channelManager.broadcast('room_admin_promoted', {
         roomId: activeRoomCode,
@@ -520,12 +582,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       });
     }
 
+    // 3. Persist to DB / storage
     const rooms = await dbFetchRooms();
     const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
     const existingAdmins = current?.admins || [];
-    const updatedAdmins = existingAdmins.filter((a) => a.toLowerCase() !== targetName.toLowerCase());
+    const updatedAdmins = existingAdmins.filter((a) => a.toLowerCase() !== cleanTarget);
     await dbUpdateRoomAdmins(activeRoomCode, updatedAdmins);
-    setRoom((prev) => ({ ...prev, admins: updatedAdmins }));
   };
 
   const muteAttendee = (targetSessionId: string, targetName: string) => {
@@ -541,7 +603,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     }
     setMutedSessionIds((prev) => {
       const next = new Set(prev);
-      next.add(targetSessionId);
+      if (targetSessionId) next.add(targetSessionId);
+      if (targetName) next.add(targetName.trim().toLowerCase());
       try {
         localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
       } catch {
@@ -564,7 +627,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     }
     setMutedSessionIds((prev) => {
       const next = new Set(prev);
-      next.delete(targetSessionId);
+      if (targetSessionId) next.delete(targetSessionId);
+      if (targetName) next.delete(targetName.trim().toLowerCase());
       try {
         localStorage.setItem(`sketchcast_muted_${activeRoomCode}`, JSON.stringify(Array.from(next)));
       } catch {
@@ -587,7 +651,8 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     }
     setBannedSessionIds((prev) => {
       const next = new Set(prev);
-      next.add(targetSessionId);
+      if (targetSessionId) next.add(targetSessionId);
+      if (targetName) next.add(targetName.trim().toLowerCase());
       try {
         localStorage.setItem(`sketchcast_banned_${activeRoomCode}`, JSON.stringify(Array.from(next)));
       } catch {
@@ -595,7 +660,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       }
       return next;
     });
-    setAttendees((prev) => prev.filter((a) => a.session_id !== targetSessionId));
+    setAttendees((prev) => prev.filter((a) => a.session_id !== targetSessionId && a.name.toLowerCase() !== targetName.toLowerCase()));
   };
 
   const sendAttendeeWarning = (targetSessionId: string, targetName: string, message?: string) => {
@@ -680,12 +745,13 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         setRoom(currentRoom);
       } else {
         effectiveRole = 'attendee';
-        setRoom({
+        const existingRoom = allRooms.find((r) => r.code.toUpperCase() === targetRoomCode.toUpperCase());
+        setRoom(existingRoom || {
           id: `room-${targetRoomCode}`,
           code: targetRoomCode,
           title: customRoomTitle || `Tech Arena // ${targetRoomCode}`,
           host_id: 'host-external',
-          host_name: 'Room Host',
+          host_name: '',
           created_at: new Date().toISOString(),
         });
       }

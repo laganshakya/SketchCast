@@ -11,6 +11,7 @@ import { motion } from 'motion/react';
 import type { Question, QuestionStatus } from '../../types';
 import { generateSpeakerTalkingPoints, getStoredMeshKey } from '../../lib/meshApi';
 import { playPopSound, playClickSound } from '../../lib/soundFx';
+import { RollingCounter } from '../common/RollingCounter';
 
 interface QuestionCardProps {
   question: Question;
@@ -52,29 +53,29 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     switch (question.status) {
       case 'spotlight':
         return (
-          <span className="inline-flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-black uppercase bg-neo-pink text-white border border-black brutal-shadow-sm animate-pulse shrink-0">
-            <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-white" />
-            <span>★ ON STAGE ★</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/25 shrink-0">
+            <Sparkles className="w-3 h-3 fill-blue-400" />
+            <span>On Stage</span>
           </span>
         );
       case 'answered':
         return (
-          <span className="inline-flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-black uppercase bg-neo-mint text-black border border-black brutal-shadow-sm shrink-0">
-            <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[2.5]" />
-            <span>ANSWERED</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0">
+            <CheckCircle className="w-3 h-3 stroke-[2.5]" />
+            <span>Answered</span>
           </span>
         );
       case 'dismissed':
         return (
-          <span className="inline-flex items-center space-x-1 px-1.5 sm:px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold uppercase bg-slate-800 text-slate-400 border border-black shrink-0">
-            <XCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-500" />
-            <span>DISMISSED</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-zinc-800/60 text-zinc-400 border border-white/[0.08] shrink-0">
+            <XCircle className="w-3 h-3 text-zinc-400" />
+            <span>Dismissed</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold uppercase bg-[#1A1E2B] text-slate-400 border border-black shrink-0">
-            QUEUED
+          <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-zinc-800/40 text-zinc-500 border border-white/[0.08] shrink-0">
+            Queued
           </span>
         );
     }
@@ -111,53 +112,52 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className={`border-2 border-black transition-all font-sans relative ${
+      className={`border rounded-2xl transition-all font-sans relative ${
         question.status === 'spotlight'
-          ? 'bg-[#1D2030] border-neo-pink brutal-shadow-pink'
-          : 'bg-neo-card hover:bg-[#1A1E2B] brutal-shadow-sm'
-      } ${compact ? 'p-2.5 sm:p-3' : 'p-3.5 sm:p-4'}`}
+          ? 'bg-[#121624] border-blue-500/40 shadow-glow-cobalt'
+          : 'bg-[#121215] hover:bg-[#16161C] border-white/[0.08]'
+      } ${compact ? 'p-3' : 'p-4'}`}
     >
-      <div className="flex items-start space-x-2.5 sm:space-x-3">
-        {/* Chunky Upvote Button with spring tap & pop SFX */}
+      <div className="flex items-start space-x-3">
+        {/* Kinetic Upvote Button */}
         <motion.button
-          whileHover={{ scale: 1.05, y: -1 }}
-          whileTap={{ scale: 0.88 }}
+          whileTap={{ y: 1 }}
           onClick={() => {
             playPopSound();
             onToggleUpvote(question.id);
           }}
-          className={`flex flex-col items-center justify-center p-1.5 sm:p-2 min-w-10 sm:min-w-12 border-2 border-black transition-all cursor-pointer shrink-0 ${
+          className={`flex flex-col items-center justify-center p-2 min-w-11 sm:min-w-12 rounded-xl border transition-colors cursor-pointer shrink-0 ${
             isUpvoted
-              ? 'bg-neo-mint text-black brutal-shadow-sm font-black'
-              : 'bg-[#10121A] text-slate-300 hover:text-white hover:bg-[#1E2332] brutal-shadow-sm'
+              ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+              : 'bg-[#18181D] text-zinc-400 hover:text-white hover:bg-[#22222A] border-white/[0.08]'
           }`}
           title="Vote to rank this question"
         >
-          <ChevronUp className={`w-4 h-4 sm:w-5 sm:h-5 stroke-3 transition-transform ${isUpvoted ? 'scale-110' : ''}`} />
-          <span className="text-[11px] sm:text-xs font-mono font-black mt-0.5">
-            {question.upvotes_count}
-          </span>
+          <ChevronUp className={`w-4 h-4 stroke-[2.5] transition-transform ${isUpvoted ? 'scale-110' : ''}`} />
+          <RollingCounter
+            value={question.upvotes_count}
+            className={`text-xs font-mono font-bold mt-0.5 ${isUpvoted ? 'text-white' : 'text-zinc-200'}`}
+          />
         </motion.button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-1.5 mb-1.5 font-mono flex-wrap">
-            <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
-              <span className="text-[11px] sm:text-xs font-black text-neo-yellow truncate max-w-28 sm:max-w-44 uppercase">
+          <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
+            <div className="flex items-center space-x-2 min-w-0">
+              <span className="text-xs font-semibold text-white truncate max-w-32 sm:max-w-48">
                 {question.author_name}
               </span>
-              <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold shrink-0">
-                {timeAgo(question.created_at)}
+              <span className="text-[11px] text-zinc-500 font-medium shrink-0">
+                • {timeAgo(question.created_at)}
               </span>
             </div>
             <div className="flex items-center space-x-1.5 flex-wrap">
               {clusterTheme && (
                 <span
-                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase border border-black shrink-0"
-                  style={{ backgroundColor: `${clusterTheme.color}25`, color: clusterTheme.color, borderColor: clusterTheme.color }}
+                  className="inline-flex items-center space-x-1 px-2 py-0.5 text-[10px] font-medium rounded-full border shrink-0 bg-[#18181D] text-zinc-300 border-white/[0.08]"
                   title={`AI Topic Cluster: ${clusterTheme.name}`}
                 >
                   <span>{clusterTheme.emoji}</span>
@@ -168,7 +168,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-100 font-semibold leading-relaxed wrap-break-word font-display">
+          <p className="text-xs sm:text-sm text-zinc-300 font-normal leading-relaxed break-words font-sans">
             {question.content}
           </p>
 
@@ -177,41 +177,40 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2.5 p-2.5 sm:p-3 bg-[#11131C] border border-neo-yellow/70 brutal-shadow-sm font-mono space-y-2"
+              className="mt-3 p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-xl space-y-2"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-neo-yellow flex items-center gap-1.5">
-                  <Mic className="w-3.5 h-3.5 text-neo-yellow" />
-                  <span>HOST CO-PILOT // SPEAKER TALKING POINTS</span>
+                <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1.5">
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Speaker Talking Points</span>
                 </span>
-                <span className="text-[9px] px-1.5 py-0.5 bg-black text-neo-yellow border border-neo-yellow font-black">
-                  HOST PRIVATE
+                <span className="text-[10px] px-2 py-0.5 bg-white/5 text-zinc-400 border border-white/[0.08] rounded-full">
+                  Private
                 </span>
               </div>
 
               {effectivePoints && effectivePoints.length > 0 ? (
                 <div className="space-y-1.5 pt-1">
                   {effectivePoints.map((pt, idx) => (
-                    <div key={idx} className="flex items-start space-x-1.5 text-[11px] text-slate-200">
-                      <span className="text-neo-yellow font-black shrink-0">▸</span>
+                    <div key={idx} className="flex items-start space-x-2 text-xs text-zinc-300">
+                      <span className="text-blue-400 font-bold shrink-0">›</span>
                       <span className="leading-snug">{pt}</span>
                     </div>
                   ))}
                   <div className="pt-1">
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.96 }}
+                      whileTap={{ y: 1 }}
                       onClick={() => {
                         playClickSound();
                         handleGenerateTalkingPoints();
                       }}
                       disabled={isGeneratingPoints}
-                      className="px-2 py-0.5 bg-[#1C2030] hover:bg-neo-yellow hover:text-black text-slate-300 text-[10px] font-bold uppercase border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer transition-all"
+                      className="px-2.5 py-1 bg-[#18181D] hover:bg-[#22222A] text-white text-[11px] font-medium rounded-lg border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-colors"
                       title="Re-generate talking points"
                     >
-                      <Sparkles className="w-3 h-3 shrink-0" />
-                      <span>{isGeneratingPoints ? 'GENERATING...' : 'REFRESH POINTS'}</span>
+                      <Sparkles className="w-3 h-3 text-blue-400 shrink-0" />
+                      <span>{isGeneratingPoints ? 'Generating...' : 'Refresh Points'}</span>
                     </motion.button>
                   </div>
                 </div>
@@ -219,23 +218,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div className="pt-1">
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileTap={{ y: 1 }}
                     onClick={() => {
                       playClickSound();
                       handleGenerateTalkingPoints();
                     }}
                     disabled={isGeneratingPoints}
-                    className="px-2.5 py-1 bg-neo-yellow hover:bg-[#FFF04D] text-black text-[10px] sm:text-[11px] font-black uppercase border border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer transition-all"
+                    className="px-3 py-1.5 btn-cobalt text-xs font-semibold rounded-lg flex items-center space-x-1.5 cursor-pointer shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <span>{isGeneratingPoints ? 'GENERATING...' : 'AI TALKING POINTS'}</span>
+                    <span>{isGeneratingPoints ? 'Generating...' : 'Generate Talking Points'}</span>
                   </motion.button>
                 </div>
               )}
 
               {pointsError && (
-                <div className="p-1.5 bg-neo-pink text-white text-[10px] font-bold border border-black flex items-start space-x-1">
+                <div className="p-2.5 bg-rose-500/10 text-rose-400 text-xs border border-rose-500/25 rounded-lg flex items-start space-x-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <span>{pointsError}</span>
@@ -243,7 +241,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       <button
                         type="button"
                         onClick={onOpenAISettings}
-                        className="ml-1 underline font-black text-black bg-white px-1"
+                        className="ml-1.5 underline font-semibold text-white cursor-pointer"
                       >
                         Settings
                       </button>
@@ -256,63 +254,59 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
           {/* Host Moderation Toolbar */}
           {isHost && onStatusChange && (
-            <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-slate-800 flex items-center justify-between gap-1.5 flex-wrap font-mono">
-              <div className="flex items-center space-x-1 sm:space-x-1.5 flex-wrap gap-y-1">
+            <div className="mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                 {question.status !== 'spotlight' && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ y: 1 }}
                     onClick={() => {
                       playClickSound();
                       onStatusChange(question.id, 'spotlight');
                     }}
-                    className="px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase text-white bg-neo-pink hover:bg-[#FF4782] border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer"
+                    className="px-2.5 py-1 text-xs font-semibold text-white btn-cobalt rounded-lg flex items-center space-x-1 cursor-pointer shadow-sm"
                   >
                     <Sparkles className="w-3 h-3" />
-                    <span>SPOTLIGHT</span>
+                    <span>Spotlight</span>
                   </motion.button>
                 )}
                 {question.status !== 'answered' && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ y: 1 }}
                     onClick={() => {
                       playClickSound();
                       onStatusChange(question.id, 'answered');
                     }}
-                    className="px-2 py-0.5 text-[10px] sm:text-[11px] font-black uppercase text-black bg-neo-mint hover:bg-[#26F7A9] border border-black brutal-shadow-sm flex items-center space-x-1 cursor-pointer"
+                    className="px-2.5 py-1 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/30 rounded-lg flex items-center space-x-1 cursor-pointer transition-colors shadow-sm"
                   >
                     <CheckCircle className="w-3 h-3" />
-                    <span>ANSWER</span>
+                    <span>Resolve</span>
                   </motion.button>
                 )}
                 {question.status !== 'pending' && (
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ y: 1 }}
                     onClick={() => {
                       playClickSound();
                       onStatusChange(question.id, 'pending');
                     }}
-                    className="px-2 py-0.5 text-[10px] sm:text-[11px] font-bold uppercase text-slate-400 hover:text-white bg-slate-800 border border-black cursor-pointer"
+                    className="px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-white bg-[#18181D] border border-white/[0.08] rounded-lg cursor-pointer transition-colors"
                   >
-                    RESET
+                    Reset
                   </motion.button>
                 )}
               </div>
 
               {question.status !== 'dismissed' && (
                 <motion.button
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ y: 1 }}
                   onClick={() => {
                     playClickSound();
                     onStatusChange(question.id, 'dismissed');
                   }}
-                  className="p-1 text-slate-500 hover:text-neo-pink transition-colors cursor-pointer"
+                  className="p-1 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
                   title="Dismiss Question"
                 >
-                  <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <XCircle className="w-4 h-4" />
                 </motion.button>
               )}
             </div>

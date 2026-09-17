@@ -58,7 +58,7 @@ export const PRESET_SURVEY_TEMPLATES: Omit<Survey, 'id' | 'room_id' | 'created_a
         id: 'q_stack',
         type: 'choice',
         title: 'Which live interactive feature added the most value today?',
-        options: ['Real-time Architecture Quizzes', 'Live Audience Polls', 'Safe Guarded Q&A Feed', 'Spotlight Roulette'],
+        options: ['Real-time Architecture Quizzes', 'Live Audience Polls', 'Safe Guarded Q&A Feed', 'Masterclass Pass & Credential'],
         required: true,
       },
       {

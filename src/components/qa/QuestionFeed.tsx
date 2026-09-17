@@ -73,124 +73,122 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
   });
 
   return (
-    <div className="flex flex-col h-full bg-[#12141D] border-2 border-black brutal-shadow-lg overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-[#121215] border border-white/[0.08] rounded-2xl overflow-hidden font-sans shadow-card">
       {/* Top Feed Bar */}
-      <div className="p-3 sm:p-3.5 border-b-2 border-black bg-neo-card">
-        <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-3 flex-wrap">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm sm:text-base font-heavy tracking-tight text-white uppercase flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neo-yellow" />
-              <span>LIVE Q&A FEED</span>
+      <div className="p-3.5 sm:p-4 border-b border-white/[0.08] bg-[#0E0E11]">
+        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-sm font-semibold tracking-tight text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span>Live Q&A Feed</span>
             </span>
-            <span className="text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.2 sm:py-0.5 bg-neo-yellow text-black border border-black brutal-shadow-sm">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {questions.length}
             </span>
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Host [🧠 CLUSTER THEMES] Button */}
+            {/* Host [CLUSTER THEMES] Button */}
             {isHost && (
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ y: 1 }}
                 onClick={handleClusterThemes}
                 disabled={isClustering || questions.length < 2}
-                className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#8A2BE2] hover:bg-[#9B42F5] disabled:opacity-50 text-white text-[11px] sm:text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1 cursor-pointer"
+                className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] disabled:opacity-50 text-white text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-blue-500/40 transition-colors flex items-center space-x-1.5 cursor-pointer"
                 title="Use Mesh AI to group questions into high-level technical themes"
               >
-                <Brain className="w-3.5 h-3.5" />
-                <span>{isClustering ? 'CLUSTERING...' : '🧠 CLUSTER THEMES'}</span>
+                <Brain className="w-3.5 h-3.5 text-blue-400" />
+                <span>{isClustering ? 'Clustering...' : 'Cluster Themes'}</span>
               </motion.button>
             )}
 
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ y: 1 }}
               onClick={() => {
                 playClickSound();
                 onOpenAskModal();
               }}
-              className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white text-[11px] sm:text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center space-x-1 cursor-pointer"
+              className="px-3.5 py-1.5 btn-cobalt text-xs font-semibold rounded-xl flex items-center space-x-1.5 cursor-pointer shadow-sm"
             >
-              <Plus className="w-3.5 h-3.5 stroke-3" />
-              <span>ASK QUESTION</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Ask Question</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Retro Folder Tabs */}
-        <div className="grid grid-cols-4 gap-1 p-1 bg-black border-2 border-black font-mono text-xs">
+        {/* Modern Segmented Filter Tabs */}
+        <div className="grid grid-cols-4 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-xs">
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('top');
             }}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
+            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
               activeTab === 'top'
-                ? 'bg-neo-yellow text-black border-black brutal-shadow-sm'
-                : 'text-slate-400 hover:text-white border-transparent'
+                ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Flame className="w-3 h-3" />
-            <span>TOP</span>
+            <Flame className="w-3.5 h-3.5 text-blue-400" />
+            <span>Top</span>
           </motion.button>
 
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('recent');
             }}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
+            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
               activeTab === 'recent'
-                ? 'bg-neo-cyan text-black border-black brutal-shadow-sm'
-                : 'text-slate-400 hover:text-white border-transparent'
+                ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Clock className="w-3 h-3" />
-            <span>RECENT</span>
+            <Clock className="w-3.5 h-3.5 text-blue-400" />
+            <span>Recent</span>
           </motion.button>
 
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('answered');
             }}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
+            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
               activeTab === 'answered'
-                ? 'bg-neo-mint text-black border-black brutal-shadow-sm'
-                : 'text-slate-400 hover:text-white border-transparent'
+                ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <CheckCircle2 className="w-3 h-3" />
-            <span>ANSWERED</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Answered</span>
           </motion.button>
 
           <motion.button
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('spotlight');
             }}
-            className={`py-1.5 font-extrabold uppercase transition-all flex items-center justify-center space-x-1 border cursor-pointer ${
+            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
               activeTab === 'spotlight'
-                ? 'bg-neo-pink text-white border-black brutal-shadow-sm'
-                : 'text-slate-400 hover:text-white border-transparent'
+                ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Sparkles className="w-3 h-3" />
-            <span>SPOTLIGHT</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Stage</span>
           </motion.button>
         </div>
 
         {/* AI Topic Cluster Category Pills */}
         {clusters.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-black/40 flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="text-[10px] font-mono font-black text-slate-400 uppercase shrink-0 flex items-center gap-1">
-              <Brain className="w-3 h-3 text-[#B547FF]" />
-              <span>THEMES:</span>
+          <div className="mt-3 pt-2.5 border-t border-white/[0.08] flex items-center gap-1.5 overflow-x-auto pb-1">
+            <span className="text-[11px] font-medium text-zinc-400 shrink-0 flex items-center gap-1">
+              <Brain className="w-3.5 h-3.5 text-blue-400" />
+              <span>Themes:</span>
             </span>
             <button
               type="button"
@@ -198,13 +196,13 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
                 playClickSound();
                 setSelectedClusterTheme(null);
               }}
-              className={`px-2 py-0.5 font-mono text-[10px] font-black uppercase border border-black brutal-shadow-sm cursor-pointer shrink-0 transition-all ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer shrink-0 transition-colors ${
                 selectedClusterTheme === null
-                  ? 'bg-white text-black font-bold'
-                  : 'bg-black text-slate-400 hover:text-white'
+                  ? 'bg-blue-600 text-white border-blue-500'
+                  : 'bg-[#18181D] text-zinc-400 border-white/[0.08] hover:text-white hover:border-zinc-700'
               }`}
             >
-              ALL ({questions.length})
+              All ({questions.length})
             </button>
             {clusters.map((c) => {
               const isSelected = selectedClusterTheme === c.themeName;
@@ -216,18 +214,15 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
                     playClickSound();
                     setSelectedClusterTheme(isSelected ? null : c.themeName);
                   }}
-                  style={{
-                    backgroundColor: isSelected ? c.color : 'transparent',
-                    color: isSelected ? '#000' : '#FFF',
-                    borderColor: c.color,
-                  }}
-                  className={`px-2 py-0.5 font-mono text-[10px] font-black uppercase border brutal-shadow-sm cursor-pointer shrink-0 flex items-center gap-1 transition-all ${
-                    !isSelected ? 'hover:bg-slate-800' : ''
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer shrink-0 flex items-center gap-1.5 transition-colors ${
+                    isSelected
+                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                      : 'bg-[#141418] text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:border-zinc-700'
                   }`}
                 >
                   <span>{c.emoji}</span>
                   <span>{c.themeName}</span>
-                  <span className="opacity-80 font-normal">({c.questionIds.length})</span>
+                  <span className="text-blue-400 font-mono text-[11px]">{c.questionIds.length}</span>
                 </button>
               );
             })}
@@ -235,26 +230,26 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
         )}
 
         {/* Search */}
-        <div className="mt-2.5 relative font-mono">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+        <div className="mt-3 relative">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
             type="text"
-            placeholder="Search questions or topics..."
+            placeholder="Search questions or authors..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-neo-card-darker border-2 border-black text-slate-200 placeholder-slate-500 focus:outline-none focus:border-neo-yellow font-mono"
+            className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
       </div>
 
       {/* Feed List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 pb-24 sm:pb-28 md:pb-4">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-24 sm:pb-28 md:pb-4">
         {filtered.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-slate-500 font-mono">
-            <Sparkles className="w-8 h-8 text-slate-600 mb-2 opacity-60" />
-            <p className="text-xs font-bold uppercase">NO QUESTIONS IN QUEUE</p>
-            <p className="text-[11px] text-slate-600 mt-0.5">
-              Submit an architecture question to challenge the speaker!
+          <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-zinc-400">
+            <Sparkles className="w-8 h-8 text-zinc-600 mb-2 opacity-60" />
+            <p className="text-xs font-semibold text-zinc-300">No questions in queue</p>
+            <p className="text-[11px] text-zinc-500 mt-1">
+              Submit an architecture question to challenge the keynote speaker.
             </p>
           </div>
         ) : (

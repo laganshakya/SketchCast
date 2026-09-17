@@ -46,37 +46,37 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 15, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-neo-cream text-black w-full max-w-xs sm:max-w-sm p-4 sm:p-6 border-4 border-black brutal-shadow-lg relative text-center max-h-[92vh] overflow-y-auto"
+            className="bg-[#101014] text-[#FAFAFA] w-full max-w-xs sm:max-w-sm p-5 sm:p-6 rounded-2xl border border-white/[0.08] relative text-center max-h-[92vh] overflow-y-auto shadow-modal"
           >
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer"
+              className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-xl bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors border border-white/[0.06] cursor-pointer"
               title="Close QR Code"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-3" />
+              <X className="w-4 h-4" />
             </motion.button>
 
-            <div className="flex flex-col items-center mb-2.5 sm:mb-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neo-yellow text-black border-2 border-black brutal-shadow-sm flex items-center justify-center mb-1.5 sm:mb-2 -rotate-3">
-                <QrCode className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            <div className="flex flex-col items-center mb-4">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mb-2.5">
+                <QrCode className="w-5 h-5" />
               </div>
-              <h3 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-black">
-                SCAN TO JOIN
+              <h3 className="text-base sm:text-lg font-bold tracking-tight text-white">
+                Scan to Join
               </h3>
-              <p className="text-xs font-mono font-bold text-slate-700 truncate max-w-56 sm:max-w-64">
+              <p className="text-xs text-zinc-400 truncate max-w-56 sm:max-w-64 mt-0.5">
                 {roomTitle}
               </p>
-              <p className="text-[9px] sm:text-[10px] font-mono font-semibold text-slate-600 mt-0.5">
-                Instant mobile access // Zero login required
+              <p className="text-[11px] text-zinc-500 mt-1 tracking-wide">
+                Instant mobile access • Zero login required
               </p>
             </div>
 
-            <div className="p-2.5 sm:p-3 bg-white border-4 border-black inline-block mx-auto mb-2.5 sm:mb-3.5 brutal-shadow-sm">
+            <div className="p-3.5 bg-white rounded-2xl border border-white/[0.1] inline-block mx-auto mb-4 shadow-md">
               <QRCodeSVG
                 value={joinUrl}
                 size={160}
@@ -87,37 +87,37 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               />
             </div>
 
-            <div className="bg-neo-card-darker text-white p-2 sm:p-2.5 border-2 border-black mb-2.5 sm:mb-3.5 font-mono">
-              <div className="text-[9px] sm:text-[10px] font-extrabold text-neo-yellow uppercase mb-0.5">
-                ROOM PASSCODE
+            <div className="bg-white/[0.02] text-white p-3.5 rounded-xl border border-white/[0.08] mb-4">
+              <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1">
+                Room Passcode
               </div>
-              <div className="text-xl sm:text-2xl font-black tracking-widest text-neo-cyan">
+              <div className="text-2xl sm:text-3xl font-black tracking-widest text-blue-400 font-mono">
                 {roomCode}
               </div>
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleCopyLink}
-              className="w-full py-2 sm:py-2.5 px-4 bg-neo-yellow hover:bg-[#FFF04D] text-black text-xs font-mono font-black uppercase border-2 border-black brutal-shadow transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold tracking-wider uppercase transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-md shadow-blue-500/20"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-black stroke-3" />
-                  <span>LINK COPIED!</span>
+                  <Check className="w-4 h-4 text-white" />
+                  <span>Link Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 stroke-[2.5]" />
-                  <span>COPY DIRECT LINK</span>
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Direct Link</span>
                 </>
               )}
             </motion.button>
 
-            <div className="flex items-center justify-center space-x-1.5 mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-mono font-bold text-slate-700">
-              <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-black" />
-              <span>{activeViewerCount} LIVE IN ROOM</span>
+            <div className="flex items-center justify-center space-x-1.5 mt-3.5 text-xs text-zinc-400">
+              <Users className="w-3.5 h-3.5 text-blue-400" />
+              <span>{activeViewerCount} live in room</span>
             </div>
           </motion.div>
         </motion.div>

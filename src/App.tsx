@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
@@ -25,18 +24,16 @@ import type { VerifiedCertPayload } from './components/certificate/CertificateVe
 const RoomsAdminView = lazy(() => import('./components/rooms/RoomsAdminView').then((m) => ({ default: m.RoomsAdminView })));
 const ChangeRoomModal = lazy(() => import('./components/rooms/ChangeRoomModal').then((m) => ({ default: m.ChangeRoomModal })));
 const ActiveAttendeesModal = lazy(() => import('./components/common/ActiveAttendeesModal').then((m) => ({ default: m.ActiveAttendeesModal })));
-const AISettingsModal = lazy(() => import('./components/common/AISettingsModal').then((m) => ({ default: m.AISettingsModal })));
-const AISessionReportModal = lazy(() => import('./components/common/AISessionReportModal').then((m) => ({ default: m.AISessionReportModal })));
-const SpotlightRouletteModal = lazy(() => import('./components/common/SpotlightRouletteModal').then((m) => ({ default: m.SpotlightRouletteModal })));
-const SpotlightCelebrationModal = lazy(() => import('./components/common/SpotlightCelebrationModal').then((m) => ({ default: m.SpotlightCelebrationModal })));
+const AISettingsView = lazy(() => import('./components/common/AISettingsView').then((m) => ({ default: m.AISettingsView })));
+const MasterclassReportView = lazy(() => import('./components/common/MasterclassReportView').then((m) => ({ default: m.MasterclassReportView })));
 const ChampionSocialCardModal = lazy(() => import('./components/quiz/ChampionSocialCardModal').then((m) => ({ default: m.ChampionSocialCardModal })));
 const MasterclassCertificateModal = lazy(() => import('./components/certificate/MasterclassCertificateModal').then((m) => ({ default: m.MasterclassCertificateModal })));
 const CertificateVerificationModal = lazy(() => import('./components/certificate/CertificateVerificationModal').then((m) => ({ default: m.CertificateVerificationModal })));
 import { useSurveys } from './hooks/useSurveys';
-import { playFanfare, playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
+import { playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
 
 import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
-import type { SpotlightWinner, ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
+import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
 function parseVerificationUrl(): VerifiedCertPayload | null {
@@ -59,6 +56,8 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
       day: 'numeric',
       year: 'numeric',
     });
+    const score = Number(params.get('score') || 0);
+    const hostName = params.get('host') || 'Arena Host';
     return {
       certId: verifyCert.trim(),
       roomCode,
@@ -68,6 +67,8 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
       rank,
       totalAttendees,
       issueDate,
+      score,
+      hostName,
     };
   }
   return null;
@@ -81,14 +82,8 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isChangeRoomModalOpen, setIsChangeRoomModalOpen] = useState(false);
   const [isActiveAttendeesModalOpen, setIsActiveAttendeesModalOpen] = useState(false);
-  const [isAISettingsModalOpen, setIsAISettingsModalOpen] = useState(false);
-  const [isAISessionReportModalOpen, setIsAISessionReportModalOpen] = useState(false);
-  const [isSpotlightModalOpen, setIsSpotlightModalOpen] = useState(false);
-  const [isSpotlightCelebrationOpen, setIsSpotlightCelebrationOpen] = useState(false);
-  const [celebrationWinner, setCelebrationWinner] = useState<SpotlightWinner | null>(null);
   const [isSocialCardModalOpen, setIsSocialCardModalOpen] = useState(false);
   const [socialCardData, setSocialCardData] = useState<ChampionSocialCardData | null>(null);
-  const [spotlightBanner, setSpotlightBanner] = useState<SpotlightWinner | null>(null);
   const [mobileHostQuizView, setMobileHostQuizView] = useState<'arena' | 'controls'>('arena');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
@@ -137,6 +132,7 @@ export function App() {
     quizState,
     leaderboard,
     timeRemaining,
+    userQuizAnswers,
     startQuizRound,
     revealAnswer,
     selectOption,
@@ -288,7 +284,6 @@ export function App() {
     const unReport = channelManager.on('session_report_published', (payload) => {
       if (payload && payload.reportMarkdown) {
         setSessionReport(payload.reportMarkdown);
-        setIsCertificateModalOpen(true);
       }
     });
 
@@ -342,12 +337,63 @@ export function App() {
     return userRole === 'host' || isUserRoomAdmin(room, currentUser, userName);
   }, [userRole, room, currentUser, userName]);
 
-  // Safeguard: Ensure attendees cannot be on the host-only 'rooms' tab
+  // Safeguard: Ensure attendees cannot be on host-only tabs ('rooms' or 'ai-settings')
   useEffect(() => {
-    if (activeTab === 'rooms' && userRole !== 'host' && !isHostOrAdmin) {
+    if ((activeTab === 'rooms' || activeTab === 'ai-settings') && userRole !== 'host' && !isHostOrAdmin) {
       setActiveTab('quiz');
     }
   }, [activeTab, userRole, isHostOrAdmin, setActiveTab]);
+
+  const myLeaderboardEntry = useMemo(() => {
+    return (
+      leaderboard.find(
+        (e) =>
+          e.session_id === sessionId ||
+          (e.name && userName && e.name.toLowerCase() === userName.toLowerCase())
+      ) || null
+    );
+  }, [leaderboard, sessionId, userName]);
+
+  const myRank = useMemo(() => {
+    if (!myLeaderboardEntry) return 1;
+    const idx = leaderboard.indexOf(myLeaderboardEntry);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [leaderboard, myLeaderboardEntry]);
+
+  const resolvedHostName = useMemo(() => {
+    // 1. If an active host is present in the attendees list, use their name
+    const activeHost = attendees.find((a) => a.role === 'host' && a.name?.trim());
+    if (activeHost && activeHost.name) {
+      return activeHost.name.trim();
+    }
+    // 2. If current user is host or room admin, use current user's name
+    if (userRole === 'host' || isHostOrAdmin) {
+      if (userName && userName.trim()) return userName.trim();
+    }
+    // 3. If room has a valid host_name (excluding dummy placeholders)
+    if (
+      room.host_name &&
+      room.host_name.trim() &&
+      !['alex chen (host)', 'alex chen', 'room host', 'host admin', 'arena host'].includes(
+        room.host_name.trim().toLowerCase()
+      )
+    ) {
+      return room.host_name.replace(/\s*\(Host\)/i, '').trim();
+    }
+    // 4. If room has admins list, use the first named admin
+    if (room.admins && room.admins.length > 0) {
+      const validAdmin = room.admins.find(
+        (a) => a && !a.includes('@') && !['alex chen', 'room host'].includes(a.toLowerCase())
+      );
+      if (validAdmin) return validAdmin.trim();
+    }
+    // 5. If room was created on this browser
+    if (isRoomCreatedByMe(room.code) && userName) {
+      return userName.trim();
+    }
+    // 6. Clean fallback
+    return userName && userName.trim() ? userName.trim() : 'Masterclass Host';
+  }, [attendees, userRole, isHostOrAdmin, userName, room]);
 
   // Safeguard Strike Alert for Host / Admins
   const [violationAlert, setViolationAlert] = useState<{
@@ -456,58 +502,24 @@ export function App() {
     return false;
   }, [room.code, quizState.question]);
 
-  // Listen for live Spotlight Winner broadcasts
-  useEffect(() => {
-    if (!channelManager) return;
-    const unSpotlight = channelManager.on('attendee_spotlight', (winner) => {
-      setSpotlightBanner(winner);
-      setCelebrationWinner(winner);
-
-      if (winner.targetSessionId === sessionId) {
-        setIsSpotlightCelebrationOpen(true);
-        playFanfare();
-        try {
-          confetti({
-            particleCount: 180,
-            spread: 100,
-            origin: { y: 0.4 },
-            colors: ['#FFE600', '#FF2A6D', '#00F0FF', '#00F59B', '#9B5DE5'],
-          });
-        } catch {
-          // ignore
-        }
-      }
-      setTimeout(() => {
-        setSpotlightBanner(null);
-      }, 10000);
-    });
-
-    return () => {
-      unSpotlight();
-    };
-  }, [channelManager, sessionId]);
-
-  const handleSelectSpotlightWinner = (winner: SpotlightWinner) => {
-    setSpotlightBanner(winner);
-    setCelebrationWinner(winner);
-    if (winner.targetSessionId === sessionId) {
-      setIsSpotlightCelebrationOpen(true);
-    }
-
-    if (channelManager) {
-      channelManager.broadcast('attendee_spotlight', winner);
-    }
-  };
-
   const handleOpenSocialCard = (entry: LeaderboardEntry, rank: number) => {
+    const isMe =
+      Boolean(sessionId && entry.session_id === sessionId) ||
+      Boolean(userName && entry.name && entry.name.trim().toLowerCase() === userName.trim().toLowerCase());
+    if (!isMe) return;
+
+    const calculatedScore = entry.correct_quizzes * 100;
     setSocialCardData({
       playerName: entry.name,
       rank,
+      score: calculatedScore,
       correctQuizzes: entry.correct_quizzes,
-      totalQuizzes: queuedQuizzes.length || entry.correct_quizzes,
-      pollsVoted: entry.polls_voted,
+      totalQuizzes: entry.correct_quizzes,
+      pollsVoted: 0,
       roomCode: room.code,
       roomTitle: room.title,
+      hostName: resolvedHostName,
+      totalAttendees: leaderboard.length || attendees.length || 1,
     });
     setIsSocialCardModalOpen(true);
   };
@@ -533,7 +545,7 @@ export function App() {
 
   // Once authenticated (or signed in as guest), show the Live Arena
   return (
-    <div className="h-screen w-screen flex flex-col bg-retro-grid text-slate-100 overflow-hidden font-sans select-none">
+    <div className="h-screen w-screen flex flex-col bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] overflow-hidden font-sans select-none">
       {/* Top Header */}
       <AppHeader
         room={room}
@@ -552,54 +564,24 @@ export function App() {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
         onOpenActiveAttendees={() => setIsActiveAttendeesModalOpen(true)}
-        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-        onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
-        onOpenSpotlightRoulette={() => setIsSpotlightModalOpen(true)}
+        onOpenAISettings={() => setActiveTab('ai-settings')}
+        onOpenAISummary={() => setActiveTab('session-report')}
         onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
 
-      {/* Floating Realtime Spotlight Winner Celebration Banner */}
-      {spotlightBanner && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-lg bg-neo-yellow text-black border-4 border-black brutal-shadow-lg p-2.5 sm:p-3 animate-bounce flex items-center justify-between font-mono gap-2">
-          <div className="flex items-center space-x-2.5 min-w-0">
-            <span className="text-xl sm:text-2xl shrink-0">{spotlightBanner.rewardIcon || '🎰'}</span>
-            <div className="min-w-0">
-              <div className="text-[9px] sm:text-[10px] font-black uppercase text-slate-900 tracking-wider">
-                STAGE SPOTLIGHT WINNER SELECTED!
-              </div>
-              <div className="text-xs sm:text-sm font-heavy truncate text-black">
-                👑 {spotlightBanner.targetName} {spotlightBanner.targetSessionId === sessionId ? '(YOU!)' : ''}
-              </div>
-              {spotlightBanner.rewardPerk && (
-                <div className="text-[10px] font-black text-slate-900 truncate">
-                  🎁 Perk: {spotlightBanner.rewardPerk}
-                </div>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => setSpotlightBanner(null)}
-            className="p-1 bg-black text-white hover:bg-neo-pink border border-black cursor-pointer shrink-0"
-            title="Dismiss notification"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* Floating Promotion Toast Notification */}
       {promotionToast && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 animate-bounce">
-          <div className="bg-neo-yellow text-black font-mono font-black text-xs px-4 py-2 border-3 border-black brutal-shadow-lg flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 fill-black shrink-0" />
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-[#141824] text-[#FAFAFA] font-mono text-xs px-4 py-2 border border-[#3B82F6] shadow-[0_0_16px_rgba(59,130,246,0.15)] flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-[#3B82F6] shrink-0" />
             <span>{promotionToast}</span>
             <button
               onClick={() => setPromotionToast(null)}
-              className="p-1 hover:bg-black hover:text-white transition-colors border border-black ml-2 cursor-pointer"
+              className="p-1 hover:bg-[#22222A] text-[#A1A1AA] hover:text-white transition-colors border border-[#27272A] ml-2 cursor-pointer"
             >
-              <X className="w-3 h-3 stroke-3" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
@@ -612,34 +594,34 @@ export function App() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-xl bg-neo-yellow text-black border-4 border-black brutal-shadow-lg p-3 sm:p-4 font-mono"
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-xl bg-[#1A0D0F] text-[#FAFAFA] border border-[#EF4444] shadow-[0_0_24px_rgba(239,68,68,0.2)] p-4 font-mono"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-neo-pink text-white border-2 border-black flex items-center justify-center font-heavy shrink-0 animate-bounce">
-                  <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              <div className="flex items-start space-x-3 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#2A1014] text-[#EF4444] border border-[#EF4444] flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-heavy text-xs sm:text-sm uppercase tracking-tight text-black">
+                    <span className="text-xs sm:text-sm uppercase tracking-tight text-[#FAFAFA] font-bold">
                       SAFEGUARD STRIKE ALERT
                     </span>
-                    <span className="px-1.5 py-0.2 bg-neo-pink text-white text-[9px] font-black uppercase border border-black animate-pulse">
+                    <span className="px-1.5 py-0.2 bg-[#2A1014] text-[#EF4444] text-[9px] font-bold uppercase border border-[#EF4444]">
                       STRIKE {violationAlert.strikeCount}/3
                     </span>
                     {violationAlert.category && (
-                      <span className="px-1.5 py-0.2 bg-black text-white text-[8px] sm:text-[9px] font-black uppercase border border-black">
+                      <span className="px-1.5 py-0.2 bg-[#18181D] text-[#A1A1AA] text-[9px] font-bold uppercase border border-[#27272A]">
                         {violationAlert.category}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-black font-bold mt-1">
-                    Attendee <span className="bg-black text-neo-yellow px-1 py-0.2 font-black">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
+                  <p className="text-xs text-[#D4D4D8] font-medium mt-1">
+                    Attendee <span className="bg-[#18181D] text-[#3B82F6] px-1.5 py-0.2 font-mono font-bold">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
                   </p>
-                  <div className="text-[11px] text-slate-900 font-sans mt-1 bg-white/90 p-1.5 border border-black leading-snug">
-                    <span className="font-bold">Reason:</span> {violationAlert.reason}
+                  <div className="text-[11px] text-[#A1A1AA] font-sans mt-1 bg-[#121215] p-2 border border-[#27272A] leading-snug">
+                    <span className="font-bold text-[#FAFAFA]">Reason:</span> {violationAlert.reason}
                     {violationAlert.sampleText && (
-                      <span className="block italic text-[10px] text-slate-700 truncate mt-0.5">
+                      <span className="block italic text-[10px] text-[#71717A] truncate mt-0.5">
                         &ldquo;{violationAlert.sampleText}&rdquo;
                       </span>
                     )}
@@ -649,7 +631,7 @@ export function App() {
 
               <button
                 onClick={() => setViolationAlert(null)}
-                className="p-1 bg-black text-white hover:bg-neo-pink border border-black cursor-pointer shrink-0"
+                className="p-1 bg-[#18181D] hover:bg-[#22222A] text-[#A1A1AA] hover:text-white border border-[#27272A] cursor-pointer shrink-0"
                 title="Dismiss alert"
               >
                 <X className="w-3.5 h-3.5" />
@@ -657,50 +639,42 @@ export function App() {
             </div>
 
             {/* Quick Action Buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-2 mt-2.5 pt-2 border-t-2 border-black/20">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
+            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-2 border-t border-[#27272A]">
+              <button
                 onClick={() => {
                   playPopSound();
                   sendAttendeeWarning(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                 }}
-                className="px-3 py-1.5 bg-amber-300 hover:bg-amber-400 text-black font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-[#F59E0B]/20 hover:bg-[#F59E0B]/30 text-[#F59E0B] font-mono text-xs font-bold uppercase border border-[#F59E0B]/50 flex items-center space-x-1.5 cursor-pointer"
                 title="Send official safeguard warning to attendee"
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-black" />
+                <AlertTriangle className="w-3.5 h-3.5" />
                 <span>WARN ATTENDEE</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
+              </button>
+              <button
                 onClick={() => {
                   playPopSound();
                   resetAttendeeStrikes(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                   setViolationAlert(null);
                 }}
-                className="px-3 py-1.5 bg-white hover:bg-neo-yellow text-black font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
-                title="Reset and forgive strikes"
+                className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-[#FAFAFA] font-mono text-xs font-bold uppercase border border-[#27272A] flex items-center space-x-1.5 cursor-pointer"
+                title="Reset strikes"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>RESET STRIKES</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
+              </button>
+              <button
                 onClick={() => {
                   playPopSound();
                   muteAttendee(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                   setViolationAlert(null);
                 }}
-                className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-[#FAFAFA] font-mono text-xs font-bold uppercase border border-[#27272A] flex items-center space-x-1.5 cursor-pointer"
               >
-                <VolumeX className="w-3.5 h-3.5 text-neo-pink" />
+                <VolumeX className="w-3.5 h-3.5 text-[#3B82F6]" />
                 <span>MUTE ATTENDEE</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
+              </button>
+              <button
                 onClick={() => {
                   playClickSound();
                   if (confirm(`Ban and eject "${violationAlert.attendeeName}" from this room?`)) {
@@ -708,14 +682,14 @@ export function App() {
                     setViolationAlert(null);
                   }
                 }}
-                className="px-3 py-1.5 bg-neo-pink hover:bg-[#FF4782] text-white font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-[#EF4444] hover:bg-[#DC2626] text-white font-mono text-xs font-bold uppercase border border-[#EF4444] flex items-center space-x-1.5 cursor-pointer"
               >
                 <UserX className="w-3.5 h-3.5" />
                 <span>BAN & KICK</span>
-              </motion.button>
+              </button>
               <button
                 onClick={() => setViolationAlert(null)}
-                className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-black font-mono text-xs font-bold uppercase border-2 border-black cursor-pointer"
+                className="px-2.5 py-1.5 bg-[#121215] hover:bg-[#18181D] text-[#A1A1AA] font-mono text-xs uppercase border border-[#27272A] cursor-pointer"
               >
                 DISMISS
               </button>
@@ -729,41 +703,39 @@ export function App() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg bg-[#00F59B] text-black border-4 border-black brutal-shadow-lg p-3 sm:p-4 font-mono flex items-center justify-between gap-3"
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg bg-[#0E1A14] text-[#FAFAFA] border border-[#10B981] shadow-[0_0_24px_rgba(16,185,129,0.2)] p-3.5 sm:p-4 font-mono flex items-center justify-between gap-3"
           >
             <div className="flex items-center space-x-2.5 min-w-0">
-              <div className="w-9 h-9 bg-black text-[#00F59B] border-2 border-black flex items-center justify-center shrink-0 font-heavy">
+              <div className="w-9 h-9 bg-[#122A1E] text-[#10B981] border border-[#10B981] flex items-center justify-center shrink-0 font-bold">
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase px-1.5 py-0.2 bg-black text-white border border-black">
-                  NEW SURVEY LAUNCHED
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.2 bg-[#122A1E] text-[#10B981] border border-[#10B981]">
+                  // SURVEY LAUNCHED
                 </span>
-                <h4 className="text-xs sm:text-sm font-heavy uppercase tracking-tight text-black truncate mt-0.5">
+                <h4 className="text-xs sm:text-sm font-bold uppercase tracking-tight text-[#FAFAFA] truncate mt-0.5">
                   {incomingSurveyAlert.surveyTitle}
                 </h4>
-                <p className="text-[11px] text-slate-800 font-sans truncate">
-                  Host {incomingSurveyAlert.launchedBy} invited you to share feedback!
+                <p className="text-[11px] text-[#A1A1AA] font-sans truncate">
+                  Host {incomingSurveyAlert.launchedBy} invited you to provide feedback.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center space-x-1.5 shrink-0">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => {
                   playPopSound();
                   setActiveTab('surveys');
                   dismissSurveyAlert();
                 }}
-                className="px-3 py-1.5 bg-black text-white hover:bg-slate-900 font-mono text-xs font-black uppercase border-2 border-black brutal-shadow-sm cursor-pointer whitespace-nowrap"
+                className="px-3 py-1.5 btn-cobalt font-mono text-xs font-bold uppercase cursor-pointer whitespace-nowrap"
               >
                 TAKE SURVEY
-              </motion.button>
+              </button>
               <button
                 onClick={dismissSurveyAlert}
-                className="p-1.5 hover:bg-black/10 text-black border border-black cursor-pointer"
+                className="p-1.5 hover:bg-[#18181D] text-[#A1A1AA] hover:text-white border border-[#27272A] cursor-pointer"
                 title="Dismiss"
               >
                 <X className="w-3.5 h-3.5" />
@@ -787,9 +759,8 @@ export function App() {
           activeSurveysCount={activeSurvey && !userSubmittedIds.has(activeSurvey.id) ? 1 : 0}
           hasGeneratedReport={Boolean(sessionReport)}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-          onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
-          onOpenSpotlightRoulette={() => setIsSpotlightModalOpen(true)}
+          onOpenAISettings={() => setActiveTab('ai-settings')}
+          onOpenAISummary={() => setActiveTab('session-report')}
           onOpenCertificate={() => setIsCertificateModalOpen(true)}
           onSignOut={handleSignOut}
           isOpenMobile={isMobileSidebarOpen}
@@ -811,17 +782,17 @@ export function App() {
             >
               {/* Mobile Host Switcher Bar (Screen < lg) */}
               {userRole === 'host' && (
-                <div className="lg:hidden flex items-center justify-center p-1 bg-[#11131B] border-2 border-black font-mono text-xs font-black shrink-0 brutal-shadow-sm">
+                <div className="lg:hidden flex items-center justify-center p-1 bg-[#121215] border border-white/[0.08] rounded-xl font-mono text-xs font-bold shrink-0">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={() => {
                       playClickSound();
                       setMobileHostQuizView('arena');
                     }}
-                    className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
                       mobileHostQuizView === 'arena'
-                        ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     <Zap className="w-3.5 h-3.5" />
@@ -833,10 +804,10 @@ export function App() {
                       playClickSound();
                       setMobileHostQuizView('controls');
                     }}
-                    className={`flex-1 py-1.5 flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
                       mobileHostQuizView === 'controls'
-                        ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-x-px -translate-y-px'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                        : 'text-zinc-400 hover:text-white'
                     }`}
                   >
                     <Layers className="w-3.5 h-3.5" />
@@ -875,7 +846,7 @@ export function App() {
                     activeQuestionId={quizState.question?.id}
                     isRevealed={quizState.isRevealed}
                     roomCode={room.code}
-                    onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                    onOpenAISettings={() => setActiveTab('ai-settings')}
                   />
                 </div>
               )}
@@ -900,7 +871,7 @@ export function App() {
                 onResetPoll={resetPoll}
                 onDeletePoll={deletePoll}
                 onUpdateAIConsensus={updatePollAIConsensus}
-                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                onOpenAISettings={() => setActiveTab('ai-settings')}
                 isHost={userRole === 'host'}
               />
             </motion.div>
@@ -922,7 +893,7 @@ export function App() {
                 onToggleUpvote={toggleUpvote}
                 onStatusChange={updateQuestionStatus}
                 onUpdateTalkingPoints={updateQuestionTalkingPoints}
-                onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                onOpenAISettings={() => setActiveTab('ai-settings')}
                 activeTab={qaFilterTab}
                 setActiveTab={setQAFilterTab}
                 onOpenAskModal={() => setIsAskModalOpen(true)}
@@ -999,12 +970,58 @@ export function App() {
                   currentRoomCode={room.code}
                   onSwitchRoom={handleSwitchRoom}
                   onOpenQRCodeForRoom={handleOpenQRForRoom}
-                  onOpenAISummary={() => setIsAISessionReportModalOpen(true)}
-                  onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+                  onOpenAISummary={() => setActiveTab('session-report')}
+                  onOpenAISettings={() => setActiveTab('ai-settings')}
                   userName={userName}
                   currentUser={currentUser}
                   isHost={isHostOrAdmin}
                   hasGeneratedReport={Boolean(sessionReport)}
+                />
+              </Suspense>
+            </motion.div>
+          )}
+
+          {/* TAB 7: AI Settings */}
+          {activeTab === 'ai-settings' && (
+            <motion.div
+              key="tab-ai-settings"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading AI Settings...</div>}>
+                <AISettingsView roomCode={room.code} />
+              </Suspense>
+            </motion.div>
+          )}
+
+          {/* TAB 8: Masterclass Session Report */}
+          {activeTab === 'session-report' && (
+            <motion.div
+              key="tab-session-report"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Masterclass Report...</div>}>
+                <MasterclassReportView
+                  roomTitle={room.title}
+                  roomCode={room.code}
+                  totalAttendees={activeViewerCount}
+                  quizzes={queuedQuizzes}
+                  polls={polls}
+                  questions={questions}
+                  leaderboard={leaderboard}
+                  isHost={isHostOrAdmin}
+                  initialReportMarkdown={sessionReport}
+                  userQuizAnswers={userQuizAnswers}
+                  userPollVotes={userVotes}
+                  onReportGenerated={handlePublishReport}
+                  onOpenAISettings={() => setActiveTab('ai-settings')}
                 />
               </Suspense>
             </motion.div>
@@ -1014,17 +1031,17 @@ export function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-neo-card-darker border-t-2 border-black px-1.5 flex items-center justify-around z-40 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.6)]">
+      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#0E0E11]/95 backdrop-blur-md border-t border-white/[0.08] px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => {
             playWhoosh();
             setActiveTab('quiz');
           }}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'quiz'
-              ? 'bg-neo-yellow text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              : 'text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
           <Zap className="w-4 h-4 mb-0.5" />
@@ -1037,10 +1054,10 @@ export function App() {
             playWhoosh();
             setActiveTab('polls');
           }}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'polls'
-              ? 'bg-neo-pink text-white border-2 border-black brutal-shadow-sm -translate-y-0.5'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              : 'text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
           <Vote className="w-4 h-4 mb-0.5" />
@@ -1053,16 +1070,16 @@ export function App() {
             playWhoosh();
             setActiveTab('qa');
           }}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'qa'
-              ? 'bg-neo-cyan text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              : 'text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
           <HelpCircle className="w-4 h-4 mb-0.5" />
           <span>Q&A</span>
           {filteredQuestions.length > 0 && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
+            <span className="absolute top-1 right-2 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-[#0E0E11] animate-pulse" />
           )}
         </motion.button>
 
@@ -1072,16 +1089,16 @@ export function App() {
             playWhoosh();
             setActiveTab('surveys');
           }}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'surveys'
-              ? 'bg-[#FFF04D] text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              : 'text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
           <ClipboardList className="w-4 h-4 mb-0.5" />
           <span>SURVEYS</span>
           {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-neo-yellow rounded-full animate-pulse" />
+            <span className="absolute top-1 right-2 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-[#0E0E11] animate-pulse" />
           )}
         </motion.button>
 
@@ -1091,10 +1108,10 @@ export function App() {
             playWhoosh();
             setActiveTab('leaderboard');
           }}
-          className={`flex-1 py-1.5 flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-black uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'leaderboard'
-              ? 'bg-neo-mint text-black border-2 border-black brutal-shadow-sm -translate-y-0.5'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              : 'text-zinc-400 hover:text-white border border-transparent'
           }`}
         >
           <Trophy className="w-4 h-4 mb-0.5" />
@@ -1118,7 +1135,7 @@ export function App() {
         isOpen={isCreatePollModalOpen}
         onClose={() => setIsCreatePollModalOpen(false)}
         onCreatePoll={createPoll}
-        onOpenAISettings={() => setIsAISettingsModalOpen(true)}
+        onOpenAISettings={() => setActiveTab('ai-settings')}
       />
 
       <QuestionModal
@@ -1181,47 +1198,6 @@ export function App() {
           onResetStrikes={resetAttendeeStrikes}
         />
 
-        <AISettingsModal
-          isOpen={isAISettingsModalOpen}
-          onClose={() => setIsAISettingsModalOpen(false)}
-          roomCode={room.code}
-        />
-
-        <AISessionReportModal
-          isOpen={isAISessionReportModalOpen}
-          onClose={() => setIsAISessionReportModalOpen(false)}
-          roomTitle={room.title}
-          roomCode={room.code}
-          totalAttendees={activeViewerCount}
-          quizzes={queuedQuizzes}
-          polls={polls}
-          questions={questions}
-          leaderboard={leaderboard}
-          isHost={isHostOrAdmin}
-          initialReportMarkdown={sessionReport}
-          onReportGenerated={handlePublishReport}
-          onOpenAISettings={() => setIsAISettingsModalOpen(true)}
-        />
-
-        {/* Host Attendee Spotlight Roulette Wheel Modal */}
-        <SpotlightRouletteModal
-          isOpen={isSpotlightModalOpen}
-          onClose={() => setIsSpotlightModalOpen(false)}
-          attendees={attendees}
-          leaderboard={leaderboard}
-          currentUserName={userName}
-          room={room}
-          onSelectWinner={handleSelectSpotlightWinner}
-        />
-
-        {/* Realtime Spotlight Winner Celebration Modal (Shown on Winner screen) */}
-        <SpotlightCelebrationModal
-          isOpen={isSpotlightCelebrationOpen}
-          onClose={() => setIsSpotlightCelebrationOpen(false)}
-          winner={celebrationWinner}
-          isMe={celebrationWinner?.targetSessionId === sessionId}
-        />
-
         {/* Champion High-DPI Social Card Export Modal */}
         {socialCardData && (
           <ChampionSocialCardModal
@@ -1238,15 +1214,11 @@ export function App() {
           recipientName={userName}
           roomTitle={room.title}
           roomCode={room.code}
-          rank={
-            leaderboard.findIndex(
-              (e) => e.session_id === sessionId || (e.name && userName && e.name.toLowerCase() === userName.toLowerCase())
-            ) >= 0 ? 
-            leaderboard.findIndex(
-              (e) => e.session_id === sessionId || (e.name && userName && e.name.toLowerCase() === userName.toLowerCase())
-            ) + 1 : 1
-          }
+          rank={myRank}
           totalAttendees={leaderboard.length || attendees.length || 1}
+          score={myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes * 100 : 0}
+          correctQuizzes={myLeaderboardEntry?.correct_quizzes || 0}
+          hostName={resolvedHostName}
         />
 
         {/* Public Verified Certificate Modal */}
@@ -1261,23 +1233,23 @@ export function App() {
 
       {/* Official Host Warning Modal */}
       {officialWarning && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
-          <div className="bg-neo-cream text-black border-4 border-black brutal-shadow-lg p-6 max-w-md w-full font-mono">
-            <div className="w-14 h-14 bg-amber-400 text-black border-3 border-black mx-auto mb-4 flex items-center justify-center brutal-shadow-sm">
-              <AlertTriangle className="w-8 h-8 stroke-[2.5]" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-[#121215] text-[#FAFAFA] border border-amber-500/30 rounded-2xl shadow-modal p-6 max-w-md w-full font-mono">
+            <div className="w-12 h-12 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 stroke-[2]" />
             </div>
             <div className="text-center">
-              <span className="px-2 py-0.5 bg-black text-amber-300 font-black text-[10px] uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-400 font-bold text-[10px] uppercase tracking-wider rounded-full border border-amber-500/20">
                 OFFICIAL HOST DIRECTIVE
               </span>
-              <h2 className="text-xl font-heavy uppercase tracking-tight text-black mt-2">
+              <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA] mt-3">
                 WARNING ISSUED BY {officialWarning.issuedBy || 'HOST'}
               </h2>
-              <p className="text-xs text-slate-800 font-sans mt-2.5 leading-relaxed bg-white p-3 border-2 border-black">
+              <p className="text-xs text-zinc-300 font-sans mt-3 leading-relaxed bg-[#0A0A0C] p-3.5 rounded-xl border border-white/[0.08]">
                 {officialWarning.message}
               </p>
-              <p className="text-[11px] text-red-600 font-bold mt-2 font-mono uppercase">
-                ⚠️ Further inappropriate questions will result in an immediate mute or permanent ban.
+              <p className="text-[11px] text-amber-400 font-semibold mt-2 font-mono uppercase">
+                Continued guideline violations will trigger an automatic mute or room ejection.
               </p>
             </div>
             <div className="mt-5">
@@ -1286,7 +1258,7 @@ export function App() {
                   playClickSound();
                   dismissOfficialWarning();
                 }}
-                className="w-full py-2.5 bg-neo-yellow hover:bg-[#FFF04D] text-black font-mono font-black uppercase border-2 border-black brutal-shadow cursor-pointer transition-all"
+                className="w-full py-2.5 btn-cobalt font-mono text-xs font-bold uppercase rounded-xl cursor-pointer"
               >
                 I UNDERSTAND & AGREE
               </button>
@@ -1297,15 +1269,15 @@ export function App() {
 
       {/* Fullscreen Banned Notice Screen */}
       {isBanned && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 font-sans select-text">
-          <div className="bg-neo-cream text-black border-4 border-black brutal-shadow-lg p-6 max-w-md w-full font-mono text-center">
-            <div className="w-14 h-14 bg-neo-pink text-white border-3 border-black mx-auto mb-4 flex items-center justify-center brutal-shadow-sm">
-              <UserX className="w-8 h-8 stroke-[2.5]" />
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-[#121215] text-[#FAFAFA] border border-red-500/30 rounded-2xl shadow-modal p-6 max-w-md w-full font-mono text-center">
+            <div className="w-12 h-12 bg-red-500/10 text-red-400 border border-red-500/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <UserX className="w-6 h-6 stroke-[2]" />
             </div>
-            <h2 className="text-xl font-heavy uppercase tracking-tight text-black">
+            <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
               ROOM ACCESS BANNED
             </h2>
-            <p className="text-xs text-slate-800 font-sans mt-2 leading-relaxed">
+            <p className="text-xs text-zinc-400 font-sans mt-2 leading-relaxed">
               {banNotice || `You have been removed and banned from Room ${room.code} by the host for repeated policy violations.`}
             </p>
             <div className="mt-5">
@@ -1315,7 +1287,7 @@ export function App() {
                   handleSignOut();
                   window.location.href = window.location.pathname;
                 }}
-                className="w-full py-2.5 bg-neo-yellow text-black font-mono font-black uppercase border-2 border-black brutal-shadow hover:bg-[#FFF04D] cursor-pointer"
+                className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase rounded-xl transition-colors cursor-pointer"
               >
                 RETURN TO HOME
               </button>

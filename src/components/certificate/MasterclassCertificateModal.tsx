@@ -2,16 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   X,
   Award,
-  Share2,
-  Check,
-  ExternalLink,
-  Sparkles,
   Trophy,
   ShieldCheck,
-  Printer,
   Download,
-  Copy,
-  Smartphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
@@ -26,6 +19,9 @@ interface MasterclassCertificateModalProps {
   roomCode: string;
   rank?: number;
   totalAttendees?: number;
+  score?: number;
+  correctQuizzes?: number;
+  hostName?: string;
 }
 
 export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalProps> = ({
@@ -35,12 +31,12 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   roomTitle,
   roomCode,
   rank = 1,
-  totalAttendees = 12,
+  totalAttendees = 1,
+  score = 0,
+  correctQuizzes = 0,
+  hostName = 'Arena Host',
 }) => {
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedImage, setCopiedImage] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [showShareToast, setShowShareToast] = useState<'linkedin' | 'twitter' | null>(null);
 
   const certCardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,11 +54,8 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   });
 
   const verificationUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`
-    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}`;
-
-  // Check if device supports native Web Share API
-  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`
+    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`;
 
   // Draw high-resolution 1200x700 Certificate Card on Canvas
   const drawCertificate = useCallback(() => {
@@ -74,12 +67,12 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     const width = 1200;
     const height = 700;
 
-    // 1. Background (Dark Cyber Neo-Brutalist)
-    ctx.fillStyle = '#0A0C14';
+    // 1. Background (Obsidian Blueprint Canvas)
+    ctx.fillStyle = '#0A0A0C';
     ctx.fillRect(0, 0, width, height);
 
     // 2. Dot Matrix Pattern
-    ctx.fillStyle = '#1E2538';
+    ctx.fillStyle = '#16161E';
     for (let x = 24; x < width - 24; x += 24) {
       for (let y = 24; y < height - 24; y += 24) {
         ctx.beginPath();
@@ -88,144 +81,174 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
       }
     }
 
-    // 3. Neo-Brutalist Chunky Yellow Outer Border
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = '#FFE600';
-    ctx.strokeRect(5, 5, width - 10, height - 10);
+    // 3. Blueprint Hairline Border with Cobalt Accent
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeRect(8, 8, width - 16, height - 16);
 
     // Inner subtle border
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#22283A';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#27272A';
     ctx.strokeRect(20, 20, width - 40, height - 40);
 
-    // 4. Corner Accreditation Badges
-    // Top-Left Acc-No Stamp
-    ctx.fillStyle = '#FF2A6D';
-    ctx.fillRect(30, 30, 160, 26);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(30, 30, 160, 26);
-    ctx.fillStyle = '#FFFFFF';
+    // 4. Accreditation Badges
+    // Top-Left ID Stamp
+    ctx.fillStyle = '#141418';
+    ctx.fillRect(30, 30, 170, 28);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeRect(30, 30, 170, 28);
+    ctx.fillStyle = '#3B82F6';
     ctx.font = 'bold 11px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`ACC-NO: ${certId.slice(-8)}`, 110, 47);
+    ctx.fillText(`ID: ${certId.slice(-8)}`, 115, 48);
 
     // Top-Right Verified Stamp
-    ctx.fillStyle = '#00F59B';
-    ctx.fillRect(width - 230, 30, 200, 26);
-    ctx.strokeRect(width - 230, 30, 200, 26);
-    ctx.fillStyle = '#000000';
-    ctx.fillText('🛡️ VERIFIED ARCHITECTURE', width - 130, 47);
+    ctx.fillStyle = '#141418';
+    ctx.fillRect(width - 230, 30, 200, 28);
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+    ctx.strokeRect(width - 230, 30, 200, 28);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.fillText('🛡️ VERIFIED CREDENTIAL', width - 130, 48);
 
-    // 5. Golden Seal (Center Icon Box)
+    // 5. Center Seal (Trophy Icon Box)
     ctx.save();
-    ctx.translate(width / 2, 92);
-    ctx.rotate(-0.025);
-    ctx.fillStyle = '#FFE600';
-    ctx.fillRect(-28, -28, 56, 56);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeRect(-28, -28, 56, 56);
-    ctx.font = '30px "Space Grotesk", sans-serif';
+    ctx.translate(width / 2, 86);
+    ctx.fillStyle = '#141418';
+    ctx.fillRect(-26, -26, 52, 52);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeRect(-26, -26, 52, 52);
+    ctx.font = '26px "Space Grotesk", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🏆', 0, 10);
+    ctx.fillText('🏆', 0, 9);
     ctx.restore();
 
     // 6. Certificate Title & Header
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#FFE600';
+    ctx.fillStyle = '#3B82F6';
     ctx.font = 'bold 12px "JetBrains Mono", monospace';
-    ctx.fillText('SKETCHCAST INTERACTIVE ARCHITECTURE ARENA', width / 2, 162);
+    ctx.fillText('SKETCHCAST INTERACTIVE MASTERCLASS ARENA', width / 2, 145);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 34px "Space Grotesk", sans-serif';
-    ctx.fillText('MASTERCLASS PASS OF MERIT', width / 2, 205);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = '900 32px "Space Grotesk", sans-serif';
+    ctx.fillText('MASTERCLASS PASS OF MERIT', width / 2, 185);
 
-    ctx.fillStyle = '#94A3B8';
+    ctx.fillStyle = '#A1A1AA';
     ctx.font = '13px "JetBrains Mono", monospace';
-    ctx.fillText('This official certificate verifies that attendee', width / 2, 235);
+    ctx.fillText('This official certificate verifies that attendee', width / 2, 214);
 
     // 7. Recipient Name Banner Box
-    const bannerY = 255;
-    ctx.fillStyle = '#05070B';
-    ctx.fillRect(160, bannerY, width - 320, 64);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#FFE600';
-    ctx.strokeRect(160, bannerY, width - 320, 64);
+    const bannerY = 232;
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(160, bannerY, width - 320, 60);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeRect(160, bannerY, width - 320, 60);
 
-    ctx.fillStyle = '#FFE600';
-    ctx.font = '900 36px "Space Grotesk", sans-serif';
-    ctx.fillText((recipientName || 'ANONYMOUS ARCHITECT').toUpperCase(), width / 2, bannerY + 44);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = '900 34px "Space Grotesk", sans-serif';
+    ctx.fillText((recipientName || 'ANONYMOUS PARTICIPANT').toUpperCase(), width / 2, bannerY + 43);
 
     // 8. Event Description & Room
-    ctx.fillStyle = '#CBD5E1';
+    ctx.fillStyle = '#A1A1AA';
     ctx.font = '13px "Space Grotesk", sans-serif';
     ctx.fillText(
       'has actively engaged in the live technical challenges, audience consensus, and architecture design session for',
       width / 2,
-      348
+      322
     );
 
-    ctx.fillStyle = '#00F59B';
+    ctx.fillStyle = '#3B82F6';
     ctx.font = '900 17px "Space Grotesk", sans-serif';
-    ctx.fillText(`"${roomTitle.toUpperCase()}" (ROOM #${roomCode.toUpperCase()})`, width / 2, 376);
+    ctx.fillText(`"${roomTitle.toUpperCase()}" (ROOM #${roomCode.toUpperCase()})`, width / 2, 348);
 
-    // 10. Footer Details Grid
-    const footerY = 485;
+    // 9. Footer Details - Balanced Grid Layout
+    const footerY = 400;
     ctx.textAlign = 'left';
 
-    // Left Details Column
-    ctx.fillStyle = '#64748B';
-    ctx.font = 'bold 11px "JetBrains Mono", monospace';
-
-    ctx.fillText('SESSION RANK:', 70, footerY + 65);
-    ctx.fillStyle = '#33F3FF';
+    // Stat 1: Session Rank
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(70, footerY, 240, 52);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeRect(70, footerY, 240, 52);
+    ctx.fillStyle = '#71717A';
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillText('SESSION RANK', 85, footerY + 20);
+    ctx.fillStyle = '#3B82F6';
     ctx.font = '900 15px "JetBrains Mono", monospace';
-    ctx.fillText(`RANK #${rank} OF ${totalAttendees} ATTENDEES`, 190, footerY + 65);
+    ctx.fillText(`RANK #${rank} OF ${totalAttendees}`, 85, footerY + 41);
 
-    ctx.fillStyle = '#64748B';
-    ctx.font = 'bold 11px "JetBrains Mono", monospace';
-    ctx.fillText('ISSUED ON:', 70, footerY + 100);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 13px "JetBrains Mono", monospace';
-    ctx.fillText(issueDate.toUpperCase(), 190, footerY + 100);
+    // Stat 2: Total Score Earned
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(325, footerY, 240, 52);
+    ctx.strokeRect(325, footerY, 240, 52);
+    ctx.fillStyle = '#71717A';
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillText('SCORE EARNED', 340, footerY + 20);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = '900 15px "JetBrains Mono", monospace';
+    ctx.fillText(`${score} PTS`, 340, footerY + 41);
 
-    ctx.fillStyle = '#475569';
-    ctx.font = '10px "JetBrains Mono", monospace';
-    ctx.fillText(`CERTIFICATE ID: ${certId}`, 70, footerY + 130);
+    // Stat 3: Challenges Solved
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(70, footerY + 62, 240, 52);
+    ctx.strokeRect(70, footerY + 62, 240, 52);
+    ctx.fillStyle = '#71717A';
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillText('CHALLENGES', 85, footerY + 82);
+    ctx.fillStyle = '#10B981';
+    ctx.font = '900 15px "JetBrains Mono", monospace';
+    ctx.fillText(`${correctQuizzes} SOLVED`, 85, footerY + 103);
 
-    // Right QR Code Box
+    // Stat 4: Session Host
+    ctx.fillStyle = '#121216';
+    ctx.fillRect(325, footerY + 62, 240, 52);
+    ctx.strokeRect(325, footerY + 62, 240, 52);
+    ctx.fillStyle = '#71717A';
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillText('SESSION HOST', 340, footerY + 82);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.font = 'bold 14px "Space Grotesk", sans-serif';
+    ctx.fillText(hostName, 340, footerY + 103);
+
+    // Metadata line (Issued on & Certificate ID)
+    ctx.fillStyle = '#71717A';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillText(`ISSUED: ${issueDate.toUpperCase()}  •  CREDENTIAL: ${certId}`, 70, footerY + 142);
+
+    // Right QR Code Box (Enlarged & high-contrast)
     const qrCanvas = qrContainerRef.current?.querySelector('canvas');
     if (qrCanvas) {
       const qx = width - 260;
-      const qy = footerY + 10;
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(qx, qy, 190, 130);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#000000';
-      ctx.strokeRect(qx, qy, 190, 130);
+      const qy = footerY - 5;
+      const qw = 190;
+      const qh = 160;
 
-      // Draw QR Code
-      ctx.drawImage(qrCanvas, qx + 12, qy + 15, 95, 95);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(qx, qy, qw, qh);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#3B82F6';
+      ctx.strokeRect(qx, qy, qw, qh);
+
+      // Draw QR Code enlarged: 120x120 centered
+      ctx.drawImage(qrCanvas, qx + 35, qy + 12, 120, 120);
 
       // QR label
       ctx.fillStyle = '#000000';
-      ctx.font = '900 10px "JetBrains Mono", monospace';
-      ctx.fillText('SCAN TO VERIFY', qx + 115, qy + 40);
-
-      ctx.fillStyle = '#64748B';
-      ctx.font = 'bold 8px "JetBrains Mono", monospace';
-      ctx.fillText('SKETCHCAST', qx + 115, qy + 60);
-      ctx.fillText('AUTHENTIC', qx + 115, qy + 75);
-      ctx.fillText(certId.slice(0, 10), qx + 115, qy + 90);
+      ctx.font = '900 11px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN TO VERIFY', qx + qw / 2, qy + 146);
+      ctx.textAlign = 'left';
     }
 
-    // 11. Bottom Platform Watermark
-    ctx.fillStyle = '#475569';
+    // 10. Bottom Platform Watermark
+    ctx.fillStyle = '#52525B';
     ctx.font = '11px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('Verified Realtime Keynote Session • Powered by SketchCast Live & Supabase', width / 2, height - 16);
-  }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate]);
+  }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate, score, correctQuizzes, hostName]);
 
   // Launch celebration fanfare and confetti EXACTLY ONCE per modal opening
   const celebrationFiredRef = useRef(false);
@@ -239,7 +262,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
             particleCount: 80,
             spread: 70,
             origin: { y: 0.45 },
-            colors: ['#FFE600', '#00F59B', '#FF4782', '#33F3FF', '#FFFFFF'],
+            colors: ['#3B82F6', '#60A5FA', '#1D4ED8', '#FAFAFA', '#71717A'],
           });
         } catch {
           // ignore
@@ -267,14 +290,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     });
   };
 
-  const handleCopyLink = () => {
-    playPopSound();
-    navigator.clipboard.writeText(verificationUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  const handleDownloadPNG = async () => {
+  const handleDownloadPass = async () => {
     playPopSound();
     setDownloading(true);
     try {
@@ -282,7 +298,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = `sketchcast-certificate-${recipientName.toLowerCase().replace(/\s+/g, '_')}.png`;
+      link.download = `sketchcast-pass-${recipientName.toLowerCase().replace(/\s+/g, '_')}.png`;
       link.href = url;
       link.click();
       URL.revokeObjectURL(url);
@@ -293,87 +309,6 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     }
   };
 
-  const handleCopyImage = async (): Promise<boolean> => {
-    playPopSound();
-    try {
-      const blob = await getCertificateBlob();
-      if (!blob || !navigator.clipboard?.write) return false;
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob }),
-      ]);
-      setCopiedImage(true);
-      setTimeout(() => setCopiedImage(false), 2500);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const handleShare = async (platform: 'linkedin' | 'twitter' | 'native') => {
-    playClickSound();
-    const shareTitle = `SketchCast Masterclass Pass: ${roomTitle}`;
-    const shareText = `🎓 Proud to complete the "${roomTitle}" live technical masterclass on SketchCast!\nRank #${rank} out of ${totalAttendees}.\nVerify credential: ${verificationUrl}`;
-    const filename = `sketchcast-certificate-${recipientName.toLowerCase().replace(/\s+/g, '_')}.png`;
-
-    // 1. Explicit Native OS Share Sheet (only when user clicks 'SHARE PASS')
-    if (platform === 'native') {
-      const blob = await getCertificateBlob();
-      const file = blob
-        ? new File([blob], filename, {
-            type: 'image/png',
-          })
-        : null;
-
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        try {
-          await navigator.share({
-            title: shareTitle,
-            text: shareText,
-            files: file && navigator.canShare?.({ files: [file] }) ? [file] : undefined,
-          });
-          return;
-        } catch (err: any) {
-          if (err?.name === 'AbortError') return; // User simply closed the share sheet
-        }
-      }
-      // If native share isn't supported or fails, fallback to downloading PNG
-      await handleDownloadPNG();
-      return;
-    }
-
-    // 2. Direct Social Platform Web Intents - ALWAYS opens website directly without OS popup
-    if (platform === 'linkedin') {
-      const textParam = encodeURIComponent(shareText);
-      window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${textParam}`, '_blank');
-    } else if (platform === 'twitter') {
-      const textParam = encodeURIComponent(
-        `Just mastered the live architecture challenges in "${roomTitle}" on @SketchCast! ⚡ (Rank #${rank}). Check my verifiable pass: ${verificationUrl}`
-      );
-      window.open(`https://twitter.com/intent/tweet?text=${textParam}`, '_blank');
-    }
-
-    // 3. Desktop Flow: Concurrently copy image to clipboard and trigger PNG download for easy Ctrl+V pasting
-    getCertificateBlob().then(async (blob) => {
-      if (blob) {
-        await handleCopyImage();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-      }
-    });
-
-    setShowShareToast(platform);
-    setTimeout(() => setShowShareToast(null), 8000);
-  };
-
-  const handlePrint = () => {
-    playClickSound();
-    window.print();
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -381,260 +316,183 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-black/90 backdrop-blur-md overflow-y-auto font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md overflow-y-auto font-sans"
         >
           {/* Hidden Canvas Elements for High-Res PNG Generation & QR Drawing */}
           <canvas ref={canvasRef} width={1200} height={700} className="hidden" />
           <div ref={qrContainerRef} className="hidden">
-            <QRCodeCanvas value={verificationUrl} size={100} level="M" includeMargin={false} />
+            <QRCodeCanvas value={verificationUrl} size={140} level="M" includeMargin={false} />
           </div>
 
           <motion.div
-            initial={{ scale: 0.92, y: 20, opacity: 0 }}
+            initial={{ scale: 0.96, y: 10, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.92, y: 20, opacity: 0 }}
+            exit={{ scale: 0.96, y: 10, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-            className="w-full max-w-2xl bg-[#0D0F17] border-4 border-black brutal-shadow-lg text-white my-auto overflow-hidden flex flex-col relative"
+            className="w-full max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col relative font-sans"
           >
             {/* Modal Header Bar */}
-            <div className="p-3 sm:p-4 bg-neo-yellow text-black border-b-4 border-black flex items-center justify-between shrink-0">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-black text-neo-yellow border-2 border-black flex items-center justify-center font-black">
-                  <Award className="w-5 h-5 fill-neo-yellow" />
+            <div className="p-4 sm:p-5 bg-[#141418] text-[#FAFAFA] border-b border-white/[0.08] flex items-center justify-between shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
+                  <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-xs sm:text-base font-heavy uppercase tracking-tight leading-none">
-                    OFFICIAL MASTERCLASS COMPLETION PASS
+                  <h2 className="text-sm sm:text-base font-semibold text-white font-display">
+                    Masterclass Completion Pass
                   </h2>
-                  <span className="text-[10px] font-mono font-bold tracking-wider">
-                    VERIFIABLE CREDENTIAL & ARCHITECTURE ACCREDITATION
+                  <span className="text-xs text-zinc-400">
+                    Verifiable Credential & Achievement Pass
                   </span>
                 </div>
               </div>
 
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   playClickSound();
                   onClose();
                 }}
-                className="p-1.5 bg-black text-white hover:bg-neo-pink transition-colors border-2 border-black cursor-pointer"
+                className="p-2 rounded-xl bg-zinc-800/40 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/[0.06] transition-colors cursor-pointer"
                 title="Close Pass"
               >
-                <X className="w-4 h-4 stroke-3" />
+                <X className="w-4 h-4" />
               </motion.button>
             </div>
 
-            {/* Desktop Share Guidance Toast */}
-            <AnimatePresence>
-              {showShareToast && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-2.5 sm:p-3 bg-neo-yellow text-black border-b-3 border-black font-mono text-xs font-bold flex items-center justify-between brutal-shadow z-20 shrink-0"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 shrink-0 text-black" />
-                    <span className="leading-tight">
-                      <strong>Certificate Image Copied & Downloaded!</strong> Press{' '}
-                      <kbd className="px-1 py-0.5 bg-black text-neo-yellow border border-black text-[10px] font-black">
-                        Ctrl+V
-                      </kbd>{' '}
-                      to paste the graphic pass directly into your {showShareToast === 'linkedin' ? 'LinkedIn' : 'X'} post.
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setShowShareToast(null)}
-                    className="p-1 hover:bg-black hover:text-white border border-black cursor-pointer ml-2 shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Neo-Brutalist Certificate Card Printable View */}
-            <div className="p-3 sm:p-6 bg-[#121420] overflow-y-auto max-h-[66vh]">
+            {/* Certificate Card View */}
+            <div className="p-4 sm:p-6 bg-[#0B0B0E] overflow-y-auto max-h-[72vh]">
               <div
                 ref={certCardRef}
-                className="relative bg-[#0A0C14] border-4 border-black p-4 sm:p-8 brutal-shadow-yellow text-center space-y-4 sm:space-y-5 overflow-hidden"
+                className="relative bg-[#121216] rounded-2xl border border-white/[0.1] p-5 sm:p-7 text-center space-y-4 sm:space-y-5 overflow-hidden shadow-2xl"
                 style={{
-                  backgroundImage: 'radial-gradient(#2A3048 1.5px, transparent 1.5px)',
+                  backgroundImage: 'radial-gradient(#27272A 1.5px, transparent 1.5px)',
                   backgroundSize: '16px 16px',
                 }}
               >
-                {/* Decorative Corner Stamps */}
-                <div className="absolute top-2 left-2 px-2 py-0.5 bg-neo-pink text-white font-mono text-[9px] font-black uppercase border border-black">
-                  ACC-NO: {certId.slice(-8)}
-                </div>
-                <div className="absolute top-2 right-2 px-2 py-0.5 bg-neo-mint text-black font-mono text-[9px] font-black uppercase border border-black flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>VERIFIED LIVE</span>
+                {/* Clean Verification Badges */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono border border-blue-500/20">
+                    ID: {certId.slice(-8)}
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Verified Credential</span>
+                  </div>
                 </div>
 
                 {/* Issuer Seal */}
-                <div className="pt-2 sm:pt-3">
-                  <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-neo-yellow text-black border-3 border-black brutal-shadow-sm -rotate-2">
-                    <Trophy className="w-7 h-7 sm:w-8 sm:h-8 fill-black" />
+                <div className="pt-1">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <Trophy className="w-7 h-7" />
                   </div>
                 </div>
 
                 {/* Certificate Sub-headers */}
                 <div className="space-y-1">
-                  <div className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-neo-yellow">
-                    SKETCHCAST INTERACTIVE ARCHITECTURE ARENA
+                  <div className="text-xs font-medium text-blue-400">
+                    SketchCast Interactive Masterclass Arena
                   </div>
-                  <h1 className="text-xl sm:text-3xl md:text-4xl font-heavy uppercase tracking-tight text-white leading-tight">
-                    MASTERCLASS PASS OF MERIT
+                  <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-white leading-tight font-display">
+                    Masterclass Pass of Merit
                   </h1>
-                  <p className="text-[11px] sm:text-xs font-mono text-slate-400">
+                  <p className="text-xs text-zinc-400">
                     This official certificate verifies that attendee
                   </p>
                 </div>
 
                 {/* Recipient Full Name */}
-                <div className="py-2 border-y-2 border-neo-yellow/30 bg-black/40">
-                  <span className="text-xl sm:text-3xl md:text-4xl font-heavy uppercase tracking-wider text-neo-yellow font-display drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                    {recipientName || 'ANONYMOUS ARCHITECT'}
+                <div className="py-3 rounded-xl border border-white/[0.08] bg-[#0D0D10]">
+                  <span className="text-xl sm:text-3xl font-bold tracking-tight text-white font-display">
+                    {recipientName || 'Anonymous Participant'}
                   </span>
                 </div>
 
                 {/* Event Description */}
                 <div className="space-y-1 max-w-lg mx-auto">
-                  <p className="text-[11px] sm:text-xs font-mono text-slate-300 leading-relaxed">
-                    has actively engaged in the live technical challenges, audience collaboration, and architecture design session for
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    has actively engaged in the live technical challenges, audience consensus, and architecture design session for
                   </p>
-                  <p className="text-sm sm:text-base font-heavy uppercase tracking-tight text-neo-mint">
-                    "{roomTitle}" (ROOM #{roomCode})
+                  <p className="text-sm sm:text-base font-semibold text-blue-400 font-display">
+                    &ldquo;{roomTitle}&rdquo; (Room #{roomCode})
                   </p>
                 </div>
 
-                {/* Footer Credentials & Verifiable QR */}
-                <div className="pt-3 sm:pt-4 border-t-2 border-black flex items-center justify-between flex-wrap gap-3 sm:gap-4 text-left">
-                  {/* Performance stats */}
-                  <div className="space-y-1 font-mono text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">SESSION RANK:</span>
-                      <span className="font-heavy text-neo-cyan text-xs sm:text-sm">
-                        RANK #{rank} OF {totalAttendees} ATTENDEES
+                {/* Footer Credentials & Verifiable QR - Balanced Grid Layout */}
+                <div className="pt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-left">
+                  {/* Performance stats grid */}
+                  <div className="flex-1 grid grid-cols-2 gap-2 sm:gap-2.5">
+                    {/* Stat 1: Session Rank */}
+                    <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                      <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Session Rank</span>
+                      <span className="text-xs sm:text-sm font-bold text-blue-400 font-mono mt-0.5">
+                        Rank #{rank} of {totalAttendees}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">ISSUED ON:</span>
-                      <span className="font-bold text-white text-xs">{issueDate}</span>
+
+                    {/* Stat 2: Total Score */}
+                    <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                      <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Score Earned</span>
+                      <span className="text-xs sm:text-sm font-bold text-white font-mono mt-0.5">
+                        {score} PTS
+                      </span>
+                    </div>
+
+                    {/* Stat 3: Challenges Solved */}
+                    <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                      <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Challenges</span>
+                      <span className="text-xs sm:text-sm font-bold text-emerald-400 font-mono mt-0.5">
+                        {correctQuizzes} Solved
+                      </span>
+                    </div>
+
+                    {/* Stat 4: Session Host */}
+                    <div className="p-2.5 rounded-xl bg-[#0E0E12] border border-white/[0.06] flex flex-col">
+                      <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase">Session Host</span>
+                      <span className="text-xs sm:text-sm font-bold text-zinc-200 truncate mt-0.5" title={hostName}>
+                        {hostName}
+                      </span>
+                    </div>
+
+                    {/* Full-width metadata info */}
+                    <div className="col-span-2 pt-1 flex items-center justify-between flex-wrap gap-1 text-[10px] sm:text-[11px] text-zinc-500 font-mono">
+                      <span className="shrink-0">Issued: <strong className="text-zinc-400 font-normal">{issueDate}</strong></span>
+                      <span className="truncate max-w-[170px] sm:max-w-none">ID: <strong className="text-zinc-400 font-normal">{certId.slice(0, 16)}...</strong></span>
                     </div>
                   </div>
 
-                  {/* Verifiable QR Code matrix */}
-                  <div className="flex items-center gap-2.5 bg-white p-2 border-2 border-black brutal-shadow-sm shrink-0">
+                  {/* Verifiable QR Code matrix - Enlarged (100px) */}
+                  <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-white border border-zinc-200 shadow-md shrink-0 self-center sm:self-auto">
                     <QRCodeSVG
                       value={verificationUrl}
-                      size={68}
+                      size={100}
                       level="M"
                       includeMargin={false}
                     />
-                    <div className="font-mono text-[9px] text-black font-bold uppercase space-y-0.5 leading-tight">
-                      <div className="font-black">SCAN TO VERIFY</div>
-                      <div className="text-slate-600">ID: {certId.slice(0, 14)}</div>
-                      <div className="text-slate-600">SKETCHCAST AUTH</div>
+                    <div className="mt-2 text-center leading-tight">
+                      <div className="text-[11px] font-bold text-zinc-900 tracking-tight">Scan to Verify</div>
+                      <div className="text-[9px] text-zinc-500 font-mono">ID: {certId.slice(-8)}</div>
+                      <div className="text-[9px] font-semibold text-blue-600">SketchCast Live</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Modal Bottom Action Bar */}
-            <div className="p-3 sm:p-4 bg-neo-card border-t-4 border-black flex items-center justify-between flex-wrap gap-2 font-mono shrink-0">
-              {/* Left Action Buttons */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleDownloadPNG}
-                  disabled={downloading}
-                  className="px-2.5 sm:px-3 py-1.5 bg-neo-yellow hover:bg-[#FFE600] text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  title="Download High-Resolution PNG Pass"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{downloading ? 'GENERATING...' : 'DOWNLOAD PNG'}</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleCopyImage}
-                  className={`px-2.5 sm:px-3 py-1.5 text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer ${
-                    copiedImage ? 'bg-neo-mint' : 'bg-neo-cyan hover:bg-[#33F3FF]'
-                  }`}
-                  title="Copy Certificate Image to Clipboard"
-                >
-                  {copiedImage ? <Check className="w-3.5 h-3.5 stroke-3" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedImage ? 'IMAGE COPIED!' : 'COPY IMAGE'}</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleCopyLink}
-                  className="px-2.5 sm:px-3 py-1.5 bg-[#1B2030] hover:bg-[#252C42] text-slate-200 font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  title="Copy Verifiable Pass Web Link"
-                >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-neo-mint" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? 'LINK COPIED!' : 'COPY LINK'}</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handlePrint}
-                  className="hidden md:flex px-2.5 sm:px-3 py-1.5 bg-[#1B2030] hover:bg-[#252C42] text-slate-300 font-black text-xs uppercase border-2 border-black brutal-shadow-sm items-center gap-1.5 cursor-pointer"
-                  title="Print / Save as PDF"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>PRINT</span>
-                </motion.button>
-              </div>
-
-              {/* Right Social Sharing Buttons */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                {/* Mobile / Tablet Direct Share Button */}
-                {canNativeShare && (
-                  <motion.button
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleShare('native')}
-                    className="px-2.5 sm:px-3 py-1.5 bg-neo-mint hover:bg-[#00E58D] text-black font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 cursor-pointer"
-                    title="Share with Image via Native Apps"
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    <span>SHARE PASS</span>
-                  </motion.button>
-                )}
-
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleShare('linkedin')}
-                  className="px-2.5 sm:px-3 py-1.5 bg-[#0077B5] hover:bg-[#006396] text-white font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 cursor-pointer"
-                  title="Share on LinkedIn with Certificate Pass"
-                >
-                  <Share2 className="w-3 h-3" />
-                  <span>LINKEDIN</span>
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleShare('twitter')}
-                  className="px-2.5 sm:px-3 py-1.5 bg-black hover:bg-slate-900 text-white font-black text-xs uppercase border-2 border-black brutal-shadow-sm flex items-center gap-1 cursor-pointer"
-                  title="Share on X (Twitter)"
-                >
-                  <Share2 className="w-3 h-3" />
-                  <span>X / TWITTER</span>
-                </motion.button>
-              </div>
+            {/* Modal Bottom Action Bar - Single Prominent Download Pass Button */}
+            <div className="p-4 bg-[#141418] border-t border-white/[0.08] flex items-center justify-center shrink-0">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleDownloadPass}
+                disabled={downloading}
+                className="w-full sm:w-auto min-w-[220px] px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/25 transition-all"
+                title="Download High-Resolution Pass"
+              >
+                <Download className="w-4 h-4" />
+                <span>{downloading ? 'Generating Pass...' : 'Download Pass'}</span>
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>
@@ -642,3 +500,4 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     </AnimatePresence>
   );
 };
+

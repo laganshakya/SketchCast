@@ -1,6 +1,6 @@
 // Core Domain Types for SketchCast Live Voting & Quizzing
 
-export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard' | 'surveys' | 'rooms';
+export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard' | 'surveys' | 'rooms' | 'ai-settings' | 'session-report';
 
 export interface Room {
   id: string;
@@ -100,7 +100,7 @@ export interface LeaderboardEntry {
   session_id: string;
   name: string;
   correct_quizzes: number;
-  polls_voted: number;
+  polls_voted?: number;
   avatar_color: string;
 }
 
@@ -112,33 +112,17 @@ export interface AttendeePresence {
   last_active: number;
 }
 
-export interface SpotlightRewardPerk {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  color: string;
-}
-
-export interface SpotlightWinner {
-  targetSessionId: string;
-  targetName: string;
-  spunBy: string;
-  perkId?: string;
-  rewardPerk?: string;
-  rewardIcon?: string;
-  rewardDesc?: string;
-  timestamp: number;
-}
-
 export interface ChampionSocialCardData {
   playerName: string;
   rank: number;
+  score: number;
   correctQuizzes: number;
   totalQuizzes: number;
   pollsVoted: number;
   roomCode: string;
   roomTitle?: string;
+  hostName?: string;
+  totalAttendees?: number;
 }
 
 // --- Survey Types ---

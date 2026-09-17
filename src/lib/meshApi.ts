@@ -58,10 +58,10 @@ export function getMeshApiBaseUrl(): string {
 
 export const MESH_MODELS = {
   AUTO: 'auto',
-  GPT_4O_MINI: 'openai/gpt-4o-mini',
+  GPT_4O_MINI: 'openai/gpt-4o-mini-2024-07-18',
   BALANCED_MINI: 'openai/gpt-4o-mini',
   DEEPSEEK_V4_FLASH: 'deepseek/deepseek-v4-flash',
-  DEEPSEEK_V3_CHAT: 'deepseek/deepseek-chat',
+  DEEPSEEK_V4_1_FLASH: 'deepseek/deepseek-v4.1-flash',
 } as const;
 
 export const MESH_MODEL_OPTIONS = [
@@ -73,25 +73,25 @@ export const MESH_MODEL_OPTIONS = [
     description: 'Auto-routes tasks to the cheapest, most efficient model (GPT-4o Mini for ultra-low token cost, DeepSeek Chat for long-form synthesis) to minimize spend.',
   },
   {
-    id: 'openai/gpt-4o-mini',
-    name: 'GPT-4o Mini (Recommended)',
+    id: 'openai/gpt-4o-mini-2024-07-18',
+    name: 'GPT-4o Mini',
     provider: 'OpenAI',
     tag: 'ULTRA CHEAP',
     description: 'Cheapest per-token pricing, blazing speed, and reliable structured parsing for moderation, quizzes, and surveys.',
   },
   {
     id: 'deepseek/deepseek-v4-flash',
-    name: 'DeepSeek V4 Flash',
+    name: 'DeepSeek V4 Flash (Recommended)',
     provider: 'DeepSeek',
     tag: 'HIGH SPEED',
     description: 'Ultra-fast latency for live moderation, quick trivia questions, and real-time interaction.',
   },
   {
-    id: 'deepseek/deepseek-chat',
-    name: 'DeepSeek V3 (Chat)',
+    id: 'deepseek/deepseek-v4.1-flash',
+    name: 'DeepSeek v4.1 Flash',
     provider: 'DeepSeek',
-    tag: 'REASONING',
-    description: 'Highly intelligent open architecture reasoning for architectural deep-dives and executive summaries.',
+    tag: 'SUPER FAST',
+    description: 'Super ultra-fast latency for live moderation, quick trivia questions, and real-time interaction.',
   },
 ];
 
@@ -1305,7 +1305,7 @@ Include a variety of question types:
 
 Output ONLY valid JSON matching this schema:
 {
-  "title": "Punchy Survey Title (uppercase / neo-brutalist style)",
+  "title": "Punchy Survey Title (clean, professional masterclass style)",
   "description": "Short explanation of the feedback purpose (1-2 sentences)",
   "questions": [
     {

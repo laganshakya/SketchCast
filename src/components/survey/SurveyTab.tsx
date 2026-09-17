@@ -67,68 +67,60 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
   );
   const aiSummariesCount = surveys.filter((s) => s.aiSummary).length;
 
-  const getAccentColorClass = (idx: number) => {
-    const accents = ['bg-neo-yellow', 'bg-neo-cyan', 'bg-neo-mint', 'bg-neo-pink', 'bg-neo-purple'];
-    return accents[idx % accents.length];
-  };
-
   return (
-    <div className="space-y-6 font-mono text-white pb-12">
+    <div className="space-y-6 font-sans text-white pb-12">
       {/* Top Banner & Control Deck */}
-      <div className="bg-[#151822] border-4 border-black brutal-shadow-lg p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        {/* Neon corner badge */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-neo-yellow/10 pointer-events-none -mr-8 -mt-8 rotate-45 border-b-2 border-black" />
-
-        <div className="flex items-start sm:items-center space-x-3.5 z-10">
-          <div className="w-12 h-12 bg-neo-yellow text-black border-3 border-black flex items-center justify-center brutal-shadow-sm shrink-0">
-            <ClipboardList className="w-6 h-6 stroke-[2.5]" />
+      <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden shadow-card">
+        <div className="flex items-start sm:items-center space-x-4 z-10">
+          <div className="w-12 h-12 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+            <ClipboardList className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="px-2 py-0.5 bg-neo-cyan text-black font-black text-[10px] uppercase border border-black brutal-shadow-xs">
-                TELEMETRY // V2.0
+              <span className="px-2.5 py-0.5 bg-blue-500/10 text-blue-400 font-semibold text-[10px] rounded-full border border-blue-500/20">
+                Audience Polling
               </span>
-              <span className="px-2 py-0.5 bg-neo-mint text-black font-black text-[10px] uppercase border border-black flex items-center space-x-1">
-                <Sparkles className="w-3 h-3" />
-                <span>AI EXECUTIVE SYNTHESIS</span>
+              <span className="px-2.5 py-0.5 bg-white/5 text-zinc-300 font-semibold text-[10px] rounded-full border border-white/[0.08] flex items-center space-x-1">
+                <Sparkles className="w-3 h-3 text-blue-400" />
+                <span>AI Synthesis</span>
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-heavy uppercase tracking-tight text-white mt-1">
-              AUDIENCE FEEDBACK & SURVEYS
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-1.5">
+              Audience Feedback & Surveys
             </h1>
-            <p className="text-xs text-slate-300 font-sans mt-0.5 max-w-xl">
+            <p className="text-xs text-zinc-400 mt-0.5 max-w-xl">
               Real-time multi-question polling, technical ratings, and deep sentiment analysis powered by Mesh AI.
             </p>
           </div>
         </div>
 
         {/* Host Actions & Room Stats */}
-        <div className="flex items-center flex-wrap gap-2.5 z-10">
+        <div className="flex items-center flex-wrap gap-3 z-10">
           {/* Quick Stats Chips */}
-          <div className="hidden lg:flex items-center space-x-2 bg-[#0E1017] border-2 border-black px-3 py-2 brutal-shadow-xs">
+          <div className="hidden lg:flex items-center space-x-3.5 bg-[#0E0E12] border border-white/[0.08] rounded-xl px-4 py-2">
             <div className="text-right">
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">RESPONSES</div>
-              <div className="text-sm font-heavy text-neo-mint leading-none">{totalResponses}</div>
+              <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Responses</div>
+              <div className="text-sm font-bold text-blue-400 leading-none">{totalResponses}</div>
             </div>
-            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <div className="w-px h-6 bg-white/[0.08]" />
             <div className="text-right">
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">AI INSIGHTS</div>
-              <div className="text-sm font-heavy text-neo-yellow leading-none">{aiSummariesCount}</div>
+              <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">AI Insights</div>
+              <div className="text-sm font-bold text-white leading-none">{aiSummariesCount}</div>
             </div>
           </div>
 
           {isHost && (
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playPopSound();
                 setIsCreateModalOpen(true);
               }}
-              className="w-full sm:w-auto px-5 py-2.5 bg-neo-yellow hover:bg-neo-mint text-black font-heavy text-xs uppercase border-3 border-black brutal-shadow flex items-center justify-center space-x-2 cursor-pointer transition-all shrink-0"
+              className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl border border-blue-500/40 flex items-center justify-center space-x-2 cursor-pointer transition-all shrink-0 shadow-sm"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>CREATE NEW SURVEY</span>
+              <Plus className="w-4 h-4" />
+              <span>Create New Survey</span>
             </motion.button>
           )}
         </div>
@@ -136,15 +128,15 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
 
       {/* 1. Active Survey Section */}
       {activeSurvey ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2 bg-[#12141D] p-3 border-3 border-black brutal-shadow-sm">
-            <div className="flex items-center space-x-2">
-              <div className="px-2.5 py-1 bg-neo-pink text-black font-heavy text-xs uppercase border-2 border-black flex items-center space-x-1.5 animate-pulse">
-                <Radio className="w-3.5 h-3.5" />
-                <span>BROADCASTING LIVE TO AUDIENCE</span>
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between flex-wrap gap-2 bg-[#121216] p-4 border border-blue-500/30 rounded-2xl shadow-card">
+            <div className="flex items-center space-x-2.5">
+              <div className="px-3 py-1 bg-blue-500/10 text-blue-400 font-semibold text-xs rounded-full border border-blue-500/25 flex items-center space-x-1.5">
+                <Radio className="w-3.5 h-3.5 animate-pulse" />
+                <span>Broadcasting Live to Audience</span>
               </div>
-              <span className="hidden sm:inline font-bold text-xs text-slate-300">
-                [ ID: {activeSurvey.id.slice(-8)} ]
+              <span className="hidden sm:inline text-xs text-zinc-500 font-mono">
+                ID: {activeSurvey.id.slice(-8)}
               </span>
             </div>
 
@@ -156,10 +148,10 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                     playPopSound();
                     setViewingResultsSurvey(activeSurvey);
                   }}
-                  className="px-3 py-1.5 bg-neo-cyan hover:bg-neo-yellow text-black text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer flex items-center space-x-1.5 transition-colors"
+                  className="px-3.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/25 cursor-pointer flex items-center space-x-1.5 transition-colors"
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>VIEW LIVE RESULTS ({activeSurvey.responses_count})</span>
+                  <span>View Live Results ({activeSurvey.responses_count})</span>
                 </button>
                 <button
                   type="button"
@@ -167,11 +159,11 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                     playClickSound();
                     onCloseSurvey(activeSurvey.id);
                   }}
-                  className="px-3 py-1.5 bg-[#FF2A6D] hover:bg-red-600 text-white text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer flex items-center space-x-1.5 transition-colors"
+                  className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-xl border border-rose-500/25 cursor-pointer flex items-center space-x-1.5 transition-colors"
                   title="Close this survey to new submissions"
                 >
                   <XCircle className="w-3.5 h-3.5" />
-                  <span>CLOSE SURVEY</span>
+                  <span>Close Survey</span>
                 </button>
               </div>
             )}
@@ -187,19 +179,19 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-[#151822] border-4 border-black p-8 sm:p-12 text-center font-mono space-y-4 brutal-shadow-lg relative overflow-hidden">
-          <div className="w-16 h-16 bg-[#1F2433] text-neo-yellow border-3 border-black mx-auto flex items-center justify-center brutal-shadow-sm">
-            <ClipboardList className="w-8 h-8 stroke-[2]" />
+        <div className="bg-[#121216] border border-white/[0.08] rounded-2xl p-8 sm:p-12 text-center space-y-4 shadow-card relative overflow-hidden">
+          <div className="w-14 h-14 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-2xl mx-auto flex items-center justify-center">
+            <ClipboardList className="w-7 h-7" />
           </div>
 
-          <div className="space-y-1">
-            <span className="px-2 py-0.5 bg-black text-neo-cyan border border-black text-[10px] font-black uppercase tracking-wider">
-              TELEMETRY STANDBY
+          <div className="space-y-1.5">
+            <span className="px-2.5 py-0.5 bg-white/5 text-zinc-400 border border-white/[0.08] text-xs font-semibold rounded-full uppercase tracking-wider">
+              Standing By
             </span>
-            <h3 className="text-lg sm:text-xl font-heavy uppercase tracking-tight text-white mt-2">
-              NO ACTIVE AUDIENCE SURVEY
+            <h3 className="text-lg sm:text-xl font-bold text-white mt-2">
+              No Active Audience Survey
             </h3>
-            <p className="text-xs text-slate-300 font-sans max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
               {isHost
                 ? 'Launch a live survey from the button below or choose a pre-configured template to collect actionable audience sentiment.'
                 : 'The presenter has not initiated an audience survey yet. Stand by — questions will appear here dynamically during the session.'}
@@ -208,16 +200,16 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
 
           {isHost && (
             <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playPopSound();
                 setIsCreateModalOpen(true);
               }}
-              className="px-5 py-2.5 bg-neo-yellow hover:bg-neo-mint text-black font-heavy text-xs uppercase border-3 border-black brutal-shadow inline-flex items-center space-x-2 cursor-pointer"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl border border-blue-500/40 inline-flex items-center space-x-2 cursor-pointer shadow-sm transition-all"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>CREATE OR LAUNCH A SURVEY</span>
+              <Plus className="w-4 h-4" />
+              <span>Create or Launch a Survey</span>
             </motion.button>
           )}
         </div>
@@ -225,72 +217,68 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
 
       {/* 2. All / Past Surveys List (Archive & Drafts) */}
       {pastSurveys.length > 0 && (
-        <div className="space-y-3 pt-4">
-          <div className="flex items-center justify-between border-b-2 border-black pb-2">
+        <div className="space-y-3.5 pt-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-neo-pink border border-black" />
-              <span className="font-heavy text-xs sm:text-sm uppercase tracking-tight text-white">
-                SURVEY REPOSITORY & ARCHIVES ({pastSurveys.length})
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="font-semibold text-xs sm:text-sm text-white">
+                Survey Repository & Archives ({pastSurveys.length})
               </span>
             </div>
-            <span className="text-[10px] font-bold text-slate-400">
-              CLICK TO VIEW RESULTS OR RE-LAUNCH
+            <span className="text-[11px] text-zinc-500">
+              Click to view results or re-launch
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pastSurveys.map((s, idx) => {
-              const accentColor = getAccentColorClass(idx);
+            {pastSurveys.map((s) => {
               const responses = responsesBySurvey[s.id] || [];
 
               return (
                 <motion.div
                   key={s.id}
                   whileHover={{ y: -2 }}
-                  className="bg-[#151822] border-3 border-black brutal-shadow flex flex-col justify-between relative overflow-hidden transition-all group"
+                  className="bg-[#121216] border border-white/[0.08] rounded-2xl flex flex-col justify-between relative overflow-hidden transition-all hover:border-blue-500/40 group shadow-card"
                 >
-                  {/* Left accent color strip */}
-                  <div className={`absolute top-0 bottom-0 left-0 w-2.5 ${accentColor}`} />
-
-                  <div className="p-4 sm:p-5 pl-5 sm:pl-6 space-y-2.5">
+                  <div className="p-4 sm:p-5 space-y-3">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center space-x-1.5">
                         <span
-                          className={`px-2 py-0.5 text-[9px] font-black uppercase border-2 border-black ${
+                          className={`px-2.5 py-0.5 text-[10px] font-semibold uppercase rounded-full border ${
                             s.status === 'closed'
-                              ? 'bg-slate-700 text-slate-200'
-                              : 'bg-neo-yellow text-black'
+                              ? 'bg-zinc-800 text-zinc-400 border-white/[0.08]'
+                              : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                           }`}
                         >
-                          {s.status.toUpperCase()}
+                          {s.status}
                         </span>
                         {s.aiSummary && (
-                          <span className="px-1.5 py-0.5 bg-neo-mint text-black text-[9px] font-black uppercase border border-black flex items-center space-x-1">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            <span>AI SYNTHESIZED</span>
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold uppercase rounded-full border border-blue-500/20 flex items-center space-x-1">
+                            <Sparkles className="w-3 h-3" />
+                            <span>AI Synthesized</span>
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-400">
+                      <div className="flex items-center space-x-2 text-[11px] text-zinc-400">
                         <span className="flex items-center space-x-1">
-                          <CheckCircle2 className="w-3 h-3 text-neo-mint" />
+                          <CheckCircle2 className="w-3 h-3 text-blue-400" />
                           <span>{responses.length} {responses.length === 1 ? 'Response' : 'Responses'}</span>
                         </span>
                         <span>•</span>
                         <span className="flex items-center space-x-1">
-                          <HelpCircle className="w-3 h-3 text-neo-cyan" />
+                          <HelpCircle className="w-3 h-3 text-zinc-500" />
                           <span>{s.questions.length} Qs</span>
                         </span>
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="font-heavy text-sm sm:text-base uppercase tracking-tight text-white group-hover:text-neo-yellow transition-colors leading-snug">
+                      <h3 className="font-semibold text-sm sm:text-base text-white group-hover:text-blue-400 transition-colors leading-snug">
                         {s.title}
                       </h3>
                       {s.description && (
-                        <p className="text-xs text-slate-300 font-sans mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
                           {s.description}
                         </p>
                       )}
@@ -298,9 +286,9 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                   </div>
 
                   {/* Card Action Dock */}
-                  <div className="p-3 pl-5 sm:pl-6 bg-[#0E1017] border-t-2 border-black flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center space-x-1 text-[10px] text-slate-400 font-mono">
-                      <Clock className="w-3 h-3 text-slate-500" />
+                  <div className="p-3 sm:px-5 bg-[#0E0E12] border-t border-white/[0.08] flex items-center justify-between gap-2 flex-wrap rounded-b-2xl">
+                    <div className="flex items-center space-x-1 text-[11px] text-zinc-500">
+                      <Clock className="w-3 h-3" />
                       <span>{new Date(s.created_at).toLocaleDateString()}</span>
                     </div>
 
@@ -312,10 +300,10 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                           playPopSound();
                           setViewingResultsSurvey(s);
                         }}
-                        className="px-3 py-1 bg-white hover:bg-neo-yellow text-black text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer flex items-center space-x-1 transition-colors"
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/20 cursor-pointer flex items-center space-x-1 transition-colors"
                       >
                         <BarChart3 className="w-3 h-3" />
-                        <span>RESULTS</span>
+                        <span>Results</span>
                       </button>
 
                       {/* Host Launch or Delete */}
@@ -328,11 +316,11 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                                 playPopSound();
                                 onLaunchSurvey(s.id);
                               }}
-                              className="px-3 py-1 bg-neo-mint hover:bg-neo-cyan text-black text-xs font-heavy uppercase border-2 border-black brutal-shadow-xs cursor-pointer flex items-center space-x-1 transition-colors"
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl border border-blue-500/40 cursor-pointer flex items-center space-x-1 transition-colors shadow-sm"
                               title="Launch this survey to the room"
                             >
                               <Rocket className="w-3 h-3" />
-                              <span>LAUNCH</span>
+                              <span>Launch</span>
                             </button>
                           )}
                           <button
@@ -343,7 +331,7 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
                                 onDeleteSurvey(s.id);
                               }
                             }}
-                            className="p-1 bg-[#1A1D28] hover:bg-red-500 text-slate-300 hover:text-white border-2 border-black cursor-pointer transition-colors"
+                            className="p-1.5 bg-[#16161A] hover:bg-rose-500/10 text-zinc-500 hover:text-rose-400 rounded-lg border border-white/[0.08] hover:border-rose-500/30 cursor-pointer transition-colors"
                             title="Delete survey cartridge"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
