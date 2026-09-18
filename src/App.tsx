@@ -145,6 +145,9 @@ export function App() {
     toggleAutoAdvance,
     pauseAutoAdvance,
     resumeAutoAdvance,
+    startAdaptiveCampaign,
+    advanceAdaptiveQuestionNow,
+    adaptiveCampaign,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -469,8 +472,14 @@ export function App() {
     setIsQRModalOpen(true);
   };
 
-  // Check if there is a subsequent queued question
+  // Check if there is a subsequent queued question or next adaptive challenge
   const hasNextQuestion = useMemo(() => {
+    if (quizState.isAdaptiveCampaign || adaptiveCampaign?.isActive) {
+      const current = quizState.adaptiveProgress?.current || adaptiveCampaign?.currentQuestionIndex || 1;
+      const total = quizState.adaptiveProgress?.total || adaptiveCampaign?.totalQuestions || 1;
+      return current < total;
+    }
+
     try {
       const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
       const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
@@ -486,7 +495,13 @@ export function App() {
       // ignore
     }
     return false;
-  }, [room.code, quizState.question]);
+  }, [
+    room.code,
+    quizState.question,
+    quizState.isAdaptiveCampaign,
+    quizState.adaptiveProgress,
+    adaptiveCampaign,
+  ]);
 
   // Host action: Quiz completion handler (transitions to Leaderboard with fanfare & confetti)
   const handleQuizComplete = useCallback(() => {
@@ -511,14 +526,19 @@ export function App() {
     }
   }, [channelManager, room.code, setActiveTab]);
 
-  // Host action: Launch next queued question in sequence
+  // Host action: Launch next queued question in sequence or advance adaptive challenge
   const handleNextQuestion = useCallback(() => {
+    if (quizState.isAdaptiveCampaign || adaptiveCampaign?.isActive) {
+      advanceAdaptiveQuestionNow();
+      return;
+    }
+
     try {
       const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
       const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
       if (stored) {
         const queue = JSON.parse(stored);
-        if (queue && Array.isArray(queue) && queue.length > 0) {
+        if (Array.isArray(queue) && queue.length > 0) {
           const currentId = quizState.question?.id;
           const currentIndex = queue.findIndex((q: any) => q.id === currentId);
           if (currentIndex >= 0 && currentIndex + 1 < queue.length) {
@@ -536,7 +556,15 @@ export function App() {
     }
 
     handleQuizComplete();
-  }, [room.code, quizState.question, startQuizRound, handleQuizComplete]);
+  }, [
+    room.code,
+    quizState.question,
+    quizState.isAdaptiveCampaign,
+    adaptiveCampaign,
+    advanceAdaptiveQuestionNow,
+    startQuizRound,
+    handleQuizComplete,
+  ]);
 
   // Sync auto-advance callback ref for useQuizEngine
   useEffect(() => {
@@ -920,6 +948,7 @@ export function App() {
                 >
                   <QuizHostPanel
                     onStartQuiz={startQuizRound}
+                    onStartAdaptiveCampaign={startAdaptiveCampaign}
                     activeQuestionId={quizState.question?.id}
                     isRevealed={quizState.isRevealed}
                     roomCode={room.code}

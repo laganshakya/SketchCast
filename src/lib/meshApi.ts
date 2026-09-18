@@ -27,6 +27,8 @@ export {
   type TrendingTechStory,
 };
 
+import type { QuizQuestion, DifficultyTier } from '../types';
+
 export interface MeshChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -634,6 +636,125 @@ Return ONLY a valid JSON object matching this schema without any markdown format
   }));
 
   return distributeQuestionOptions(rawQuestions);
+}
+
+export interface AdaptivePromptParams {
+  topic: string;
+  currentDifficulty: DifficultyTier;
+  targetDifficulty: DifficultyTier;
+  previousQuestion?: string;
+  previousCorrectAnswer?: string;
+  accuracyPct: number;
+  questionNumber: number;
+  totalQuestions: number;
+  adaptationType: 'level_up' | 'stepped_down' | 'maintained';
+}
+
+export async function generateAdaptiveFollowUpQuestion(
+  params: AdaptivePromptParams
+): Promise<QuizQuestion> {
+  const {
+    topic,
+    currentDifficulty,
+    targetDifficulty,
+    previousQuestion,
+    previousCorrectAnswer,
+    accuracyPct,
+    questionNumber,
+    totalQuestions,
+    adaptationType,
+  } = params;
+
+  let adaptationDirective = '';
+  if (adaptationType === 'level_up') {
+    adaptationDirective = `The audience solved the previous question with high accuracy (${Math.round(accuracyPct)}%)!
+LEVEL UP: Elevate the difficulty from ${currentDifficulty} to ${targetDifficulty}.
+Focus on deeper architectural edge cases, high concurrency, failure recovery, internal runtime trade-offs, or subtleties that challenge experienced engineers.`;
+  } else if (adaptationType === 'stepped_down') {
+    adaptationDirective = `The audience found the previous question difficult (only ${Math.round(accuracyPct)}% accuracy).
+STEP DOWN: Adjust difficulty from ${currentDifficulty} down to ${targetDifficulty}.
+Focus on foundational mental models, fundamental architecture rules, and clear practical trade-offs to anchor understanding.`;
+  } else {
+    adaptationDirective = `The audience achieved a balanced accuracy of ${Math.round(accuracyPct)}%.
+MAINTAIN TIER: Keep the difficulty tier steady at ${targetDifficulty}.
+Explore another vital practical aspect or common design pattern within "${topic}".`;
+  }
+
+  const systemPrompt = `You are an Adaptive Masterclass Technical Quiz Engine.
+You craft exactly ONE multiple-choice challenge tailored dynamically to real-time audience performance.
+Topic: "${topic}".
+Target Difficulty Tier: ${targetDifficulty}.
+
+Adaptive Context:
+${adaptationDirective}
+
+${previousQuestion ? `Previous Question: "${previousQuestion}"` : ''}
+${previousCorrectAnswer ? `Previous Answer: "${previousCorrectAnswer}"` : ''}
+
+REQUIREMENTS:
+1. Generate ONE fresh, real-world engineering question on "${topic}".
+2. Exactly 4 distinct, standalone options (A, B, C, D). Do NOT use "All/None of the above".
+3. Assign the correct option evenly among A, B, C, or D.
+4. Provide a clear, educational "explanation" (1-2 sentences).
+5. Set timeLimitSeconds (between 20 and 30).
+
+Return ONLY valid JSON matching this schema without markdown formatting or commentary:
+{
+  "category": "${topic.slice(0, 20)}",
+  "question": "Clear technical question...",
+  "optA": "Option A...",
+  "optB": "Option B...",
+  "optC": "Option C...",
+  "optD": "Option D...",
+  "correctOpt": "C",
+  "explanation": "Architectural takeaway...",
+  "timeLimitSeconds": 25
+}`;
+
+  const targetModel = resolveModelForTask('quiz');
+  const raw = await callMeshChatCompletion(
+    [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: `Synthesize Adaptive Question #${questionNumber} of ${totalQuestions} for "${topic}" at ${targetDifficulty} tier. Return raw JSON.`,
+      },
+    ],
+    { jsonMode: true, temperature: 0.7, maxTokens: 900, model: targetModel }
+  );
+
+  let parsed: any;
+  try {
+    parsed = safeParseJsonFromLLM(raw);
+  } catch {
+    throw new Error('Failed to parse Adaptive AI Question JSON.');
+  }
+
+  const q = parsed?.questions?.[0] || parsed;
+  const qId = `adaptive-q-${Date.now()}-${questionNumber}`;
+
+  return {
+    id: qId,
+    category: q.category || topic.slice(0, 20),
+    question: q.question || `${topic} Challenge #${questionNumber}`,
+    options: [
+      { id: 'A', text: q.optA || 'Option A' },
+      { id: 'B', text: q.optB || 'Option B' },
+      { id: 'C', text: q.optC || 'Option C' },
+      { id: 'D', text: q.optD || 'Option D' },
+    ],
+    correctOptionId: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
+    explanation: q.explanation || 'Verified architectural concept.',
+    timeLimitSeconds: Math.min(60, Math.max(15, q.timeLimitSeconds || 25)),
+    difficultyTier: targetDifficulty,
+    adaptiveMeta: {
+      questionNumber,
+      totalQuestions,
+      previousAccuracy: accuracyPct,
+      adaptationType,
+      previousDifficulty: currentDifficulty,
+    },
+  };
 }
 
 // -------------------------------------------------------------

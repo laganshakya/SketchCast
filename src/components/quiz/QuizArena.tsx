@@ -10,6 +10,8 @@ import {
   Play,
   Pause,
   Zap,
+  Flame,
+  RefreshCw,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -173,13 +175,31 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <div className="bg-[#121215] border border-white/[0.08] rounded-xl px-4 py-2.5 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
         <div className="flex items-center space-x-3 min-w-0">
           <div className="flex items-center space-x-2 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-blue-400 font-bold text-[10px] tracking-wider uppercase">LIVE ARENA</span>
+            <span className={`w-2 h-2 rounded-full ${quizState.isAdaptiveCampaign ? 'bg-purple-500 animate-ping' : 'bg-blue-500 animate-pulse'}`} />
+            <span className={`${quizState.isAdaptiveCampaign ? 'text-purple-400' : 'text-blue-400'} font-bold text-[10px] tracking-wider uppercase`}>
+              {quizState.isAdaptiveCampaign ? 'ADAPTIVE ARENA' : 'LIVE ARENA'}
+            </span>
           </div>
           <span className="text-zinc-700">/</span>
           <span className="text-zinc-300 text-[11px] font-semibold truncate uppercase tracking-wider">
             {question.category.replace(/_/g, ' ')}
           </span>
+          {question.difficultyTier && (
+            <>
+              <span className="text-zinc-700">/</span>
+              <span className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] font-bold text-zinc-300 uppercase tracking-wider">
+                {question.difficultyTier} TIER
+              </span>
+            </>
+          )}
+          {quizState.adaptiveProgress && (
+            <>
+              <span className="text-zinc-700">/</span>
+              <span className="text-purple-400 text-[10px] font-bold tracking-wider">
+                ROUND {quizState.adaptiveProgress.current} OF {quizState.adaptiveProgress.total}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center space-x-3 text-[11px] shrink-0">
@@ -204,7 +224,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               {!isRevealed ? (
                 <RollingCounter value={timeRemaining} padZero={true} />
               ) : quizState.autoAdvanceAt ? (
-                isPaused ? (
+                quizState.isAIGeneratingNext && autoAdvanceCountdown === 0 ? (
+                  <span className="text-purple-400 text-3xl sm:text-4xl font-mono tracking-tight flex items-center gap-2">
+                    <RefreshCw className="w-6 h-6 animate-spin text-purple-400 shrink-0" />
+                    SYNTHESIZING
+                  </span>
+                ) : isPaused ? (
                   <span className="text-amber-400 text-3xl sm:text-4xl md:text-5xl font-mono tracking-tight flex items-center gap-2">
                     <Pause className="w-7 h-7 sm:w-8 sm:h-8 inline-block animate-pulse text-amber-400" />
                     PAUSED
@@ -226,7 +251,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </span>
             ) : quizState.autoAdvanceAt ? (
               <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-                {isPaused
+                {quizState.isAIGeneratingNext && autoAdvanceCountdown === 0
+                  ? 'ADAPTING NEXT CHALLENGE TO ROOM ACCURACY...'
+                  : isPaused
                   ? `HOLDING AT ${autoAdvanceCountdown}S`
                   : hasNextQuestion
                   ? 'SECONDS TO NEXT QUESTION'
@@ -283,9 +310,67 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         transition={{ duration: 0.25 }}
         className="bg-[#121215] p-6 sm:p-8 rounded-2xl border border-white/[0.08] shadow-sm relative"
       >
-        <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-3">
-          CHALLENGE QUESTION
+        <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-3 flex items-center justify-between">
+          <span>CHALLENGE QUESTION</span>
+          {question.difficultyTier && (
+            <span className="text-zinc-500 font-normal">
+              DIFFICULTY: <span className="text-zinc-300 font-bold">{question.difficultyTier}</span>
+            </span>
+          )}
         </div>
+
+        {/* Adaptive Dynamic Gamification Banner */}
+        {question.adaptiveMeta && (
+          question.adaptiveMeta.adaptationType === 'level_up' ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+            >
+              <div className="flex items-center space-x-2 font-mono">
+                <Flame className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+                <span className="font-extrabold tracking-wide uppercase">
+                  🔥 LEVEL UP! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                </span>
+                <span className="text-zinc-400 hidden sm:inline">— Elevating challenge to deeper edge cases</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-amber-500/40 shrink-0">
+                {question.difficultyTier || 'Senior'} TIER
+              </span>
+            </motion.div>
+          ) : question.adaptiveMeta.adaptationType === 'stepped_down' ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="mb-4 p-3 rounded-xl bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+            >
+              <div className="flex items-center space-x-2 font-mono">
+                <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="font-extrabold tracking-wide uppercase">
+                  💡 FOUNDATION CHECK! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                </span>
+                <span className="text-zinc-400 hidden sm:inline">— Re-anchoring core mental models & essentials</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-blue-500/40 shrink-0">
+                {question.difficultyTier || 'Mid'} TIER
+              </span>
+            </motion.div>
+          ) : (
+            <div className="mb-4 p-2.5 rounded-xl bg-[#16161D] border border-white/[0.08] text-zinc-300 text-xs flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center space-x-2 font-mono">
+                <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span className="font-bold tracking-wide uppercase text-zinc-300">
+                  {question.adaptiveMeta.questionNumber === 1
+                    ? `ADAPTIVE JOURNEY: CHALLENGE 1 OF ${question.adaptiveMeta.totalQuestions}`
+                    : `STEADY PACE: MAINTAINING ${question.difficultyTier || 'Senior'} TIER`}
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-white/[0.08] shrink-0">
+                {question.difficultyTier || 'Senior'} TIER
+              </span>
+            </div>
+          )
+        )}
 
         <h2 className="text-lg sm:text-2xl md:text-3xl font-display font-extrabold text-white leading-tight tracking-tight">
           {question.question}
@@ -403,6 +488,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <p className="font-normal text-zinc-300">{question.explanation}</p>
           </div>
 
+          {/* AI Synthesizing live follow-up badge */}
+          {quizState.isAIGeneratingNext && (
+            <div className="px-4 py-2.5 rounded-xl border bg-purple-950/25 border-purple-500/30 text-purple-300 flex items-center justify-between font-mono text-xs animate-pulse">
+              <div className="flex items-center space-x-2.5">
+                <RefreshCw className="w-3.5 h-3.5 text-purple-400 animate-spin shrink-0" />
+                <span className="font-bold tracking-wider uppercase">
+                  ✨ AI Synthesizing Next Challenge (Adapting to room accuracy)...
+                </span>
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 shrink-0">
+                GENERATING LIVE
+              </span>
+            </div>
+          )}
+
           {/* Auto-Advance Synchronized Ribbon (shown to both host and attendees) */}
           {quizState.autoAdvanceAt && (
             <div
@@ -509,13 +609,28 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
+                      if (quizState.isAIGeneratingNext) return;
                       playClickSound();
                       onNextQuestion();
                     }}
-                    className="w-full sm:w-auto px-6 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                    disabled={quizState.isAIGeneratingNext}
+                    className={`w-full sm:w-auto px-6 py-2.5 text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 transition-all ${
+                      quizState.isAIGeneratingNext
+                        ? 'bg-purple-950/40 border border-purple-500/30 text-purple-300 cursor-not-allowed'
+                        : 'btn-cobalt cursor-pointer'
+                    }`}
                   >
-                    <span>NEXT QUESTION NOW</span>
-                    <ArrowRight className="w-4 h-4" />
+                    {quizState.isAIGeneratingNext ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-purple-400" />
+                        <span>SYNTHESIZING NEXT...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>NEXT QUESTION NOW</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </motion.button>
                 ) : (
                   <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">

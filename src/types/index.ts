@@ -20,6 +20,16 @@ export interface QuizOption {
   text: string;
 }
 
+export type DifficultyTier = 'Junior' | 'Mid' | 'Senior' | 'Principal';
+
+export interface AdaptiveMeta {
+  questionNumber: number;
+  totalQuestions: number;
+  previousAccuracy?: number;
+  adaptationType?: 'level_up' | 'stepped_down' | 'maintained';
+  previousDifficulty?: DifficultyTier;
+}
+
 export interface QuizQuestion {
   id: string;
   category: string;
@@ -29,6 +39,8 @@ export interface QuizQuestion {
   explanation: string;
   timeLimitSeconds: number;
   aiDeepDive?: string;
+  difficultyTier?: DifficultyTier;
+  adaptiveMeta?: AdaptiveMeta;
 }
 
 export interface QuizPack {
@@ -54,6 +66,9 @@ export interface QuizRoundState {
   isAutoAdvancePaused?: boolean;
   autoAdvanceRemaining?: number;
   isQuizFinished?: boolean;
+  isAdaptiveCampaign?: boolean;
+  adaptiveProgress?: { current: number; total: number };
+  isAIGeneratingNext?: boolean;
 }
 
 // --- Live Poll Types ---

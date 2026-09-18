@@ -4,8 +4,10 @@ import type {
   QuizQuestion,
   QuizRoundState,
   LeaderboardEntry,
+  DifficultyTier,
 } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
+import { generateAdaptiveFollowUpQuestion } from '../lib/meshApi';
 
 import {
   dbFetchLeaderboard,
@@ -15,6 +17,44 @@ import {
   dbUpdateQuizRoundReveal,
   dbIncrementQuizVote,
 } from '../lib/supabase';
+
+export const DIFFICULTY_TIERS: DifficultyTier[] = ['Junior', 'Mid', 'Senior', 'Principal'];
+
+export interface AdaptiveCampaignState {
+  isActive: boolean;
+  topic: string;
+  totalQuestions: number;
+  currentQuestionIndex: number;
+  currentDifficulty: DifficultyTier;
+  nextPreparedQuestion?: QuizQuestion | null;
+  isGeneratingNext?: boolean;
+}
+
+export function calculateNextDifficulty(
+  current: DifficultyTier,
+  accuracyPct: number
+): { targetTier: DifficultyTier; adaptationType: 'level_up' | 'stepped_down' | 'maintained' } {
+  const currentIdx = Math.max(0, DIFFICULTY_TIERS.indexOf(current));
+
+  if (accuracyPct >= 75) {
+    const nextIdx = Math.min(DIFFICULTY_TIERS.length - 1, currentIdx + 1);
+    return {
+      targetTier: DIFFICULTY_TIERS[nextIdx],
+      adaptationType: 'level_up',
+    };
+  } else if (accuracyPct <= 40) {
+    const nextIdx = Math.max(0, currentIdx - 1);
+    return {
+      targetTier: DIFFICULTY_TIERS[nextIdx],
+      adaptationType: 'stepped_down',
+    };
+  } else {
+    return {
+      targetTier: current,
+      adaptationType: 'maintained',
+    };
+  }
+}
 
 export function useQuizEngine({
   channelManager,
@@ -104,6 +144,22 @@ export function useQuizEngine({
   const autoAdvanceTimerRef = useRef<number | null>(null);
   const hasAutoAdvancedRef = useRef<boolean>(false);
 
+  const adaptiveCampaignStorageKey = `sketchcast_adaptive_campaign_${currentRoomKey}`;
+  const [adaptiveCampaign, setAdaptiveCampaign] = useState<AdaptiveCampaignState | null>(() => {
+    try {
+      const stored = localStorage.getItem(adaptiveCampaignStorageKey);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const adaptiveCampaignRef = useRef<AdaptiveCampaignState | null>(adaptiveCampaign);
+  useEffect(() => {
+    adaptiveCampaignRef.current = adaptiveCampaign;
+  }, [adaptiveCampaign]);
+
+  const pendingAdvanceRef = useRef<boolean>(false);
+
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
 
   const timerRef = useRef<number | null>(null);
@@ -187,6 +243,14 @@ export function useQuizEngine({
       });
     }
     setLeaderboard([]);
+    try {
+      localStorage.removeItem(adaptiveCampaignStorageKey);
+    } catch {
+      // ignore
+    }
+    setAdaptiveCampaign(null);
+    adaptiveCampaignRef.current = null;
+    pendingAdvanceRef.current = false;
   }
 
   useEffect(() => {
@@ -303,7 +367,179 @@ export function useQuizEngine({
     };
   }, [channelManager, currentRoomKey, quizStorageKey]);
 
+  const startQuizRound = useCallback(
+    (question: QuizQuestion) => {
+      const duration = question.timeLimitSeconds || 25;
+      const endTime = Date.now() + duration * 1000;
+
+      votedUsersRef.current.clear();
+      hasAutoAdvancedRef.current = false;
+      pendingAdvanceRef.current = false;
+      setAutoAdvanceCountdown(5);
+
+      const campaign = adaptiveCampaignRef.current;
+      const isAdaptive = Boolean(question.adaptiveMeta || (campaign && campaign.isActive));
+      const currentIdx = question.adaptiveMeta?.questionNumber || campaign?.currentQuestionIndex || 1;
+      const totalCount = question.adaptiveMeta?.totalQuestions || campaign?.totalQuestions || 1;
+
+      // If this was a regular non-adaptive question launched manually, clear the adaptive campaign
+      if (!question.adaptiveMeta && !campaign?.isActive) {
+        setAdaptiveCampaign(null);
+        adaptiveCampaignRef.current = null;
+        try {
+          localStorage.removeItem(adaptiveCampaignStorageKey);
+        } catch {
+          // ignore
+        }
+      }
+
+      const nextState: QuizRoundState = {
+        isActive: true,
+        question,
+        endTime,
+        totalSeconds: duration,
+        isRevealed: false,
+        userSelectedOption: null,
+        isCorrect: null,
+        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        autoAdvanceAt: null,
+        isAutoAdvancePaused: false,
+        autoAdvanceRemaining: 5,
+        isQuizFinished: false,
+        isAdaptiveCampaign: isAdaptive,
+        adaptiveProgress: isAdaptive ? { current: currentIdx, total: totalCount } : undefined,
+        isAIGeneratingNext: false,
+        updatedAt: Date.now(),
+      };
+
+      setQuizState(nextState);
+      setTimeRemaining(duration);
+
+      try {
+        localStorage.setItem(quizStorageKey, JSON.stringify(nextState));
+      } catch {
+        // ignore
+      }
+
+      // Persist to Supabase Postgres with current room key
+      dbSaveActiveQuizRound(nextState, currentRoomKey);
+
+      // Broadcast over Supabase Realtime & Local BroadcastChannel
+      if (channelManager) {
+        channelManager.broadcast('quiz_round_state', nextState);
+      }
+    },
+    [channelManager, currentRoomKey, quizStorageKey, adaptiveCampaignStorageKey]
+  );
+
+  const launchNextAdaptiveQuestion = useCallback(
+    (nextQ: QuizQuestion) => {
+      const camp = adaptiveCampaignRef.current;
+      if (camp && camp.isActive) {
+        const nextCamp: AdaptiveCampaignState = {
+          ...camp,
+          currentQuestionIndex: camp.currentQuestionIndex + 1,
+          currentDifficulty: nextQ.difficultyTier || camp.currentDifficulty,
+          nextPreparedQuestion: null,
+          isGeneratingNext: false,
+        };
+        setAdaptiveCampaign(nextCamp);
+        adaptiveCampaignRef.current = nextCamp;
+        try {
+          localStorage.setItem(adaptiveCampaignStorageKey, JSON.stringify(nextCamp));
+        } catch {
+          // ignore
+        }
+      }
+      startQuizRound(nextQ);
+    },
+    [adaptiveCampaignStorageKey, startQuizRound]
+  );
+
+  const startAdaptiveCampaign = useCallback(
+    async (
+      topic: string,
+      count: number,
+      startDifficulty: DifficultyTier,
+      initialQuestion?: QuizQuestion
+    ) => {
+      let q1 = initialQuestion;
+      if (!q1) {
+        q1 = await generateAdaptiveFollowUpQuestion({
+          topic,
+          currentDifficulty: startDifficulty,
+          targetDifficulty: startDifficulty,
+          accuracyPct: 50,
+          questionNumber: 1,
+          totalQuestions: count,
+          adaptationType: 'maintained',
+        });
+      }
+
+      q1 = {
+        ...q1,
+        difficultyTier: startDifficulty,
+        adaptiveMeta: {
+          questionNumber: 1,
+          totalQuestions: count,
+          adaptationType: 'maintained',
+          previousDifficulty: startDifficulty,
+        },
+      };
+
+      const newCampaign: AdaptiveCampaignState = {
+        isActive: true,
+        topic,
+        totalQuestions: count,
+        currentQuestionIndex: 1,
+        currentDifficulty: startDifficulty,
+        nextPreparedQuestion: null,
+        isGeneratingNext: false,
+      };
+
+      setAdaptiveCampaign(newCampaign);
+      adaptiveCampaignRef.current = newCampaign;
+      try {
+        localStorage.setItem(adaptiveCampaignStorageKey, JSON.stringify(newCampaign));
+      } catch {
+        // ignore
+      }
+
+      startQuizRound(q1);
+    },
+    [adaptiveCampaignStorageKey, startQuizRound]
+  );
+
+  const advanceAdaptiveQuestionNow = useCallback(() => {
+    if (userRole !== 'host') return;
+    const camp = adaptiveCampaignRef.current;
+    if (!camp || !camp.isActive) return;
+
+    if (camp.currentQuestionIndex >= camp.totalQuestions) {
+      setAdaptiveCampaign(null);
+      adaptiveCampaignRef.current = null;
+      try {
+        localStorage.removeItem(adaptiveCampaignStorageKey);
+      } catch {
+        // ignore
+      }
+      if (onAutoAdvanceRef.current) {
+        onAutoAdvanceRef.current();
+      }
+      return;
+    }
+
+    if (camp.nextPreparedQuestion) {
+      launchNextAdaptiveQuestion(camp.nextPreparedQuestion);
+    } else {
+      pendingAdvanceRef.current = true;
+    }
+  }, [userRole, adaptiveCampaignStorageKey, launchNextAdaptiveQuestion]);
+
   const revealAnswer = useCallback(() => {
+    const campaign = adaptiveCampaignRef.current;
+    const hasFollowUp = campaign && campaign.isActive && campaign.currentQuestionIndex < campaign.totalQuestions;
+
     setQuizState((prev) => {
       const autoAdvanceAt = isAutoAdvanceEnabled ? Date.now() + 5000 : null;
       const updated: QuizRoundState = {
@@ -312,6 +548,7 @@ export function useQuizEngine({
         autoAdvanceAt,
         isAutoAdvancePaused: false,
         autoAdvanceRemaining: 5,
+        isAIGeneratingNext: hasFollowUp && userRole === 'host' ? true : false,
         updatedAt: Date.now(),
       };
       try {
@@ -329,7 +566,99 @@ export function useQuizEngine({
       }
       return updated;
     });
-  }, [channelManager, quizStorageKey, isAutoAdvanceEnabled]);
+
+    // If in adaptive campaign, host immediately kicks off background generation of next question
+    if (userRole === 'host' && hasFollowUp && campaign && quizState.question) {
+      const prevQ = quizState.question;
+      const votes = quizState.votesDistribution || { A: 0, B: 0, C: 0, D: 0 };
+      const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+      const correctOpt = prevQ.correctOptionId;
+      const correctVotes = correctOpt ? votes[correctOpt] || 0 : 0;
+      const accuracyPct = totalVotes > 0 ? (correctVotes / totalVotes) * 100 : 50;
+
+      const { targetTier, adaptationType } = calculateNextDifficulty(campaign.currentDifficulty, accuracyPct);
+      const nextQNum = campaign.currentQuestionIndex + 1;
+
+      generateAdaptiveFollowUpQuestion({
+        topic: campaign.topic,
+        currentDifficulty: campaign.currentDifficulty,
+        targetDifficulty: targetTier,
+        previousQuestion: prevQ.question,
+        previousCorrectAnswer: prevQ.options.find((o) => o.id === correctOpt)?.text,
+        accuracyPct,
+        questionNumber: nextQNum,
+        totalQuestions: campaign.totalQuestions,
+        adaptationType,
+      })
+        .then((nextQ) => {
+          const curCamp = adaptiveCampaignRef.current;
+          if (curCamp && curCamp.isActive) {
+            const nextCamp: AdaptiveCampaignState = {
+              ...curCamp,
+              nextPreparedQuestion: nextQ,
+              isGeneratingNext: false,
+            };
+            setAdaptiveCampaign(nextCamp);
+            adaptiveCampaignRef.current = nextCamp;
+            try {
+              localStorage.setItem(adaptiveCampaignStorageKey, JSON.stringify(nextCamp));
+            } catch {
+              // ignore
+            }
+          }
+
+          setQuizState((curr) => {
+            const sUpdated: QuizRoundState = {
+              ...curr,
+              isAIGeneratingNext: false,
+              updatedAt: Date.now(),
+            };
+            try {
+              localStorage.setItem(quizStorageKey, JSON.stringify(sUpdated));
+            } catch {
+              // ignore
+            }
+            if (channelManager) {
+              channelManager.broadcast('quiz_round_state', sUpdated);
+            }
+            return sUpdated;
+          });
+
+          if (pendingAdvanceRef.current) {
+            pendingAdvanceRef.current = false;
+            launchNextAdaptiveQuestion(nextQ);
+          }
+        })
+        .catch((err) => {
+          console.error('[AdaptiveQuiz] Failed to synthesize next question in background:', err);
+          setQuizState((curr) => {
+            const sUpdated: QuizRoundState = {
+              ...curr,
+              isAIGeneratingNext: false,
+              updatedAt: Date.now(),
+            };
+            try {
+              localStorage.setItem(quizStorageKey, JSON.stringify(sUpdated));
+            } catch {
+              // ignore
+            }
+            if (channelManager) {
+              channelManager.broadcast('quiz_round_state', sUpdated);
+            }
+            return sUpdated;
+          });
+        });
+    }
+  }, [
+    channelManager,
+    quizStorageKey,
+    isAutoAdvanceEnabled,
+    userRole,
+    quizState.question,
+    quizState.votesDistribution,
+    adaptiveCampaignStorageKey,
+    launchNextAdaptiveQuestion,
+  ]);
 
   const toggleAutoAdvance = useCallback(
     (forced?: boolean) => {
@@ -459,9 +788,32 @@ export function useQuizEngine({
           if (remaining === 0) {
             if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
             if (userRole === 'host' && !hasAutoAdvancedRef.current) {
-              hasAutoAdvancedRef.current = true;
-              if (onAutoAdvanceRef.current) {
-                onAutoAdvanceRef.current();
+              const camp = adaptiveCampaignRef.current;
+              if (camp && camp.isActive) {
+                if (camp.currentQuestionIndex >= camp.totalQuestions) {
+                  hasAutoAdvancedRef.current = true;
+                  setAdaptiveCampaign(null);
+                  adaptiveCampaignRef.current = null;
+                  try {
+                    localStorage.removeItem(adaptiveCampaignStorageKey);
+                  } catch {
+                    // ignore
+                  }
+                  if (onAutoAdvanceRef.current) {
+                    onAutoAdvanceRef.current();
+                  }
+                } else if (camp.nextPreparedQuestion) {
+                  hasAutoAdvancedRef.current = true;
+                  launchNextAdaptiveQuestion(camp.nextPreparedQuestion);
+                } else {
+                  // Still generating in background!
+                  pendingAdvanceRef.current = true;
+                }
+              } else {
+                hasAutoAdvancedRef.current = true;
+                if (onAutoAdvanceRef.current) {
+                  onAutoAdvanceRef.current();
+                }
               }
             }
           }
@@ -487,52 +839,9 @@ export function useQuizEngine({
     quizState.isAutoAdvancePaused,
     quizState.autoAdvanceRemaining,
     userRole,
+    adaptiveCampaignStorageKey,
+    launchNextAdaptiveQuestion,
   ]);
-
-  const startQuizRound = useCallback(
-    (question: QuizQuestion) => {
-      const duration = question.timeLimitSeconds || 25;
-      const endTime = Date.now() + duration * 1000;
-
-      votedUsersRef.current.clear();
-      hasAutoAdvancedRef.current = false;
-      setAutoAdvanceCountdown(5);
-
-      const nextState: QuizRoundState = {
-        isActive: true,
-        question,
-        endTime,
-        totalSeconds: duration,
-        isRevealed: false,
-        userSelectedOption: null,
-        isCorrect: null,
-        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
-        autoAdvanceAt: null,
-        isAutoAdvancePaused: false,
-        autoAdvanceRemaining: 5,
-        isQuizFinished: false,
-        updatedAt: Date.now(),
-      };
-
-      setQuizState(nextState);
-      setTimeRemaining(duration);
-
-      try {
-        localStorage.setItem(quizStorageKey, JSON.stringify(nextState));
-      } catch {
-        // ignore
-      }
-
-      // Persist to Supabase Postgres with current room key
-      dbSaveActiveQuizRound(nextState, currentRoomKey);
-
-      // Broadcast over Supabase Realtime & Local BroadcastChannel
-      if (channelManager) {
-        channelManager.broadcast('quiz_round_state', nextState);
-      }
-    },
-    [channelManager, currentRoomKey, quizStorageKey]
-  );
 
   const selectOption = useCallback(
     (optionId: string) => {
@@ -692,5 +1001,8 @@ export function useQuizEngine({
     toggleAutoAdvance,
     pauseAutoAdvance,
     resumeAutoAdvance,
+    adaptiveCampaign,
+    startAdaptiveCampaign,
+    advanceAdaptiveQuestionNow,
   };
 }

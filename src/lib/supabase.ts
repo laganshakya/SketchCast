@@ -450,8 +450,11 @@ export async function dbFetchActiveQuizRound(roomId: string): Promise<QuizRoundS
       isRevealed: round.is_revealed,
       userSelectedOption: null,
       isCorrect: null,
-
       votesDistribution: round.votes_distribution || { A: 0, B: 0, C: 0, D: 0 },
+      autoAdvanceAt: round.auto_advance_at ? Number(round.auto_advance_at) : null,
+      isAutoAdvancePaused: Boolean(round.is_auto_advance_paused),
+      isAdaptiveCampaign: round.quiz_type === 'adaptive',
+      adaptiveProgress: round.adaptive_meta?.progress || undefined,
     };
   } catch {
     return null;
@@ -471,6 +474,10 @@ export async function dbSaveActiveQuizRound(state: QuizRoundState, roomId: strin
       is_revealed: state.isRevealed,
       end_time: state.endTime,
       votes_distribution: state.votesDistribution,
+      auto_advance_at: state.autoAdvanceAt ?? null,
+      is_auto_advance_paused: state.isAutoAdvancePaused ?? false,
+      quiz_type: state.isAdaptiveCampaign ? 'adaptive' : 'standard',
+      adaptive_meta: state.adaptiveProgress ? { progress: state.adaptiveProgress } : {},
       created_at: new Date().toISOString(),
     });
   } catch {
@@ -478,12 +485,16 @@ export async function dbSaveActiveQuizRound(state: QuizRoundState, roomId: strin
   }
 }
 
-export async function dbUpdateQuizRoundReveal(roundId: string) {
+export async function dbUpdateQuizRoundReveal(roundId: string, autoAdvanceAt?: number | null) {
   if (!supabase) return;
   try {
+    const updatePayload: Record<string, any> = { is_revealed: true };
+    if (typeof autoAdvanceAt !== 'undefined') {
+      updatePayload.auto_advance_at = autoAdvanceAt;
+    }
     await supabase
       .from('quiz_rounds')
-      .update({ is_revealed: true })
+      .update(updatePayload)
       .eq('id', roundId);
   } catch {
     // fallback

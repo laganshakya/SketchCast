@@ -30,6 +30,7 @@ import {
   generateAIQuizFromUrl,
   generateAIQuizFromGitHub,
   generateAIQuizFromHNTrends,
+  generateAdaptiveFollowUpQuestion,
   distributeQuestionOptions,
   fetchTrendingTechNews,
   formatCodeSnippet,
@@ -42,6 +43,12 @@ import { QuizImportExportModal } from './QuizImportExportModal';
 
 interface QuizHostPanelProps {
   onStartQuiz: (question: QuizQuestion) => void;
+  onStartAdaptiveCampaign?: (
+    topic: string,
+    count: number,
+    startDifficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal',
+    initialQuestion?: QuizQuestion
+  ) => Promise<void> | void;
   activeQuestionId?: string;
   isRevealed?: boolean;
   roomCode?: string;
@@ -76,6 +83,7 @@ const createBlankDraftQuestion = (index: number): DraftQuestion => ({
 
 export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   onStartQuiz,
+  onStartAdaptiveCampaign,
   activeQuestionId,
   isRevealed = false,
   roomCode = 'SKT-789',
@@ -115,6 +123,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const [aiTopic, setAiTopic] = useState('');
   const [aiCount, setAiCount] = useState<number>(3);
   const [aiDifficulty, setAiDifficulty] = useState<'Junior' | 'Mid' | 'Senior' | 'Principal'>('Senior');
+  const [isAdaptiveLiveMode, setIsAdaptiveLiveMode] = useState<boolean>(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
   const [aiSuccessNote, setAiSuccessNote] = useState<string | null>(null);
   const [aiToolStatus, setAiToolStatus] = useState<string | null>(null);
@@ -242,6 +251,40 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     setGroundingSources([]);
 
     try {
+      if (isAdaptiveLiveMode) {
+        let targetTopic = aiTopic.trim();
+        if (aiToolMode === 'url_scraper') {
+          targetTopic = aiUrlInput.trim();
+        } else if (aiToolMode === 'hackernews') {
+          targetTopic = selectedHnStory?.title || 'Tech Trends';
+        }
+        if (!targetTopic) {
+          throw new Error('Please specify a topic, URL, or select a news story for the adaptive challenge.');
+        }
+
+        setAiToolStatus(`✨ Synthesizing Adaptive Challenge 1 of ${aiCount} (${aiDifficulty} tier)...`);
+
+        const q1 = await generateAdaptiveFollowUpQuestion({
+          topic: targetTopic,
+          currentDifficulty: aiDifficulty,
+          targetDifficulty: aiDifficulty,
+          accuracyPct: 50,
+          questionNumber: 1,
+          totalQuestions: aiCount,
+          adaptationType: 'maintained',
+        });
+
+        playPopSound();
+        if (onStartAdaptiveCampaign) {
+          await onStartAdaptiveCampaign(targetTopic, aiCount, aiDifficulty, q1);
+        } else {
+          onStartQuiz(q1);
+        }
+
+        setShowCustomModal(false);
+        return;
+      }
+
       let generated: any[] = [];
       let successMsg = '';
       let defaultCategory = aiTopic.trim() || 'System Design';
@@ -906,9 +949,64 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   </div>
                 </div>
 
+                {/* Adaptive Live Mode Toggle */}
+                <div className="pt-2 border-t border-white/[0.08]">
+                  <div
+                    onClick={() => {
+                      playClickSound();
+                      setIsAdaptiveLiveMode((prev) => !prev);
+                    }}
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                      isAdaptiveLiveMode
+                        ? 'bg-purple-950/20 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.12)]'
+                        : 'bg-[#16161D] border-white/[0.08] hover:border-white/[0.15]'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2.5">
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+                          isAdaptiveLiveMode
+                            ? 'bg-purple-500/20 border-purple-500/40 text-purple-400'
+                            : 'bg-white/[0.04] border-white/[0.08] text-zinc-400'
+                        }`}
+                      >
+                        <Flame className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                          <span>Adaptive Live Mode</span>
+                          <span
+                            className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${
+                              isAdaptiveLiveMode
+                                ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
+                                : 'bg-white/[0.06] text-zinc-400'
+                            }`}
+                          >
+                            DYNAMIC
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-zinc-400 leading-tight">
+                          Generates 1 question at a time. Difficulty auto-balances by audience accuracy.
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${
+                        isAdaptiveLiveMode ? 'bg-purple-600' : 'bg-[#26262F]'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                          isAdaptiveLiveMode ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Status Indicator */}
                 {isGeneratingAI && aiToolStatus && (
-                  <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-xs font-medium text-blue-400 flex items-center gap-2 animate-pulse">
+                  <div className="p-2.5 bg-purple-500/10 border border-purple-500/30 rounded-xl text-xs font-medium text-purple-400 flex items-center gap-2 animate-pulse">
                     <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
                     <span>{aiToolStatus}</span>
                   </div>
@@ -918,12 +1016,24 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <button
                   type="submit"
                   disabled={isGeneratingAI}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm"
+                  className={`w-full py-2.5 text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm ${
+                    isAdaptiveLiveMode
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 border border-purple-500/40 shadow-[0_0_16px_rgba(168,85,247,0.2)]'
+                      : 'bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 border border-blue-500/40'
+                  }`}
                 >
-                  <Zap className="w-3.5 h-3.5" />
+                  {isAdaptiveLiveMode ? (
+                    <Flame className="w-3.5 h-3.5 text-purple-200" />
+                  ) : (
+                    <Zap className="w-3.5 h-3.5" />
+                  )}
                   <span>
                     {isGeneratingAI
-                      ? 'Generating Questions with AI...'
+                      ? isAdaptiveLiveMode
+                        ? `Synthesizing Challenge 1 of ${aiCount}...`
+                        : 'Generating Questions with AI...'
+                      : isAdaptiveLiveMode
+                      ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
                       : aiToolMode === 'topic'
                       ? aiAutoWebSearch
                         ? `Search & Generate ${aiCount} Questions`
