@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
@@ -30,7 +31,7 @@ const ChampionSocialCardModal = lazy(() => import('./components/quiz/ChampionSoc
 const MasterclassCertificateModal = lazy(() => import('./components/certificate/MasterclassCertificateModal').then((m) => ({ default: m.MasterclassCertificateModal })));
 const CertificateVerificationModal = lazy(() => import('./components/certificate/CertificateVerificationModal').then((m) => ({ default: m.CertificateVerificationModal })));
 import { useSurveys } from './hooks/useSurveys';
-import { playWhoosh, playClickSound, playPopSound, setAudioPack } from './lib/soundFx';
+import { playWhoosh, playClickSound, playPopSound, playSuccessFanfare, setAudioPack } from './lib/soundFx';
 
 import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
 import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
@@ -127,6 +128,8 @@ export function App() {
     resetAttendeeStrikes,
   } = useRoomSession('SKT-789');
 
+  const autoAdvanceCallbackRef = useRef<() => void>(() => {});
+
   // 2. Live Quiz Engine (Isolated to room.code)
   const {
     quizState,
@@ -136,6 +139,12 @@ export function App() {
     startQuizRound,
     revealAnswer,
     selectOption,
+    autoAdvanceCountdown,
+    isAutoAdvanceEnabled,
+    isAutoAdvancePaused,
+    toggleAutoAdvance,
+    pauseAutoAdvance,
+    resumeAutoAdvance,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -143,6 +152,7 @@ export function App() {
     userRole,
     roomCode: room.code,
     appActiveTab: activeTab,
+    onAutoAdvance: () => autoAdvanceCallbackRef.current(),
   });
 
   // 3. Live Polls Engine (Isolated to room.code)
@@ -459,30 +469,6 @@ export function App() {
     setIsQRModalOpen(true);
   };
 
-  // Host action: Launch next queued question in sequence
-  const handleNextQuestion = () => {
-    try {
-      const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
-      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
-      if (stored) {
-        const queue = JSON.parse(stored);
-        if (queue && Array.isArray(queue) && queue.length > 0) {
-          const currentId = quizState.question?.id;
-          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
-          if (currentIndex >= 0 && currentIndex + 1 < queue.length) {
-            startQuizRound(queue[currentIndex + 1]);
-            return;
-          }
-          if (currentIndex === -1) {
-            startQuizRound(queue[0]);
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  };
-
   // Check if there is a subsequent queued question
   const hasNextQuestion = useMemo(() => {
     try {
@@ -501,6 +487,91 @@ export function App() {
     }
     return false;
   }, [room.code, quizState.question]);
+
+  // Host action: Quiz completion handler (transitions to Leaderboard with fanfare & confetti)
+  const handleQuizComplete = useCallback(() => {
+    setActiveTab('leaderboard');
+    playSuccessFanfare();
+    try {
+      confetti({
+        particleCount: 90,
+        spread: 80,
+        origin: { y: 0.5 },
+        colors: ['#3B82F6', '#FAFAFA', '#10B981', '#F59E0B'],
+      });
+    } catch {
+      // ignore
+    }
+
+    if (channelManager) {
+      channelManager.broadcast('quiz_completed', {
+        roomId: room.code,
+        completedAt: Date.now(),
+      });
+    }
+  }, [channelManager, room.code, setActiveTab]);
+
+  // Host action: Launch next queued question in sequence
+  const handleNextQuestion = useCallback(() => {
+    try {
+      const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
+      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      if (stored) {
+        const queue = JSON.parse(stored);
+        if (queue && Array.isArray(queue) && queue.length > 0) {
+          const currentId = quizState.question?.id;
+          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
+          if (currentIndex >= 0 && currentIndex + 1 < queue.length) {
+            startQuizRound(queue[currentIndex + 1]);
+            return;
+          }
+          if (currentIndex === -1) {
+            startQuizRound(queue[0]);
+            return;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    handleQuizComplete();
+  }, [room.code, quizState.question, startQuizRound, handleQuizComplete]);
+
+  // Sync auto-advance callback ref for useQuizEngine
+  useEffect(() => {
+    autoAdvanceCallbackRef.current = () => {
+      if (hasNextQuestion) {
+        handleNextQuestion();
+      } else {
+        handleQuizComplete();
+      }
+    };
+  }, [hasNextQuestion, handleNextQuestion, handleQuizComplete]);
+
+  // Attendee realtime listener for quiz completion
+  useEffect(() => {
+    if (!channelManager) return;
+    const unQuizCompleted = channelManager.on('quiz_completed', (payload) => {
+      if (payload.roomId.toUpperCase().trim() === room.code.toUpperCase().trim()) {
+        setActiveTab('leaderboard');
+        playSuccessFanfare();
+        try {
+          confetti({
+            particleCount: 90,
+            spread: 80,
+            origin: { y: 0.5 },
+            colors: ['#3B82F6', '#FAFAFA', '#10B981', '#F59E0B'],
+          });
+        } catch {
+          // ignore
+        }
+      }
+    });
+    return () => {
+      unQuizCompleted();
+    };
+  }, [channelManager, room.code, setActiveTab]);
 
   const handleOpenSocialCard = (entry: LeaderboardEntry, rank: number) => {
     const isMe =
@@ -831,6 +902,12 @@ export function App() {
                   hasNextQuestion={hasNextQuestion}
                   onViewScores={() => setActiveTab('leaderboard')}
                   isHost={userRole === 'host'}
+                  autoAdvanceCountdown={autoAdvanceCountdown}
+                  isAutoAdvanceEnabled={isAutoAdvanceEnabled}
+                  isAutoAdvancePaused={isAutoAdvancePaused}
+                  onToggleAutoAdvance={toggleAutoAdvance}
+                  onPauseAutoAdvance={pauseAutoAdvance}
+                  onResumeAutoAdvance={resumeAutoAdvance}
                 />
               </div>
 

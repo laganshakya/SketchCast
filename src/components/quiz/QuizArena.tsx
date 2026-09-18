@@ -7,6 +7,9 @@ import {
   ArrowRight,
   Eye,
   Trophy,
+  Play,
+  Pause,
+  Zap,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -29,6 +32,12 @@ interface QuizArenaProps {
   hasNextQuestion?: boolean;
   onViewScores?: () => void;
   isHost: boolean;
+  autoAdvanceCountdown?: number;
+  isAutoAdvanceEnabled?: boolean;
+  isAutoAdvancePaused?: boolean;
+  onToggleAutoAdvance?: () => void;
+  onPauseAutoAdvance?: () => void;
+  onResumeAutoAdvance?: () => void;
 }
 
 export const QuizArena: React.FC<QuizArenaProps> = ({
@@ -40,6 +49,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   hasNextQuestion = false,
   onViewScores,
   isHost,
+  autoAdvanceCountdown = 5,
+  isAutoAdvanceEnabled = true,
+  isAutoAdvancePaused = false,
+  onToggleAutoAdvance,
+  onPauseAutoAdvance,
+  onResumeAutoAdvance,
 }) => {
   const {
     question,
@@ -48,6 +63,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     isCorrect,
     votesDistribution,
   } = quizState;
+
+  const isPaused = Boolean(isAutoAdvancePaused || quizState.isAutoAdvancePaused);
 
   const totalVotes = Object.values(votesDistribution || {}).reduce((a, b) => a + b, 0);
   const lastRemainingRef = useRef<number>(timeRemaining);
@@ -180,44 +197,83 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold">
-            ROUND TIMER
+            {isRevealed ? (quizState.autoAdvanceAt ? 'AUTO-ADVANCE' : 'ROUND STATUS') : 'ROUND TIMER'}
           </div>
           <div className="flex items-baseline space-x-3">
             <div className="font-timer text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-white">
-              {isRevealed ? (
+              {!isRevealed ? (
+                <RollingCounter value={timeRemaining} padZero={true} />
+              ) : quizState.autoAdvanceAt ? (
+                isPaused ? (
+                  <span className="text-amber-400 text-3xl sm:text-4xl md:text-5xl font-mono tracking-tight flex items-center gap-2">
+                    <Pause className="w-7 h-7 sm:w-8 sm:h-8 inline-block animate-pulse text-amber-400" />
+                    PAUSED
+                  </span>
+                ) : (
+                  <span className="text-blue-400">
+                    <RollingCounter value={autoAdvanceCountdown} padZero={true} />
+                  </span>
+                )
+              ) : (
                 <span className="text-blue-400 text-3xl sm:text-4xl md:text-5xl font-mono tracking-tight">
                   REVEALED
                 </span>
-              ) : (
-                <RollingCounter value={timeRemaining} padZero={true} />
               )}
             </div>
-            {!isRevealed && (
+            {!isRevealed ? (
               <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-500 uppercase tracking-wider">
                 SECONDS REMAINING
               </span>
-            )}
+            ) : quizState.autoAdvanceAt ? (
+              <span className="font-mono text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                {isPaused
+                  ? `HOLDING AT ${autoAdvanceCountdown}S`
+                  : hasNextQuestion
+                  ? 'SECONDS TO NEXT QUESTION'
+                  : 'SECONDS TO LEADERBOARD'}
+              </span>
+            ) : null}
           </div>
         </div>
 
         {/* Minimal Progress Track */}
-        {!isRevealed && (
-          <div className="sm:w-64 w-full space-y-2 self-end sm:self-center">
-            <div className="flex justify-between text-[11px] font-mono text-zinc-500">
-              <span>TIME REMAINING</span>
-              <span className={timeRemaining <= 5 ? 'text-red-400 font-bold' : 'text-blue-400'}>
-                {Math.round(timerPercentage)}%
-              </span>
-            </div>
-            <div className="w-full h-2 bg-[#18181D] rounded-full border border-white/[0.06] overflow-hidden">
-              <motion.div
-                className={`h-full rounded-full ${timeRemaining <= 5 ? 'bg-red-500' : 'bg-blue-500'}`}
-                style={{ width: `${timerPercentage}%` }}
-                transition={{ duration: 0.2 }}
-              />
-            </div>
-          </div>
-        )}
+        <div className="sm:w-64 w-full space-y-2 self-end sm:self-center">
+          {!isRevealed ? (
+            <>
+              <div className="flex justify-between text-[11px] font-mono text-zinc-500">
+                <span>TIME REMAINING</span>
+                <span className={timeRemaining <= 5 ? 'text-red-400 font-bold' : 'text-blue-400'}>
+                  {Math.round(timerPercentage)}%
+                </span>
+              </div>
+              <div className="w-full h-2 bg-[#18181D] rounded-full border border-white/[0.06] overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full ${timeRemaining <= 5 ? 'bg-red-500' : 'bg-blue-500'}`}
+                  style={{ width: `${timerPercentage}%` }}
+                  transition={{ duration: 0.2 }}
+                />
+              </div>
+            </>
+          ) : quizState.autoAdvanceAt ? (
+            <>
+              <div className="flex justify-between text-[11px] font-mono text-zinc-500">
+                <span>TRANSITION</span>
+                <span className={isPaused ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'}>
+                  {isPaused ? 'PAUSED' : `${autoAdvanceCountdown}S`}
+                </span>
+              </div>
+              <div className="w-full h-2 bg-[#18181D] rounded-full border border-white/[0.06] overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full ${
+                    isPaused ? 'bg-amber-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                  }`}
+                  style={{ width: `${Math.max(0, Math.min(100, (autoAdvanceCountdown / 5) * 100))}%` }}
+                  transition={{ duration: 0.2 }}
+                />
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {/* Question Prompt Card with Clean Typographic Hierarchy */}
@@ -346,57 +402,145 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
             <p className="font-normal text-zinc-300">{question.explanation}</p>
           </div>
+
+          {/* Auto-Advance Synchronized Ribbon (shown to both host and attendees) */}
+          {quizState.autoAdvanceAt && (
+            <div
+              className={`px-4 py-2.5 rounded-xl border flex items-center justify-between font-mono text-xs transition-colors ${
+                isPaused
+                  ? 'bg-amber-950/20 border-amber-500/30 text-amber-300'
+                  : 'bg-blue-950/20 border-blue-500/30 text-blue-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2.5">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isPaused ? 'bg-amber-400' : 'bg-blue-400 animate-ping'
+                  }`}
+                />
+                <span className="font-bold tracking-wider uppercase">
+                  {isPaused
+                    ? 'Host paused auto-advance countdown'
+                    : hasNextQuestion
+                    ? `Next challenge queuing automatically in ${autoAdvanceCountdown}s...`
+                    : `Final round resolved. Transitioning to Leaderboard in ${autoAdvanceCountdown}s...`}
+                </span>
+              </div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 shrink-0">
+                {isPaused ? 'ON HOLD' : 'SYNCED LIVE'}
+              </span>
+            </div>
+          )}
         </motion.div>
       )}
 
       {/* Host Control Actions */}
       {isHost && (
-        <div className="flex items-center justify-end flex-wrap gap-2 pt-2">
-          {!isRevealed ? (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
+          {/* Left: Auto-Advance Toggle Pill */}
+          <div className="flex items-center space-x-2">
+            <button
               onClick={() => {
                 playClickSound();
-                onRevealAnswer();
+                onToggleAutoAdvance?.();
               }}
-              className="w-full sm:w-auto px-5 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+              className={`px-3 py-2 rounded-xl border text-xs font-mono font-bold flex items-center space-x-2 cursor-pointer transition-all ${
+                isAutoAdvanceEnabled
+                  ? 'bg-blue-500/15 border-blue-500/40 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+                  : 'bg-[#18181D] border-white/[0.08] text-zinc-500 hover:text-zinc-300'
+              }`}
+              title="Toggle automatic progression to the next question"
             >
-              <Eye className="w-4 h-4" />
-              <span>REVEAL CORRECT ANSWER</span>
-            </motion.button>
-          ) : hasNextQuestion && onNextQuestion ? (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                playClickSound();
-                onNextQuestion();
-              }}
-              className="w-full sm:w-auto px-6 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <span>NEXT QUESTION</span>
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
-          ) : (
-            <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
-              <span className="px-3.5 py-2 rounded-xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold uppercase flex items-center space-x-1.5">
-                <CheckCircle className="w-4 h-4 text-emerald-400 stroke-[2]" />
-                <span>QUIZ COMPLETED</span>
-              </span>
-              {onViewScores && (
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    playClickSound();
-                    onViewScores();
-                  }}
-                  className="px-5 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] text-xs font-mono font-bold uppercase flex items-center space-x-1.5 cursor-pointer transition-colors"
-                >
-                  <Trophy className="w-4 h-4 text-blue-400" />
-                  <span>VIEW LEADERBOARD</span>
-                </motion.button>
-              )}
-            </div>
-          )}
+              <Zap className={`w-3.5 h-3.5 ${isAutoAdvanceEnabled ? 'text-blue-400' : 'text-zinc-500'}`} />
+              <span>AUTO-ADVANCE: {isAutoAdvanceEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+          </div>
+
+          {/* Right: Reveal / Pause / Resume / Next Question Now */}
+          <div className="flex items-center space-x-2 flex-wrap justify-end">
+            {!isRevealed ? (
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  playClickSound();
+                  onRevealAnswer();
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Eye className="w-4 h-4" />
+                <span>REVEAL CORRECT ANSWER</span>
+              </motion.button>
+            ) : (
+              <>
+                {/* Pause / Resume Button if Auto-Advance is scheduled */}
+                {quizState.autoAdvanceAt && (
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      playClickSound();
+                      if (isPaused) {
+                        onResumeAutoAdvance?.();
+                      } else {
+                        onPauseAutoAdvance?.();
+                      }
+                    }}
+                    className={`px-4 py-2.5 text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer border transition-colors ${
+                      isPaused
+                        ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50'
+                        : 'bg-amber-950/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/50'
+                    }`}
+                  >
+                    {isPaused ? (
+                      <>
+                        <Play className="w-3.5 h-3.5" />
+                        <span>RESUME COUNTDOWN</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-3.5 h-3.5" />
+                        <span>PAUSE COUNTDOWN</span>
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
+                {/* Next Question Now (Skip countdown early) */}
+                {hasNextQuestion && onNextQuestion ? (
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      playClickSound();
+                      onNextQuestion();
+                    }}
+                    className="w-full sm:w-auto px-6 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <span>NEXT QUESTION NOW</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                ) : (
+                  <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
+                    <span className="px-3.5 py-2 rounded-xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold uppercase flex items-center space-x-1.5">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 stroke-[2]" />
+                      <span>QUIZ COMPLETED</span>
+                    </span>
+                    {onViewScores && (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          playClickSound();
+                          onViewScores();
+                        }}
+                        className="px-5 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] text-xs font-mono font-bold uppercase flex items-center space-x-1.5 cursor-pointer transition-colors"
+                      >
+                        <Trophy className="w-4 h-4 text-blue-400" />
+                        <span>VIEW LEADERBOARD</span>
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </motion.div>

@@ -82,6 +82,7 @@ export type RealtimeEventMap = {
   session_report_published: { reportMarkdown: string; generatedAt: number; publishedBy: string };
   qa_cluster_update: QuestionCluster[];
   room_audio_pack_update: { pack: 'arcade' | 'hifi'; updatedBy: string };
+  quiz_completed: { roomId: string; completedAt: number };
 };
 
 export type EventKey = keyof RealtimeEventMap;

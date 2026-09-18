@@ -23,6 +23,7 @@ export function useQuizEngine({
   userRole,
   roomCode,
   appActiveTab,
+  onAutoAdvance,
 }: {
   channelManager: RealtimeChannelManager | null;
   sessionId: string;
@@ -30,6 +31,7 @@ export function useQuizEngine({
   userRole: 'host' | 'attendee';
   roomCode: string;
   appActiveTab?: string;
+  onAutoAdvance?: () => void;
 }) {
   const currentRoomKey = (roomCode || 'SKT-789').toUpperCase().trim();
   const quizStorageKey = `sketchcast_active_quiz_round_${currentRoomKey}`;
@@ -82,6 +84,25 @@ export function useQuizEngine({
   useEffect(() => {
     leaderboardRef.current = leaderboard;
   }, [leaderboard]);
+
+  const autoAdvanceStorageKey = `sketchcast_host_autoadvance_${currentRoomKey}`;
+  const [isAutoAdvanceEnabled, setIsAutoAdvanceEnabled] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(autoAdvanceStorageKey);
+      return stored !== null ? JSON.parse(stored) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const onAutoAdvanceRef = useRef(onAutoAdvance);
+  useEffect(() => {
+    onAutoAdvanceRef.current = onAutoAdvance;
+  }, [onAutoAdvance]);
+
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number>(5);
+  const autoAdvanceTimerRef = useRef<number | null>(null);
+  const hasAutoAdvancedRef = useRef<boolean>(false);
 
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
 
@@ -284,7 +305,15 @@ export function useQuizEngine({
 
   const revealAnswer = useCallback(() => {
     setQuizState((prev) => {
-      const updated = { ...prev, isRevealed: true, updatedAt: Date.now() };
+      const autoAdvanceAt = isAutoAdvanceEnabled ? Date.now() + 5000 : null;
+      const updated: QuizRoundState = {
+        ...prev,
+        isRevealed: true,
+        autoAdvanceAt,
+        isAutoAdvancePaused: false,
+        autoAdvanceRemaining: 5,
+        updatedAt: Date.now(),
+      };
       try {
         localStorage.setItem(quizStorageKey, JSON.stringify(updated));
       } catch {
@@ -300,7 +329,93 @@ export function useQuizEngine({
       }
       return updated;
     });
-  }, [channelManager, quizStorageKey]);
+  }, [channelManager, quizStorageKey, isAutoAdvanceEnabled]);
+
+  const toggleAutoAdvance = useCallback(
+    (forced?: boolean) => {
+      if (userRole !== 'host') return;
+      setIsAutoAdvanceEnabled((prev) => {
+        const next = typeof forced === 'boolean' ? forced : !prev;
+        try {
+          localStorage.setItem(autoAdvanceStorageKey, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+
+        // If toggling while a question is currently revealed:
+        setQuizState((currentState) => {
+          if (!currentState.isRevealed) return currentState;
+          const autoAdvanceAt = next ? Date.now() + 5000 : null;
+          const updated: QuizRoundState = {
+            ...currentState,
+            autoAdvanceAt,
+            isAutoAdvancePaused: false,
+            autoAdvanceRemaining: 5,
+            updatedAt: Date.now(),
+          };
+          try {
+            localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          if (channelManager) {
+            channelManager.broadcast('quiz_round_state', updated);
+          }
+          return updated;
+        });
+
+        return next;
+      });
+    },
+    [userRole, autoAdvanceStorageKey, quizStorageKey, channelManager]
+  );
+
+  const pauseAutoAdvance = useCallback(() => {
+    if (userRole !== 'host') return;
+    setQuizState((prev) => {
+      if (!prev.isRevealed || !prev.autoAdvanceAt) return prev;
+      const remaining = Math.max(0, Math.ceil((prev.autoAdvanceAt - Date.now()) / 1000));
+      const updated: QuizRoundState = {
+        ...prev,
+        isAutoAdvancePaused: true,
+        autoAdvanceRemaining: remaining,
+        updatedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      if (channelManager) {
+        channelManager.broadcast('quiz_round_state', updated);
+      }
+      return updated;
+    });
+  }, [userRole, quizStorageKey, channelManager]);
+
+  const resumeAutoAdvance = useCallback(() => {
+    if (userRole !== 'host') return;
+    setQuizState((prev) => {
+      if (!prev.isRevealed) return prev;
+      const remainingSec = prev.autoAdvanceRemaining && prev.autoAdvanceRemaining > 0 ? prev.autoAdvanceRemaining : 5;
+      const autoAdvanceAt = Date.now() + remainingSec * 1000;
+      const updated: QuizRoundState = {
+        ...prev,
+        isAutoAdvancePaused: false,
+        autoAdvanceAt,
+        updatedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      if (channelManager) {
+        channelManager.broadcast('quiz_round_state', updated);
+      }
+      return updated;
+    });
+  }, [userRole, quizStorageKey, channelManager]);
 
   // Round countdown timer loop - strictly attendee-local timing
   useEffect(() => {
@@ -327,12 +442,61 @@ export function useQuizEngine({
     }
   }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer, userRole]);
 
+  // Auto-advance review countdown effect (5 seconds after reveal)
+  useEffect(() => {
+    if (quizState.isActive && quizState.isRevealed) {
+      if (quizState.isAutoAdvancePaused) {
+        if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
+        setAutoAdvanceCountdown(quizState.autoAdvanceRemaining ?? 5);
+        return;
+      }
+
+      if (quizState.autoAdvanceAt) {
+        const updateAdvanceTimer = () => {
+          const remaining = Math.max(0, Math.ceil((quizState.autoAdvanceAt! - Date.now()) / 1000));
+          setAutoAdvanceCountdown(remaining);
+
+          if (remaining === 0) {
+            if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
+            if (userRole === 'host' && !hasAutoAdvancedRef.current) {
+              hasAutoAdvancedRef.current = true;
+              if (onAutoAdvanceRef.current) {
+                onAutoAdvanceRef.current();
+              }
+            }
+          }
+        };
+
+        updateAdvanceTimer();
+        autoAdvanceTimerRef.current = window.setInterval(updateAdvanceTimer, 250);
+
+        return () => {
+          if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
+        };
+      } else {
+        setAutoAdvanceCountdown(0);
+      }
+    } else {
+      hasAutoAdvancedRef.current = false;
+      setAutoAdvanceCountdown(5);
+    }
+  }, [
+    quizState.isActive,
+    quizState.isRevealed,
+    quizState.autoAdvanceAt,
+    quizState.isAutoAdvancePaused,
+    quizState.autoAdvanceRemaining,
+    userRole,
+  ]);
+
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
       const duration = question.timeLimitSeconds || 25;
       const endTime = Date.now() + duration * 1000;
 
       votedUsersRef.current.clear();
+      hasAutoAdvancedRef.current = false;
+      setAutoAdvanceCountdown(5);
 
       const nextState: QuizRoundState = {
         isActive: true,
@@ -343,6 +507,10 @@ export function useQuizEngine({
         userSelectedOption: null,
         isCorrect: null,
         votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        autoAdvanceAt: null,
+        isAutoAdvancePaused: false,
+        autoAdvanceRemaining: 5,
+        isQuizFinished: false,
         updatedAt: Date.now(),
       };
 
@@ -518,5 +686,11 @@ export function useQuizEngine({
     revealAnswer,
     selectOption,
     updateAIDeepDive,
+    autoAdvanceCountdown,
+    isAutoAdvanceEnabled,
+    isAutoAdvancePaused: quizState.isAutoAdvancePaused || false,
+    toggleAutoAdvance,
+    pauseAutoAdvance,
+    resumeAutoAdvance,
   };
 }

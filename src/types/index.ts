@@ -50,6 +50,10 @@ export interface QuizRoundState {
   votesDistribution: Record<string, number>; // { 'A': 12, 'B': 4, ... }
   aiDeepDive?: string | null;
   updatedAt?: number;
+  autoAdvanceAt?: number | null;
+  isAutoAdvancePaused?: boolean;
+  autoAdvanceRemaining?: number;
+  isQuizFinished?: boolean;
 }
 
 // --- Live Poll Types ---
