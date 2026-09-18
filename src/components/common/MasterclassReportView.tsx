@@ -367,7 +367,7 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
 
       if (!skipTables) {
         elements.push(
-          <div key={`table-${i}`} className="my-4 overflow-x-auto rounded-xl border border-white/[0.08] shadow-sm">
+          <div key={`table-${i}`} className="my-4 overflow-x-auto table-responsive rounded-xl border border-white/[0.08] shadow-sm max-w-full">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-white/[0.04] border-b border-white/[0.08] text-zinc-300 font-semibold uppercase tracking-wider text-[11px]">
@@ -1196,7 +1196,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 rounded-xl bg-[#121216] border border-white/[0.1] shadow-2xl p-1.5 z-50 backdrop-blur-xl"
+                    className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-xl bg-[#121216] border border-white/[0.1] shadow-2xl p-1.5 z-50 backdrop-blur-xl"
                   >
                     <button
                       onClick={handleDownloadHtml}

@@ -87,6 +87,25 @@ html, body {
   scrollbar-width: none;
 }
 
+/* Mobile Touch & Viewport Utilities */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Modal Responsive Dialog Base */
+.modal-responsive {
+  width: min(95vw, var(--modal-max-w, 36rem));
+  max-height: min(90dvh, 800px);
+}
+
+/* Responsive Table Wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ================= GLOBAL CURSOR STYLES ================= */
 button,
 a,

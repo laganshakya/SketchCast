@@ -120,7 +120,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 12, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-[#0E0E11] text-white w-full max-w-lg p-5 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[90vh] overflow-y-auto"
+            className="bg-[#0E0E11] text-white w-[95vw] sm:max-w-lg p-4 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}

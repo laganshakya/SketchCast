@@ -179,92 +179,92 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] font-sans selection:bg-[#3B82F6] selection:text-white">
+    <div className="min-h-screen w-full flex flex-col justify-between bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] font-sans selection:bg-[#3B82F6] selection:text-white overflow-x-hidden">
       {/* Clean Top Bar */}
-      <div className="border-b border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex items-center justify-between text-xs font-mono">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          <span className="text-blue-400 font-bold tracking-wider uppercase">ARENA LIVE</span>
-          <span className="text-zinc-600">/</span>
-          <span className="text-zinc-400 uppercase">REALTIME AUDIENCE GATEWAY</span>
+      <div className="border-b border-white/[0.08] bg-[#0E0E11] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between text-xs font-mono min-w-0">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+          <span className="text-blue-400 font-bold tracking-wider uppercase text-[11px] sm:text-xs shrink-0">ARENA LIVE</span>
+          <span className="text-zinc-600 shrink-0 hidden min-[380px]:inline">/</span>
+          <span className="text-zinc-400 uppercase text-[10px] sm:text-xs truncate hidden min-[380px]:inline">REALTIME GATEWAY</span>
         </div>
-        <div className="text-[11px] text-zinc-500 font-mono">
+        <div className="text-[10px] sm:text-[11px] text-zinc-500 font-mono shrink-0">
           SKETCHCAST v2.4
         </div>
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-center p-4 sm:p-8 md:p-12 gap-8 lg:gap-16 max-w-6xl mx-auto w-full">
+      <div className="flex-1 flex flex-col lg:flex-row items-stretch lg:items-center justify-center p-3 sm:p-6 md:p-12 gap-6 lg:gap-16 max-w-6xl mx-auto w-full min-w-0">
         {/* Left Hero Brand & Exaggerated Typography */}
-        <div className="flex-1 space-y-6 max-w-xl text-left">
-          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-mono text-xs text-blue-400">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400" />
-            <span className="font-bold uppercase tracking-wider">LIVE AUDIENCE ENGAGEMENT ARENA</span>
+        <div className="flex-1 space-y-4 sm:space-y-6 max-w-xl text-left w-full min-w-0">
+          <div className="inline-flex items-center space-x-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-mono text-[10px] sm:text-xs text-blue-400 max-w-full">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400 shrink-0" />
+            <span className="font-bold uppercase tracking-wider truncate">LIVE AUDIENCE ENGAGEMENT ARENA</span>
           </div>
 
-          <div className="space-y-3">
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-none uppercase">
+          <div className="space-y-2 sm:space-y-3">
+            <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-none uppercase break-words">
               SKETCH<span className="text-blue-500">CAST</span>
             </h1>
-            <p className="text-sm sm:text-base font-sans text-zinc-400 leading-relaxed max-w-lg">
+            <p className="text-xs sm:text-base font-sans text-zinc-400 leading-relaxed max-w-lg break-words">
               High-velocity interactive audience engagement platform designed for modern tech events: real-time quizzing, live consensus polling, and crowdsourced technical Q&A.
             </p>
           </div>
 
           {/* Feature Highlights Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 w-full min-w-0">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
               <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <Zap className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase text-white">TECH QUIZZING</div>
+              <div className="min-w-0">
+                <div className="text-xs font-mono font-bold uppercase text-white truncate">TECH QUIZZING</div>
                 <div className="text-xs text-zinc-400 mt-1 leading-snug">Real-time competitive rounds with instant takeaway analysis</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
               <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <Vote className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase text-white">LIVE POLLS</div>
+              <div className="min-w-0">
+                <div className="text-xs font-mono font-bold uppercase text-white truncate">LIVE POLLS</div>
                 <div className="text-xs text-zinc-400 mt-1 leading-snug">Instant audience consensus with AI sentiment synthesis</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
               <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <HelpCircle className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase text-white">Q&A UPVOTING</div>
+              <div className="min-w-0">
+                <div className="text-xs font-mono font-bold uppercase text-white truncate">Q&A UPVOTING</div>
                 <div className="text-xs text-zinc-400 mt-1 leading-snug">Crowdsourced question triage & live stage spotlight</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5">
+            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
               <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
                 <Trophy className="w-4 h-4" />
               </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase text-white">RANKINGS PODIUM</div>
+              <div className="min-w-0">
+                <div className="text-xs font-mono font-bold uppercase text-white truncate">RANKINGS PODIUM</div>
                 <div className="text-xs text-zinc-400 mt-1 leading-snug">Live podium & verifiable masterclass credentials</div>
               </div>
             </div>
           </div>
 
-          {/* Quick QR Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+          {/* Quick QR Bar: Stacks on mobile to prevent horizontal overflow */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 w-full min-w-0">
             <button
               type="button"
               onClick={() => setShowQRPreview(true)}
-              className="px-4 py-2.5 rounded-xl bg-[#121215] hover:bg-[#18181D] text-white border border-white/[0.08] font-mono text-xs font-bold transition-colors flex items-center space-x-2 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#121215] hover:bg-[#18181D] text-white border border-white/[0.08] font-mono text-xs font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer touch-target shrink-0"
             >
-              <QrCode className="w-4 h-4 text-blue-400" />
+              <QrCode className="w-4 h-4 text-blue-400 shrink-0" />
               <span>SHOW ROOM QR CODE</span>
             </button>
-            <div className="inline-flex items-center space-x-2 text-xs font-mono text-zinc-400 bg-[#121215] px-4 py-2.5 rounded-xl border border-white/[0.08]">
+            <div className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 text-xs font-mono text-zinc-400 bg-[#121215] px-4 py-2.5 rounded-xl border border-white/[0.08] shrink-0">
               <span>ACTIVE KEY:</span>
               <span className="text-blue-400 font-bold">{roomKey}</span>
             </div>
@@ -272,7 +272,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         </div>
 
         {/* Right Modern Auth Box */}
-        <div className="w-full max-w-md bg-[#121215] text-[#FAFAFA] p-6 sm:p-8 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans">
+        <div className="w-full max-w-md bg-[#121215] text-[#FAFAFA] p-4 sm:p-6 md:p-8 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-mono shrink-0">
@@ -353,21 +353,21 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
           ) : (
             <>
               {/* Tab Switcher */}
-              <div className="grid grid-cols-3 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl mb-4 font-mono text-xs">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl mb-4 font-mono text-[10px] sm:text-xs">
                 <button
                   type="button"
                   onClick={() => {
                     playClickSound();
                     handleTabChange('guest');
                   }}
-                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'guest'
                       ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                       : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Zap className="w-3 h-3 text-blue-400" />
-                  <span>GUEST</span>
+                  <Zap className="w-3 h-3 text-blue-400 shrink-0" />
+                  <span className="truncate">GUEST</span>
                 </button>
                 <button
                   type="button"
@@ -375,14 +375,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signin');
                   }}
-                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signin'
                       ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                       : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Lock className="w-3 h-3 text-blue-400" />
-                  <span>SIGN IN</span>
+                  <Lock className="w-3 h-3 text-blue-400 shrink-0" />
+                  <span className="truncate">SIGN IN</span>
                 </button>
                 <button
                   type="button"
@@ -390,14 +390,14 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signup');
                   }}
-                  className={`py-2 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signup'
                       ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                       : 'text-zinc-400 hover:text-white border border-transparent'
                   }`}
                 >
-                  <Crown className="w-3 h-3 text-blue-400" />
-                  <span>REGISTER</span>
+                  <Crown className="w-3 h-3 text-blue-400 shrink-0" />
+                  <span className="truncate">REGISTER</span>
                 </button>
               </div>
 
@@ -627,8 +627,8 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm font-sans">
-          <div className="bg-[#121215] text-[#FAFAFA] w-full max-w-xs p-6 rounded-2xl border border-white/[0.08] shadow-modal relative text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm font-sans">
+          <div className="bg-[#121215] text-[#FAFAFA] w-full max-w-xs p-4 sm:p-6 rounded-2xl border border-white/[0.08] shadow-modal relative text-center max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowQRPreview(false)}
               className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
@@ -672,11 +672,11 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
       )}
 
       {/* Bottom Minimalist Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-zinc-500 shrink-0">
+      <footer className="border-t border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-mono text-zinc-500 shrink-0 text-center sm:text-left">
         <div>SKETCHCAST • SUPABASE REALTIME SYNC</div>
         <div className="flex items-center gap-2 text-zinc-400">
-          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-          <span>EXAGGERATED MINIMALISM & KINETIC TYPOGRAPHY</span>
+          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />
+          <span className="truncate">EXAGGERATED MINIMALISM & KINETIC TYPOGRAPHY</span>
         </div>
       </footer>
     </div>

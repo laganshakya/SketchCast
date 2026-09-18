@@ -103,7 +103,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.96, y: 10, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-        className="w-full max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col font-sans"
+        className="w-[95vw] sm:max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col font-sans max-h-[90dvh]"
       >
         {/* Verification Status Banner */}
         <div className="p-4 sm:p-5 bg-[#141418] text-[#FAFAFA] border-b border-white/[0.08] flex items-center justify-between flex-wrap gap-2">
@@ -142,7 +142,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
         </div>
 
         {/* Certificate Printable Pass */}
-        <div className="p-4 sm:p-6 bg-[#0B0B0E] overflow-y-auto max-h-[72vh]">
+        <div className="p-3 sm:p-6 bg-[#0B0B0E] overflow-y-auto flex-1">
           <div
             ref={certCardRef}
             className="relative bg-[#121216] rounded-2xl border border-white/[0.1] p-5 sm:p-8 text-center space-y-4 overflow-hidden shadow-2xl"

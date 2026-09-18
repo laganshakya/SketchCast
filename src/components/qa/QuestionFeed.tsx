@@ -117,21 +117,21 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
         </div>
 
         {/* Modern Segmented Filter Tabs */}
-        <div className="grid grid-cols-4 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-xs">
+        <div className="grid grid-cols-4 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-[10px] sm:text-xs">
           <motion.button
             whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('top');
             }}
-            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
+            className={`py-1.5 px-1 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
               activeTab === 'top'
                 ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-blue-400" />
-            <span>Top</span>
+            <Flame className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Top</span>
           </motion.button>
 
           <motion.button
@@ -140,14 +140,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('recent');
             }}
-            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
+            className={`py-1.5 px-1 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
               activeTab === 'recent'
                 ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
-            <span>Recent</span>
+            <Clock className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Recent</span>
           </motion.button>
 
           <motion.button
@@ -156,14 +156,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('answered');
             }}
-            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
+            className={`py-1.5 px-1 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
               activeTab === 'answered'
                 ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Answered</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate">Answered</span>
           </motion.button>
 
           <motion.button
@@ -172,14 +172,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('spotlight');
             }}
-            className={`py-1.5 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer ${
+            className={`py-1.5 px-1 font-semibold rounded-lg transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
               activeTab === 'spotlight'
                 ? 'bg-[#18181D] text-white shadow-sm border border-white/[0.08]'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Stage</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">Stage</span>
           </motion.button>
         </div>
 
@@ -243,7 +243,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
       </div>
 
       {/* Feed List */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-24 sm:pb-28 md:pb-4">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-40 sm:pb-44 md:pb-6">
         {filtered.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-zinc-400">
             <Sparkles className="w-8 h-8 text-zinc-600 mb-2 opacity-60" />

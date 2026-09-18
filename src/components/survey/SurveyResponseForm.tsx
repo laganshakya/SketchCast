@@ -320,12 +320,12 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
         })}
 
         {/* Submit Button */}
-        <div className="pt-2 flex justify-end">
+        <div className="pt-3 pb-2 sm:pb-0 flex justify-end">
           <motion.button
             type="submit"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-medium flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-lg shadow-blue-500/20"
+            className="w-full sm:w-auto px-8 py-3.5 min-h-[48px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-lg shadow-blue-500/20 active:scale-98"
           >
             <Send className="w-4 h-4" />
             <span>Submit Feedback</span>

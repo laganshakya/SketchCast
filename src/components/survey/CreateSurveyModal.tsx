@@ -237,7 +237,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.96, opacity: 0 }}
-          className="bg-[#101014] text-[#FAFAFA] w-full max-w-5xl rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+          className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-5xl rounded-2xl border border-white/[0.08] shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 sm:p-5 bg-[#141418] border-b border-white/[0.08] flex items-center justify-between shrink-0">

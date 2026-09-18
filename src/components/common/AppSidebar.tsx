@@ -490,7 +490,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         {/* ================= PINNED BOTTOM SECTION ================= */}
-        <div className="border-t border-white/[0.08] bg-[#0E0E11] shrink-0 p-2 space-y-2">
+        <div className={`border-t border-white/[0.08] bg-[#0E0E11] shrink-0 p-2 space-y-2 ${mobile ? 'pb-safe' : ''}`}>
           {!mobile && (
             <motion.button
               whileTap={{ scale: 0.98 }}

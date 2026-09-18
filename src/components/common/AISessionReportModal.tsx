@@ -502,7 +502,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 15, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-[#101014] text-[#FAFAFA] w-full max-w-2xl p-5 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[92vh] overflow-y-auto flex flex-col shadow-modal"
+            className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-2xl p-4 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90dvh] overflow-y-auto flex flex-col shadow-modal"
           >
             {/* Close button */}
             <motion.button

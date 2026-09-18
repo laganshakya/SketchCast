@@ -329,7 +329,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.96, y: 10, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-            className="w-full max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col relative font-sans"
+            className="w-[95vw] sm:max-w-2xl bg-[#101014] border border-white/[0.08] rounded-2xl shadow-2xl text-[#FAFAFA] my-auto overflow-hidden flex flex-col relative font-sans max-h-[90dvh]"
           >
             {/* Modal Header Bar */}
             <div className="p-4 sm:p-5 bg-[#141418] text-[#FAFAFA] border-b border-white/[0.08] flex items-center justify-between shrink-0">
@@ -362,7 +362,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
             </div>
 
             {/* Certificate Card View */}
-            <div className="p-4 sm:p-6 bg-[#0B0B0E] overflow-y-auto max-h-[72vh]">
+            <div className="p-3 sm:p-6 bg-[#0B0B0E] overflow-y-auto flex-1">
               <div
                 ref={certCardRef}
                 className="relative bg-[#121216] rounded-2xl border border-white/[0.1] p-5 sm:p-7 text-center space-y-4 sm:space-y-5 overflow-hidden shadow-2xl"

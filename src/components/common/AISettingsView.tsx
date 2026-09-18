@@ -122,9 +122,9 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-5 font-sans pb-24 sm:pb-28 md:pb-8">
+    <div className="max-w-4xl mx-auto w-full space-y-5 font-sans p-2.5 sm:p-4 md:p-6">
       {/* Top Header Card */}
-      <div className="bg-[#101014] p-5 sm:p-6 rounded-2xl border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-[#101014] p-4 sm:p-6 rounded-2xl border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center space-x-3.5">
           <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
             <Bot className="w-5 h-5" />
@@ -144,7 +144,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 self-end sm:self-center">
+        <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
           <AnimatePresence>
             {saveStatus && (
               <motion.span

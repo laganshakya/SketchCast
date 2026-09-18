@@ -638,8 +638,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       {/* Multi-Question Quiz Modal */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-sans">
-          <div className="bg-[#0E0E11] text-white w-full max-w-xl p-5 sm:p-7 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-sans">
+          <div className="bg-[#0E0E11] text-white w-full max-w-xl p-4 sm:p-7 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-[#16161A] text-zinc-400 hover:text-white transition-colors border border-white/[0.08] cursor-pointer z-10"

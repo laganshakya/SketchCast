@@ -33,7 +33,9 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
   userName,
 }) => {
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [isBarExpanded, setIsBarExpanded] = useState(true);
+  const [isBarExpanded, setIsBarExpanded] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 640 : false
+  );
   const [isOnCooldown, setIsOnCooldown] = useState(false);
   const lastSendTimeRef = useRef<number>(0);
   const seenReactionIdsRef = useRef<Set<string>>(new Set());
@@ -190,7 +192,7 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
       </div>
 
       {/* 2. Sleek Glassmorphic Reaction Bar */}
-      <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-3 sm:right-6 z-30 select-none max-w-[calc(100vw-24px)]">
+      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-2.5 sm:right-6 z-30 select-none max-w-[calc(100vw-20px)]">
         <motion.div
           layout
           transition={{ type: 'spring', damping: 28, stiffness: 350 }}

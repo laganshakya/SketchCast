@@ -90,9 +90,9 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans">
+    <div className="flex flex-col max-w-4xl mx-auto w-full p-2.5 sm:p-4 md:p-5 space-y-4 font-sans mb-4">
       {/* Header */}
-      <div className="bg-[#121215] p-4 sm:p-5 border border-white/[0.08] rounded-2xl shadow-card flex items-center justify-between flex-wrap gap-3">
+      <div className="bg-[#121215] p-3.5 sm:p-5 border border-white/[0.08] rounded-2xl shadow-card flex items-center justify-between flex-wrap gap-2.5">
         <div>
           <div className="flex items-center space-x-2 text-xs mb-1">
             <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">
@@ -113,7 +113,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
               playClickSound();
               onOpenCreatePoll();
             }}
-            className="w-full sm:w-auto px-4 py-2 btn-cobalt text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
+            className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] btn-cobalt text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Poll</span>

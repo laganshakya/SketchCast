@@ -146,11 +146,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1.5 mb-1.5 flex-wrap">
-            <div className="flex items-center space-x-2 min-w-0">
-              <span className="text-xs font-semibold text-white truncate max-w-32 sm:max-w-48">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
+              <span className="text-xs font-semibold text-white truncate max-w-[100px] min-[360px]:max-w-[130px] sm:max-w-48">
                 {question.author_name}
               </span>
-              <span className="text-[11px] text-zinc-500 font-medium shrink-0">
+              <span className="text-[10px] sm:text-[11px] text-zinc-500 font-medium shrink-0">
                 • {timeAgo(question.created_at)}
               </span>
             </div>

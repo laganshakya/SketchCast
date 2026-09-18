@@ -46,7 +46,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 15, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-[#101014] text-[#FAFAFA] w-full max-w-xs sm:max-w-sm p-5 sm:p-6 rounded-2xl border border-white/[0.08] relative text-center max-h-[92vh] overflow-y-auto shadow-modal"
+            className="bg-[#101014] text-[#FAFAFA] w-[92vw] max-w-xs sm:max-w-sm p-4 sm:p-6 rounded-2xl border border-white/[0.08] relative text-center max-h-[90dvh] overflow-y-auto shadow-modal"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}

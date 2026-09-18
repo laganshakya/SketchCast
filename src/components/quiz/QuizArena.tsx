@@ -169,40 +169,40 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-3 sm:p-5 pb-24 sm:pb-28 md:pb-6 space-y-4 font-sans"
+      className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-2.5 sm:p-4 md:p-5 space-y-3.5 sm:space-y-4 font-sans"
     >
       {/* Clean Top Status Bar */}
-      <div className="bg-[#121215] border border-white/[0.08] rounded-xl px-4 py-2.5 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
-        <div className="flex items-center space-x-3 min-w-0">
-          <div className="flex items-center space-x-2 shrink-0">
+      <div className="bg-[#121215] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-wrap gap-y-1">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             <span className={`w-2 h-2 rounded-full ${quizState.isAdaptiveCampaign ? 'bg-purple-500 animate-ping' : 'bg-blue-500 animate-pulse'}`} />
             <span className={`${quizState.isAdaptiveCampaign ? 'text-purple-400' : 'text-blue-400'} font-bold text-[10px] tracking-wider uppercase`}>
               {quizState.isAdaptiveCampaign ? 'ADAPTIVE ARENA' : 'LIVE ARENA'}
             </span>
           </div>
-          <span className="text-zinc-700">/</span>
-          <span className="text-zinc-300 text-[11px] font-semibold truncate uppercase tracking-wider">
+          <span className="text-zinc-700 hidden xs:inline">/</span>
+          <span className="text-zinc-300 text-[10px] sm:text-[11px] font-semibold truncate uppercase tracking-wider max-w-[130px] sm:max-w-none">
             {question.category.replace(/_/g, ' ')}
           </span>
           {question.difficultyTier && (
             <>
-              <span className="text-zinc-700">/</span>
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[10px] font-bold text-zinc-300 uppercase tracking-wider">
+              <span className="text-zinc-700 hidden sm:inline">/</span>
+              <span className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[9px] sm:text-[10px] font-bold text-zinc-300 uppercase tracking-wider">
                 {question.difficultyTier} TIER
               </span>
             </>
           )}
           {quizState.adaptiveProgress && (
             <>
-              <span className="text-zinc-700">/</span>
-              <span className="text-purple-400 text-[10px] font-bold tracking-wider">
+              <span className="text-zinc-700 hidden sm:inline">/</span>
+              <span className="text-purple-400 text-[9px] sm:text-[10px] font-bold tracking-wider">
                 ROUND {quizState.adaptiveProgress.current} OF {quizState.adaptiveProgress.total}
               </span>
             </>
           )}
         </div>
 
-        <div className="flex items-center space-x-3 text-[11px] shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-[11px] shrink-0">
           <span className="text-zinc-500">
             STATUS: <span className="text-zinc-200">{isRevealed ? 'RESOLVED' : 'ACTIVE'}</span>
           </span>
@@ -214,13 +214,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       </div>
 
       {/* Exaggerated Minimalist Countdown & Progress Section */}
-      <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="space-y-1">
           <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold">
             {isRevealed ? (quizState.autoAdvanceAt ? 'AUTO-ADVANCE' : 'ROUND STATUS') : 'ROUND TIMER'}
           </div>
-          <div className="flex items-baseline space-x-3">
-            <div className="font-timer text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-white">
+          <div className="flex items-baseline space-x-2 sm:space-x-3 flex-wrap">
+            <div className="font-timer text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white">
               {!isRevealed ? (
                 <RollingCounter value={timeRemaining} padZero={true} />
               ) : quizState.autoAdvanceAt ? (
@@ -308,12 +308,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="bg-[#121215] p-6 sm:p-8 rounded-2xl border border-white/[0.08] shadow-sm relative"
+        className="bg-[#121215] p-4 sm:p-6 md:p-8 rounded-2xl border border-white/[0.08] shadow-sm relative"
       >
-        <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-3 flex items-center justify-between">
+        <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold mb-2.5 flex items-center justify-between flex-wrap gap-1">
           <span>CHALLENGE QUESTION</span>
           {question.difficultyTier && (
-            <span className="text-zinc-500 font-normal">
+            <span className="text-zinc-500 font-normal text-[10px]">
               DIFFICULTY: <span className="text-zinc-300 font-bold">{question.difficultyTier}</span>
             </span>
           )}
@@ -325,16 +325,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+              className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
             >
               <div className="flex items-center space-x-2 font-mono">
                 <Flame className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-                <span className="font-extrabold tracking-wide uppercase">
+                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs">
                   🔥 LEVEL UP! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
                 </span>
                 <span className="text-zinc-400 hidden sm:inline">— Elevating challenge to deeper edge cases</span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-amber-500/40 shrink-0">
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-amber-500/40 shrink-0">
                 {question.difficultyTier || 'Senior'} TIER
               </span>
             </motion.div>
@@ -342,43 +342,43 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+              className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
             >
               <div className="flex items-center space-x-2 font-mono">
                 <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="font-extrabold tracking-wide uppercase">
+                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs">
                   💡 FOUNDATION CHECK! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
                 </span>
                 <span className="text-zinc-400 hidden sm:inline">— Re-anchoring core mental models & essentials</span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-blue-500/40 shrink-0">
+              <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-blue-500/40 shrink-0">
                 {question.difficultyTier || 'Mid'} TIER
               </span>
             </motion.div>
           ) : (
-            <div className="mb-4 p-2.5 rounded-xl bg-[#16161D] border border-white/[0.08] text-zinc-300 text-xs flex items-center justify-between flex-wrap gap-2">
+            <div className="mb-3.5 p-2 sm:p-2.5 rounded-xl bg-[#16161D] border border-white/[0.08] text-zinc-300 text-xs flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center space-x-2 font-mono">
                 <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span className="font-bold tracking-wide uppercase text-zinc-300">
+                <span className="font-bold tracking-wide uppercase text-zinc-300 text-[11px] sm:text-xs">
                   {question.adaptiveMeta.questionNumber === 1
                     ? `ADAPTIVE JOURNEY: CHALLENGE 1 OF ${question.adaptiveMeta.totalQuestions}`
                     : `STEADY PACE: MAINTAINING ${question.difficultyTier || 'Senior'} TIER`}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-white/[0.08] shrink-0">
+              <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-white/[0.08] shrink-0">
                 {question.difficultyTier || 'Senior'} TIER
               </span>
             </div>
           )
         )}
 
-        <h2 className="text-lg sm:text-2xl md:text-3xl font-display font-extrabold text-white leading-tight tracking-tight">
+        <h2 className="text-base sm:text-2xl md:text-3xl font-display font-extrabold text-white leading-snug sm:leading-tight tracking-tight">
           {question.question}
         </h2>
       </motion.div>
 
       {/* 4 Precision Option Cards (A, B, C, D) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
         {question.options.map((option) => {
           const voteCount = votesDistribution[option.id] || 0;
           const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
@@ -397,7 +397,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 }
               }}
               disabled={isDisabled}
-              className={`p-4 sm:p-5 rounded-2xl text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[96px] cursor-pointer ${getOptionButtonClass(
+              className={`p-3.5 sm:p-5 rounded-2xl text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[80px] sm:min-h-[96px] cursor-pointer ${getOptionButtonClass(
                 option.id
               )}`}
             >
@@ -411,8 +411,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 />
               )}
 
-              <div className="flex items-start justify-between relative z-10 gap-3 mb-2">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-start justify-between relative z-10 gap-2 sm:gap-3 mb-2 w-full min-w-0">
+                <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 flex-1">
                   <span
                     className={`w-7 h-7 rounded-lg font-mono text-xs flex items-center justify-center border shrink-0 font-bold ${getOptionBadgeClass(
                       option.id
@@ -420,7 +420,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   >
                     {option.id}
                   </span>
-                  <span className="text-sm font-semibold leading-snug tracking-tight font-sans">
+                  <span className="text-xs sm:text-sm font-semibold leading-snug tracking-tight font-sans break-words">
                     {option.text}
                   </span>
                 </div>
@@ -536,15 +536,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Host Control Actions */}
       {isHost && (
-        <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2">
           {/* Left: Auto-Advance Toggle Pill */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             <button
               onClick={() => {
                 playClickSound();
                 onToggleAutoAdvance?.();
               }}
-              className={`px-3 py-2 rounded-xl border text-xs font-mono font-bold flex items-center space-x-2 cursor-pointer transition-all ${
+              className={`w-full sm:w-auto px-3.5 py-2.5 min-h-[44px] rounded-xl border text-xs font-mono font-bold flex items-center justify-center space-x-2 cursor-pointer transition-all ${
                 isAutoAdvanceEnabled
                   ? 'bg-blue-500/15 border-blue-500/40 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
                   : 'bg-[#18181D] border-white/[0.08] text-zinc-500 hover:text-zinc-300'
@@ -557,7 +557,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           </div>
 
           {/* Right: Reveal / Pause / Resume / Next Question Now */}
-          <div className="flex items-center space-x-2 flex-wrap justify-end">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-wrap sm:justify-end">
             {!isRevealed ? (
               <motion.button
                 whileTap={{ scale: 0.98 }}
@@ -565,7 +565,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   playClickSound();
                   onRevealAnswer();
                 }}
-                className="w-full sm:w-auto px-5 py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <Eye className="w-4 h-4" />
                 <span>REVEAL CORRECT ANSWER</span>
@@ -584,7 +584,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                         onPauseAutoAdvance?.();
                       }
                     }}
-                    className={`px-4 py-2.5 text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer border transition-colors ${
+                    className={`w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer border transition-colors ${
                       isPaused
                         ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50'
                         : 'bg-amber-950/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/50'
@@ -614,7 +614,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                       onNextQuestion();
                     }}
                     disabled={quizState.isAIGeneratingNext}
-                    className={`w-full sm:w-auto px-6 py-2.5 text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 transition-all ${
+                    className={`w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 transition-all ${
                       quizState.isAIGeneratingNext
                         ? 'bg-purple-950/40 border border-purple-500/30 text-purple-300 cursor-not-allowed'
                         : 'btn-cobalt cursor-pointer'
@@ -633,8 +633,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     )}
                   </motion.button>
                 ) : (
-                  <div className="flex items-center space-x-2 flex-wrap w-full sm:w-auto justify-end">
-                    <span className="px-3.5 py-2 rounded-xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold uppercase flex items-center space-x-1.5">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end">
+                    <span className="px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/20 font-mono text-xs font-bold uppercase flex items-center justify-center space-x-1.5">
                       <CheckCircle className="w-4 h-4 text-emerald-400 stroke-[2]" />
                       <span>QUIZ COMPLETED</span>
                     </span>
@@ -645,7 +645,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           playClickSound();
                           onViewScores();
                         }}
-                        className="px-5 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] text-xs font-mono font-bold uppercase flex items-center space-x-1.5 cursor-pointer transition-colors"
+                        className="px-5 py-2.5 min-h-[44px] rounded-xl bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] text-xs font-mono font-bold uppercase flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                       >
                         <Trophy className="w-4 h-4 text-blue-400" />
                         <span>VIEW LEADERBOARD</span>

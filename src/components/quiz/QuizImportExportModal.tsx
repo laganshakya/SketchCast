@@ -111,7 +111,7 @@ export const QuizImportExportModal: React.FC<QuizImportExportModalProps> = ({
           initial={{ opacity: 0, scale: 0.96, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
-          className="bg-[#0E0E11] border border-white/[0.08] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden font-sans shadow-modal"
+          className="bg-[#0E0E11] border border-white/[0.08] rounded-2xl w-[95vw] sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden font-sans shadow-modal"
         >
           {/* Header */}
           <div className="bg-[#121215] border-b border-white/[0.08] p-4 flex items-center justify-between shrink-0">

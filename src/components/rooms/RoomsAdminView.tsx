@@ -198,7 +198,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-5 font-sans pb-24 sm:pb-28 md:pb-6">
+    <div className="max-w-6xl mx-auto w-full space-y-5 font-sans p-2.5 sm:p-4 md:p-6">
       {/* Top Header Card */}
       <div className="bg-[#101014] p-5 sm:p-6 rounded-2xl border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center space-x-3.5">
@@ -482,7 +482,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 15, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="bg-[#101014] text-[#FAFAFA] w-full max-w-md p-5 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90vh] overflow-y-auto shadow-modal"
+              className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-md p-4 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90dvh] overflow-y-auto shadow-modal"
             >
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -602,7 +602,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 15, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="bg-[#101014] text-[#FAFAFA] w-full max-w-md p-5 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90vh] overflow-y-auto shadow-modal"
+              className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-md p-4 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90dvh] overflow-y-auto shadow-modal"
             >
               <motion.button
                 whileHover={{ scale: 1.05 }}

@@ -85,9 +85,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="flex flex-col bg-[#0A0A0C]/90 backdrop-blur-xl border-b border-white/[0.08] z-40 select-none shrink-0 font-sans relative w-full">
-      <div className="h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between gap-3 w-full relative">
+      <div className="h-14 sm:h-16 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2.5 w-full max-w-full overflow-hidden relative">
         {/* ================= LEFT: Navigation & Brand ================= */}
-        <div className="flex items-center space-x-2.5 sm:space-x-4 shrink-0 min-w-0">
+        <div className="flex items-center space-x-1 sm:space-x-2.5 shrink-0 min-w-0">
           {/* Mobile Drawer Toggle (< md) */}
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -95,7 +95,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               playPopSound();
               onOpenMobileSidebar?.();
             }}
-            className="md:hidden p-2 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0"
+            className="md:hidden p-1.5 xs:p-2 bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0"
             title="Open Arena Menu"
             aria-label="Open Navigation Menu"
           >
@@ -105,14 +105,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {/* Minimalist Brand Logo */}
           <motion.div
             whileTap={{ scale: 0.98 }}
-            className="flex items-center space-x-2.5 shrink-0 cursor-pointer"
+            className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 cursor-pointer"
           >
-            <div className="w-8 h-8 bg-[#3B82F6] text-white rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-lg shadow-blue-500/25">
-              <Zap className="w-4 h-4 fill-white stroke-white" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#3B82F6] text-white rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-lg shadow-blue-500/25">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-white" />
             </div>
-            <div className="flex items-baseline space-x-1.5">
-              <span className="text-sm sm:text-base font-display font-extrabold tracking-tight text-white uppercase shrink-0">
-                SKETCH<span className="text-[#3B82F6]">CAST</span>
+            <div className="flex items-baseline space-x-1">
+              <span className="text-xs sm:text-base font-display font-extrabold tracking-tight text-white uppercase shrink-0">
+                SKETCH<span className="text-[#3B82F6] hidden min-[360px]:inline">CAST</span>
               </span>
             </div>
           </motion.div>
@@ -168,14 +168,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
 
         {/* ================= RIGHT: Telemetry, Audio, Presence ================= */}
-        <div className="flex items-center space-x-2 shrink-0 min-w-0">
-          {/* Audio Sound Profile Switcher */}
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 min-w-0">
+          {/* Audio Sound Profile Switcher (Tablet & Desktop) */}
           <button
             onClick={handleToggleAudioPack}
-            className="h-8 px-3 flex items-center space-x-1.5 bg-white/[0.03] hover:bg-white/[0.06] text-[#FAFAFA] border border-white/[0.08] rounded-full text-xs font-medium transition-colors cursor-pointer shrink-0"
+            className="hidden sm:flex h-8 w-auto px-3 items-center justify-center space-x-1 bg-white/[0.03] hover:bg-white/[0.06] text-[#FAFAFA] border border-white/[0.08] rounded-full text-xs font-medium transition-colors cursor-pointer shrink-0"
             title={`Active Sound Pack: ${audioPack.toUpperCase()}`}
           >
-            <span className="text-[#3B82F6]">{audioPack === 'arcade' ? '⚡ 8-BIT' : '🎵 HI-FI'}</span>
+            <span className="text-[#3B82F6]">{audioPack === 'arcade' ? '⚡' : '🎵'}</span>
+            <span className="text-[#3B82F6]">{audioPack === 'arcade' ? '8-BIT' : 'HI-FI'}</span>
           </button>
 
           {/* Mute Audio SFX */}
@@ -206,31 +207,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </span>
           </button>
 
-          {/* Mobile Room & QR Pill (< sm) */}
-          <div className="sm:hidden flex items-center bg-white/[0.03] border border-white/[0.08] rounded-full h-8 shrink-0 overflow-hidden">
-            <button
-              onClick={handleCopyCode}
-              className="px-2.5 h-full text-xs font-semibold text-[#3B82F6] flex items-center gap-1.5"
-              title="Copy Room Code"
-            >
-              <span>{room.code}</span>
-              {copied ? (
-                <Check className="w-3 h-3 text-[#10B981] shrink-0" />
-              ) : (
-                <Copy className="w-3 h-3 text-[#71717A] shrink-0" />
-              )}
-            </button>
-            <button
-              onClick={() => {
-                playClickSound();
-                onOpenQRCode();
-              }}
-              className="px-2 h-full bg-white/[0.03] text-[#FAFAFA] border-l border-white/[0.08] transition-colors flex items-center cursor-pointer"
-              title="Open QR Code"
-            >
-              <QrCode className="w-3 h-3" />
-            </button>
-          </div>
+          {/* Mobile QR Button (< sm) */}
+          <button
+            onClick={() => {
+              playClickSound();
+              onOpenQRCode();
+            }}
+            className="sm:hidden h-8 w-8 flex items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-[#FAFAFA] border border-white/[0.1] transition-colors cursor-pointer shrink-0 active:scale-95 shadow-sm"
+            title="Open Room QR Code"
+            aria-label="Open Room QR Code"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </header>

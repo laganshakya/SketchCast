@@ -154,7 +154,7 @@ export const SurveyResultsModal: React.FC<SurveyResultsModalProps> = ({
           initial={{ scale: 0.96, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.96, opacity: 0, y: 10 }}
-          className="bg-[#101014] text-[#FAFAFA] w-full max-w-4xl rounded-2xl border border-white/[0.08] shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden"
+          className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-4xl rounded-2xl border border-white/[0.08] shadow-2xl relative flex flex-col max-h-[90dvh] overflow-hidden"
         >
           {/* Header */}
           <div className="p-4 sm:p-5 bg-[#141418] border-b border-white/[0.08] flex items-start justify-between shrink-0 gap-3">

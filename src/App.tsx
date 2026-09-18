@@ -644,7 +644,7 @@ export function App() {
 
   // Once authenticated (or signed in as guest), show the Live Arena
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] overflow-hidden font-sans select-none">
+    <div className="h-screen w-full max-w-full flex flex-col bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] overflow-hidden font-sans select-none">
       {/* Top Header */}
       <AppHeader
         room={room}
@@ -867,7 +867,7 @@ export function App() {
         />
 
         {/* Main Content Area with Framer Motion Spring Transitions */}
-        <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-24 sm:pb-28 md:pb-6">
+        <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-44 sm:pb-48 md:pb-8">
         <AnimatePresence mode="wait">
           {/* TAB 1: Live Quiz Arena */}
           {activeTab === 'quiz' && (
@@ -967,7 +967,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
             >
               <LivePollsView
                 polls={polls}
@@ -1021,7 +1021,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
             >
               <LeaderboardPodium
                 leaderboard={leaderboard}
@@ -1111,7 +1111,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
             >
               <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Masterclass Report...</div>}>
                 <MasterclassReportView
@@ -1137,7 +1137,7 @@ export function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-[#0E0E11]/95 backdrop-blur-md border-t border-white/[0.08] px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
+      <div className="md:hidden fixed bottom-0 inset-x-0 min-h-[64px] bg-[#0E0E11]/95 backdrop-blur-md border-t border-white/[0.08] px-1 sm:px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => {
