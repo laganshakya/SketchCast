@@ -97,7 +97,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const [modalTab, setModalTab] = useState<'editor' | 'ai'>('ai');
   const [hostQuestions, setHostQuestions] = useState<QuizQuestion[]>(() => {
     try {
-      const stored = localStorage.getItem(queueStorageKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      const stored = localStorage.getItem(queueStorageKey);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -181,7 +181,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   if (prevQueueKey !== queueStorageKey) {
     setPrevQueueKey(queueStorageKey);
     try {
-      const stored = localStorage.getItem(queueStorageKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      const stored = localStorage.getItem(queueStorageKey);
       setHostQuestions(stored ? JSON.parse(stored) : []);
       const storedCompleted = localStorage.getItem(completedStorageKey);
       setCompletedIds(storedCompleted ? JSON.parse(storedCompleted) : []);
@@ -195,7 +195,6 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     setHostQuestions(questions);
     try {
       localStorage.setItem(queueStorageKey, JSON.stringify(questions));
-      localStorage.setItem('sketchcast_host_quiz_queue', JSON.stringify(questions));
     } catch {
       // ignore
     }

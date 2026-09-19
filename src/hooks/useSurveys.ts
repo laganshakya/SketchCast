@@ -114,26 +114,15 @@ export function useSurveys(
       const stored = localStorage.getItem(surveysKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Filter out legacy default/demo surveys
+          return parsed.filter((s) => !s.id.endsWith('_default') && s.id !== `survey_${cleanRoomCode}_default`);
+        }
       }
     } catch {
       // ignore
     }
-
-    // Default Seed Survey
-    return [
-      {
-        id: `survey_${cleanRoomCode}_default`,
-        room_id: cleanRoomCode,
-        title: PRESET_SURVEY_TEMPLATES[0].title,
-        description: PRESET_SURVEY_TEMPLATES[0].description,
-        questions: PRESET_SURVEY_TEMPLATES[0].questions as SurveyQuestion[],
-        status: 'active',
-        created_at: new Date().toISOString(),
-        responses_count: 0,
-        author_name: 'Room Host',
-      },
-    ];
+    return [];
   });
 
   const [responsesBySurvey, setResponsesBySurvey] = useState<Record<string, SurveyResponse[]>>(() => {
@@ -162,18 +151,6 @@ export function useSurveys(
 
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
 
-  const createDefaultSurvey = useCallback((code: string): Survey => ({
-    id: `survey_${code}_default`,
-    room_id: code,
-    title: PRESET_SURVEY_TEMPLATES[0].title,
-    description: PRESET_SURVEY_TEMPLATES[0].description,
-    questions: PRESET_SURVEY_TEMPLATES[0].questions as SurveyQuestion[],
-    status: 'active',
-    created_at: new Date().toISOString(),
-    responses_count: 0,
-    author_name: 'Room Host',
-  }), []);
-
   // When roomCode switches, immediately load or reset surveys, responses, and submitted state for the new room
   const [prevRoomKey, setPrevRoomKey] = useState(cleanRoomCode);
   if (prevRoomKey !== cleanRoomCode) {
@@ -182,13 +159,13 @@ export function useSurveys(
       const stored = localStorage.getItem(surveysKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSurveys(parsed);
+        if (Array.isArray(parsed)) {
+          setSurveys(parsed.filter((s) => !s.id.endsWith('_default') && s.id !== `survey_${cleanRoomCode}_default`));
         } else {
-          setSurveys([createDefaultSurvey(cleanRoomCode)]);
+          setSurveys([]);
         }
       } else {
-        setSurveys([createDefaultSurvey(cleanRoomCode)]);
+        setSurveys([]);
       }
 
       const storedResponses = localStorage.getItem(responsesKey);
@@ -197,7 +174,7 @@ export function useSurveys(
       const storedSubmitted = localStorage.getItem(submittedKey);
       setUserSubmittedIds(storedSubmitted ? new Set(JSON.parse(storedSubmitted)) : new Set());
     } catch {
-      setSurveys([createDefaultSurvey(cleanRoomCode)]);
+      setSurveys([]);
       setResponsesBySurvey({});
       setUserSubmittedIds(new Set());
     }
@@ -206,8 +183,9 @@ export function useSurveys(
   // Load from Supabase DB on initialization and room change
   useEffect(() => {
     dbFetchSurveys(cleanRoomCode).then((remoteSurveys) => {
-      if (remoteSurveys && remoteSurveys.length > 0) {
-        setSurveys(remoteSurveys);
+      if (remoteSurveys) {
+        const clean = remoteSurveys.filter((s) => !s.id.endsWith('_default') && s.id !== `survey_${cleanRoomCode}_default`);
+        setSurveys(clean);
       }
     });
     dbFetchSurveyResponses(cleanRoomCode).then((remoteResponses) => {

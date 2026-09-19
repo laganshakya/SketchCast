@@ -219,7 +219,7 @@ export function App() {
   const queuedQuizzes = useMemo(() => {
     try {
       const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
-      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      const stored = localStorage.getItem(queueKey);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -259,6 +259,16 @@ export function App() {
       return () => {
         isMounted = false;
       };
+    }
+  }, []);
+
+  // One-time startup purge of legacy un-scoped demo/fallback keys
+  useEffect(() => {
+    try {
+      localStorage.removeItem('sketchcast_host_quiz_queue');
+      localStorage.removeItem('sketchcast_surveys_default');
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -482,7 +492,7 @@ export function App() {
 
     try {
       const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
-      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      const stored = localStorage.getItem(queueKey);
       if (stored) {
         const queue = JSON.parse(stored);
         if (Array.isArray(queue) && queue.length > 0) {
@@ -535,7 +545,7 @@ export function App() {
 
     try {
       const queueKey = `sketchcast_host_quiz_queue_${room.code.toUpperCase().trim()}`;
-      const stored = localStorage.getItem(queueKey) || localStorage.getItem('sketchcast_host_quiz_queue');
+      const stored = localStorage.getItem(queueKey);
       if (stored) {
         const queue = JSON.parse(stored);
         if (Array.isArray(queue) && queue.length > 0) {

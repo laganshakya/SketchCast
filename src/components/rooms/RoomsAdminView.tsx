@@ -137,6 +137,23 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
 
     await dbCreateRoom(newRoom);
     await loadRooms();
+
+    // Guarantee clean slate for newly created room with zero demo elements
+    try {
+      localStorage.removeItem(`sketchcast_host_quiz_queue_${finalCode}`);
+      localStorage.removeItem(`sketchcast_surveys_${finalCode}`);
+      localStorage.removeItem(`sketchcast_survey_responses_${finalCode}`);
+      localStorage.removeItem(`sketchcast_active_quiz_round_${finalCode}`);
+      localStorage.removeItem(`sketchcast_quiz_user_answers_${finalCode}`);
+      localStorage.removeItem(`sketchcast_host_quiz_completed_${finalCode}`);
+      localStorage.removeItem(`sketchcast_polls_${finalCode}`);
+      localStorage.removeItem(`sketchcast_session_report_${finalCode}`);
+      localStorage.removeItem('sketchcast_host_quiz_queue');
+      localStorage.removeItem('sketchcast_surveys_default');
+    } catch {
+      // ignore
+    }
+
     onSwitchRoom(finalCode, cleanTitle);
     setIsCreateModalOpen(false);
     setNewRoomCode('');
@@ -147,6 +164,19 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
     e.stopPropagation();
     if (confirm(`Are you sure you want to delete Room [${code}]? All questions, polls and quiz history for this room will be cleared.`)) {
       await dbDeleteRoom(roomId, code);
+      try {
+        const cleanCode = code.toUpperCase().trim();
+        localStorage.removeItem(`sketchcast_host_quiz_queue_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_surveys_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_survey_responses_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_active_quiz_round_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_quiz_user_answers_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_host_quiz_completed_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_polls_${cleanCode}`);
+        localStorage.removeItem(`sketchcast_session_report_${cleanCode}`);
+      } catch {
+        // ignore
+      }
       await loadRooms();
     }
   };
