@@ -28,6 +28,7 @@ import {
   resendVerificationEmail,
 } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+import { SketchCastLogo, SignalSparkGlyph } from '../common/SketchCastLogo';
 
 interface LandingAuthPageProps {
   onAuthenticated: (name: string, role: 'host' | 'attendee', roomCode?: string) => void;
@@ -194,7 +195,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:flex-row items-stretch lg:items-center justify-center p-3 sm:p-6 md:p-12 gap-6 lg:gap-16 max-w-6xl mx-auto w-full min-w-0">
+      <div className="flex-1 flex flex-col lg:flex-row items-stretch lg:items-center justify-center p-3 sm:p-6 md:p-12 gap-6 lg:gap-8 xl:gap-14 max-w-6xl mx-auto w-full min-w-0">
         {/* Left Hero Brand & Exaggerated Typography */}
         <div className="flex-1 space-y-4 sm:space-y-6 max-w-xl text-left w-full min-w-0">
           <div className="inline-flex items-center space-x-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-mono text-[10px] sm:text-xs text-blue-400 max-w-full">
@@ -202,10 +203,8 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             <span className="font-bold uppercase tracking-wider truncate">LIVE AUDIENCE ENGAGEMENT ARENA</span>
           </div>
 
-          <div className="space-y-2 sm:space-y-3">
-            <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-none uppercase break-words">
-              SKETCH<span className="text-blue-500">CAST</span>
-            </h1>
+          <div className="space-y-3 sm:space-y-4 max-w-full">
+            <SketchCastLogo size="xl" showWordmark={true} />
             <p className="text-xs sm:text-base font-sans text-zinc-400 leading-relaxed max-w-lg break-words">
               High-velocity interactive audience engagement platform designed for modern tech events: real-time quizzing, live consensus polling, and crowdsourced technical Q&A.
             </p>
@@ -214,8 +213,8 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
           {/* Feature Highlights Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 w-full min-w-0">
             <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                <Zap className="w-4 h-4" />
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 flex items-center justify-center">
+                <SignalSparkGlyph size={24} />
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-mono font-bold uppercase text-white truncate">TECH QUIZZING</div>

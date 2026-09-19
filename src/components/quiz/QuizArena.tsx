@@ -319,53 +319,63 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )}
         </div>
 
-        {/* Adaptive Dynamic Gamification Banner */}
+        {/* Adaptive Dynamic Gamification Banner (Sleek Single-Line Layout) */}
         {question.adaptiveMeta && (
           question.adaptiveMeta.adaptationType === 'level_up' ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              initial={{ opacity: 0, scale: 0.98, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+              className="mb-3.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between gap-2.5 overflow-hidden shadow-[0_0_20px_rgba(245,158,11,0.08)]"
             >
-              <div className="flex items-center space-x-2 font-mono">
+              <div className="flex items-center space-x-2 font-mono min-w-0 flex-1 overflow-hidden whitespace-nowrap">
                 <Flame className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs">
-                  🔥 LEVEL UP! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs text-white shrink-0">
+                  LEVEL UP!
                 </span>
-                <span className="text-zinc-400 hidden sm:inline">— Elevating challenge to deeper edge cases</span>
+                <span className="text-amber-400 font-bold tracking-wide uppercase text-[11px] sm:text-xs shrink-0">
+                  • PREV. ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                </span>
+                <span className="text-zinc-400 text-[11px] sm:text-xs truncate hidden md:inline">
+                  — Elevating challenge to deeper edge cases
+                </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-amber-500/40 shrink-0">
+              <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-amber-500/40 shrink-0 whitespace-nowrap">
                 {question.difficultyTier || 'Senior'} TIER
               </span>
             </motion.div>
           ) : question.adaptiveMeta.adaptationType === 'stepped_down' ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              initial={{ opacity: 0, scale: 0.98, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="mb-3.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between flex-wrap gap-2 shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+              className="mb-3.5 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500/15 via-indigo-500/10 to-transparent border border-blue-500/30 text-blue-300 text-xs flex items-center justify-between gap-2.5 overflow-hidden shadow-[0_0_20px_rgba(59,130,246,0.08)]"
             >
-              <div className="flex items-center space-x-2 font-mono">
+              <div className="flex items-center space-x-2 font-mono min-w-0 flex-1 overflow-hidden whitespace-nowrap">
                 <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
-                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs">
-                  💡 FOUNDATION CHECK! PREVIOUS ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                <span className="font-extrabold tracking-wide uppercase text-[11px] sm:text-xs text-white shrink-0">
+                  FOUNDATION CHECK
                 </span>
-                <span className="text-zinc-400 hidden sm:inline">— Re-anchoring core mental models & essentials</span>
+                <span className="text-blue-400 font-bold tracking-wide uppercase text-[11px] sm:text-xs shrink-0">
+                  • PREV. ACCURACY: {Math.round(question.adaptiveMeta.previousAccuracy ?? 0)}%
+                </span>
+                <span className="text-zinc-400 text-[11px] sm:text-xs truncate hidden md:inline">
+                  — Re-anchoring core mental models & essentials
+                </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-blue-500/40 shrink-0">
-                {question.difficultyTier || 'Mid'} TIER
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-blue-500/40 shrink-0 whitespace-nowrap">
+                {question.difficultyTier || 'Junior'} TIER
               </span>
             </motion.div>
           ) : (
-            <div className="mb-3.5 p-2 sm:p-2.5 rounded-xl bg-[#16161D] border border-white/[0.08] text-zinc-300 text-xs flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center space-x-2 font-mono">
+            <div className="mb-3.5 px-3 py-2 rounded-xl bg-[#16161D] border border-white/[0.08] text-zinc-300 text-xs flex items-center justify-between gap-2.5 overflow-hidden">
+              <div className="flex items-center space-x-2 font-mono min-w-0 flex-1 overflow-hidden whitespace-nowrap">
                 <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span className="font-bold tracking-wide uppercase text-zinc-300 text-[11px] sm:text-xs">
+                <span className="font-bold tracking-wide uppercase text-zinc-200 text-[11px] sm:text-xs truncate">
                   {question.adaptiveMeta.questionNumber === 1
                     ? `ADAPTIVE JOURNEY: CHALLENGE 1 OF ${question.adaptiveMeta.totalQuestions}`
                     : `STEADY PACE: MAINTAINING ${question.difficultyTier || 'Senior'} TIER`}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-mono text-[9px] sm:text-[10px] font-bold tracking-wider uppercase border border-white/[0.08] shrink-0">
+              <span className="px-2.5 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 font-mono text-[10px] font-bold tracking-wider uppercase border border-white/[0.08] shrink-0 whitespace-nowrap">
                 {question.difficultyTier || 'Senior'} TIER
               </span>
             </div>

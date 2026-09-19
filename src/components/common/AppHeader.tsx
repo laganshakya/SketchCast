@@ -4,7 +4,6 @@ import {
   QrCode,
   Copy,
   Check,
-  Zap,
   ArrowRightLeft,
   Volume2,
   VolumeX,
@@ -12,6 +11,7 @@ import {
 import { motion } from 'motion/react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { SketchCastLogo } from './SketchCastLogo';
 import {
   isAudioMuted,
   toggleAudioMute,
@@ -103,19 +103,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </motion.button>
 
           {/* Minimalist Brand Logo */}
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 cursor-pointer"
-          >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#3B82F6] text-white rounded-lg flex items-center justify-center font-bold text-xs shrink-0 shadow-lg shadow-blue-500/25">
-              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white stroke-white" />
-            </div>
-            <div className="flex items-baseline space-x-1">
-              <span className="text-xs sm:text-base font-display font-extrabold tracking-tight text-white uppercase shrink-0">
-                SKETCH<span className="text-[#3B82F6] hidden min-[360px]:inline">CAST</span>
-              </span>
-            </div>
-          </motion.div>
+          <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={true} />
 
           <div className="h-4 w-px bg-white/[0.08] hidden sm:block shrink-0" />
 

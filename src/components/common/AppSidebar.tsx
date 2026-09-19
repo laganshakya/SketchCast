@@ -23,6 +23,7 @@ import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { isUserRoomAdmin } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+import { SketchCastLogo } from './SketchCastLogo';
 
 export interface AppSidebarProps {
   activeTab: ActiveTabType;
@@ -282,14 +283,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* Mobile Header with Logo and Close Button */}
         {mobile && (
           <div className="p-3 border-b border-white/[0.08] bg-[#121215] flex items-center justify-between shrink-0">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
-                <Zap className="w-4 h-4 fill-white stroke-white" />
-              </div>
-              <span className="font-display font-extrabold text-sm tracking-tight text-white uppercase">
-                SKETCH<span className="text-blue-500">CAST</span>
-              </span>
-            </div>
+            <SketchCastLogo size="sm" showWordmark={true} />
             <motion.button
               whileTap={{ scale: 0.94 }}
               onClick={() => {
