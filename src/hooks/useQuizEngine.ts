@@ -7,7 +7,7 @@ import type {
   DifficultyTier,
 } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { generateAdaptiveFollowUpQuestion } from '../lib/meshApi';
+import { generateAdaptiveFollowUpQuestion, calculateDynamicQuestionTimeLimit } from '../lib/meshApi';
 
 import {
   dbFetchLeaderboard,
@@ -369,7 +369,13 @@ export function useQuizEngine({
 
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
-      const duration = question.timeLimitSeconds || 25;
+      const calculatedDuration = calculateDynamicQuestionTimeLimit(
+        question.question,
+        question.options,
+        question.difficultyTier,
+        question.timeLimitSeconds
+      );
+      const duration = Math.max(question.timeLimitSeconds || 0, calculatedDuration);
       const endTime = Date.now() + duration * 1000;
 
       votedUsersRef.current.clear();
@@ -986,6 +992,35 @@ export function useQuizEngine({
     [channelManager, quizStorageKey]
   );
 
+  const extendQuestionTime = useCallback(
+    (additionalSeconds: number = 20) => {
+      if (userRole !== 'host') return;
+      setQuizState((prev) => {
+        if (!prev.isActive || prev.isRevealed || !prev.endTime) return prev;
+        const newEndTime = prev.endTime + additionalSeconds * 1000;
+        const newTotalSeconds = (prev.totalSeconds || 25) + additionalSeconds;
+        const updated: QuizRoundState = {
+          ...prev,
+          endTime: newEndTime,
+          totalSeconds: newTotalSeconds,
+          updatedAt: Date.now(),
+        };
+        try {
+          localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        dbSaveActiveQuizRound(updated, currentRoomKey);
+        if (channelManager) {
+          channelManager.broadcast('quiz_round_state', updated);
+        }
+        return updated;
+      });
+      setTimeRemaining((prev) => prev + additionalSeconds);
+    },
+    [userRole, quizStorageKey, currentRoomKey, channelManager]
+  );
+
   return {
     quizState,
     leaderboard,
@@ -993,6 +1028,7 @@ export function useQuizEngine({
     userQuizAnswers,
     startQuizRound,
     revealAnswer,
+    extendQuestionTime,
     selectOption,
     updateAIDeepDive,
     autoAdvanceCountdown,

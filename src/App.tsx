@@ -148,6 +148,7 @@ export function App() {
     startAdaptiveCampaign,
     advanceAdaptiveQuestionNow,
     adaptiveCampaign,
+    extendQuestionTime,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -946,6 +947,7 @@ export function App() {
                   onToggleAutoAdvance={toggleAutoAdvance}
                   onPauseAutoAdvance={pauseAutoAdvance}
                   onResumeAutoAdvance={resumeAutoAdvance}
+                  onExtendTime={extendQuestionTime}
                 />
               </div>
 

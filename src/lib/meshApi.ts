@@ -497,6 +497,80 @@ export interface GeneratedAIQuestion {
 }
 
 /**
+ * Intelligently calculates an ergonomic, realistic time limit in seconds
+ * based on question length, option complexity, technical syntax/code presence,
+ * and cognitive difficulty tier.
+ *
+ * Prevents audience time pressure where complex/long questions cannot even be read
+ * before the round ends.
+ */
+export function calculateDynamicQuestionTimeLimit(
+  questionText: string,
+  options: Array<{ text?: string } | string> = [],
+  difficultyTier?: 'Junior' | 'Mid' | 'Senior' | 'Principal' | string,
+  suggestedSeconds?: number
+): number {
+  // 1. Calculate word counts
+  const cleanQ = (questionText || '').trim();
+  const questionWords = cleanQ.split(/\s+/).filter(Boolean).length;
+
+  const optionsText = options
+    .map((o) => (typeof o === 'string' ? o : o.text || ''))
+    .join(' ');
+  const cleanOptions = optionsText.trim();
+  const optionsWords = cleanOptions.split(/\s+/).filter(Boolean).length;
+  const totalWords = questionWords + optionsWords;
+
+  // 2. Detect technical code, backticks, syntax symbols, or JSON/code snippets
+  const hasCodeSnippet = /[`{}[\]();<>\/\\=]/.test(cleanQ) || /```/.test(cleanQ) || /`[^`]+`/.test(cleanQ);
+  const codeBonusSeconds = hasCodeSnippet ? 12 : 0;
+
+  // 3. Technical reading speed calculation
+  // Human technical reading speed with cognitive comprehension: ~2.5 words per second
+  // Reading time (seconds) = totalWords / 2.5 (approx 0.4 seconds per word)
+  const readingTimeSeconds = Math.ceil(totalWords * 0.4);
+
+  // 4. Cognitive decision / comparison buffer based on difficulty tier
+  const tier = (difficultyTier || '').toLowerCase();
+  let difficultyBuffer = 20;
+  let minimumFloor = 35;
+
+  if (tier === 'principal') {
+    difficultyBuffer = 35;
+    minimumFloor = 70; // Principal questions should NEVER be under 70s
+  } else if (tier === 'senior') {
+    difficultyBuffer = 28;
+    minimumFloor = 55; // Senior questions should NEVER be under 55s
+  } else if (tier === 'mid') {
+    difficultyBuffer = 22;
+    minimumFloor = 45; // Mid questions should NEVER be under 45s
+  } else {
+    // Junior or unclassified
+    difficultyBuffer = 18;
+    minimumFloor = 35; // Junior questions should NEVER be under 35s
+  }
+
+  // 5. Length scaling bonus: long questions require re-reading and option elimination
+  let lengthBonus = 0;
+  if (totalWords > 120) {
+    lengthBonus = 22;
+  } else if (totalWords > 80) {
+    lengthBonus = 14;
+  } else if (totalWords > 50) {
+    lengthBonus = 8;
+  }
+
+  // Calculated ideal time
+  const calculatedTime = readingTimeSeconds + difficultyBuffer + codeBonusSeconds + lengthBonus;
+
+  // If AI suggested something higher, honor it up to 120s
+  const baseTime = Math.max(minimumFloor, calculatedTime, suggestedSeconds || 0);
+
+  // Return clamped between minimumFloor and 120s
+  return Math.min(120, Math.max(minimumFloor, baseTime));
+}
+
+/**
  * Distributes correct answer options evenly across A, B, C, and D.
  * Prevents LLM bias where Option A is disproportionately set as the correct answer.
  */
@@ -577,7 +651,7 @@ REQUIREMENTS:
 3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
 4. Designate the correct option key ('A', 'B', 'C', or 'D').
 5. Provide a clear, educational "explanation" (1-2 sentences) detailing why the chosen option is correct and why common pitfalls fail.
-6. Set appropriate timeLimitSeconds between 15 and 45.
+6. Set realistic, generous timeLimitSeconds based on question length and difficulty tier so participants have ample time to read and evaluate trade-offs: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never rush reading complex questions.
 
 Return ONLY a valid JSON object matching this schema without any markdown formatting or commentary:
 {
@@ -591,7 +665,7 @@ Return ONLY a valid JSON object matching this schema without any markdown format
       "optD": "Option D text...",
       "correctOpt": "C",
       "explanation": "Concise architectural explanation...",
-      "timeLimitSeconds": 25
+      "timeLimitSeconds": 60
     }
   ]
 }`;
@@ -632,7 +706,12 @@ Return ONLY a valid JSON object matching this schema without any markdown format
     optD: q.optD || q.options?.[3]?.text || 'Option D',
     correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(90, Math.max(10, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `Technical Question ${idx + 1}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      difficulty,
+      q.timeLimitSeconds
+    ),
   }));
 
   return distributeQuestionOptions(rawQuestions);
@@ -696,7 +775,7 @@ REQUIREMENTS:
 2. Exactly 4 distinct, standalone options (A, B, C, D). Do NOT use "All/None of the above".
 3. Assign the correct option evenly among A, B, C, or D.
 4. Provide a clear, educational "explanation" (1-2 sentences).
-5. Set timeLimitSeconds (between 20 and 30).
+5. Set realistic, generous timeLimitSeconds based on scenario complexity and difficulty tier so participants have ample time to read the question prompt and carefully compare options: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set rushing timers on hard questions.
 
 Return ONLY valid JSON matching this schema without markdown formatting or commentary:
 {
@@ -708,7 +787,7 @@ Return ONLY valid JSON matching this schema without markdown formatting or comme
   "optD": "Option D...",
   "correctOpt": "C",
   "explanation": "Architectural takeaway...",
-  "timeLimitSeconds": 25
+  "timeLimitSeconds": 60
 }`;
 
   const targetModel = resolveModelForTask('quiz');
@@ -745,7 +824,12 @@ Return ONLY valid JSON matching this schema without markdown formatting or comme
     ],
     correctOptionId: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(60, Math.max(15, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `${topic} Challenge #${questionNumber}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      targetDifficulty,
+      q.timeLimitSeconds
+    ),
     difficultyTier: targetDifficulty,
     adaptiveMeta: {
       questionNumber,
@@ -787,10 +871,10 @@ REQUIREMENTS:
 2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
 3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
 4. Concise 1-2 sentence educational explanation.
-5. timeLimitSeconds between 15 and 45.
+5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY a valid raw JSON object matching:
-{"questions": [{"category": "${query.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 25}]}`;
+{"questions": [{"category": "${query.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
@@ -812,7 +896,12 @@ Return ONLY a valid raw JSON object matching:
     optD: q.optD || 'Option D',
     correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(90, Math.max(10, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `Question ${idx + 1}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      difficulty,
+      q.timeLimitSeconds
+    ),
   }));
 
   if (rawQuestions.length === 0) {
@@ -844,10 +933,10 @@ REQUIREMENTS:
 2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
 3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
 4. Concise educational explanation (1-2 sentences).
-5. timeLimitSeconds between 15 and 45.
+5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "${pageInfo.title.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "C", "explanation": "...", "timeLimitSeconds": 25}]}`;
+{"questions": [{"category": "${pageInfo.title.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "C", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
@@ -869,7 +958,12 @@ Return ONLY valid raw JSON:
     optD: q.optD || 'Option D',
     correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(90, Math.max(10, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `Question ${idx + 1}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      difficulty,
+      q.timeLimitSeconds
+    ),
   }));
 
   if (rawQuestions.length === 0) {
@@ -904,10 +998,10 @@ REQUIREMENTS:
 2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
 3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
 4. Concise 1-2 sentence explanation.
-5. timeLimitSeconds between 15 and 45.
+5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "${repoSummary.repo}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "D", "explanation": "...", "timeLimitSeconds": 25}]}`;
+{"questions": [{"category": "${repoSummary.repo}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "D", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
@@ -929,7 +1023,12 @@ Return ONLY valid raw JSON:
     optD: q.optD || 'Option D',
     correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(90, Math.max(10, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `Question ${idx + 1}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      difficulty,
+      q.timeLimitSeconds
+    ),
   }));
 
   if (rawQuestions.length === 0) {
@@ -968,10 +1067,10 @@ REQUIREMENTS:
 2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
 3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
 4. Educational explanation (1-2 sentences).
-5. timeLimitSeconds between 15 and 45.
+5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "Tech Trends", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 25}]}`;
+{"questions": [{"category": "Tech Trends", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
@@ -993,7 +1092,12 @@ Return ONLY valid raw JSON:
     optD: q.optD || 'Option D',
     correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
     explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: Math.min(90, Math.max(10, q.timeLimitSeconds || 25)),
+    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+      q.question || `Question ${idx + 1}`,
+      [q.optA, q.optB, q.optC, q.optD],
+      difficulty,
+      q.timeLimitSeconds
+    ),
   }));
 
   if (rawQuestions.length === 0) {

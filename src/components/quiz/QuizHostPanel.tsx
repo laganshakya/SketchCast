@@ -78,7 +78,7 @@ const createBlankDraftQuestion = (index: number): DraftQuestion => ({
   optD: '',
   correctOpt: 'A',
   explanation: '',
-  timeLimitSeconds: 25,
+  timeLimitSeconds: 45,
 });
 
 export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
@@ -364,7 +364,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
         optD: g.optD,
         correctOpt: g.correctOpt,
         explanation: g.explanation,
-        timeLimitSeconds: g.timeLimitSeconds || 25,
+        timeLimitSeconds: g.timeLimitSeconds || 45,
       }));
 
       setDraftQuestions(newDrafts);
@@ -406,7 +406,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       ],
       correctOptionId: dq.correctOpt,
       explanation: dq.explanation.trim() || 'Correct answer verified by host.',
-      timeLimitSeconds: dq.timeLimitSeconds || 25,
+      timeLimitSeconds: dq.timeLimitSeconds || 45,
     }));
 
     const updatedQueue = [...finalQuestions, ...hostQuestions];
@@ -1181,8 +1181,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     <label className="text-[11px] font-medium block mb-1 text-zinc-400">Time Limit (Sec)</label>
                     <input
                       type="number"
-                      min="10"
-                      max="90"
+                      min="20"
+                      max="180"
                       value={currentDraft.timeLimitSeconds}
                       onChange={(e) => updateCurrentDraft('timeLimitSeconds', Number(e.target.value))}
                       className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"

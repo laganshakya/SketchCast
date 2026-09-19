@@ -12,6 +12,7 @@ import {
   Zap,
   Flame,
   RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -40,6 +41,7 @@ interface QuizArenaProps {
   onToggleAutoAdvance?: () => void;
   onPauseAutoAdvance?: () => void;
   onResumeAutoAdvance?: () => void;
+  onExtendTime?: (additionalSeconds: number) => void;
 }
 
 export const QuizArena: React.FC<QuizArenaProps> = ({
@@ -57,6 +59,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   onToggleAutoAdvance,
   onPauseAutoAdvance,
   onResumeAutoAdvance,
+  onExtendTime,
 }) => {
   const {
     question,
@@ -569,17 +572,33 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {/* Right: Reveal / Pause / Resume / Next Question Now */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-wrap sm:justify-end">
             {!isRevealed ? (
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  playClickSound();
-                  onRevealAnswer();
-                }}
-                className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <Eye className="w-4 h-4" />
-                <span>REVEAL CORRECT ANSWER</span>
-              </motion.button>
+              <div className="flex items-center gap-2 flex-wrap sm:justify-end w-full sm:w-auto">
+                {onExtendTime && (
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      playPopSound();
+                      onExtendTime(20);
+                    }}
+                    className="px-3.5 py-2.5 min-h-[44px] bg-[#16161C] hover:bg-[#1E1E26] text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-xl text-xs font-mono font-bold uppercase flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-sm"
+                    title="Add +20 seconds to the current round timer for everyone"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-blue-400" />
+                    <span>+20S TIME</span>
+                  </motion.button>
+                )}
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    playClickSound();
+                    onRevealAnswer();
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>REVEAL CORRECT ANSWER</span>
+                </motion.button>
+              </div>
             ) : (
               <>
                 {/* Pause / Resume Button if Auto-Advance is scheduled */}
