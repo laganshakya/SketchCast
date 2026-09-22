@@ -44,6 +44,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        question: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['Syne', 'Space Grotesk', 'sans-serif'],
         mono: ['JetBrains Mono', 'Menlo', 'monospace'],
       },

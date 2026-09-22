@@ -39,6 +39,7 @@
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-question: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Syne', 'Space Grotesk', sans-serif;
   --font-mono: 'JetBrains Mono', Menlo, monospace;
 }
@@ -309,6 +310,10 @@ input, textarea {
   line-height: 1;
   letter-spacing: -0.02em;
   font-weight: 800;
+}
+
+.font-question {
+  font-family: var(--font-question);
 }
 
 /* Custom Sleek Dark Scrollbar */

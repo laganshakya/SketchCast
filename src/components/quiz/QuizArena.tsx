@@ -44,6 +44,31 @@ interface QuizArenaProps {
   onExtendTime?: (additionalSeconds: number) => void;
 }
 
+/**
+ * Formats question and option text, highlighting inline code backticks with monospace styling
+ * for enhanced technical legibility.
+ */
+const renderFormattedText = (text: string) => {
+  if (!text) return null;
+  if (text.includes('`')) {
+    const parts = text.split(/(`[^`]+`)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+        return (
+          <code
+            key={idx}
+            className="px-1.5 py-0.5 mx-0.5 rounded-md bg-[#1C1C24] text-cyan-300 font-mono text-[0.88em] font-medium border border-cyan-500/25"
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+  }
+  return text;
+};
+
 export const QuizArena: React.FC<QuizArenaProps> = ({
   quizState,
   timeRemaining,
@@ -385,8 +410,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )
         )}
 
-        <h2 className="text-base sm:text-2xl md:text-3xl font-display font-extrabold text-white leading-snug sm:leading-tight tracking-tight">
-          {question.question}
+        <h2 className="text-lg sm:text-2xl md:text-[28px] lg:text-3xl font-question font-bold text-white leading-snug sm:leading-[1.35] tracking-[-0.012em]">
+          {renderFormattedText(question.question)}
         </h2>
       </motion.div>
 
@@ -433,8 +458,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   >
                     {option.id}
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold leading-snug tracking-tight font-sans break-words">
-                    {option.text}
+                  <span className="text-xs sm:text-sm md:text-[15px] font-semibold leading-relaxed tracking-normal font-question break-words text-zinc-100">
+                    {renderFormattedText(option.text)}
                   </span>
                 </div>
 
@@ -498,7 +523,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <HelpCircle className="w-3.5 h-3.5 stroke-[2]" />
               <span>KEY TAKEAWAY</span>
             </div>
-            <p className="font-normal text-zinc-300">{question.explanation}</p>
+            <p className="font-normal text-zinc-300 font-question leading-relaxed">{renderFormattedText(question.explanation)}</p>
           </div>
 
           {/* AI Synthesizing live follow-up badge */}
