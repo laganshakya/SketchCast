@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -13,10 +13,14 @@ import {
   Flame,
   RefreshCw,
   Clock,
+  Lightbulb,
+  Vote,
+  Terminal,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
-import type { QuizRoundState } from '../../types';
+import type { QuizRoundState, QuizQuestion, QuizOption } from '../../types';
+import { gradeShortAnswerWithJev } from '../../lib/meshApi';
 import {
   playPopSound,
   playClickSound,
@@ -30,6 +34,7 @@ interface QuizArenaProps {
   quizState: QuizRoundState;
   timeRemaining: number;
   onSelectOption: (optionId: string) => void;
+  onSubmitShortAnswer?: (answer: string, isCorrect: boolean) => void;
   onRevealAnswer: () => void;
   onNextQuestion?: () => void;
   hasNextQuestion?: boolean;
@@ -42,6 +47,11 @@ interface QuizArenaProps {
   onPauseAutoAdvance?: () => void;
   onResumeAutoAdvance?: () => void;
   onExtendTime?: (additionalSeconds: number) => void;
+  onLaunchRemediationPoll?: (params: {
+    question: QuizQuestion;
+    mostPickedWrong?: QuizOption;
+    votesDistribution: Record<string, number>;
+  }) => Promise<void> | void;
 }
 
 /**
@@ -73,6 +83,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   quizState,
   timeRemaining,
   onSelectOption,
+  onSubmitShortAnswer,
   onRevealAnswer,
   onNextQuestion,
   hasNextQuestion = false,
@@ -85,6 +96,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   onPauseAutoAdvance,
   onResumeAutoAdvance,
   onExtendTime,
+  onLaunchRemediationPoll,
 }) => {
   const {
     question,
@@ -95,8 +107,95 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   } = quizState;
 
   const isPaused = Boolean(isAutoAdvancePaused || quizState.isAutoAdvancePaused);
-
   const totalVotes = Object.values(votesDistribution || {}).reduce((a, b) => a + b, 0);
+
+  // Short Answer state
+  const [shortAnswerInput, setShortAnswerInput] = useState('');
+  const [isGradingShortAnswer, setIsGradingShortAnswer] = useState(false);
+  const [shortAnswerGradeResult, setShortAnswerGradeResult] = useState<{
+    isCorrect: boolean;
+    confidence: number;
+    feedback?: string;
+  } | null>(null);
+
+  // Remediation Poll generation state
+  const [isGeneratingRemediation, setIsGeneratingRemediation] = useState(false);
+
+  // Reset states on question change
+  const prevQuestionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (question && question.id !== prevQuestionIdRef.current) {
+      prevQuestionIdRef.current = question.id;
+      setShortAnswerInput('');
+      setIsGradingShortAnswer(false);
+      setShortAnswerGradeResult(null);
+      setIsGeneratingRemediation(false);
+    }
+  }, [question]);
+
+  const handleShortAnswerSubmit = async () => {
+    if (!question || !shortAnswerInput.trim() || isGradingShortAnswer || isRevealed) return;
+    setIsGradingShortAnswer(true);
+    playPopSound();
+
+    const correctId = question.correctOptionId || 'A';
+    const wrongId = (question.options?.find((o) => o.id !== correctId)?.id) || (correctId === 'A' ? 'B' : 'A');
+
+    try {
+      const result = await gradeShortAnswerWithJev({
+        question: question.question,
+        expectedAnswer: question.expectedAnswer || question.correctOptionId || '',
+        attendeeAnswer: shortAnswerInput.trim(),
+        acceptableAnswers: question.acceptableAnswers,
+      });
+
+      setShortAnswerGradeResult(result);
+      if (result.isCorrect) {
+        playSuccessFanfare();
+        onSelectOption(correctId); // Count as correct
+      } else {
+        playErrorBuzz();
+        onSelectOption(wrongId); // Count as incorrect
+      }
+      onSubmitShortAnswer?.(shortAnswerInput.trim(), result.isCorrect);
+    } catch (err) {
+      console.warn('[QuizArena] Jev grading error, falling back to heuristic:', err);
+      const cleanSub = shortAnswerInput.trim().toLowerCase();
+      const cleanExp = (question.expectedAnswer || question.correctOptionId || '').trim().toLowerCase();
+      const isMatch = cleanSub.length > 0 && (
+        cleanSub === cleanExp ||
+        (question.acceptableAnswers || []).some((ans) => ans.trim().toLowerCase() === cleanSub) ||
+        (cleanSub.length >= 3 && cleanExp.includes(cleanSub))
+      );
+      const fallbackResult = {
+        isCorrect: isMatch,
+        confidence: isMatch ? 0.8 : 0.2,
+        feedback: isMatch ? 'Matched ground truth via local fallback.' : 'Concept did not match expected answer.',
+      };
+      setShortAnswerGradeResult(fallbackResult);
+      if (isMatch) {
+        playSuccessFanfare();
+        onSelectOption(correctId);
+      } else {
+        playErrorBuzz();
+        onSelectOption(wrongId);
+      }
+      onSubmitShortAnswer?.(shortAnswerInput.trim(), isMatch);
+    } finally {
+      setIsGradingShortAnswer(false);
+    }
+  };
+
+  const correctCount = question ? votesDistribution[question.correctOptionId] || 0 : 0;
+  const failureCount = totalVotes - correctCount;
+  const failurePct = totalVotes > 0 ? Math.round((failureCount / totalVotes) * 100) : 0;
+  const isHighMisconception = Boolean(isRevealed && isHost && totalVotes >= 2 && (failurePct >= 50 || failureCount >= 2));
+
+  const wrongOptions = question?.options ? question.options.filter((o) => o.id !== question.correctOptionId) : [];
+  const mostPickedWrong = wrongOptions.length > 0
+    ? [...wrongOptions].sort((a, b) => (votesDistribution[b.id] || 0) - (votesDistribution[a.id] || 0))[0]
+    : undefined;
+
   const lastRemainingRef = useRef<number>(timeRemaining);
   const hasPlayedRevealRef = useRef<boolean>(false);
 
@@ -415,73 +514,204 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </h2>
       </motion.div>
 
-      {/* 4 Precision Option Cards (A, B, C, D) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
-        {question.options.map((option) => {
-          const voteCount = votesDistribution[option.id] || 0;
-          const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-          const isSelected = userSelectedOption === option.id;
-          const isAnswer = question.correctOptionId === option.id;
-          const isDisabled = isRevealed || userSelectedOption !== null;
+      {/* Short Answer Mode or Multiple Choice Cards */}
+      {question.questionType === 'short_answer' ? (
+        <div className="p-5 sm:p-6 bg-[#121215] border border-white/[0.08] rounded-2xl space-y-4">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-purple-400 font-bold uppercase flex items-center gap-1.5">
+              <Terminal className="w-3.5 h-3.5" />
+              <span>Freeform Technical Short Answer</span>
+            </span>
+            <span className="text-[10px] text-zinc-500">
+              ⚡ Evaluated by TypeSafe Jev-1.13 in ~150ms
+            </span>
+          </div>
 
-          return (
-            <motion.button
-              key={option.id}
-              whileTap={isDisabled ? {} : { scale: 0.98 }}
-              onClick={() => {
-                if (!isDisabled) {
-                  playPopSound();
-                  onSelectOption(option.id);
+          {/* Interactive Short Answer Input & Evaluation */}
+          <div className="space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                value={shortAnswerInput}
+                onChange={(e) => setShortAnswerInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleShortAnswerSubmit();
+                  }
+                }}
+                disabled={isRevealed || userSelectedOption !== null || isGradingShortAnswer}
+                placeholder={
+                  isHost
+                    ? "Test your answer here with TypeSafe Jev-1.13..."
+                    : "Type your exact command, concept, or technical answer..."
                 }
-              }}
-              disabled={isDisabled}
-              className={`p-3.5 sm:p-5 rounded-2xl text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[80px] sm:min-h-[96px] cursor-pointer ${getOptionButtonClass(
-                option.id
-              )}`}
-            >
-              {/* Fill bar for vote counts */}
-              {(isRevealed || isHost) && (
-                <div
-                  className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-15 ${
-                    isAnswer ? 'bg-emerald-500' : isSelected ? 'bg-red-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${votePct}%` }}
-                />
-              )}
+                className="w-full px-4 py-3 bg-[#0A0A0C] border border-white/[0.1] rounded-xl text-white font-mono text-sm focus:outline-none focus:border-purple-500 disabled:opacity-60 placeholder:text-zinc-600"
+              />
+            </div>
 
-              <div className="flex items-start justify-between relative z-10 gap-2 sm:gap-3 mb-2 w-full min-w-0">
-                <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <div className="text-xs">
+                {shortAnswerGradeResult ? (
                   <span
-                    className={`w-7 h-7 rounded-lg font-mono text-xs flex items-center justify-center border shrink-0 font-bold ${getOptionBadgeClass(
-                      option.id
-                    )}`}
+                    className={`px-3 py-1 rounded-full font-mono text-xs font-bold uppercase inline-flex items-center gap-1.5 ${
+                      shortAnswerGradeResult.isCorrect
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                    }`}
                   >
-                    {option.id}
+                    {shortAnswerGradeResult.isCorrect ? (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Correct! Jev score: {Math.round(shortAnswerGradeResult.confidence * 100)}%</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Incorrect answer</span>
+                      </>
+                    )}
                   </span>
-                  <span className="text-xs sm:text-sm md:text-[15px] font-semibold leading-relaxed tracking-normal font-question break-words text-zinc-100">
-                    {renderFormattedText(option.text)}
+                ) : userSelectedOption ? (
+                  <span
+                    className={`px-3 py-1 rounded-full font-mono text-xs font-bold uppercase inline-flex items-center gap-1.5 ${
+                      userSelectedOption === (question.correctOptionId || 'A')
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                    }`}
+                  >
+                    {userSelectedOption === (question.correctOptionId || 'A') ? (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Submitted (Correct)</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Submitted (Incorrect)</span>
+                      </>
+                    )}
                   </span>
-                </div>
-
-                {isRevealed && isAnswer && (
-                  <CheckCircle className="w-5 h-5 text-emerald-400 stroke-[2] shrink-0" />
-                )}
-                {isRevealed && isSelected && !isAnswer && (
-                  <XCircle className="w-5 h-5 text-red-400 stroke-[2] shrink-0" />
-                )}
+                ) : isRevealed ? (
+                  <span className="px-3 py-1 rounded-full font-mono text-xs font-bold uppercase inline-flex items-center gap-1.5 bg-zinc-800 text-zinc-400 border border-white/[0.08]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Time expired</span>
+                  </span>
+                ) : null}
               </div>
 
-              {/* Vote statistics */}
-              {(isRevealed || isHost) && (
-                <div className="flex justify-between items-center text-[11px] font-mono pt-2 border-t border-white/[0.08] relative z-10 text-zinc-400">
-                  <span>{voteCount} VOTES</span>
-                  <span className="font-bold text-white">{votePct}%</span>
-                </div>
+              {!userSelectedOption && !isRevealed && (
+                <button
+                  type="button"
+                  onClick={handleShortAnswerSubmit}
+                  disabled={!shortAnswerInput.trim() || isGradingShortAnswer}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-mono text-xs font-bold uppercase rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {isGradingShortAnswer ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      <span>Evaluating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{isHost ? 'Test / Submit Answer' : 'Submit Answer'}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
               )}
-            </motion.button>
-          );
-        })}
-      </div>
+            </div>
+          </div>
+
+          {isHost && (
+            <div className="p-3.5 bg-[#0A0A0C] border border-white/[0.06] rounded-xl font-mono text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400 uppercase text-[10px] font-bold">Host Ground Truth Reference:</span>
+                <span className="text-[10px] text-zinc-500">Live Correct: {correctCount} / {totalVotes}</span>
+              </div>
+              <div className="text-white font-semibold flex items-center gap-2 flex-wrap">
+                <span>Expected:</span>
+                <code className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {question.expectedAnswer || question.correctOptionId}
+                </code>
+                {question.acceptableAnswers && question.acceptableAnswers.length > 0 && (
+                  <span className="text-zinc-500 text-[11px]">
+                    (Synonyms: {question.acceptableAnswers.join(', ')})
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* 4 Precision Option Cards (A, B, C, D) */
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+          {(question.options || []).map((option) => {
+            const voteCount = votesDistribution[option.id] || 0;
+            const votePct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+            const isSelected = userSelectedOption === option.id;
+            const isAnswer = question.correctOptionId === option.id;
+            const isDisabled = isRevealed || userSelectedOption !== null;
+
+            return (
+              <motion.button
+                key={option.id}
+                whileTap={isDisabled ? {} : { scale: 0.98 }}
+                onClick={() => {
+                  if (!isDisabled) {
+                    playPopSound();
+                    onSelectOption(option.id);
+                  }
+                }}
+                disabled={isDisabled}
+                className={`p-3.5 sm:p-5 rounded-2xl text-left transition-all relative overflow-hidden flex flex-col justify-between min-h-[80px] sm:min-h-[96px] cursor-pointer ${getOptionButtonClass(
+                  option.id
+                )}`}
+              >
+                {/* Fill bar for vote counts */}
+                {(isRevealed || isHost) && (
+                  <div
+                    className={`absolute inset-y-0 left-0 transition-all duration-500 opacity-15 ${
+                      isAnswer ? 'bg-emerald-500' : isSelected ? 'bg-red-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${votePct}%` }}
+                  />
+                )}
+
+                <div className="flex items-start justify-between relative z-10 gap-2 sm:gap-3 mb-2 w-full min-w-0">
+                  <div className="flex items-start space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                    <span
+                      className={`w-7 h-7 rounded-lg font-mono text-xs flex items-center justify-center border shrink-0 font-bold ${getOptionBadgeClass(
+                        option.id
+                      )}`}
+                    >
+                      {option.id}
+                    </span>
+                    <span className="text-xs sm:text-sm md:text-[15px] font-semibold leading-relaxed tracking-normal font-question break-words text-zinc-100">
+                      {renderFormattedText(option.text)}
+                    </span>
+                  </div>
+
+                  {isRevealed && isAnswer && (
+                    <CheckCircle className="w-5 h-5 text-emerald-400 stroke-[2] shrink-0" />
+                  )}
+                  {isRevealed && isSelected && !isAnswer && (
+                    <XCircle className="w-5 h-5 text-red-400 stroke-[2] shrink-0" />
+                  )}
+                </div>
+
+                {/* Vote statistics */}
+                {(isRevealed || isHost) && (
+                  <div className="flex justify-between items-center text-[11px] font-mono pt-2 border-t border-white/[0.08] relative z-10 text-zinc-400">
+                    <span>{voteCount} VOTES</span>
+                    <span className="font-bold text-white">{votePct}%</span>
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Result & Explanation Card */}
       {isRevealed && (
@@ -513,7 +743,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
 
             <div className="font-mono font-bold text-xs uppercase bg-[#18181D] text-white px-3 py-1 rounded-full border border-white/[0.08]">
-              CORRECT OPTION: <span className="text-blue-400">[{question.correctOptionId}]</span>
+              {question.questionType === 'short_answer' ? (
+                <>
+                  CORRECT ANSWER:{' '}
+                  <span className="text-emerald-400 font-mono">[{question.expectedAnswer || question.correctOptionId}]</span>
+                </>
+              ) : (
+                <>
+                  CORRECT OPTION: <span className="text-blue-400">[{question.correctOptionId}]</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -524,7 +763,72 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <span>KEY TAKEAWAY</span>
             </div>
             <p className="font-normal text-zinc-300 font-question leading-relaxed">{renderFormattedText(question.explanation)}</p>
+            {question.questionType === 'short_answer' && question.acceptableAnswers && question.acceptableAnswers.length > 0 && (
+              <div className="mt-2.5 pt-2.5 border-t border-white/[0.06] text-xs font-mono text-zinc-400 flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold uppercase text-[10px] text-zinc-500">Also Accepted:</span>
+                {question.acceptableAnswers.map((syn, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-[11px]">
+                    {syn}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Smart Remediation Poll Trigger for Host */}
+          {isHighMisconception && onLaunchRemediationPoll && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-500/30 rounded-xl flex items-center justify-between flex-wrap gap-3"
+            >
+              <div className="flex items-start gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                  <Lightbulb className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-amber-300 uppercase tracking-wider font-mono">
+                    High Misconception Detected ({failurePct}% Incorrect)
+                  </div>
+                  <p className="text-[12px] text-zinc-300 font-sans mt-0.5">
+                    {mostPickedWrong && (votesDistribution[mostPickedWrong.id] || 0) > 0
+                      ? `${Math.round(((votesDistribution[mostPickedWrong.id] || 0) / totalVotes) * 100)}% of attendees selected [${mostPickedWrong.id}] "${mostPickedWrong.text.slice(0, 45)}...". Launch a remediation poll to clarify.`
+                      : `Audience struggled with this concept. Launch a debate or remediation poll to solidify understanding.`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  playClickSound();
+                  setIsGeneratingRemediation(true);
+                  try {
+                    await onLaunchRemediationPoll({
+                      question,
+                      mostPickedWrong,
+                      votesDistribution,
+                    });
+                  } finally {
+                    setIsGeneratingRemediation(false);
+                  }
+                }}
+                disabled={isGeneratingRemediation}
+                className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-mono text-xs font-bold uppercase rounded-xl border border-amber-400/40 shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all"
+              >
+                {isGeneratingRemediation ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Synthesizing Poll...</span>
+                  </>
+                ) : (
+                  <>
+                    <Vote className="w-3.5 h-3.5" />
+                    <span>Launch Remediation Poll</span>
+                  </>
+                )}
+              </button>
+            </motion.div>
+          )}
 
           {/* AI Synthesizing live follow-up badge */}
           {quizState.isAIGeneratingNext && (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Bot,
   Key,
@@ -48,8 +48,10 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  // Sync state if external changes happen
-  useEffect(() => {
+  // Sync state if roomCode changes
+  const [prevRoomCode, setPrevRoomCode] = useState(roomCode);
+  if (roomCode !== prevRoomCode) {
+    setPrevRoomCode(roomCode);
     const key = getStoredMeshKey();
     const model = getStoredMeshModel();
     setApiKey(key);
@@ -58,7 +60,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
     if (model && model !== 'auto' && !MESH_MODEL_OPTIONS.some((m) => m.id === model)) {
       setCustomModelInput(model);
     }
-  }, [roomCode]);
+  }
 
   const triggerSaveNotification = (msg: string = 'Saved') => {
     setSaveStatus(msg);
@@ -300,7 +302,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
               >
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-xs font-semibold text-white">{m.name}</span>
+                    <span className="text-xs font-semibold text-white truncate">{m.name}</span>
                     <span
                       className={`text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                         isSelected
@@ -311,6 +313,11 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
                       {m.tag}
                     </span>
                   </div>
+                  {m.provider && (
+                    <div className="text-[10px] text-zinc-500 font-mono mb-1">
+                      {m.provider}
+                    </div>
+                  )}
                   <p className="text-[11px] text-zinc-400 leading-relaxed">
                     {m.description}
                   </p>
@@ -342,7 +349,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
             type="text"
             value={customModelInput}
             onChange={(e) => handleCustomModelChange(e.target.value)}
-            placeholder="e.g. openai/gpt-4o-mini or deepseek/deepseek-v4-flash"
+            placeholder="e.g. xiaomi/mimo-v2.5, deepseek/deepseek-chat, or any model on Mesh API"
             className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-black/40 border border-white/[0.08] text-white font-mono focus:outline-none focus:border-blue-500"
           />
         </div>

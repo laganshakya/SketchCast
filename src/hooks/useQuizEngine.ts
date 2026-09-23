@@ -7,7 +7,11 @@ import type {
   DifficultyTier,
 } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { generateAdaptiveFollowUpQuestion, calculateDynamicQuestionTimeLimit } from '../lib/meshApi';
+import {
+  generateAdaptiveFollowUpQuestion,
+  calculateDynamicQuestionTimeLimit,
+  type QuizQuestionFormat,
+} from '../lib/meshApi';
 
 import {
   dbFetchLeaderboard,
@@ -26,6 +30,7 @@ export interface AdaptiveCampaignState {
   totalQuestions: number;
   currentQuestionIndex: number;
   currentDifficulty: DifficultyTier;
+  format?: QuizQuestionFormat;
   nextPreparedQuestion?: QuizQuestion | null;
   isGeneratingNext?: boolean;
 }
@@ -86,14 +91,16 @@ export function useQuizEngine({
     }
   });
 
-  useEffect(() => {
+  const [prevQuizAnswersKey, setPrevQuizAnswersKey] = useState(quizAnswersStorageKey);
+  if (quizAnswersStorageKey !== prevQuizAnswersKey) {
+    setPrevQuizAnswersKey(quizAnswersStorageKey);
     try {
       const stored = localStorage.getItem(quizAnswersStorageKey);
       setUserQuizAnswers(stored ? JSON.parse(stored) : {});
     } catch {
       setUserQuizAnswers({});
     }
-  }, [quizAnswersStorageKey]);
+  }
 
   const votedUsersRef = useRef<Set<string>>(new Set());
 
@@ -249,12 +256,12 @@ export function useQuizEngine({
       // ignore
     }
     setAdaptiveCampaign(null);
-    adaptiveCampaignRef.current = null;
-    pendingAdvanceRef.current = false;
   }
 
   useEffect(() => {
     votedUsersRef.current.clear();
+    adaptiveCampaignRef.current = null;
+    pendingAdvanceRef.current = false;
   }, [currentRoomKey]);
 
   // Load from Supabase DB on mount, when roomCode changes, or when active tab switches to quiz/leaderboard
@@ -467,7 +474,8 @@ export function useQuizEngine({
       topic: string,
       count: number,
       startDifficulty: DifficultyTier,
-      initialQuestion?: QuizQuestion
+      initialQuestion?: QuizQuestion,
+      format?: QuizQuestionFormat
     ) => {
       let q1 = initialQuestion;
       if (!q1) {
@@ -479,6 +487,7 @@ export function useQuizEngine({
           questionNumber: 1,
           totalQuestions: count,
           adaptationType: 'maintained',
+          format,
         });
       }
 
@@ -499,6 +508,7 @@ export function useQuizEngine({
         totalQuestions: count,
         currentQuestionIndex: 1,
         currentDifficulty: startDifficulty,
+        format,
         nextPreparedQuestion: null,
         isGeneratingNext: false,
       };
@@ -537,10 +547,53 @@ export function useQuizEngine({
 
     if (camp.nextPreparedQuestion) {
       launchNextAdaptiveQuestion(camp.nextPreparedQuestion);
-    } else {
+    } else if (camp.isGeneratingNext || quizState.isAIGeneratingNext) {
       pendingAdvanceRef.current = true;
+    } else {
+      // Background generation failed or was never initiated; launch synthesis now
+      pendingAdvanceRef.current = true;
+      const prevQ = quizState.question;
+      const votes = quizState.votesDistribution || { A: 0, B: 0, C: 0, D: 0 };
+      const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+      const correctOpt = prevQ?.correctOptionId;
+      const correctVotes = correctOpt ? votes[correctOpt] || 0 : 0;
+      const accuracyPct = totalVotes > 0 ? (correctVotes / totalVotes) * 100 : 50;
+
+      const { targetTier, adaptationType } = calculateNextDifficulty(camp.currentDifficulty, accuracyPct);
+      const nextQNum = camp.currentQuestionIndex + 1;
+
+      generateAdaptiveFollowUpQuestion({
+        topic: camp.topic,
+        currentDifficulty: camp.currentDifficulty,
+        targetDifficulty: targetTier,
+        previousQuestion: prevQ?.question,
+        previousCorrectAnswer: prevQ?.expectedAnswer || prevQ?.options?.find((o) => o.id === correctOpt)?.text,
+        accuracyPct,
+        questionNumber: nextQNum,
+        totalQuestions: camp.totalQuestions,
+        adaptationType,
+        format: camp.format || 'mixed',
+      })
+        .then((nextQ) => {
+          pendingAdvanceRef.current = false;
+          launchNextAdaptiveQuestion(nextQ);
+        })
+        .catch((err) => {
+          console.error('[AdaptiveQuiz] Emergency advance synthesis failed:', err);
+          pendingAdvanceRef.current = false;
+          if (onAutoAdvanceRef.current) {
+            onAutoAdvanceRef.current();
+          }
+        });
     }
-  }, [userRole, adaptiveCampaignStorageKey, launchNextAdaptiveQuestion]);
+  }, [
+    userRole,
+    quizState.question,
+    quizState.votesDistribution,
+    quizState.isAIGeneratingNext,
+    adaptiveCampaignStorageKey,
+    launchNextAdaptiveQuestion,
+  ]);
 
   const revealAnswer = useCallback(() => {
     const campaign = adaptiveCampaignRef.current;
@@ -590,11 +643,12 @@ export function useQuizEngine({
         currentDifficulty: campaign.currentDifficulty,
         targetDifficulty: targetTier,
         previousQuestion: prevQ.question,
-        previousCorrectAnswer: prevQ.options.find((o) => o.id === correctOpt)?.text,
+        previousCorrectAnswer: prevQ.expectedAnswer || prevQ.options?.find((o) => o.id === correctOpt)?.text,
         accuracyPct,
         questionNumber: nextQNum,
         totalQuestions: campaign.totalQuestions,
         adaptationType,
+        format: campaign.format || 'mixed',
       })
         .then((nextQ) => {
           const curCamp = adaptiveCampaignRef.current;
@@ -637,6 +691,16 @@ export function useQuizEngine({
         })
         .catch((err) => {
           console.error('[AdaptiveQuiz] Failed to synthesize next question in background:', err);
+          pendingAdvanceRef.current = false;
+          const curCamp = adaptiveCampaignRef.current;
+          if (curCamp && curCamp.isActive) {
+            const nextCamp: AdaptiveCampaignState = {
+              ...curCamp,
+              isGeneratingNext: false,
+            };
+            setAdaptiveCampaign(nextCamp);
+            adaptiveCampaignRef.current = nextCamp;
+          }
           setQuizState((curr) => {
             const sUpdated: QuizRoundState = {
               ...curr,
@@ -782,7 +846,8 @@ export function useQuizEngine({
     if (quizState.isActive && quizState.isRevealed) {
       if (quizState.isAutoAdvancePaused) {
         if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
-        setAutoAdvanceCountdown(quizState.autoAdvanceRemaining ?? 5);
+        const rem = quizState.autoAdvanceRemaining ?? 5;
+        queueMicrotask(() => setAutoAdvanceCountdown(rem));
         return;
       }
 
@@ -832,11 +897,11 @@ export function useQuizEngine({
           if (autoAdvanceTimerRef.current) clearInterval(autoAdvanceTimerRef.current);
         };
       } else {
-        setAutoAdvanceCountdown(0);
+        queueMicrotask(() => setAutoAdvanceCountdown(0));
       }
     } else {
       hasAutoAdvancedRef.current = false;
-      setAutoAdvanceCountdown(5);
+      queueMicrotask(() => setAutoAdvanceCountdown(5));
     }
   }, [
     quizState.isActive,
@@ -970,6 +1035,7 @@ export function useQuizEngine({
       userRole,
       currentRoomKey,
       quizStorageKey,
+      quizAnswersStorageKey,
       channelManager,
     ]
   );

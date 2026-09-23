@@ -72,14 +72,19 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
     type: 'success' | 'warn' | 'error' | 'info';
   } | null>(null);
 
-  useEffect(() => {
-    if (isOpen && onRefresh) {
-      onRefresh();
-    }
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (!isOpen) {
       setConfirmAction(null);
       setActionToast(null);
       setSearchQuery('');
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen && onRefresh) {
+      onRefresh();
     }
   }, [isOpen, onRefresh]);
 

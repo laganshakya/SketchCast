@@ -60,26 +60,30 @@ export function getMeshApiBaseUrl(): string {
 
 export const MESH_MODELS = {
   AUTO: 'auto',
-  GPT_4O_MINI: 'openai/gpt-4o-mini-2024-07-18',
-  BALANCED_MINI: 'openai/gpt-4o-mini',
+  JEV_1_13: 'typesafe/jev-1.13',
+  XIAOMI_MIMO_V2_5: 'xiaomi/mimo-v2.5',
   DEEPSEEK_V4_FLASH: 'deepseek/deepseek-v4-flash',
   DEEPSEEK_V4_1_FLASH: 'deepseek/deepseek-v4.1-flash',
+  GPT_4O_MINI: 'openai/gpt-4o-mini-2024-07-18',
+  BALANCED_MINI: 'openai/gpt-4o-mini',
+  GEMINI_2_5_FLASH: 'google/gemini-2.5-flash',
+  LLAMA_3_3_70B: 'meta-llama/llama-3.3-70b-instruct',
 } as const;
 
 export const MESH_MODEL_OPTIONS = [
   {
     id: 'auto',
-    name: 'Smart Auto-Router (Credit Saver)',
-    provider: 'Mesh Smart Router',
-    tag: 'MAX SAVINGS',
-    description: 'Auto-routes tasks to the cheapest, most efficient model (GPT-4o Mini for ultra-low token cost, DeepSeek Chat for long-form synthesis) to minimize spend.',
+    name: 'Smart Router',
+    provider: 'Powered by TypeSafe Jev 1.13',
+    tag: 'INTELLIGENT ROUTER',
+    description: 'Uses TypeSafe Jev-1.13 as a lightning-fast Traffic Controller: handles live Q&A moderation, safety guardrails, duplicate detection & sentiment itself, and routes quizzes, surveys & reports to the optimal models.',
   },
   {
-    id: 'openai/gpt-4o-mini-2024-07-18',
-    name: 'GPT-4o Mini',
-    provider: 'OpenAI',
-    tag: 'ULTRA CHEAP',
-    description: 'Cheapest per-token pricing, blazing speed, and reliable structured parsing for moderation, quizzes, and surveys.',
+    id: 'xiaomi/mimo-v2.5',
+    name: 'Xiaomi MiMo V2.5',
+    provider: 'Xiaomi',
+    tag: '310B MoE FLAGSHIP',
+    description: 'Massive 310B MoE model with 1M context. Exceptional deep reasoning for executive session reports, synthesis, and complex analysis.',
   },
   {
     id: 'deepseek/deepseek-v4-flash',
@@ -95,46 +99,105 @@ export const MESH_MODEL_OPTIONS = [
     tag: 'SUPER FAST',
     description: 'Super ultra-fast latency for live moderation, quick trivia questions, and real-time interaction.',
   },
+  {
+    id: 'openai/gpt-4o-mini-2024-07-18',
+    name: 'GPT-4o Mini',
+    provider: 'OpenAI',
+    tag: 'ULTRA RELIABLE',
+    description: 'Cheapest per-token pricing, blazing speed, and reliable structured parsing for moderation, quizzes, and surveys.',
+  },
+  {
+    id: 'google/gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    provider: 'Google',
+    tag: 'BALANCED PRO',
+    description: 'Next-gen multimodal reasoning, 1M context window, high speed, and low token cost.',
+  },
+  {
+    id: 'meta-llama/llama-3.3-70b-instruct',
+    name: 'Llama 3.3 70B',
+    provider: 'Meta',
+    tag: 'OPEN WEIGHTS',
+    description: 'Flagship open weights intelligence with deep reasoning and coding proficiency.',
+  },
 ];
 
 const STORAGE_KEY_MESH_KEY = 'sketchcast_mesh_api_key';
 const STORAGE_KEY_MESH_MODEL = 'sketchcast_mesh_selected_model';
 
+function getSafeLocalStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+    if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      return localStorage;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function getStoredMeshKey(): string {
-  if (typeof window !== 'undefined' || typeof localStorage !== 'undefined') {
-    const local = localStorage.getItem(STORAGE_KEY_MESH_KEY);
-    if (local && local.trim()) return local.trim();
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      const local = storage.getItem(STORAGE_KEY_MESH_KEY);
+      if (local && local.trim()) return local.trim();
+    }
+  } catch {
+    // ignore
   }
   return (import.meta.env?.VITE_MESH_API_KEY as string) || '';
 }
 
 export function setStoredMeshKey(key: string): void {
-  if (typeof window !== 'undefined' || typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY_MESH_KEY, key.trim());
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.setItem(STORAGE_KEY_MESH_KEY, key.trim());
+    }
+  } catch {
+    // ignore
   }
 }
 
 export function getStoredMeshModel(): string {
-  if (typeof window !== 'undefined' || typeof localStorage !== 'undefined') {
-    const local = localStorage.getItem(STORAGE_KEY_MESH_MODEL);
-    if (local && local.trim()) {
-      const trimmed = local.trim();
-      if (trimmed === 'auto' || trimmed === MESH_MODELS.AUTO) {
-        return MESH_MODELS.AUTO;
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      const local = storage.getItem(STORAGE_KEY_MESH_MODEL);
+      if (local && local.trim()) {
+        const trimmed = local.trim();
+        if (trimmed === 'auto' || trimmed === MESH_MODELS.AUTO) {
+          return MESH_MODELS.AUTO;
+        }
+        // Jev-1.13 is the internal traffic controller inside Smart Router; route user to auto
+        if (trimmed === 'typesafe/jev-1.13' || trimmed.includes('jev-1.13')) {
+          return MESH_MODELS.AUTO;
+        }
+        // Migrate old removed model strings
+        if (trimmed.includes('claude-3.5-sonnet') || trimmed.includes('claude-3-haiku') || trimmed.includes('deepseek-r1')) {
+          return MESH_MODELS.AUTO;
+        }
+        return trimmed;
       }
-      // Migrate old removed model strings
-      if (trimmed.includes('gemini') || trimmed.includes('claude-3.5-sonnet') || trimmed.includes('claude-3-haiku') || trimmed.includes('deepseek-r1')) {
-        return MESH_MODELS.AUTO;
-      }
-      return trimmed;
     }
+  } catch {
+    // ignore
   }
   return MESH_MODELS.AUTO;
 }
 
 export function setStoredMeshModel(model: string): void {
-  if (typeof window !== 'undefined' || typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY_MESH_MODEL, model.trim());
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.setItem(STORAGE_KEY_MESH_MODEL, model.trim());
+    }
+  } catch {
+    // ignore
   }
 }
 
@@ -152,7 +215,7 @@ export type MeshTaskType =
 /**
  * Intelligently resolves the optimal model for a given task.
  * If the host has chosen a specific preset or custom model ID (not 'auto'), that model is STRICTLY respected.
- * If in 'auto' mode, task-specific cost optimization routes to the cheapest reliable model.
+ * If in 'auto' mode (Smart Router), task-specific cost optimization routes to the cheapest reliable model.
  */
 export function resolveModelForTask(taskType: MeshTaskType, explicitModel?: string): string {
   const chosenModel = explicitModel || getStoredMeshModel();
@@ -162,25 +225,28 @@ export function resolveModelForTask(taskType: MeshTaskType, explicitModel?: stri
     return chosenModel;
   }
 
-  // Dynamic / Auto-Router Selection (Optimized to save maximum money and tokens using GPT-4o Mini)
+  // Dynamic Smart Router Selection (Task-specific optimization to save maximum credits and tokens)
   switch (taskType) {
     case 'moderation':
     case 'duplicates':
-    case 'talking_points':
-    case 'poll_consensus':
-      // Trivial / high-frequency tasks: use ultra-cheap, reliable GPT-4o Mini
-      return MESH_MODELS.GPT_4O_MINI;
+      // High-frequency classification: use ultra-cheap ($0.042/1M tokens) TypeSafe Jev 1.13
+      return MESH_MODELS.JEV_1_13;
     case 'quiz':
     case 'survey':
+    case 'talking_points':
+    case 'poll_consensus':
+      // Fast structured schema generation: ultra-fast latency DeepSeek Flash
+      return MESH_MODELS.DEEPSEEK_V4_FLASH;
     case 'clustering':
-      // Fast structured schema generation: lowest token cost and superior JSON compliance
+      // Schema adherence for nested array-of-objects grouping
       return MESH_MODELS.GPT_4O_MINI;
-    case 'session_report':
     case 'survey_sentiment':
-      // Multi-dimensional synthesis: cost-effective GPT-4o Mini
-      return MESH_MODELS.GPT_4O_MINI;
+      return MESH_MODELS.JEV_1_13;
+    case 'session_report':
+      // Multi-dimensional synthesis: deep reasoning 310B MoE Xiaomi MiMo V2.5
+      return MESH_MODELS.XIAOMI_MIMO_V2_5;
     default:
-      return MESH_MODELS.GPT_4O_MINI;
+      return MESH_MODELS.DEEPSEEK_V4_FLASH;
   }
 }
 
@@ -190,6 +256,234 @@ const duplicateCheckCache = new Map<string, { result: DuplicateDetectionResult; 
 const clusterCache = new Map<string, { result: QuestionCluster[]; timestamp: number }>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes TTL
 
+export interface MeshEvaluateOptions {
+  apiKey?: string;
+  model?: string;
+}
+
+export interface MeshEvaluateResponse {
+  id?: string;
+  model?: string;
+  answers?: Record<string, any>;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  };
+}
+
+/**
+ * Calls TypeSafe Jev-1.13 (or other System One evaluation models) via /v1/evaluate
+ * Delivers sub-second, calibrated choices, probabilities, and scores at $0.042/1M tokens.
+ */
+export async function callMeshEvaluate(
+  state: string,
+  questions: Record<string, any>,
+  options: MeshEvaluateOptions = {}
+): Promise<MeshEvaluateResponse> {
+  const apiKey = options.apiKey || getStoredMeshKey();
+  const model = options.model || MESH_MODELS.JEV_1_13;
+
+  const payload = {
+    model,
+    state,
+    questions,
+  };
+
+  // --- Tier 1: Supabase Edge Function ---
+  const edgeFunctionUrl = getSupabaseEdgeFunctionUrl();
+  const supabaseAnonKey = (import.meta.env?.VITE_SUPABASE_ANON_KEY as string) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
+
+  if (edgeFunctionUrl) {
+    try {
+      const edgeRes = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'x-mesh-endpoint': 'evaluate',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (edgeRes.ok) {
+        const edgeJson = await edgeRes.json().catch(() => null);
+        if (edgeJson?.answers) {
+          return edgeJson;
+        }
+      }
+    } catch {
+      // Fallback seamlessly to direct gateway
+    }
+  }
+
+  if (!apiKey) {
+    throw new Error('Mesh API Key missing. Please click "AI SETTINGS" in the header to enter your rsk_... key.');
+  }
+
+  // --- Tier 2: Vite proxy / Direct Mesh API ---
+  const baseUrl = getMeshApiBaseUrl();
+  const evaluateUrl = baseUrl.endsWith('/v1') ? `${baseUrl}/evaluate` : `${baseUrl}/v1/evaluate`;
+  const directEvaluateUrl = 'https://api.meshapi.ai/v1/evaluate';
+
+  let response: Response | null = null;
+  let lastError: any = null;
+
+  try {
+    const res = await fetch(evaluateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (
+      (!res.ok && (res.status === 404 || res.status === 405 || res.status === 502)) ||
+      contentType.includes('text/html')
+    ) {
+      if (evaluateUrl !== directEvaluateUrl) {
+        response = await fetch(directEvaluateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = res;
+      }
+    } else {
+      response = res;
+    }
+  } catch (err: any) {
+    lastError = err;
+    if (evaluateUrl !== directEvaluateUrl) {
+      try {
+        response = await fetch(directEvaluateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (directErr: any) {
+        lastError = directErr;
+      }
+    }
+  }
+
+  if (!response) {
+    throw new Error(`Connection failed: ${lastError?.message || 'Network error'}.`);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let msg = `Mesh API Evaluate Error (${response.status}): ${errorText}`;
+    try {
+      const parsed = JSON.parse(errorText);
+      if (parsed?.error?.message) msg = parsed.error.message;
+    } catch {
+      // ignore
+    }
+    throw new Error(msg);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Smart Router Dynamic Traffic Controller (powered by TypeSafe Jev 1.13)
+ * When an arbitrary request is dispatched, Jev-1.13 acts as the lightning-fast "Traffic Controller",
+ * classifying tasks into the optimal model lane:
+ * - Live moderation, safety checks, duplicate detection, sentiment -> Jev-1.13 handles directly!
+ * - Quizzes, trivia, polls -> DeepSeek Flash
+ * - Executive Masterclass Reports -> Xiaomi MiMo-V2.5 (310B MoE)
+ * - Strict schema clustering -> GPT-4o Mini
+ */
+export async function routeTaskWithJev(
+  promptOrContent: string,
+  explicitTask?: MeshTaskType
+): Promise<{ model: string; lane: string; confidence: number; reason: string }> {
+  // If task is explicit, map directly
+  if (explicitTask) {
+    const directModel = resolveModelForTask(explicitTask);
+    return {
+      model: directModel,
+      lane: explicitTask,
+      confidence: 1.0,
+      reason: `Direct task mapping for ${explicitTask}`,
+    };
+  }
+
+  try {
+    const evalRes = await callMeshEvaluate(
+      promptOrContent.slice(0, 1000),
+      {
+        target_lane: {
+          type: 'choice',
+          instructions: 'What is the optimal AI execution lane for this user request or content?',
+          criteria: {
+            guardrail_decision: 'Micro-decisions, content moderation, duplicate checking, or safety filtering',
+            fast_interactive: 'Generating quizzes, trivia, surveys, quick questions, or polls',
+            deep_synthesis: 'Generating comprehensive executive summaries, masterclass reports, deep analysis, or long-form synthesis',
+            structured_data: 'Grouping or clustering complex data objects into strict JSON categories',
+          },
+        },
+      },
+      { model: MESH_MODELS.JEV_1_13 }
+    );
+
+    const lane = evalRes?.answers?.target_lane?.choice || 'fast_interactive';
+    const confidence = evalRes?.answers?.target_lane?.confidence ?? 0.95;
+
+    switch (lane) {
+      case 'guardrail_decision':
+        return {
+          model: MESH_MODELS.JEV_1_13,
+          lane,
+          confidence,
+          reason: 'Handled by Jev-1.13 directly for sub-second, sub-cent decision',
+        };
+      case 'deep_synthesis':
+        return {
+          model: MESH_MODELS.XIAOMI_MIMO_V2_5,
+          lane,
+          confidence,
+          reason: 'Routed to Xiaomi MiMo-V2.5 310B MoE for deep executive synthesis',
+        };
+      case 'structured_data':
+        return {
+          model: MESH_MODELS.GPT_4O_MINI,
+          lane,
+          confidence,
+          reason: 'Routed to GPT-4o Mini for strict JSON schema compliance',
+        };
+      case 'fast_interactive':
+      default:
+        return {
+          model: MESH_MODELS.DEEPSEEK_V4_FLASH,
+          lane,
+          confidence,
+          reason: 'Routed to DeepSeek Flash for high-speed interactive generation',
+        };
+    }
+  } catch (err) {
+    console.warn('[Smart Router] Jev traffic controller fallback:', err);
+    return {
+      model: MESH_MODELS.DEEPSEEK_V4_FLASH,
+      lane: 'fast_interactive',
+      confidence: 0.8,
+      reason: 'Fallback to DeepSeek Flash default',
+    };
+  }
+}
+
 export async function callMeshChatCompletion(
   messages: MeshChatMessage[],
   options: MeshCompletionOptions = {}
@@ -197,8 +491,14 @@ export async function callMeshChatCompletion(
   const apiKey = options.apiKey || getStoredMeshKey();
   const rawModel = options.model || getStoredMeshModel();
   const model = (rawModel === 'auto' || rawModel === MESH_MODELS.AUTO)
-    ? MESH_MODELS.GPT_4O_MINI
+    ? MESH_MODELS.DEEPSEEK_V4_FLASH
     : rawModel;
+
+  // If Jev 1.13 was explicitly selected as global model but a generative completion is requested,
+  // route generative text to high-speed DeepSeek Flash (since Jev is a System One decision evaluator)
+  const effectiveModel = model === MESH_MODELS.JEV_1_13
+    ? MESH_MODELS.DEEPSEEK_V4_FLASH
+    : model;
 
   const {
     temperature = 0.7,
@@ -206,11 +506,16 @@ export async function callMeshChatCompletion(
     jsonMode = false,
   } = options;
 
+  // Xiaomi MiMo models use reasoning tokens before content; ensure sufficient token headroom
+  const effectiveMaxTokens = (effectiveModel.includes('mimo') && maxTokens < 600)
+    ? 600
+    : maxTokens;
+
   const payload: Record<string, any> = {
-    model,
+    model: effectiveModel,
     messages,
     temperature,
-    max_tokens: maxTokens,
+    max_tokens: effectiveMaxTokens,
   };
 
   if (jsonMode) {
@@ -235,7 +540,7 @@ export async function callMeshChatCompletion(
 
       if (edgeRes.ok) {
         const edgeJson = await edgeRes.json().catch(() => null);
-        const edgeContent = edgeJson?.choices?.[0]?.message?.content;
+        const edgeContent = edgeJson?.choices?.[0]?.message?.content || edgeJson?.choices?.[0]?.message?.reasoning;
         if (edgeContent) {
           return edgeContent;
         }
@@ -313,8 +618,8 @@ export async function callMeshChatCompletion(
       `Mesh API Error: ${response.status} ${response.statusText}`;
 
     // If a custom or failed model encountered an error, retry with fallback WITHOUT destroying user's saved preference
-    if (model !== MESH_MODELS.GPT_4O_MINI && model !== MESH_MODELS.DEEPSEEK_V4_FLASH) {
-      console.warn(`[Mesh API] Model "${model}" failed (${message}). Retrying with fallback "${MESH_MODELS.GPT_4O_MINI}"...`);
+    if (effectiveModel !== MESH_MODELS.GPT_4O_MINI && effectiveModel !== MESH_MODELS.DEEPSEEK_V4_FLASH) {
+      console.warn(`[Mesh API] Model "${effectiveModel}" failed (${message}). Retrying with fallback "${MESH_MODELS.GPT_4O_MINI}"...`);
       return callMeshChatCompletion(messages, {
         ...options,
         model: MESH_MODELS.GPT_4O_MINI,
@@ -325,7 +630,7 @@ export async function callMeshChatCompletion(
   }
 
   const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const content = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning;
   if (!content) {
     throw new Error('Empty response received from Mesh API.');
   }
@@ -339,19 +644,50 @@ export async function testMeshConnection(apiKey?: string, model?: string): Promi
   }
 
   const rawModel = model || getStoredMeshModel();
+
+  // If testing TypeSafe Jev 1.13 specifically, test the evaluate endpoint
+  if (rawModel === MESH_MODELS.JEV_1_13) {
+    try {
+      const evalRes = await callMeshEvaluate(
+        'System connectivity ping test',
+        {
+          ping: {
+            type: 'noul',
+            instructions: 'Is this message a system ping check?',
+          },
+        },
+        { apiKey: keyToUse, model: MESH_MODELS.JEV_1_13 }
+      );
+      const conf = evalRes?.answers?.ping?.noul ?? 1.0;
+      return {
+        success: true,
+        message: `Connected successfully! (Model: ${rawModel} via System One Evaluate, calibrated response: ${conf}).`,
+        modelUsed: rawModel,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Connection failed to Mesh Evaluate gateway.',
+        modelUsed: rawModel,
+      };
+    }
+  }
+
   const targetModel = (rawModel === 'auto' || rawModel === MESH_MODELS.AUTO)
-    ? MESH_MODELS.GPT_4O_MINI
+    ? MESH_MODELS.DEEPSEEK_V4_FLASH
     : rawModel;
+
+  const testMaxTokens = targetModel.includes('mimo') ? 250 : 25;
 
   try {
     const text = await callMeshChatCompletion(
       [{ role: 'user', content: 'Respond with exactly: "MESH_API_ONLINE"' }],
-      { apiKey: keyToUse, model: targetModel, maxTokens: 25, temperature: 0.1 }
+      { apiKey: keyToUse, model: targetModel, maxTokens: testMaxTokens, temperature: 0.1 }
     );
 
     return {
       success: true,
-      message: `Connected successfully! (Model: ${targetModel}${rawModel === 'auto' ? ' via Smart Auto-Router' : ''}) Output: ${text.trim()}`,
+      message: `Connected successfully! (Model: ${targetModel}${rawModel === 'auto' ? ' via Smart Router' : ''}) Output: ${text.trim()}`,
       modelUsed: targetModel,
     };
   } catch (err: any) {
@@ -484,14 +820,19 @@ export function safeParseJsonFromLLM<T = any>(rawText: string, fallback?: T): T 
 // -------------------------------------------------------------
 // FEATURE 1: AI Quiz Pack Generator
 // -------------------------------------------------------------
+export type QuizQuestionFormat = 'mixed' | 'multiple_choice' | 'short_answer';
+
 export interface GeneratedAIQuestion {
   category: string;
   question: string;
-  optA: string;
-  optB: string;
-  optC: string;
-  optD: string;
-  correctOpt: 'A' | 'B' | 'C' | 'D';
+  questionType?: 'multiple_choice' | 'short_answer';
+  expectedAnswer?: string;
+  acceptableAnswers?: string[];
+  optA?: string;
+  optB?: string;
+  optC?: string;
+  optD?: string;
+  correctOpt?: 'A' | 'B' | 'C' | 'D';
   explanation: string;
   timeLimitSeconds: number;
 }
@@ -522,7 +863,7 @@ export function calculateDynamicQuestionTimeLimit(
   const totalWords = questionWords + optionsWords;
 
   // 2. Detect technical code, backticks, syntax symbols, or JSON/code snippets
-  const hasCodeSnippet = /[`{}[\]();<>\/\\=]/.test(cleanQ) || /```/.test(cleanQ) || /`[^`]+`/.test(cleanQ);
+  const hasCodeSnippet = /[`{}[\]();<>\x2f\\=]/.test(cleanQ) || /```/.test(cleanQ) || /`[^`]+`/.test(cleanQ);
   const codeBonusSeconds = hasCodeSnippet ? 12 : 0;
 
   // 3. Technical reading speed calculation
@@ -570,9 +911,123 @@ export function calculateDynamicQuestionTimeLimit(
   return Math.min(120, Math.max(minimumFloor, baseTime));
 }
 
+export function buildQuizFormatInstructions(format: QuizQuestionFormat, count: number): string {
+  if (format === 'short_answer') {
+    return `FORMAT REQUIREMENT: ALL ${count} questions MUST be freeform short-answer questions (auto-evaluated via semantic grader).
+- "questionType": "short_answer"
+- "expectedAnswer": The canonical, concise correct technical term, command, algorithm, complexity, or keyword (1 to 4 words, e.g. "git cherry-pick", "O(1)", "CAP theorem", "raft", "optimistic concurrency control").
+- "acceptableAnswers": Array of 2 to 4 acceptable synonyms, abbreviations, casing variations, or alternative spellings (e.g. ["cherry pick", "git-cherry-pick"]).
+- "optA": set to expectedAnswer, "optB": "Other", "correctOpt": "A".
+- "explanation": Concise 1-2 sentence educational explanation detailing why this is correct.
+- "timeLimitSeconds": 30 to 45 seconds.`;
+  }
+
+  if (format === 'multiple_choice') {
+    return `FORMAT REQUIREMENT: ALL ${count} questions MUST be 4-option multiple-choice questions.
+- "questionType": "multiple_choice"
+- 4 distinct, standalone options (optA, optB, optC, optD). Do NOT use "All of the above" or "None of the above".
+- Distribute correctOpt evenly across ('A', 'B', 'C', 'D'). Randomize which option is correct so 'A' is NOT always the answer.
+- "explanation": Concise 1-2 sentence educational explanation.
+- "timeLimitSeconds": 45 to 80 seconds based on reading complexity.`;
+  }
+
+  // mixed format: balanced blend
+  const shortCount = Math.max(1, Math.floor(count / 2));
+  const mcCount = count - shortCount;
+  return `FORMAT REQUIREMENT: Provide a BALANCED MIX of ${mcCount} multiple-choice question(s) AND ${shortCount} freeform short-answer question(s).
+1. For multiple-choice questions:
+   - "questionType": "multiple_choice"
+   - 4 distinct standalone options: "optA", "optB", "optC", "optD".
+   - "correctOpt": 'A', 'B', 'C', or 'D'.
+   - "timeLimitSeconds": 45 to 80 seconds.
+2. For short-answer questions:
+   - "questionType": "short_answer"
+   - "expectedAnswer": Canonical concise technical answer (1 to 4 words, e.g. "git cherry-pick", "O(1)", "CAP theorem", "raft").
+   - "acceptableAnswers": Array of 2 to 4 acceptable synonyms, abbreviations, or alternative phrasings.
+   - "optA": set to expectedAnswer, "optB": "Other", "correctOpt": "A".
+   - "timeLimitSeconds": 30 to 45 seconds.
+3. Educational "explanation" (1-2 sentences) for every question.`;
+}
+
+export function parseRawGeneratedQuestions(
+  rawList: any[],
+  defaultCategory: string,
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  requestedFormat: QuizQuestionFormat = 'mixed'
+): GeneratedAIQuestion[] {
+  return rawList.map((q: any, idx: number) => {
+    const isShortExplicit = q.questionType === 'short_answer';
+    const hasExpectedAnswer = Boolean(q.expectedAnswer && String(q.expectedAnswer).trim().length > 0);
+    const lacksMultipleOptions = !q.optB || q.optB === 'Other' || q.optB === q.optA;
+
+    // Determine if this question should be treated as short_answer
+    const isShort = isShortExplicit || (requestedFormat === 'short_answer') || (hasExpectedAnswer && lacksMultipleOptions);
+
+    const cleanExpected = (
+      q.expectedAnswer ||
+      (q.correctOpt && q[`opt${q.correctOpt}`]) ||
+      q.optA ||
+      'Correct'
+    ).trim();
+
+    const acceptableArr: string[] = Array.isArray(q.acceptableAnswers)
+      ? q.acceptableAnswers.map((s: any) => String(s).trim()).filter(Boolean)
+      : typeof q.acceptableAnswers === 'string'
+      ? q.acceptableAnswers.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : [];
+
+    if (isShort) {
+      return {
+        category: q.category || defaultCategory,
+        question: q.question || `Technical Question ${idx + 1}`,
+        questionType: 'short_answer' as const,
+        expectedAnswer: cleanExpected,
+        acceptableAnswers: acceptableArr,
+        optA: cleanExpected,
+        optB: 'Other',
+        optC: '',
+        optD: '',
+        correctOpt: 'A' as const,
+        explanation: q.explanation || `Ground truth expected answer: ${cleanExpected}`,
+        timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+          q.question || `Technical Question ${idx + 1}`,
+          [cleanExpected],
+          difficulty,
+          q.timeLimitSeconds || 35
+        ),
+      };
+    }
+
+    const optA = q.optA || q.options?.[0]?.text || 'Option A';
+    const optB = q.optB || q.options?.[1]?.text || 'Option B';
+    const optC = q.optC || q.options?.[2]?.text || 'Option C';
+    const optD = q.optD || q.options?.[3]?.text || 'Option D';
+    const correctOpt = (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D';
+
+    return {
+      category: q.category || defaultCategory,
+      question: q.question || `Technical Question ${idx + 1}`,
+      questionType: 'multiple_choice' as const,
+      optA,
+      optB,
+      optC,
+      optD,
+      correctOpt,
+      explanation: q.explanation || 'Verified architectural concept.',
+      timeLimitSeconds: calculateDynamicQuestionTimeLimit(
+        q.question || `Technical Question ${idx + 1}`,
+        [optA, optB, optC, optD],
+        difficulty,
+        q.timeLimitSeconds
+      ),
+    };
+  });
+}
+
 /**
  * Distributes correct answer options evenly across A, B, C, and D.
  * Prevents LLM bias where Option A is disproportionately set as the correct answer.
+ * Preserves short_answer questions untouched.
  */
 export function distributeQuestionOptions(questions: GeneratedAIQuestion[]): GeneratedAIQuestion[] {
   if (!questions || questions.length === 0) return [];
@@ -587,11 +1042,16 @@ export function distributeQuestionOptions(questions: GeneratedAIQuestion[]): Gen
   }
 
   return questions.map((q, idx) => {
+    // Preserve short-answer questions as-is without scrambling options
+    if (q.questionType === 'short_answer') {
+      return q;
+    }
+
     const options = [
-      { key: 'A', text: q.optA },
-      { key: 'B', text: q.optB },
-      { key: 'C', text: q.optC },
-      { key: 'D', text: q.optD },
+      { key: 'A', text: q.optA || 'Option A' },
+      { key: 'B', text: q.optB || 'Option B' },
+      { key: 'C', text: q.optC || 'Option C' },
+      { key: 'D', text: q.optD || 'Option D' },
     ];
 
     // Don't reposition if options contain relative terms like "all of the above"
@@ -602,8 +1062,8 @@ export function distributeQuestionOptions(questions: GeneratedAIQuestion[]): Gen
       return q;
     }
 
-    const currentCorrectKey = (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D';
-    const correctText = q[`opt${currentCorrectKey}` as 'optA' | 'optB' | 'optC' | 'optD'] || q.optA;
+    const currentCorrectKey = (['A', 'B', 'C', 'D'].includes(q.correctOpt || '') ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D';
+    const correctText = q[`opt${currentCorrectKey}` as 'optA' | 'optB' | 'optC' | 'optD'] || q.optA || 'Option A';
     const incorrectTexts = options.filter((o) => o.key !== currentCorrectKey).map((o) => o.text);
 
     // Shuffle incorrect options so their relative placement is also randomized
@@ -639,19 +1099,21 @@ export function distributeQuestionOptions(questions: GeneratedAIQuestion[]): Gen
 export async function generateAIQuizQuestions(
   topic: string,
   count: number = 3,
-  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior'
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  format: QuizQuestionFormat = 'mixed'
 ): Promise<GeneratedAIQuestion[]> {
+  const formatInstructions = buildQuizFormatInstructions(format, count);
+
   const systemPrompt = `You are a Principal Software Architect and Technical Quiz Master.
-Your goal is to generate ${count} high-caliber, practical multiple-choice quiz questions for a live tech session on the topic: "${topic}".
+Your goal is to generate ${count} high-caliber, practical technical quiz questions for a live tech session on the topic: "${topic}".
 Difficulty level: ${difficulty}.
 
-REQUIREMENTS:
-1. Each question must test real-world architectural principles, distributed systems, code trade-offs, security, or concurrency.
-2. Exactly 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
-3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
-4. Designate the correct option key ('A', 'B', 'C', or 'D').
-5. Provide a clear, educational "explanation" (1-2 sentences) detailing why the chosen option is correct and why common pitfalls fail.
-6. Set realistic, generous timeLimitSeconds based on question length and difficulty tier so participants have ample time to read and evaluate trade-offs: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never rush reading complex questions.
+${formatInstructions}
+
+GENERAL REQUIREMENTS:
+1. Each question must test real-world architectural principles, distributed systems, code trade-offs, security, internals, or concurrency.
+2. Provide a clear, educational "explanation" (1-2 sentences) detailing why the answer is correct and why common pitfalls fail.
+3. Set realistic, generous timeLimitSeconds based on question length and difficulty tier so participants have ample time to read and evaluate trade-offs: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never rush reading complex questions.
 
 Return ONLY a valid JSON object matching this schema without any markdown formatting or commentary:
 {
@@ -659,6 +1121,7 @@ Return ONLY a valid JSON object matching this schema without any markdown format
     {
       "category": "${topic.slice(0, 20)}",
       "question": "Question prompt here...",
+      "questionType": "multiple_choice",
       "optA": "Option A text...",
       "optB": "Option B text...",
       "optC": "Option C text...",
@@ -666,6 +1129,18 @@ Return ONLY a valid JSON object matching this schema without any markdown format
       "correctOpt": "C",
       "explanation": "Concise architectural explanation...",
       "timeLimitSeconds": 60
+    },
+    {
+      "category": "${topic.slice(0, 20)}",
+      "question": "Short answer question prompt...",
+      "questionType": "short_answer",
+      "expectedAnswer": "git cherry-pick",
+      "acceptableAnswers": ["cherry pick", "git-cherry-pick"],
+      "optA": "git cherry-pick",
+      "optB": "Other",
+      "correctOpt": "A",
+      "explanation": "Concise architectural explanation...",
+      "timeLimitSeconds": 40
     }
   ]
 }`;
@@ -675,7 +1150,7 @@ Return ONLY a valid JSON object matching this schema without any markdown format
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate ${count} technical questions on "${topic}" at ${difficulty} level. Return ONLY valid raw JSON.` },
+      { role: 'user', content: `Generate ${count} technical questions (${format} format) on "${topic}" at ${difficulty} level. Return ONLY valid raw JSON.` },
     ],
     { jsonMode: true, temperature: 0.7, maxTokens: tokenBudget, model: targetModel }
   );
@@ -697,23 +1172,7 @@ Return ONLY a valid JSON object matching this schema without any markdown format
     throw new Error('AI returned an empty question list. Please try again.');
   }
 
-  const rawQuestions: GeneratedAIQuestion[] = list.map((q, idx) => ({
-    category: q.category || topic.slice(0, 20),
-    question: q.question || `Technical Question ${idx + 1}`,
-    optA: q.optA || q.options?.[0]?.text || 'Option A',
-    optB: q.optB || q.options?.[1]?.text || 'Option B',
-    optC: q.optC || q.options?.[2]?.text || 'Option C',
-    optD: q.optD || q.options?.[3]?.text || 'Option D',
-    correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
-      q.question || `Technical Question ${idx + 1}`,
-      [q.optA, q.optB, q.optC, q.optD],
-      difficulty,
-      q.timeLimitSeconds
-    ),
-  }));
-
+  const rawQuestions = parseRawGeneratedQuestions(list, topic.slice(0, 20), difficulty, format);
   return distributeQuestionOptions(rawQuestions);
 }
 
@@ -727,6 +1186,7 @@ export interface AdaptivePromptParams {
   questionNumber: number;
   totalQuestions: number;
   adaptationType: 'level_up' | 'stepped_down' | 'maintained';
+  format?: QuizQuestionFormat;
 }
 
 export async function generateAdaptiveFollowUpQuestion(
@@ -742,7 +1202,12 @@ export async function generateAdaptiveFollowUpQuestion(
     questionNumber,
     totalQuestions,
     adaptationType,
+    format = 'mixed',
   } = params;
+
+  const isShortTarget =
+    format === 'short_answer' ||
+    (format === 'mixed' && (questionNumber || 1) % 2 === 0);
 
   let adaptationDirective = '';
   if (adaptationType === 'level_up') {
@@ -759,8 +1224,23 @@ MAINTAIN TIER: Keep the difficulty tier steady at ${targetDifficulty}.
 Explore another vital practical aspect or common design pattern within "${topic}".`;
   }
 
+  const formatRequirement = isShortTarget
+    ? `REQUIREMENT: Generate ONE short-answer engineering question (evaluated via semantic grader).
+- "questionType": "short_answer"
+- "expectedAnswer": The canonical concise technical term, keyword, or command (1-4 words).
+- "acceptableAnswers": Array of 2-4 synonyms or alternative phrasings.
+- "optA": set to expectedAnswer, "optB": "Other", "correctOpt": "A".
+- "explanation": 1-2 sentence architectural takeaway.
+- "timeLimitSeconds": 30-45s.`
+    : `REQUIREMENT: Generate ONE 4-option multiple-choice engineering question.
+- "questionType": "multiple_choice"
+- 4 distinct options (optA, optB, optC, optD).
+- Assign correctOpt evenly among A, B, C, or D.
+- "explanation": 1-2 sentence educational explanation.
+- "timeLimitSeconds": 45-80s based on complexity.`;
+
   const systemPrompt = `You are an Adaptive Masterclass Technical Quiz Engine.
-You craft exactly ONE multiple-choice challenge tailored dynamically to real-time audience performance.
+You craft exactly ONE challenge tailored dynamically to real-time audience performance.
 Topic: "${topic}".
 Target Difficulty Tier: ${targetDifficulty}.
 
@@ -770,24 +1250,20 @@ ${adaptationDirective}
 ${previousQuestion ? `Previous Question: "${previousQuestion}"` : ''}
 ${previousCorrectAnswer ? `Previous Answer: "${previousCorrectAnswer}"` : ''}
 
-REQUIREMENTS:
-1. Generate ONE fresh, real-world engineering question on "${topic}".
-2. Exactly 4 distinct, standalone options (A, B, C, D). Do NOT use "All/None of the above".
-3. Assign the correct option evenly among A, B, C, or D.
-4. Provide a clear, educational "explanation" (1-2 sentences).
-5. Set realistic, generous timeLimitSeconds based on scenario complexity and difficulty tier so participants have ample time to read the question prompt and carefully compare options: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set rushing timers on hard questions.
+${formatRequirement}
 
-Return ONLY valid JSON matching this schema without markdown formatting or commentary:
+Return ONLY valid JSON matching this schema:
 {
   "category": "${topic.slice(0, 20)}",
   "question": "Clear technical question...",
-  "optA": "Option A...",
+  "questionType": "${isShortTarget ? 'short_answer' : 'multiple_choice'}",
+  ${isShortTarget ? `"expectedAnswer": "canonical answer...",\n  "acceptableAnswers": ["alias 1", "alias 2"],\n  ` : ''}"optA": "Option A...",
   "optB": "Option B...",
   "optC": "Option C...",
   "optD": "Option D...",
-  "correctOpt": "C",
+  "correctOpt": "A",
   "explanation": "Architectural takeaway...",
-  "timeLimitSeconds": 60
+  "timeLimitSeconds": ${isShortTarget ? 35 : 60}
 }`;
 
   const targetModel = resolveModelForTask('quiz');
@@ -812,21 +1288,45 @@ Return ONLY valid JSON matching this schema without markdown formatting or comme
   const q = parsed?.questions?.[0] || parsed;
   const qId = `adaptive-q-${Date.now()}-${questionNumber}`;
 
+  const isShortResult =
+    format === 'short_answer'
+      ? true
+      : format === 'multiple_choice'
+      ? false
+      : (q.questionType === 'short_answer' || Boolean(q.expectedAnswer) || isShortTarget);
+  const cleanExpected = (
+    q.expectedAnswer ||
+    (q.correctOpt && q[`opt${q.correctOpt}`]) ||
+    q.optA ||
+    'Correct'
+  ).trim();
+  const acceptableList: string[] = Array.isArray(q.acceptableAnswers)
+    ? q.acceptableAnswers.map((s: any) => String(s).trim()).filter(Boolean)
+    : [];
+
   return {
     id: qId,
     category: q.category || topic.slice(0, 20),
     question: q.question || `${topic} Challenge #${questionNumber}`,
-    options: [
-      { id: 'A', text: q.optA || 'Option A' },
-      { id: 'B', text: q.optB || 'Option B' },
-      { id: 'C', text: q.optC || 'Option C' },
-      { id: 'D', text: q.optD || 'Option D' },
-    ],
-    correctOptionId: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
+    questionType: isShortResult ? 'short_answer' : 'multiple_choice',
+    expectedAnswer: isShortResult ? cleanExpected : undefined,
+    acceptableAnswers: isShortResult ? acceptableList : undefined,
+    options: isShortResult
+      ? [
+          { id: 'A', text: cleanExpected },
+          { id: 'B', text: 'Other' },
+        ]
+      : [
+          { id: 'A', text: q.optA || 'Option A' },
+          { id: 'B', text: q.optB || 'Option B' },
+          { id: 'C', text: q.optC || 'Option C' },
+          { id: 'D', text: q.optD || 'Option D' },
+        ],
+    correctOptionId: isShortResult ? 'A' : ((['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D'),
+    explanation: q.explanation || (isShortResult ? `Ground truth expected answer: ${cleanExpected}` : 'Verified architectural concept.'),
     timeLimitSeconds: calculateDynamicQuestionTimeLimit(
       q.question || `${topic} Challenge #${questionNumber}`,
-      [q.optA, q.optB, q.optC, q.optD],
+      isShortResult ? [cleanExpected] : [q.optA, q.optB, q.optC, q.optD],
       targetDifficulty,
       q.timeLimitSeconds
     ),
@@ -847,7 +1347,8 @@ Return ONLY valid JSON matching this schema without markdown formatting or comme
 export async function generateAIQuizFromWebSearch(
   query: string,
   count: number = 3,
-  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior'
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  format: QuizQuestionFormat = 'mixed'
 ): Promise<{ questions: GeneratedAIQuestion[]; sources: WebSearchResult[] }> {
   let sources: WebSearchResult[] = [];
   try {
@@ -859,50 +1360,37 @@ export async function generateAIQuizFromWebSearch(
     ? sources.map((s, i) => `[Source ${i + 1}] Title: ${s.title}\nURL: ${s.url}\nExcerpt: ${s.snippet}`).join('\n\n')
     : `Topic: ${query}`;
 
+  const formatInstructions = buildQuizFormatInstructions(format, count);
+
   const systemPrompt = `You are a Principal Software Architect and Quiz Master with access to real-time web search results.
-Generate ${count} multiple-choice quiz questions based on the latest web context provided below.
+Generate ${count} technical quiz questions based on the latest web context provided below.
 Difficulty: ${difficulty}.
 
 REAL-TIME WEB CONTEXT:
 ${sourcesContext}
 
-REQUIREMENTS:
-1. Ground each question in real architectural developments, breaking releases, or RFCs from the web search context.
-2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
-3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
-4. Concise 1-2 sentence educational explanation.
-5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
+${formatInstructions}
+
+GENERAL REQUIREMENTS:
+1. Ground questions in real architectural developments, breaking releases, or RFCs from the web search context.
+2. Concise educational explanation (1-2 sentences).
+3. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY a valid raw JSON object matching:
-{"questions": [{"category": "${query.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
+{"questions": [{"category": "${query.slice(0, 20)}", "question": "...", "questionType": "multiple_choice", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate ${count} questions grounded in the web search results for "${query}". Return ONLY raw JSON.` },
+      { role: 'user', content: `Generate ${count} questions (${format} format) grounded in the web search results for "${query}". Return ONLY raw JSON.` },
     ],
     { jsonMode: true, temperature: 0.6, maxTokens: tokenBudget, model: targetModel }
   );
 
   const parsed = safeParseJsonFromLLM(raw, { questions: [] });
-  const rawQuestions: GeneratedAIQuestion[] = (parsed.questions || []).map((q: any, idx: number) => ({
-    category: q.category || query.slice(0, 20),
-    question: q.question || `Question ${idx + 1}`,
-    optA: q.optA || 'Option A',
-    optB: q.optB || 'Option B',
-    optC: q.optC || 'Option C',
-    optD: q.optD || 'Option D',
-    correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
-      q.question || `Question ${idx + 1}`,
-      [q.optA, q.optB, q.optC, q.optD],
-      difficulty,
-      q.timeLimitSeconds
-    ),
-  }));
+  const rawQuestions = parseRawGeneratedQuestions(parsed.questions || [], query.slice(0, 20), difficulty, format);
 
   if (rawQuestions.length === 0) {
     throw new Error('No quiz questions generated from web search.');
@@ -917,9 +1405,11 @@ Return ONLY a valid raw JSON object matching:
 export async function generateAIQuizFromUrl(
   url: string,
   count: number = 3,
-  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior'
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  format: QuizQuestionFormat = 'mixed'
 ): Promise<{ questions: GeneratedAIQuestion[]; pageInfo: ScrapedPageContent }> {
   const pageInfo = await scrapeUrlContent(url, 4500);
+  const formatInstructions = buildQuizFormatInstructions(format, count);
 
   const systemPrompt = `You are a Technical Quiz Master.
 Generate ${count} practical quiz questions testing comprehension of the documentation/article scraped from: "${pageInfo.title}".
@@ -928,43 +1418,28 @@ Difficulty: ${difficulty}.
 SCRAPED CONTENT EXCERPT:
 ${pageInfo.markdown.slice(0, 3000)}
 
-REQUIREMENTS:
-1. Questions must test core principles, caveats, or trade-offs mentioned in this document.
-2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
-3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
-4. Concise educational explanation (1-2 sentences).
-5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
+${formatInstructions}
+
+GENERAL REQUIREMENTS:
+1. Questions must test core principles, caveats, internal design, or trade-offs mentioned in this document.
+2. Concise educational explanation (1-2 sentences).
+3. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "${pageInfo.title.slice(0, 20)}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "C", "explanation": "...", "timeLimitSeconds": 60}]}`;
+{"questions": [{"category": "${pageInfo.title.slice(0, 20)}", "question": "...", "questionType": "multiple_choice", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "C", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate ${count} questions testing the scraped content from "${pageInfo.title}". Return ONLY raw JSON.` },
+      { role: 'user', content: `Generate ${count} questions (${format} format) testing the scraped content from "${pageInfo.title}". Return ONLY raw JSON.` },
     ],
     { jsonMode: true, temperature: 0.6, maxTokens: tokenBudget, model: targetModel }
   );
 
   const parsed = safeParseJsonFromLLM(raw, { questions: [] });
-  const rawQuestions: GeneratedAIQuestion[] = (parsed.questions || []).map((q: any, idx: number) => ({
-    category: q.category || pageInfo.title.slice(0, 20),
-    question: q.question || `Question ${idx + 1}`,
-    optA: q.optA || 'Option A',
-    optB: q.optB || 'Option B',
-    optC: q.optC || 'Option C',
-    optD: q.optD || 'Option D',
-    correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
-      q.question || `Question ${idx + 1}`,
-      [q.optA, q.optB, q.optC, q.optD],
-      difficulty,
-      q.timeLimitSeconds
-    ),
-  }));
+  const rawQuestions = parseRawGeneratedQuestions(parsed.questions || [], pageInfo.title.slice(0, 20), difficulty, format);
 
   if (rawQuestions.length === 0) {
     throw new Error('No questions generated from document content.');
@@ -979,9 +1454,11 @@ Return ONLY valid raw JSON:
 export async function generateAIQuizFromGitHub(
   repoUrlOrSlug: string,
   count: number = 3,
-  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior'
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  format: QuizQuestionFormat = 'mixed'
 ): Promise<{ questions: GeneratedAIQuestion[]; repoSummary: GitHubRepoSummary }> {
   const repoSummary = await fetchGitHubRepoDetails(repoUrlOrSlug);
+  const formatInstructions = buildQuizFormatInstructions(format, count);
 
   const systemPrompt = `You are a Principal Software Architect.
 Generate ${count} technical architecture quiz questions testing knowledge of the open-source repository: "${repoSummary.fullName}".
@@ -993,43 +1470,28 @@ Topics: ${repoSummary.topics.join(', ')}
 README EXCERPT:
 ${repoSummary.readmeExcerpt.slice(0, 2500)}
 
-REQUIREMENTS:
-1. Focus on architectural patterns, internal design, core modules, or trade-offs of ${repoSummary.fullName}.
-2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
-3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
-4. Concise 1-2 sentence explanation.
-5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
+${formatInstructions}
+
+GENERAL REQUIREMENTS:
+1. Focus on architectural patterns, internal design, core modules, algorithms, or trade-offs of ${repoSummary.fullName}.
+2. Concise 1-2 sentence explanation.
+3. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "${repoSummary.repo}", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "D", "explanation": "...", "timeLimitSeconds": 60}]}`;
+{"questions": [{"category": "${repoSummary.repo}", "question": "...", "questionType": "multiple_choice", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "D", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate ${count} architectural questions for repository ${repoSummary.fullName}. Return ONLY raw JSON.` },
+      { role: 'user', content: `Generate ${count} architectural questions (${format} format) for repository ${repoSummary.fullName}. Return ONLY raw JSON.` },
     ],
     { jsonMode: true, temperature: 0.6, maxTokens: tokenBudget, model: targetModel }
   );
 
   const parsed = safeParseJsonFromLLM(raw, { questions: [] });
-  const rawQuestions: GeneratedAIQuestion[] = (parsed.questions || []).map((q: any, idx: number) => ({
-    category: q.category || repoSummary.repo,
-    question: q.question || `Question ${idx + 1}`,
-    optA: q.optA || 'Option A',
-    optB: q.optB || 'Option B',
-    optC: q.optC || 'Option C',
-    optD: q.optD || 'Option D',
-    correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
-      q.question || `Question ${idx + 1}`,
-      [q.optA, q.optB, q.optC, q.optD],
-      difficulty,
-      q.timeLimitSeconds
-    ),
-  }));
+  const rawQuestions = parseRawGeneratedQuestions(parsed.questions || [], repoSummary.repo, difficulty, format);
 
   if (rawQuestions.length === 0) {
     throw new Error('No questions generated for this GitHub repository.');
@@ -1045,7 +1507,8 @@ export async function generateAIQuizFromHNTrends(
   storyTitle: string,
   storyUrl?: string,
   count: number = 3,
-  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior'
+  difficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal' = 'Senior',
+  format: QuizQuestionFormat = 'mixed'
 ): Promise<{ questions: GeneratedAIQuestion[]; story: { title: string; url?: string } }> {
   let extraContext = '';
   if (storyUrl) {
@@ -1057,48 +1520,35 @@ export async function generateAIQuizFromHNTrends(
     }
   }
 
+  const formatInstructions = buildQuizFormatInstructions(format, count);
+
   const systemPrompt = `You are an expert Tech News Quiz Master.
-Generate ${count} engaging multiple-choice trivia and engineering questions on today's breaking story: "${storyTitle}".
+Generate ${count} engaging trivia and engineering questions on today's breaking story: "${storyTitle}".
 Difficulty: ${difficulty}.
 ${extraContext}
 
-REQUIREMENTS:
-1. Test engineering implications, industry disruption, or core concepts related to this story.
-2. 4 distinct, standalone options (A, B, C, D). Do NOT use "All of the above" or "None of the above".
-3. Distribute the correct answer evenly across options ('A', 'B', 'C', or 'D'). Randomize which option is correct so 'A' is NOT always the answer.
-4. Educational explanation (1-2 sentences).
-5. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
+${formatInstructions}
+
+GENERAL REQUIREMENTS:
+1. Test engineering implications, industry disruption, key technical terms, or core concepts related to this story.
+2. Educational explanation (1-2 sentences).
+3. Set realistic, generous timeLimitSeconds based on question length and difficulty: Junior: 35-45s, Mid: 45-60s, Senior: 60-80s, Principal: 75-100s. Never set short timers for complex technical questions.
 
 Return ONLY valid raw JSON:
-{"questions": [{"category": "Tech Trends", "question": "...", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
+{"questions": [{"category": "Tech Trends", "question": "...", "questionType": "multiple_choice", "optA": "...", "optB": "...", "optC": "...", "optD": "...", "correctOpt": "B", "explanation": "...", "timeLimitSeconds": 60}]}`;
 
   const targetModel = resolveModelForTask('quiz');
   const tokenBudget = Math.max(1600, count * 550);
   const raw = await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Generate ${count} questions on breaking story "${storyTitle}". Return ONLY raw JSON.` },
+      { role: 'user', content: `Generate ${count} questions (${format} format) on breaking story "${storyTitle}". Return ONLY raw JSON.` },
     ],
     { jsonMode: true, temperature: 0.7, maxTokens: tokenBudget, model: targetModel }
   );
 
   const parsed = safeParseJsonFromLLM(raw, { questions: [] });
-  const rawQuestions: GeneratedAIQuestion[] = (parsed.questions || []).map((q: any, idx: number) => ({
-    category: q.category || 'Tech Trends',
-    question: q.question || `Question ${idx + 1}`,
-    optA: q.optA || 'Option A',
-    optB: q.optB || 'Option B',
-    optC: q.optC || 'Option C',
-    optD: q.optD || 'Option D',
-    correctOpt: (['A', 'B', 'C', 'D'].includes(q.correctOpt) ? q.correctOpt : 'A') as 'A' | 'B' | 'C' | 'D',
-    explanation: q.explanation || 'Verified architectural concept.',
-    timeLimitSeconds: calculateDynamicQuestionTimeLimit(
-      q.question || `Question ${idx + 1}`,
-      [q.optA, q.optB, q.optC, q.optD],
-      difficulty,
-      q.timeLimitSeconds
-    ),
-  }));
+  const rawQuestions = parseRawGeneratedQuestions(parsed.questions || [], 'Tech Trends', difficulty, format);
 
   if (rawQuestions.length === 0) {
     throw new Error('No questions generated for this story.');
@@ -1141,11 +1591,21 @@ Return ONLY valid raw JSON:
     );
 
     const parsed = safeParseJsonFromLLM(raw, { polls: [] });
+    const polls = (parsed.polls || []).map((p: any) => ({
+      question: p.question || `Poll about ${repoSummary.fullName}`,
+      options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
+    }));
     return {
-      polls: (parsed.polls || []).map((p: any) => ({
-        question: p.question || `Poll about ${repoSummary.fullName}`,
-        options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
-      })),
+      polls: polls.length > 0 ? polls : [
+        {
+          question: `How would you evaluate adopting ${repoSummary.repo} in production?`,
+          options: ['Ready for mission-critical production', 'Good for prototypes / secondary services', 'Evaluating trade-offs vs existing stack', 'Not suitable for our current needs'],
+        },
+        {
+          question: `What is the primary architectural draw of ${repoSummary.repo}?`,
+          options: ['Developer ergonomics & DX', 'Runtime throughput & low latency', 'Minimal dependency footprint', 'Community ecosystem & plugins'],
+        },
+      ],
       documentTitle: repoSummary.fullName,
     };
   }
@@ -1170,11 +1630,21 @@ Return ONLY valid raw JSON:
   );
 
   const parsed = safeParseJsonFromLLM(raw, { polls: [] });
+  const docPolls = (parsed.polls || []).map((p: any) => ({
+    question: p.question || `Poll about ${pageInfo.title}`,
+    options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
+  }));
   return {
-    polls: (parsed.polls || []).map((p: any) => ({
-      question: p.question || `Poll about ${pageInfo.title}`,
-      options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
-    })),
+    polls: docPolls.length > 0 ? docPolls : [
+      {
+        question: `What is your team's stance on the architectural practices in "${pageInfo.title.slice(0, 40)}"?`,
+        options: ['Already implemented in production', 'Currently planning / piloting', 'Prefer alternative approaches', 'Under evaluation'],
+      },
+      {
+        question: `Which trade-off is most challenging regarding this topic?`,
+        options: ['Operational complexity', 'Migration friction', 'Team learning curve', 'Cost vs benefit'],
+      },
+    ],
     documentTitle: pageInfo.title,
   };
 }
@@ -1216,14 +1686,42 @@ Return ONLY a valid JSON object matching this schema without markdown:
   );
 
   try {
-    const parsed = safeParseJsonFromLLM(raw);
+    const parsed = safeParseJsonFromLLM(raw, { polls: [] });
     const list = Array.isArray(parsed.polls) ? parsed.polls : Array.isArray(parsed) ? parsed : [];
-    return list.map((p: any) => ({
+    const mapped = list.map((p: any) => ({
       question: p.question || `Poll about ${cleanTopic}`,
       options: Array.isArray(p.options) && p.options.length >= 2 ? p.options : ['Yes', 'No'],
     }));
+    if (mapped.length > 0) return mapped;
+    return [
+      {
+        question: `What is your primary architectural consideration for ${cleanTopic}?`,
+        options: ['High scalability & throughput', 'Operational simplicity & maintainability', 'Fast developer velocity', 'Strict data consistency'],
+      },
+      {
+        question: `How would your team classify your current adoption of ${cleanTopic}?`,
+        options: ['Live in production', 'Active pilot / development', 'Evaluating for next quarter', 'Not on current roadmap'],
+      },
+      {
+        question: `What is the biggest trade-off when adopting ${cleanTopic}?`,
+        options: ['Distributed state management', 'Telemetry & observability', 'Team learning curve', 'Vendor lock-in'],
+      },
+    ];
   } catch {
-    throw new Error('Failed to parse AI Poll suggestions. Please try again.');
+    return [
+      {
+        question: `What is your primary architectural consideration for ${cleanTopic}?`,
+        options: ['High scalability & throughput', 'Operational simplicity & maintainability', 'Fast developer velocity', 'Strict data consistency'],
+      },
+      {
+        question: `How would your team classify your current adoption of ${cleanTopic}?`,
+        options: ['Live in production', 'Active pilot / development', 'Evaluating for next quarter', 'Not on current roadmap'],
+      },
+      {
+        question: `What is the biggest trade-off when adopting ${cleanTopic}?`,
+        options: ['Distributed state management', 'Telemetry & observability', 'Team learning curve', 'Vendor lock-in'],
+      },
+    ];
   }
 }
 
@@ -1283,9 +1781,15 @@ Return ONLY a JSON object:
   );
 
   try {
-    const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-    const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed.talkingPoints) ? parsed.talkingPoints : [];
+    const parsed = safeParseJsonFromLLM<any>(raw, { talkingPoints: [] });
+    if (Array.isArray(parsed.talkingPoints) && parsed.talkingPoints.length > 0) {
+      return parsed.talkingPoints;
+    }
+    return [
+      `Directly address: ${questionContent.slice(0, 60)}...`,
+      'Discuss production trade-offs between consistency and operational complexity.',
+      'Recommend measuring telemetry before premature optimization.',
+    ];
   } catch {
     return [
       `Directly address: ${questionContent.slice(0, 60)}...`,
@@ -1302,33 +1806,76 @@ export async function generateSessionSummaryReport(params: {
   roomTitle: string;
   roomCode: string;
   totalAttendees: number;
-  quizzes: Array<{ question: string; correctOption: string; category: string }>;
-  polls: Array<{ question: string; totalVotes: number; topOption: string }>;
-  topQuestions: Array<{ content: string; upvotes: number; author: string }>;
+  quizzes: Array<{ question: string; correctOption?: string; category?: string; explanation?: string }>;
+  polls: Array<{ question: string; totalVotes: number; topOption: string; aiConsensusNote?: string | null }>;
+  topQuestions: Array<{ content: string; upvotes: number; author?: string }>;
   leaderboardTop3: Array<{ name: string; score: number }>;
 }): Promise<string> {
-  const systemPrompt = `You are an Executive Tech Scribe.
-Generate a comprehensive, beautifully formatted Markdown Executive Masterclass Summary Report for the SketchCast session titled "${params.roomTitle}" (Room ${params.roomCode}).
-
-Include:
-# ⚡ SKETCHCAST MASTERCLASS SUMMARY: ${params.roomTitle}
-- Session Overview & Attendance Metrics
-- 🧠 Technical Quizzing Breakdown & Key Architectural Takeaways
-- 📊 Community Poll Insights & Consensus Trends
-- 💬 Top Upvoted Audience Q&A Topics
-- 🏆 High Scores Podium & MVP Recognition
-- 🚀 Recommended Next Steps & Engineering Best Practices`;
-
   const targetModel = resolveModelForTask('session_report');
+
+  const quizSummaries = params.quizzes
+    .map((q, i) => `[Challenge ${i + 1}] (${q.category || 'Architecture'}) ${q.question}\nCorrect: ${q.correctOption || 'Verified pattern'}\nKey Takeaway: ${q.explanation || 'Core engineering principle.'}`)
+    .join('\n\n');
+
+  const questionSummaries = params.topQuestions
+    .slice(0, 10)
+    .map((q, i) => `[Q&A ${i + 1}] (${q.upvotes || 0} upvotes${q.author ? ` from ${q.author}` : ''}) ${q.content}`)
+    .join('\n');
+
+  const pollSummaries = params.polls
+    .map((p, i) => `[Poll ${i + 1}] ${p.question} (${p.totalVotes} votes | Leading: ${p.topOption}${p.aiConsensusNote ? ` | Consensus Note: ${p.aiConsensusNote}` : ''})`)
+    .join('\n');
+
+  const leaderboardSummaries = params.leaderboardTop3.length > 0
+    ? params.leaderboardTop3.map((l, i) => `#${i + 1} ${l.name} (${l.score} pts)`).join(', ')
+    : 'Session attendees';
+
+  const systemPrompt = `You are a Principal Software Architect synthesizing an authoritative, high-density Masterclass Session Report & Technical Cheat Sheet for attendees of "${params.roomTitle}" (Room ${params.roomCode}, ${params.totalAttendees} attendees).
+The document must be crisp, high-density, beautifully structured in clean Markdown, and immediately actionable for senior engineers.
+
+STRUCTURE REQUIREMENTS (Markdown):
+# ⚡ ${params.roomTitle} — Masterclass Session Report & Technical Cheat Sheet
+*Executive Architectural Takeaways, Technical FAQ, Voting Consensus & Code Reference*
+
+## 🏛️ Core Architectural Principles
+(3 to 5 key bullet points with bold keywords and concise engineering rationales)
+
+## 💬 Audience Technical FAQ
+(Top 3-4 questions from the session with authoritative, 1-2 sentence engineering answers)
+
+## 📊 Community Poll Insights & Consensus Trends
+(Bullet points summarizing poll outcomes, audience consensus, and architectural trade-offs)
+
+## 🧠 Technical Quizzing Breakdown & Key Architectural Takeaways
+(Summary of challenges evaluated, key takeaways, and areas where attendees excelled or found misconceptions)
+
+## 🛠️ Quick Reference & Code Recipes
+(2-3 practical code snippets, terminal commands, or rule-of-thumb formulas with language tags like \`\`\`bash or \`\`\`ts)
+
+## 🏆 High Scores Podium & MVP Recognition
+(Recognize top performers: ${leaderboardSummaries}, and key participant contributions)
+
+Keep it dense, elegant, and strictly high signal.`;
+
+  const userContent = `Session Data:
+TOTAL ATTENDEES: ${params.totalAttendees}
+
+QUIZZES & CHALLENGES COVERED:
+${quizSummaries || 'None'}
+
+TOP AUDIENCE INQUIRIES:
+${questionSummaries || 'None'}
+
+LIVE POLLS & COMMUNITY CONSENSUS:
+${pollSummaries || 'None'}`;
+
+  const reportMaxTokens = targetModel.includes('mimo') ? 2800 : 2000;
   return await callMeshChatCompletion(
     [
       { role: 'system', content: systemPrompt },
-      {
-        role: 'user',
-        content: `Session Details:\n${JSON.stringify(params, null, 2)}`,
-      },
+      { role: 'user', content: userContent },
     ],
-    { temperature: 0.5, maxTokens: 1000, model: targetModel }
+    { temperature: 0.4, maxTokens: reportMaxTokens, model: targetModel }
   );
 }
 
@@ -1339,16 +1886,23 @@ const STORAGE_KEY_QA_SAFEGUARD = 'sketchcast_qa_safeguard_enabled';
 
 export function isQASafeguardEnabled(): boolean {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_QA_SAFEGUARD);
-    return saved !== null ? saved === 'true' : true;
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      const saved = storage.getItem(STORAGE_KEY_QA_SAFEGUARD);
+      return saved !== null ? saved === 'true' : true;
+    }
   } catch {
-    return true;
+    // ignore
   }
+  return true;
 }
 
 export function setQASafeguardEnabled(enabled: boolean): void {
   try {
-    localStorage.setItem(STORAGE_KEY_QA_SAFEGUARD, String(enabled));
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.setItem(STORAGE_KEY_QA_SAFEGUARD, String(enabled));
+    }
   } catch {
     // ignore
   }
@@ -1468,10 +2022,52 @@ export async function moderateQuestionWithMeshAI(content: string): Promise<QAMod
     return { isSafe: true, reason: null, category: 'none' };
   }
 
-  // 4. Resolve optimal model dynamically (strictly respects custom model or auto-routes to cheap flash)
+  // 4. Resolve optimal model dynamically (strictly respects custom model or auto-routes to TypeSafe Jev 1.13)
   const targetModel = resolveModelForTask('moderation');
 
-  // Compact prompt to minimize token burn
+  // If using TypeSafe Jev 1.13, execute ultra-cheap ($0.042/1M), sub-second System One evaluate
+  if (targetModel === MESH_MODELS.JEV_1_13) {
+    try {
+      const evalRes = await callMeshEvaluate(
+        `Audience question: "${content.trim()}"`,
+        {
+          safe: {
+            type: 'noul',
+            instructions: 'Is this audience question appropriate, safe, and respectful for a tech presentation without harassment, hate speech, explicit profanity, or spam/trolling?'
+          },
+          category: {
+            type: 'choice',
+            instructions: 'Identify any issue category or select none if safe:',
+            criteria: {
+              none: 'Safe and appropriate question',
+              profanity: 'Profanity, explicit language, or vulgarity',
+              harassment: 'Personal attacks, insults, or harassment',
+              spam_gibberish: 'Spam, promotional junk, or keyboard mash',
+              trolling: 'Disruptive hostile trolling'
+            }
+          }
+        },
+        { apiKey, model: MESH_MODELS.JEV_1_13 }
+      );
+
+      const isSafeProb = evalRes?.answers?.safe?.noul ?? 1.0;
+      const isSafe = isSafeProb >= 0.65;
+      const chosenCat = evalRes?.answers?.category?.choice || 'none';
+      const result: QAModerationResult = {
+        isSafe,
+        reason: isSafe ? null : `Flagged by AI safety check (${chosenCat}).`,
+        category: isSafe ? 'none' : (chosenCat as any),
+      };
+
+      moderationCache.set(cacheKey, { result, timestamp: Date.now() });
+      return result;
+    } catch (evalErr) {
+      console.warn('[Mesh AI Safeguard] Jev evaluation failed or unavailable, falling back to LLM chat completion:', evalErr);
+      // Fall through seamlessly to callMeshChatCompletion fallback below
+    }
+  }
+
+  // Compact prompt to minimize token burn if fallback generative LLM is used
   const systemPrompt = `You are a live tech audience safety guard. Reject (isSafe=false) harassment, hate, explicit profanity, or spam. Approve (isSafe=true) genuine tech questions.
 Return ONLY valid JSON:
 {"isSafe": boolean, "reason": string | null, "category": "none" | "harassment" | "hate_speech" | "profanity" | "spam_gibberish" | "trolling"}`;
@@ -1486,7 +2082,7 @@ Return ONLY valid JSON:
         jsonMode: true,
         temperature: 0.1,
         maxTokens: 70,
-        model: targetModel,
+        model: targetModel === MESH_MODELS.JEV_1_13 ? MESH_MODELS.GPT_4O_MINI : targetModel,
       }
     );
 
@@ -1521,13 +2117,40 @@ export async function generateAISurvey(topicPrompt: string): Promise<{
     required: boolean;
   }[];
 }> {
+  const cleanInput = topicPrompt.trim();
+  let extraContext = '';
+
+  if (isGitHubRepoInput(cleanInput)) {
+    try {
+      const repoSummary = await fetchGitHubRepoDetails(cleanInput);
+      extraContext = `GITHUB REPO CONTEXT:
+Repository: ${repoSummary.fullName}
+Description: ${repoSummary.description}
+Topics: ${repoSummary.topics.join(', ')}
+README Excerpt:
+${repoSummary.readmeExcerpt.slice(0, 1200)}`;
+    } catch {
+      // ignore
+    }
+  } else if (cleanInput.match(/^https?:\/\//i)) {
+    try {
+      const pageInfo = await scrapeUrlContent(cleanInput, 2500);
+      extraContext = `DOCUMENT CONTEXT:
+Document Title: ${pageInfo.title}
+Content Excerpt:
+${pageInfo.markdown.slice(0, 1200)}`;
+    } catch {
+      // ignore
+    }
+  }
+
   const systemPrompt = `You are an expert audience feedback & technical workshop survey designer for live presentations.
 Generate an engaging, concise, and structured survey (3 to 5 questions) based on the user's topic.
 Include a variety of question types:
 - 'rating' (1 to 5 stars for overall satisfaction, depth, pacing)
 - 'choice' (multiple choice options to gauge prior experience or key takeaway)
 - 'text' (open-ended question for suggestions, critiques, or speaker notes)
-
+${extraContext ? `\n${extraContext}\n` : ''}
 Output ONLY valid JSON matching this schema:
 {
   "title": "Punchy Survey Title (clean, professional masterclass style)",
@@ -1560,7 +2183,7 @@ Output ONLY valid JSON matching this schema:
     const raw = await callMeshChatCompletion(
       [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Design a survey about: ${topicPrompt}` },
+        { role: 'user', content: `Design a survey about: ${cleanInput}` },
       ],
       {
         jsonMode: true,
@@ -1580,8 +2203,12 @@ Output ONLY valid JSON matching this schema:
       required: q.required !== false,
     }));
 
+    if (questions.length === 0) {
+      throw new Error('AI returned empty questions array.');
+    }
+
     return {
-      title: parsed.title || `${topicPrompt.toUpperCase()} FEEDBACK`,
+      title: parsed.title || `${cleanInput.toUpperCase()} FEEDBACK`,
       description: parsed.description || 'Please share your thoughts to help us improve.',
       questions,
     };
@@ -1673,6 +2300,41 @@ Return ONLY valid JSON matching this schema:
 
   try {
     const targetModel = resolveModelForTask('survey_sentiment');
+
+    let jevSentiment: 'positive' | 'neutral' | 'mixed' | 'negative' | undefined;
+    let jevScore: number | undefined;
+
+    // Use TypeSafe Jev 1.13 to score the sentiment rubric directly with calibrated accuracy
+    if (targetModel === MESH_MODELS.JEV_1_13) {
+      try {
+        const evalRes = await callMeshEvaluate(
+          `Survey: "${surveyTitle}". Feedback summary:\n${responsesText.slice(0, 1500)}`,
+          {
+            sentiment: {
+              type: 'choice',
+              instructions: 'What is the dominant overall attendee sentiment for this session feedback?',
+              criteria: {
+                positive: 'Overwhelmingly positive and enthusiastic praise',
+                neutral: 'Balanced or indifferent feedback',
+                mixed: 'Mix of both praise and critical critiques',
+                negative: 'Predominantly negative or dissatisfied feedback',
+              },
+            },
+            satisfaction: {
+              type: 'noul',
+              instructions: 'Are attendees satisfied with this technical session overall?',
+            },
+          },
+          { model: MESH_MODELS.JEV_1_13 }
+        );
+        jevSentiment = evalRes?.answers?.sentiment?.choice as any;
+        const satProb = evalRes?.answers?.satisfaction?.noul ?? 0.85;
+        jevScore = Math.round(satProb * 100);
+      } catch (evalErr) {
+        console.warn('[Survey Sentiment] Jev evaluation failed, falling back to chat completion:', evalErr);
+      }
+    }
+
     const raw = await callMeshChatCompletion(
       [
         { role: 'system', content: systemPrompt },
@@ -1685,16 +2347,15 @@ Return ONLY valid JSON matching this schema:
         jsonMode: true,
         temperature: 0.3,
         maxTokens: 350,
-        model: targetModel,
+        model: targetModel === MESH_MODELS.JEV_1_13 ? MESH_MODELS.DEEPSEEK_V4_FLASH : targetModel,
       }
     );
 
-    const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-    const parsed = JSON.parse(cleaned);
+    const parsed = safeParseJsonFromLLM<any>(raw, {});
 
     return {
-      sentiment: parsed.sentiment || 'positive',
-      score: typeof parsed.score === 'number' ? parsed.score : 85,
+      sentiment: jevSentiment || parsed.sentiment || 'positive',
+      score: jevScore !== undefined ? jevScore : (typeof parsed.score === 'number' ? parsed.score : 85),
       takeaways: Array.isArray(parsed.takeaways) && parsed.takeaways.length > 0 ? parsed.takeaways : ['Audience actively engaged and provided positive feedback.'],
       keyQuotes: Array.isArray(parsed.keyQuotes) ? parsed.keyQuotes : [],
     };
@@ -1778,6 +2439,56 @@ export async function detectDuplicateQuestionWithAI(
 
   const targetModel = resolveModelForTask('duplicates');
 
+  // If in Smart Router mode, execute ultra-fast TypeSafe Jev 1.13 evaluate
+  if (targetModel === MESH_MODELS.JEV_1_13) {
+    try {
+      const criteria: Record<string, string> = {
+        none: 'Not a duplicate of any existing question',
+      };
+      candidates.forEach((c) => {
+        criteria[c.id] = `Matches: "${c.content.slice(0, 80)}"`;
+      });
+
+      const evalRes = await callMeshEvaluate(
+        `Draft question: "${cleanDraft}"`,
+        {
+          duplicate_match: {
+            type: 'choice',
+            instructions: 'Does this draft question ask essentially the same thing as one of the active questions? Select the matching question ID or "none":',
+            criteria,
+          },
+          is_duplicate: {
+            type: 'noul',
+            instructions: 'Is the draft question a semantic duplicate of an already submitted question?',
+          },
+        },
+        { model: MESH_MODELS.JEV_1_13 }
+      );
+
+      const matchedId = evalRes?.answers?.duplicate_match?.choice;
+      const prob = evalRes?.answers?.is_duplicate?.noul ?? 0;
+
+      if (matchedId && matchedId !== 'none' && prob >= 0.6) {
+        const matched = existingQuestions.find((q) => q.id === matchedId);
+        const result: DuplicateDetectionResult = {
+          isDuplicate: true,
+          matchedQuestionId: matchedId,
+          matchedQuestionContent: matched?.content,
+          similarityScore: prob,
+          reason: 'A very similar question is already active in the live feed.',
+        };
+        duplicateCheckCache.set(cacheKey, { result, timestamp: Date.now() });
+        return result;
+      }
+
+      const result: DuplicateDetectionResult = { isDuplicate: false };
+      duplicateCheckCache.set(cacheKey, { result, timestamp: Date.now() });
+      return result;
+    } catch (evalErr) {
+      console.warn('[Mesh AI] Jev duplicate check failed, falling back to chat completion:', evalErr);
+    }
+  }
+
   try {
     const candidateList = candidates
       .map((c, i) => `[${i + 1}] ID: "${c.id}" | Content: "${c.content}"`)
@@ -1797,7 +2508,7 @@ Return ONLY valid JSON:
         jsonMode: true,
         temperature: 0.1,
         maxTokens: 120,
-        model: targetModel,
+        model: targetModel === MESH_MODELS.JEV_1_13 ? MESH_MODELS.GPT_4O_MINI : targetModel,
       }
     );
 
@@ -1942,5 +2653,185 @@ Return ONLY valid JSON:
 
     return clusters.filter((c) => c.questionIds.length > 0);
   }
+}
+
+// -------------------------------------------------------------
+// FEATURE: Smart Remediation Poll Generator from Quiz Misconceptions
+// -------------------------------------------------------------
+export async function generateRemediationPoll(params: {
+  questionText: string;
+  correctOptionText: string;
+  wrongOptionText?: string;
+  explanation: string;
+}): Promise<{ question: string; options: string[] }> {
+  const targetModel = resolveModelForTask('survey');
+  const systemPrompt = `You are an expert technical instructor creating a live "Remediation / Clarity Poll" for attendees who just struggled with a technical quiz question.
+The goal is to resolve confusion between the misconception and the correct engineering principle.
+Provide a 2 or 3 option debate, preference, or architectural trade-off poll question that directly helps attendees internalize the distinction.
+
+Return ONLY valid raw JSON matching:
+{"question": "Punchy poll question targeting the core trade-off or misconception?", "options": ["Option 1 (Trade-off A)", "Option 2 (Trade-off B)", "Option 3 (Context dependent)"]}`;
+
+  const userContent = `Quiz Question: "${params.questionText}"
+Correct Principle: "${params.correctOptionText}"
+Common Misconception Chosen: "${params.wrongOptionText || 'Common distractor'}"
+Explanation / Key Takeaway: "${params.explanation}"`;
+
+  try {
+    const raw = await callMeshChatCompletion(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+      { jsonMode: true, temperature: 0.7, maxTokens: 400, model: targetModel }
+    );
+    const parsed = safeParseJsonFromLLM(raw);
+    return {
+      question: parsed.question || `Trade-off Check: ${params.questionText.slice(0, 60)}?`,
+      options: Array.isArray(parsed.options) && parsed.options.length >= 2 ? parsed.options.slice(0, 4) : ['Adopt proposed fix', 'Keep legacy approach', 'Depends on scale'],
+    };
+  } catch (err) {
+    console.warn('[Mesh AI] Remediation poll generation failed, using fallback:', err);
+    return {
+      question: `Clarification: ${params.questionText.slice(0, 60)}?`,
+      options: [
+        `Recommended: ${params.correctOptionText.slice(0, 40)}`,
+        `Alternative: ${params.wrongOptionText?.slice(0, 40) || 'Previous approach'}`,
+        'Trade-off depends on constraints',
+      ],
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// FEATURE: Freeform Short-Answer Auto-Grading with TypeSafe Jev 1.13
+// -------------------------------------------------------------
+export async function gradeShortAnswerWithJev(params: {
+  question: string;
+  expectedAnswer: string;
+  attendeeAnswer: string;
+  acceptableAnswers?: string[];
+}): Promise<{ isCorrect: boolean; confidence: number; feedback?: string }> {
+  const cleanSubmission = (params.attendeeAnswer || '').trim().slice(0, 1000);
+  const cleanExpected = (params.expectedAnswer || '').trim();
+
+  if (!cleanSubmission) {
+    return { isCorrect: false, confidence: 0, feedback: 'No answer submitted.' };
+  }
+
+  // Fast exact match or acceptableAnswers check (0ms, 0 tokens)
+  if (cleanSubmission.toLowerCase() === cleanExpected.toLowerCase()) {
+    return { isCorrect: true, confidence: 1.0, feedback: 'Exact match.' };
+  }
+  if (params.acceptableAnswers?.some((ans) => ans.trim().toLowerCase() === cleanSubmission.toLowerCase())) {
+    return { isCorrect: true, confidence: 1.0, feedback: 'Matched acceptable synonym.' };
+  }
+
+  // TypeSafe Jev 1.13 sub-second semantic evaluation ($0.042/1M tokens)
+  try {
+    const evalRes = await callMeshEvaluate(
+      `Technical Quiz Question: "${params.question}"\nGround Truth Expected Answer: "${cleanExpected}"${params.acceptableAnswers?.length ? ` (Also acceptable: ${params.acceptableAnswers.join(', ')})` : ''}\nAttendee Submitted Answer: "${cleanSubmission}"`,
+      {
+        is_correct: {
+          type: 'noul',
+          instructions: 'Does the attendee answer express the technically correct answer, taking into account minor typos, casing, or equivalent technical terms/synonyms?'
+        },
+        answer_quality: {
+          type: 'choice',
+          instructions: 'Classify the attendee answer quality:',
+          criteria: {
+            correct: 'Technically accurate, valid synonym, or acceptable abbreviation',
+            partially_correct: 'Close concept but missing key technical precision',
+            incorrect: 'Technically wrong or irrelevant',
+          }
+        }
+      },
+      { model: MESH_MODELS.JEV_1_13 }
+    );
+
+    const prob = evalRes?.answers?.is_correct?.noul ?? 0;
+    const choice = evalRes?.answers?.answer_quality?.choice || 'incorrect';
+    const isCorrect = prob >= 0.7 || choice === 'correct';
+
+    return {
+      isCorrect,
+      confidence: prob,
+      feedback: isCorrect ? 'Semantically accurate answer.' : 'Concept does not match ground truth.',
+    };
+  } catch (evalErr) {
+    console.warn('[Short Answer] Jev evaluation failed, using token fallback:', evalErr);
+    const subWords = cleanSubmission.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    const expWords = cleanExpected.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    const wordOverlap = subWords.filter((w) => expWords.includes(w)).length;
+    const isSub =
+      cleanSubmission.toLowerCase() === cleanExpected.toLowerCase() ||
+      (params.acceptableAnswers || []).some((a) => a.trim().toLowerCase() === cleanSubmission.toLowerCase()) ||
+      (wordOverlap > 0 && wordOverlap >= Math.ceil(expWords.length / 2));
+
+    return {
+      isCorrect: isSub,
+      confidence: isSub ? 0.75 : 0.2,
+      feedback: isSub ? 'Partial match via local heuristic.' : 'Incorrect.',
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// FEATURE: 1-Page Session Technical Cheat Sheet & FAQ Synthesizer
+// -------------------------------------------------------------
+export async function generateTechnicalCheatSheet(params: {
+  roomTitle: string;
+  quizzes: Array<{ question: string; explanation?: string; expectedAnswer?: string }>;
+  questions: Array<{ content: string; upvotes?: number; aiTalkingPoints?: string[] }>;
+  polls: Array<{ question: string; aiConsensusNote?: string | null }>;
+}): Promise<string> {
+  const targetModel = resolveModelForTask('session_report');
+
+  const quizSummaries = (params.quizzes || [])
+    .map((q, i) => `[Quiz ${i + 1}] ${q.question}${q.expectedAnswer ? `\nExpected: ${q.expectedAnswer}` : ''}\nTakeaway: ${q.explanation || 'Key engineering principle.'}`)
+    .join('\n\n');
+  const questionSummaries = (params.questions || []).slice(0, 10).map((q, i) => `[Q&A ${i + 1}] (${q.upvotes || 0} upvotes) ${q.content}`).join('\n');
+  const pollSummaries = (params.polls || []).map((p, i) => `[Poll ${i + 1}] ${p.question}${p.aiConsensusNote ? ` (Consensus: ${p.aiConsensusNote})` : ''}`).join('\n');
+
+  const systemPrompt = `You are a Principal Software Architect synthesizing an executive 1-Page Technical Cheat Sheet & Session FAQ for attendees of the masterclass: "${params.roomTitle}".
+The cheat sheet must be crisp, high-density, and immediately actionable for senior engineers.
+
+STRUCTURE REQUIREMENTS (Markdown):
+# ⚡ ${params.roomTitle} — Technical Cheat Sheet & FAQ
+*Curated Takeaways, Architectural Principles & Session Q&A Reference*
+
+## 🏛️ Core Architectural Principles
+(3 to 5 key bullet points with bold keywords and concise engineering rationales)
+
+## 💬 Audience Technical FAQ
+(Top 3-4 questions from the session with authoritative, 1-2 sentence engineering answers)
+
+## 📊 Consensus Decisions & Trade-Offs
+(Bullet points summarizing poll outcomes and architecture tradeoffs)
+
+## 🛠️ Quick Reference & Code Recipes
+(2-3 practical code snippets, terminal commands, or rule-of-thumb formulas)
+
+Keep it dense, elegant, and strictly high signal.`;
+
+  const userContent = `Session Data:
+QUIZZES COVERED:
+${quizSummaries || 'None'}
+
+TOP AUDIENCE QUESTIONS:
+${questionSummaries || 'None'}
+
+LIVE POLLS & CONSENSUS:
+${pollSummaries || 'None'}`;
+
+  const raw = await callMeshChatCompletion(
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent },
+    ],
+    { temperature: 0.4, maxTokens: 1800, model: targetModel }
+  );
+
+  return raw.trim();
 }
 

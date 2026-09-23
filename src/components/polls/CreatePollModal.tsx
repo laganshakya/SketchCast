@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Plus, Trash2, Vote, Sparkles, Bot, Zap, AlertCircle, Link2, RefreshCw, FolderGit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateAIPollSuggestions, generateAIPollsFromUrl, getStoredMeshKey, isGitHubRepoInput, type SuggestedAIPoll } from '../../lib/meshApi';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+
+export interface SessionPollContext {
+  roomTitle?: string;
+  quizzes?: string[];
+  questions?: Array<{ content: string; upvotes?: number }>;
+  surveys?: string[];
+}
 
 interface CreatePollModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreatePoll: (question: string, options: string[]) => void;
   onOpenAISettings?: () => void;
+  sessionContext?: SessionPollContext;
 }
 
 export const CreatePollModal: React.FC<CreatePollModalProps> = ({
@@ -16,16 +24,87 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
   onClose,
   onCreatePoll,
   onOpenAISettings,
+  sessionContext,
 }) => {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState<string[]>(['', '', '']);
   const [aiTopic, setAiTopic] = useState('');
-  const [aiPollMode, setAiPollMode] = useState<'topic' | 'url'>('topic');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiStatusMsg, setAiStatusMsg] = useState<string | null>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<SuggestedAIPoll[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<SuggestedAIPoll[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+
+  // Sync / Reset on close
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setAiError(null);
+      setAiStatusMsg(null);
+      setIsGeneratingAI(false);
+      setAiSuggestions([]);
+    }
+  }
+
+  // Auto-extract and prioritize session topics (from Q&A, Quizzes, Surveys, and Room Title)
+  const sessionTopics = useMemo(() => {
+    const rawList: string[] = [];
+
+    // 1. Top Q&A Questions (prioritized by upvotes)
+    if (sessionContext?.questions && sessionContext.questions.length > 0) {
+      const sortedQ = [...sessionContext.questions].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+      sortedQ.forEach((q) => {
+        const clean = q.content.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 2. Active & Queued Quizzes
+    if (sessionContext?.quizzes && sessionContext.quizzes.length > 0) {
+      sessionContext.quizzes.forEach((quiz) => {
+        const clean = quiz.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 3. Surveys
+    if (sessionContext?.surveys && sessionContext.surveys.length > 0) {
+      sessionContext.surveys.forEach((survey) => {
+        const clean = survey.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 4. Room Title & Standard Fallbacks if list has fewer than 4 items
+    if (sessionContext?.roomTitle) {
+      const cleanTitle = sessionContext.roomTitle.trim();
+      if (cleanTitle && !rawList.some((existing) => existing.toLowerCase() === cleanTitle.toLowerCase())) {
+        rawList.push(cleanTitle);
+      }
+    }
+
+    const fallbacks = [
+      'Architecture Trade-offs',
+      'Production Readiness',
+      'Tech Stack Consensus',
+      'Scalability vs Simplicity',
+    ];
+
+    fallbacks.forEach((fb) => {
+      if (rawList.length < 5 && !rawList.some((existing) => existing.toLowerCase() === fb.toLowerCase())) {
+        rawList.push(fb);
+      }
+    });
+
+    return rawList.slice(0, 5);
+  }, [sessionContext]);
 
   const handleAddOption = () => {
     playPopSound();
@@ -49,11 +128,11 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
     });
   };
 
-  const handleFetchAISuggestions = async () => {
+  const handleFetchAISuggestions = async (overrideTopic?: string) => {
     playClickSound();
-    const cleanInput = aiTopic.trim();
+    const cleanInput = (overrideTopic !== undefined ? overrideTopic : aiTopic).trim();
     if (!cleanInput) {
-      setAiError(aiPollMode === 'url' ? 'Please enter a webpage URL or GitHub repo (e.g. facebook/react).' : 'Please enter a topic for AI poll suggestions.');
+      setAiError('Please enter a topic, URL, or GitHub repo for AI poll suggestions.');
       return;
     }
 
@@ -68,12 +147,12 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
     setAiSuggestions([]);
 
     try {
-      if (aiPollMode === 'url' || cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || isGitHubRepoInput(cleanInput)) {
-        if (isGitHubRepoInput(cleanInput)) {
-          setAiStatusMsg(`🐙 Scanning GitHub repo & building polls...`);
-        } else {
-          setAiStatusMsg(`🔗 Scraping content & building polls...`);
-        }
+      if (isGitHubRepoInput(cleanInput)) {
+        setAiStatusMsg(`🐙 Scanning GitHub repo & building polls...`);
+        const res = await generateAIPollsFromUrl(cleanInput);
+        setAiSuggestions(res.polls);
+      } else if (cleanInput.match(/^https?:\/\//i)) {
+        setAiStatusMsg(`🔗 Scraping content & building polls...`);
         const res = await generateAIPollsFromUrl(cleanInput);
         setAiSuggestions(res.polls);
       } else {
@@ -178,71 +257,94 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                 animate={{ opacity: 1, height: 'auto' }}
                 className="p-3.5 bg-[#121215] border border-white/[0.08] rounded-xl mb-3.5 space-y-3"
               >
-                {/* Mode Selector */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { playPopSound(); setAiPollMode('topic'); }}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg border cursor-pointer transition-colors flex items-center gap-1.5 ${
-                      aiPollMode === 'topic'
-                        ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                        : 'bg-[#16161A] text-zinc-400 border-white/[0.08]'
-                    }`}
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>Topic / Search</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { playPopSound(); setAiPollMode('url'); }}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg border cursor-pointer transition-colors flex items-center gap-1.5 ${
-                      aiPollMode === 'url'
-                        ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                        : 'bg-[#16161A] text-zinc-400 border-white/[0.08]'
-                    }`}
-                  >
-                    <Link2 className="w-3 h-3" />
-                    <span>Scrape URL / GitHub</span>
-                  </button>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={aiTopic}
-                      onChange={(e) => setAiTopic(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleFetchAISuggestions();
-                        }
-                      }}
-                      placeholder={
-                        aiPollMode === 'url'
-                          ? 'Paste URL or GitHub repo: e.g. facebook/react'
-                          : 'Topic: e.g. Rate this Architecture, PostgreSQL vs Redis...'
-                      }
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 pr-16 transition-colors"
-                    />
-                    {aiPollMode === 'url' && isGitHubRepoInput(aiTopic) && (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
-                        <FolderGit2 className="w-2.5 h-2.5" />
-                        <span>Repo</span>
+                {/* Unified Input and Action Button */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center space-x-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={aiTopic}
+                        onChange={(e) => setAiTopic(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleFetchAISuggestions();
+                          }
+                        }}
+                        placeholder="e.g. Rate this Architecture, https://bun.sh/docs, or facebook/react"
+                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 pr-20 transition-colors"
+                      />
+                      {isGitHubRepoInput(aiTopic) ? (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                          <FolderGit2 className="w-2.5 h-2.5" />
+                          <span>GitHub</span>
+                        </span>
+                      ) : aiTopic.match(/https?:\/\/[^\s]+/i) ? (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                          <Link2 className="w-2.5 h-2.5" />
+                          <span>URL Doc</span>
+                        </span>
+                      ) : null}
+                    </div>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleFetchAISuggestions()}
+                      disabled={isGeneratingAI}
+                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center space-x-1 cursor-pointer shrink-0 shadow-sm transition-all"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>
+                        {isGeneratingAI
+                          ? 'Generating...'
+                          : isGitHubRepoInput(aiTopic)
+                          ? 'Scan Repo'
+                          : aiTopic.match(/https?:\/\/[^\s]+/i)
+                          ? 'Scrape & Suggest'
+                          : 'Suggest'}
                       </span>
-                    )}
+                    </motion.button>
                   </div>
-                  <motion.button
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleFetchAISuggestions}
-                    disabled={isGeneratingAI}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center space-x-1 cursor-pointer shrink-0 shadow-sm"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>{isGeneratingAI ? 'Generating...' : aiPollMode === 'url' ? 'Scrape' : 'Suggest'}</span>
-                  </motion.button>
+
+                  {/* Session Topics (from Quizzes, Q&A Questions, Surveys, and Room Title) */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                      <span className="font-bold uppercase tracking-wider text-zinc-400">Session topics:</span>
+                      {aiTopic && (
+                        <button
+                          type="button"
+                          onClick={() => setAiTopic('')}
+                          className="text-[9px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {sessionTopics.map((topicItem) => {
+                        const isSelected = aiTopic === topicItem;
+                        return (
+                          <button
+                            key={topicItem}
+                            type="button"
+                            onClick={() => {
+                              playClickSound();
+                              setAiTopic(topicItem);
+                            }}
+                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
+                              isSelected
+                                ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
+                                : 'bg-[#16161A] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
+                            }`}
+                            title={topicItem}
+                          >
+                            {topicItem}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Status Indicator */}

@@ -19,9 +19,14 @@ import {
   BarChart2,
   Check,
   BookOpen,
+  Printer,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { generateSessionSummaryReport, getStoredMeshKey } from '../../lib/meshApi';
+import {
+  generateSessionSummaryReport,
+  generateTechnicalCheatSheet,
+  getStoredMeshKey,
+} from '../../lib/meshApi';
 import type { QuizQuestion, LivePoll, Question, LeaderboardEntry } from '../../types';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
@@ -110,7 +115,29 @@ function parseMarkdownToStyledHtml(
       richCardsHtml = `
         <div class="rich-drilldown-header">Technical Question Breakdown (${quizzes.length} Questions)</div>
         ${quizzes.map((q, qIdx) => {
-          const correctOpt = q.options.find((o) => o.id.toUpperCase() === q.correctOptionId.toUpperCase());
+          if (q.questionType === 'short_answer') {
+            return `
+            <div class="quiz-card-html">
+              <div class="quiz-header-html">
+                <span class="q-badge">#${qIdx + 1}</span>
+                <span class="q-title-html">${q.question}</span>
+                <span class="category-chip">${q.category || 'Architecture'}</span>
+              </div>
+              <div class="correct-banner">
+                <span class="correct-label">✓ EXPECTED ANSWER:</span>
+                <span class="correct-value">${q.expectedAnswer || q.correctOptionId}</span>
+              </div>
+              ${q.acceptableAnswers && q.acceptableAnswers.length > 0 ? `
+              <div class="options-grid-html">
+                <div class="opt-row-html is-correct">
+                  <span class="opt-body"><strong>Accepted Synonyms:</strong> ${q.acceptableAnswers.join(', ')}</span>
+                </div>
+              </div>` : ''}
+              ${q.explanation ? `<div class="explanation-box"><strong>Key Architectural Takeaway:</strong> ${q.explanation}</div>` : ''}
+            </div>
+            `;
+          }
+          const correctOpt = (q.options || []).find((o) => o.id.toUpperCase() === q.correctOptionId.toUpperCase());
           const correctText = correctOpt ? `${correctOpt.id}. ${correctOpt.text}` : `Option ${q.correctOptionId}`;
           return `
             <div class="quiz-card-html">
@@ -124,7 +151,7 @@ function parseMarkdownToStyledHtml(
                 <span class="correct-value">${correctText}</span>
               </div>
               <div class="options-grid-html">
-                ${q.options.map((opt) => `
+                ${(q.options || []).map((opt) => `
                   <div class="opt-row-html ${opt.id.toUpperCase() === q.correctOptionId.toUpperCase() ? 'is-correct' : ''}">
                     <span class="opt-key">${opt.id}</span>
                     <span class="opt-body">${opt.text}</span>
@@ -143,7 +170,7 @@ function parseMarkdownToStyledHtml(
       richCardsHtml = `
         <div class="rich-drilldown-header">Live Poll Insights (${polls.length} Polls)</div>
         ${polls.map((p, pIdx) => {
-          const totalVotes = p.options.reduce((sum, o) => sum + (o.votesCount || 0), 0);
+          const totalVotes = (p.options || []).reduce((sum, o) => sum + (o.votesCount || 0), 0);
           return `
             <div class="quiz-card-html">
               <div class="quiz-header-html">
@@ -152,7 +179,7 @@ function parseMarkdownToStyledHtml(
                 <span class="category-chip">${totalVotes} Total Votes</span>
               </div>
               <div class="options-grid-html">
-                ${p.options.map((opt) => {
+                ${(p.options || []).map((opt) => {
                   const pct = totalVotes > 0 ? Math.round(((opt.votesCount || 0) / totalVotes) * 100) : 0;
                   return `
                     <div class="opt-row-html">
@@ -353,6 +380,31 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
     const line = lines[i];
     const trimmed = line.trim();
 
+    // Fenced Code Blocks
+    if (trimmed.startsWith('```')) {
+      const lang = trimmed.slice(3).trim();
+      i++;
+      const codeLines: string[] = [];
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++; // skip closing ```
+      elements.push(
+        <div key={`code-${i}`} className="my-3 rounded-xl bg-[#09090C] border border-white/[0.08] overflow-hidden">
+          {lang && (
+            <div className="px-3.5 py-1.5 bg-white/[0.04] border-b border-white/[0.06] text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
+              {lang}
+            </div>
+          )}
+          <pre className="p-3.5 font-mono text-xs text-cyan-300 overflow-x-auto leading-relaxed">
+            <code>{codeLines.join('\n')}</code>
+          </pre>
+        </div>
+      );
+      continue;
+    }
+
     // Table detection: line contains |
     if (trimmed.startsWith('|') && trimmed.endsWith('|') && i + 1 < lines.length && lines[i + 1].includes('---')) {
       const headerCols = trimmed.split('|').slice(1, -1).map((c) => c.trim());
@@ -503,14 +555,14 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
             : null;
 
         // Correct Option details
-        const correctOptionObj = quiz.options.find(
+        const correctOptionObj = (quiz.options || []).find(
           (o) => o.id.toUpperCase() === quiz.correctOptionId.toUpperCase()
         );
         const correctOptionText = correctOptionObj ? correctOptionObj.text : `Option ${quiz.correctOptionId}`;
 
         // User Option details
         const userOptionObj = userChoiceId
-          ? quiz.options.find((o) => o.id.toUpperCase() === userChoiceId.toUpperCase())
+          ? (quiz.options || []).find((o) => o.id.toUpperCase() === userChoiceId.toUpperCase())
           : null;
         const userOptionText = userOptionObj ? userOptionObj.text : userChoiceId ? `Option ${userChoiceId}` : null;
 
@@ -551,7 +603,11 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                 {isHost ? (
                   <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Answer: {quiz.correctOptionId}</span>
+                    <span>
+                      {quiz.questionType === 'short_answer'
+                        ? `Answer: ${quiz.expectedAnswer || quiz.correctOptionId}`
+                        : `Answer: ${quiz.correctOptionId}`}
+                    </span>
                   </span>
                 ) : userChoiceId !== null ? (
                   isUserCorrect ? (
@@ -597,11 +653,24 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                     <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
                       <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 mb-1">
                         <CheckCircle className="w-3.5 h-3.5" />
-                        <span>CORRECT OPTION</span>
+                        <span>{quiz.questionType === 'short_answer' ? 'EXPECTED ANSWER' : 'CORRECT OPTION'}</span>
                       </div>
                       <div className="text-xs sm:text-sm font-semibold text-emerald-300">
-                        <span className="font-mono mr-1.5 font-bold">{quiz.correctOptionId}.</span>
-                        {correctOptionText}
+                        {quiz.questionType === 'short_answer' ? (
+                          <div>
+                            <span className="font-mono text-emerald-300">{quiz.expectedAnswer || correctOptionText}</span>
+                            {quiz.acceptableAnswers && quiz.acceptableAnswers.length > 0 && (
+                              <div className="text-[11px] font-mono text-zinc-400 mt-1">
+                                (Accepted: {quiz.acceptableAnswers.join(', ')})
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-mono mr-1.5 font-bold">{quiz.correctOptionId}.</span>
+                            {correctOptionText}
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -678,67 +747,97 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                     </div>
                   </div>
 
-                  {/* All 4 Options Breakdown */}
-                  <div>
-                    <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-                      <BarChart2 className="w-3.5 h-3.5 text-blue-400" />
-                      <span>ALL 4 OPTIONS BREAKDOWN</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {quiz.options.map((opt) => {
-                        const isThisCorrect = opt.id.toUpperCase() === quiz.correctOptionId.toUpperCase();
-                        const isThisUser = userChoiceId !== null && opt.id.toUpperCase() === userChoiceId.toUpperCase();
-
-                        return (
-                          <div
-                            key={opt.id}
-                            className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors ${
-                              isThisCorrect
-                                ? 'bg-emerald-500/[0.06] border-emerald-500/35 text-zinc-100'
-                                : isThisUser && !isThisCorrect
-                                ? 'bg-rose-500/[0.06] border-rose-500/35 text-zinc-200'
-                                : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {/* Question Options or Short-Answer Reference */}
+                  {quiz.questionType === 'short_answer' ? (
+                    <div>
+                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>GROUND TRUTH & ACCEPTABLE SYNONYMS</span>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2.5">
+                        <div className="text-xs text-zinc-300 flex items-center gap-2 flex-wrap">
+                          <span className="text-zinc-400 font-mono font-semibold">Canonical Answer:</span>
+                          <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                            {quiz.expectedAnswer || quiz.correctOptionId}
+                          </span>
+                        </div>
+                        {quiz.acceptableAnswers && quiz.acceptableAnswers.length > 0 && (
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/[0.04]">
+                            <span className="text-zinc-400 font-mono text-[11px] mr-1">Accepted Variations:</span>
+                            {quiz.acceptableAnswers.map((syn, synIdx) => (
                               <span
-                                className={`w-6 h-6 rounded-md font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
-                                  isThisCorrect
-                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                    : isThisUser && !isThisCorrect
-                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                    : 'bg-white/[0.06] text-zinc-400 border border-white/[0.08]'
-                                }`}
+                                key={synIdx}
+                                className="px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 font-mono text-[10px] border border-white/[0.08]"
                               >
-                                {opt.id}
+                                {syn}
                               </span>
-                              <span className="font-medium text-xs leading-relaxed">{opt.text}</span>
-                            </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
+                        <BarChart2 className="w-3.5 h-3.5 text-blue-400" />
+                        <span>ALL OPTIONS BREAKDOWN</span>
+                      </div>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {isThisCorrect && (
-                                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">
-                                  CORRECT OPTION
-                                </span>
-                              )}
-                              {isThisUser && (
+                      <div className="space-y-2">
+                        {(quiz.options || []).map((opt) => {
+                          const isThisCorrect = opt.id.toUpperCase() === quiz.correctOptionId.toUpperCase();
+                          const isThisUser = userChoiceId !== null && opt.id.toUpperCase() === userChoiceId.toUpperCase();
+
+                          return (
+                            <div
+                              key={opt.id}
+                              className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors ${
+                                isThisCorrect
+                                  ? 'bg-emerald-500/[0.06] border-emerald-500/35 text-zinc-100'
+                                  : isThisUser && !isThisCorrect
+                                  ? 'bg-rose-500/[0.06] border-rose-500/35 text-zinc-200'
+                                  : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <span
-                                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold border ${
+                                  className={`w-6 h-6 rounded-md font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
                                     isThisCorrect
-                                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                                      : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                      : isThisUser && !isThisCorrect
+                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                      : 'bg-white/[0.06] text-zinc-400 border border-white/[0.08]'
                                   }`}
                                 >
-                                  YOU CHOSE
+                                  {opt.id}
                                 </span>
-                              )}
+                                <span className="font-medium text-xs leading-relaxed">{opt.text}</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {isThisCorrect && (
+                                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">
+                                    CORRECT OPTION
+                                  </span>
+                                )}
+                                {isThisUser && (
+                                  <span
+                                    className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold border ${
+                                      isThisCorrect
+                                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                        : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                                    }`}
+                                  >
+                                    YOU CHOSE
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Architectural Takeaway Box */}
                   {(quiz.explanation || quiz.aiDeepDive) && (
@@ -794,7 +893,7 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
       {polls.map((poll, pIdx) => {
         const cardId = poll.id || `poll_${pIdx + 1}`;
         const isExpanded = expandedIds.has(cardId);
-        const totalVotes = poll.options.reduce((sum, o) => sum + (o.votesCount || 0), 0);
+        const totalVotes = (poll.options || []).reduce((sum, o) => sum + (o.votesCount || 0), 0);
         const userVotedOptId = userPollVotes[poll.id] || null;
 
         return (
@@ -862,7 +961,7 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
                   </div>
 
                   <div className="space-y-2.5">
-                    {poll.options.map((opt) => {
+                    {(poll.options || []).map((opt) => {
                       const count = opt.votesCount || 0;
                       const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                       const isUserChoice = userVotedOptId === opt.id;
@@ -941,17 +1040,22 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
   onOpenAISettings,
 }) => {
   const [activeMarkdown, setActiveMarkdown] = useState<string>(initialReportMarkdown || '');
+  const [cheatSheetMarkdown, setCheatSheetMarkdown] = useState<string>('');
+  const [activeDocType, setActiveDocType] = useState<'report' | 'cheatsheet'>('report');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingCheatSheet, setIsGeneratingCheatSheet] = useState(false);
   const [copied, setCopied] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const [prevInitialMarkdown, setPrevInitialMarkdown] = useState(initialReportMarkdown);
+  if (initialReportMarkdown !== prevInitialMarkdown) {
+    setPrevInitialMarkdown(initialReportMarkdown);
     if (initialReportMarkdown) {
       setActiveMarkdown(initialReportMarkdown);
     }
-  }, [initialReportMarkdown]);
+  }
 
   // Click outside to dismiss dropdown
   useEffect(() => {
@@ -969,7 +1073,12 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     return parseMarkdownIntoSections(activeMarkdown);
   }, [activeMarkdown]);
 
-  // Handle Report Generation
+  const parsedCheatSheet = useMemo(() => {
+    if (!cheatSheetMarkdown) return null;
+    return parseMarkdownIntoSections(cheatSheetMarkdown);
+  }, [cheatSheetMarkdown]);
+
+  // Handle Full Masterclass Report Generation
   const handleGenerateReport = async () => {
     const apiKey = getStoredMeshKey();
     if (!apiKey) {
@@ -986,7 +1095,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
       const topQuestions = questions
         .slice()
         .sort((a, b) => b.upvotes_count - a.upvotes_count)
-        .slice(0, 5)
+        .slice(0, 8)
         .map((q) => ({
           content: q.content,
           upvotes: q.upvotes_count,
@@ -994,19 +1103,23 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
         }));
 
       const pollData = polls.map((p) => {
-        const topOpt = p.options.slice().sort((a, b) => b.votesCount - a.votesCount)[0];
-        const totalV = p.options.reduce((sum, o) => sum + o.votesCount, 0);
+        const topOpt = (p.options || []).slice().sort((a, b) => b.votesCount - a.votesCount)[0];
+        const totalV = (p.options || []).reduce((sum, o) => sum + o.votesCount, 0);
         return {
           question: p.question,
           totalVotes: totalV,
           topOption: topOpt ? `${topOpt.text} (${topOpt.votesCount} votes)` : 'No votes',
+          aiConsensusNote: p.aiConsensusNote,
         };
       });
 
       const quizData = quizzes.map((q) => ({
         question: q.question,
-        correctOption: `${q.correctOptionId}: ${q.options.find((o) => o.id === q.correctOptionId)?.text || ''}`,
+        correctOption: q.questionType === 'short_answer'
+          ? (q.expectedAnswer || q.correctOptionId)
+          : `${q.correctOptionId}: ${(q.options || []).find((o) => o.id === q.correctOptionId)?.text || ''}`,
         category: q.category,
+        explanation: q.explanation,
       }));
 
       const report = await generateSessionSummaryReport({
@@ -1034,9 +1147,68 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     }
   };
 
+  // Handle 1-Page Technical Cheat Sheet Generation
+  const handleGenerateCheatSheet = async () => {
+    const apiKey = getStoredMeshKey();
+    if (!apiKey) {
+      setErrorNotice('Mesh API Key missing. Please click AI Settings to configure your key.');
+      onOpenAISettings?.();
+      return;
+    }
+
+    setIsGeneratingCheatSheet(true);
+    setErrorNotice(null);
+    playWhoosh();
+
+    try {
+      const topQuestions = questions
+        .slice()
+        .sort((a, b) => b.upvotes_count - a.upvotes_count)
+        .slice(0, 10)
+        .map((q) => ({
+          content: q.content,
+          upvotes: q.upvotes_count,
+        }));
+
+      const pollData = polls.map((p) => ({
+        question: p.question,
+        aiConsensusNote: p.aiConsensusNote,
+      }));
+
+      const quizData = quizzes.map((q) => ({
+        question: q.question,
+        expectedAnswer: q.questionType === 'short_answer'
+          ? (q.expectedAnswer || q.correctOptionId)
+          : (q.options || []).find((o) => o.id === q.correctOptionId)?.text || q.correctOptionId,
+        explanation: q.explanation,
+      }));
+
+      const sheet = await generateTechnicalCheatSheet({
+        roomTitle,
+        quizzes: quizData,
+        questions: topQuestions,
+        polls: pollData,
+      });
+
+      if (sheet && sheet.trim().length > 20) {
+        setCheatSheetMarkdown(sheet);
+        playPopSound();
+      } else {
+        throw new Error('Received an empty cheat sheet from the AI engine.');
+      }
+    } catch (err: any) {
+      console.error('[MasterclassReportView] cheat sheet generation error:', err);
+      setErrorNotice(err?.message || 'Failed to generate technical cheat sheet. Please verify API key.');
+    } finally {
+      setIsGeneratingCheatSheet(false);
+    }
+  };
+
+  const currentMarkdown = activeDocType === 'report' ? activeMarkdown : cheatSheetMarkdown;
+
   const handleCopy = () => {
-    if (!activeMarkdown) return;
-    navigator.clipboard.writeText(activeMarkdown);
+    if (!currentMarkdown) return;
+    navigator.clipboard.writeText(currentMarkdown);
     setCopied(true);
     playPopSound();
     setTimeout(() => setCopied(false), 2000);
@@ -1044,30 +1216,35 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
 
   // Download formats
   const handleDownloadHtml = () => {
-    if (!activeMarkdown) return;
+    if (!currentMarkdown) return;
     playClickSound();
     const timeStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const fullHtml = parseMarkdownToStyledHtml(activeMarkdown, roomTitle, roomCode, timeStr, quizzes, polls);
+    const fullHtml = activeDocType === 'report'
+      ? parseMarkdownToStyledHtml(currentMarkdown, roomTitle, roomCode, timeStr, quizzes, polls)
+      : parseMarkdownToStyledHtml(currentMarkdown, roomTitle, roomCode, timeStr, [], []);
     const blob = new Blob([fullHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Masterclass_Report_${roomCode}.html`;
+    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.html` : `Technical_CheatSheet_${roomCode}.html`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadMarkdown = () => {
-    if (!activeMarkdown) return;
+    if (!currentMarkdown) return;
     playClickSound();
 
-    let enrichedMd = activeMarkdown;
-    if (quizzes.length > 0 && !activeMarkdown.includes('### Detailed Question Analysis')) {
+    let enrichedMd = currentMarkdown;
+    if (activeDocType === 'report' && quizzes.length > 0 && !currentMarkdown.includes('### Detailed Question Analysis')) {
       const detailedQuizMd = quizzes
         .map((q, idx) => {
-          const correctOpt = q.options.find((o) => o.id.toUpperCase() === q.correctOptionId.toUpperCase());
-          return `\n#### Question ${idx + 1}: ${q.question}\n- **Category:** ${q.category || 'Architecture'}\n- **Correct Answer:** Option ${q.correctOptionId} (${correctOpt?.text || ''})\n- **All Options:**\n${q.options.map((o) => `  - [${o.id}] ${o.text}`).join('\n')}\n${q.explanation ? `- **Architectural Takeaway:** ${q.explanation}\n` : ''}`;
+          if (q.questionType === 'short_answer') {
+            return `\n#### Question ${idx + 1}: ${q.question}\n- **Category:** ${q.category || 'Architecture'}\n- **Question Type:** Freeform Short-Answer\n- **Expected Answer:** ${q.expectedAnswer || q.correctOptionId}\n${q.acceptableAnswers && q.acceptableAnswers.length > 0 ? `- **Accepted Synonyms:** ${q.acceptableAnswers.join(', ')}\n` : ''}${q.explanation ? `- **Architectural Takeaway:** ${q.explanation}\n` : ''}`;
+          }
+          const correctOpt = (q.options || []).find((o) => o.id.toUpperCase() === q.correctOptionId.toUpperCase());
+          return `\n#### Question ${idx + 1}: ${q.question}\n- **Category:** ${q.category || 'Architecture'}\n- **Correct Answer:** Option ${q.correctOptionId} (${correctOpt?.text || ''})\n- **All Options:**\n${(q.options || []).map((o) => `  - [${o.id}] ${o.text}`).join('\n')}\n${q.explanation ? `- **Architectural Takeaway:** ${q.explanation}\n` : ''}`;
         })
         .join('\n');
       enrichedMd += `\n\n### Detailed Question Analysis\n${detailedQuizMd}`;
@@ -1077,16 +1254,16 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Masterclass_Report_${roomCode}.md`;
+    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.md` : `Technical_CheatSheet_${roomCode}.md`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadTxt = () => {
-    if (!activeMarkdown) return;
+    if (!currentMarkdown) return;
     playClickSound();
-    const plainText = activeMarkdown
+    const plainText = currentMarkdown
       .replace(/^#+\s+/gm, '')
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/`([^`]+)`/g, '$1')
@@ -1096,35 +1273,43 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Masterclass_Report_${roomCode}.txt`;
+    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.txt` : `Technical_CheatSheet_${roomCode}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadJson = () => {
-    if (!activeMarkdown) return;
+    if (!currentMarkdown) return;
     playClickSound();
     const jsonPayload = {
       roomTitle,
       roomCode,
       generatedAt: new Date().toISOString(),
+      documentType: activeDocType,
       totalAttendees,
       quizzesCount: quizzes.length,
       pollsCount: polls.length,
       questionsCount: questions.length,
       quizzes,
       polls,
-      reportMarkdown: activeMarkdown,
+      reportMarkdown: currentMarkdown,
     };
     const blob = new Blob([JSON.stringify(jsonPayload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Masterclass_Report_${roomCode}.json`;
+    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.json` : `Technical_CheatSheet_${roomCode}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
+  };
+
+  const handlePrint = () => {
+    if (!currentMarkdown) return;
+    playClickSound();
+    setIsDropdownOpen(false);
+    window.print();
   };
 
   return (
@@ -1138,25 +1323,25 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
           <div>
             <div className="flex items-center space-x-2.5">
               <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                Masterclass Session Report
+                Masterclass Report & Technical Cheat Sheet
               </h2>
               <span className="font-mono text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">
                 {roomCode}
               </span>
-              {activeMarkdown && (
+              {currentMarkdown && (
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold tracking-wide border border-emerald-500/20 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Ready
                 </span>
               )}
             </div>
             <p className="text-xs text-zinc-400 mt-1">
-              Comprehensive executive synthesis with interactive question drilldown, voting consensus, and top architectural Q&A.
+              Unified executive synthesis with core architectural principles, technical FAQ, interactive question drilldowns, and community consensus.
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        {activeMarkdown && (
+        {currentMarkdown && (
           <div className="flex items-center space-x-2 flex-wrap gap-y-2 shrink-0">
             {/* Quick Copy Button */}
             <motion.button
@@ -1168,7 +1353,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
               title="Copy markdown to clipboard"
             >
               {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-400" />}
-              <span>{copied ? 'Copied' : 'Copy Report'}</span>
+              <span>{copied ? 'Copied' : activeDocType === 'report' ? 'Copy Report' : 'Copy Cheat Sheet'}</span>
             </motion.button>
 
             {/* Download Dropdown */}
@@ -1184,7 +1369,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                 className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold border border-blue-400/30 flex items-center space-x-2 cursor-pointer transition-all shadow-md shadow-blue-500/20"
               >
                 <Download className="w-4 h-4" />
-                <span>Download Report</span>
+                <span>{activeDocType === 'report' ? 'Download Report' : 'Download Cheat Sheet'}</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </motion.button>
 
@@ -1241,10 +1426,36 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                         <div className="text-[10px] text-zinc-400">Raw session data & analytics</div>
                       </div>
                     </button>
+
+                    <div className="my-1 border-t border-white/[0.06]" />
+
+                    <button
+                      onClick={handlePrint}
+                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                    >
+                      <Printer className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <div>
+                        <div className="font-semibold text-white">Print / Save as PDF</div>
+                        <div className="text-[10px] text-zinc-400">Printable cheat sheet & report</div>
+                      </div>
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Print / PDF Button */}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handlePrint}
+              className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 text-xs font-semibold border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-all shadow-sm"
+              title="Print or Save as PDF"
+            >
+              <Printer className="w-4 h-4 text-cyan-400" />
+              <span>Print / PDF</span>
+            </motion.button>
 
             {/* Re-generate Button (For Host) */}
             {isHost && (
@@ -1254,10 +1465,14 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   playWhoosh();
-                  handleGenerateReport();
+                  if (activeDocType === 'report') {
+                    handleGenerateReport();
+                  } else {
+                    handleGenerateCheatSheet();
+                  }
                 }}
                 className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-colors"
-                title="Synthesize fresh AI report"
+                title="Synthesize fresh AI content"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
                 <span>Re-generate</span>
@@ -1344,156 +1559,288 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
         </div>
       )}
 
-      {/* State 1: Generation Trigger Card (If Report Not Generated) */}
-      {!activeMarkdown && !isGenerating && (
-        <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mx-auto flex items-center justify-center mb-4">
-            <FileText className="w-7 h-7" />
-          </div>
+      {/* Document Selector Tabs */}
+      <div className="flex items-center space-x-2 mb-6 p-1.5 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] w-fit">
+        <button
+          type="button"
+          onClick={() => {
+            playClickSound();
+            setActiveDocType('report');
+          }}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
+            activeDocType === 'report'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Full Masterclass Report</span>
+          {activeMarkdown && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          )}
+        </button>
 
-          <h3 className="text-base sm:text-lg font-bold text-white mb-2">
-            {isHost ? 'Synthesize Masterclass Executive Report' : 'Report Pending Generation'}
-          </h3>
+        <button
+          type="button"
+          onClick={() => {
+            playClickSound();
+            setActiveDocType('cheatsheet');
+          }}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
+            activeDocType === 'cheatsheet'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>⚡ 1-Page Technical Cheat Sheet</span>
+          {cheatSheetMarkdown && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          )}
+        </button>
+      </div>
 
-          <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
-            {isHost
-              ? `Ready to generate the executive report for Room ${roomCode}. AI will synthesize quiz outcomes, audience poll consensus, and Q&A talking points into an interactive executive brief.`
-              : `The session host has not generated the AI Masterclass Report for Room ${roomCode} yet. Once synthesized, the executive report will appear here automatically.`}
-          </p>
+      {activeDocType === 'report' && (
+        <>
+          {/* State 1: Generation Trigger Card (If Report Not Generated) */}
+          {!activeMarkdown && !isGenerating && (
+            <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mx-auto flex items-center justify-center mb-4">
+                <FileText className="w-7 h-7" />
+              </div>
 
-          {isHost ? (
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                playWhoosh();
-                handleGenerateReport();
-              }}
-              className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer transition-all shadow-lg shadow-blue-500/25"
-            >
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span>Generate Masterclass Report</span>
-            </motion.button>
-          ) : (
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] text-zinc-400 text-xs border border-white/[0.06]">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-              <span>Waiting for host to publish...</span>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-2">
+                {isHost ? 'Synthesize Masterclass Report & Technical Cheat Sheet' : 'Report Pending Generation'}
+              </h3>
+
+              <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
+                {isHost
+                  ? `Ready to generate the masterclass synthesis for Room ${roomCode}. AI will unify technical architectural principles, audience FAQ, quiz drilldowns, community poll consensus, and code recipes into a single high-density document.`
+                  : `The session host has not generated the AI Masterclass Report for Room ${roomCode} yet. Once synthesized, the executive report will appear here automatically.`}
+              </p>
+
+              {isHost ? (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    playWhoosh();
+                    handleGenerateReport();
+                  }}
+                  className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer transition-all shadow-lg shadow-blue-500/25"
+                >
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Generate Report</span>
+                </motion.button>
+              ) : (
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] text-zinc-400 text-xs border border-white/[0.06]">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                  <span>Waiting for host to publish...</span>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* State 2: Generating Loader */}
-      {isGenerating && (
-        <div className="p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-md mx-auto my-auto shadow-xl">
-          <RefreshCw className="w-8 h-8 text-blue-400 mx-auto animate-spin mb-4" />
-          <h4 className="text-base font-bold text-white mb-1.5">Synthesizing Executive Report...</h4>
-          <p className="text-xs text-zinc-400 leading-relaxed">
-            Analyzing quiz outcomes, voting consensus, and top architectural Q&A threads via Mesh API.
-          </p>
-        </div>
-      )}
-
-      {/* State 3: Formatted Executive Dashboard */}
-      {activeMarkdown && parsedReport && (
-        <div className="space-y-6 pb-12">
-          {/* Executive Hero Banner */}
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/30 via-[#101015] to-[#0E0E12] border border-blue-500/20 shadow-md">
-            <div className="flex items-center space-x-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>SKETCHCAST MASTERCLASS SYNTHESIS</span>
+          {/* State 2: Generating Loader */}
+          {isGenerating && (
+            <div className="p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-md mx-auto my-auto shadow-xl">
+              <RefreshCw className="w-8 h-8 text-blue-400 mx-auto animate-spin mb-4" />
+              <h4 className="text-base font-bold text-white mb-1.5">Synthesizing Masterclass Report...</h4>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Analyzing quiz outcomes, voting consensus, and top architectural Q&A threads via Xiaomi MiMo-V2.5.
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-              {parsedReport.heroTitle || roomTitle}
-            </h1>
-            <p className="text-xs text-zinc-400 mt-2">
-              Keynote Executive Brief • Published for Room {roomCode}
-            </p>
-          </div>
+          )}
 
-          {/* Rendered Section Cards */}
-          <div className="grid grid-cols-1 gap-5">
-            {parsedReport.sections.map((sec, idx) => {
-              const isQuizSection = /quiz/i.test(sec.title);
-              const isPollSection = /poll/i.test(sec.title);
+          {/* State 3: Formatted Executive Dashboard */}
+          {activeMarkdown && parsedReport && (
+            <div className="space-y-6 pb-12">
+              {/* Executive Hero Banner */}
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/30 via-[#101015] to-[#0E0E12] border border-blue-500/20 shadow-md">
+                <div className="flex items-center space-x-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono mb-2">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>SKETCHCAST MASTERCLASS SYNTHESIS</span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                  {parsedReport.heroTitle || roomTitle}
+                </h1>
+                <p className="text-xs text-zinc-400 mt-2">
+                  Keynote Executive Brief • Published for Room {roomCode}
+                </p>
+              </div>
 
-              // Use passed quizzes, or fallback to parsed from table if queue was empty
-              const activeQuizzesList =
-                quizzes.length > 0 ? quizzes : parseQuizzesFromTable(sec.lines);
+              {/* Rendered Section Cards */}
+              <div className="grid grid-cols-1 gap-5">
+                {parsedReport.sections.map((sec, idx) => {
+                  const isQuizSection = /quiz/i.test(sec.title);
+                  const isPollSection = /poll/i.test(sec.title);
 
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: idx * 0.05 }}
-                  className="p-5 sm:p-6 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] shadow-md transition-all hover:border-white/[0.12]"
-                >
-                  {/* Section Header */}
-                  <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-                        {isQuizSection ? (
-                          <Zap className="w-4 h-4" />
-                        ) : isPollSection ? (
-                          <Layers className="w-4 h-4" />
-                        ) : (
-                          <FileText className="w-4 h-4" />
+                  const activeQuizzesList =
+                    quizzes.length > 0 ? quizzes : parseQuizzesFromTable(sec.lines);
+
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: idx * 0.05 }}
+                      className="p-5 sm:p-6 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] shadow-md transition-all hover:border-white/[0.12]"
+                    >
+                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                            {isQuizSection ? (
+                              <Zap className="w-4 h-4" />
+                            ) : isPollSection ? (
+                              <Layers className="w-4 h-4" />
+                            ) : (
+                              <FileText className="w-4 h-4" />
+                            )}
+                          </div>
+                          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                            {sec.title}
+                          </h3>
+                        </div>
+
+                        {isQuizSection && activeQuizzesList.length > 0 && (
+                          <span className="font-mono text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                            {activeQuizzesList.length} QUESTIONS
+                          </span>
                         )}
+
+                        {isPollSection && polls.length > 0 && (
+                          <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            {polls.length} POLLS
+                          </span>
+                        )}
+                      </div>
+
+                      {isQuizSection && activeQuizzesList.length > 0 ? (
+                        <div>
+                          <FormattedSectionBody lines={sec.lines} skipTables={true} />
+                          <QuizQuestionsAccordion
+                            quizzes={activeQuizzesList}
+                            userQuizAnswers={userQuizAnswers}
+                            isHost={isHost}
+                          />
+                        </div>
+                      ) : isPollSection && polls.length > 0 ? (
+                        <div>
+                          <FormattedSectionBody lines={sec.lines} skipTables={true} />
+                          <PollsAccordion
+                            polls={polls}
+                            userPollVotes={userPollVotes}
+                            isHost={isHost}
+                          />
+                        </div>
+                      ) : (
+                        <FormattedSectionBody lines={sec.lines} />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeDocType === 'cheatsheet' && (
+        <>
+          {/* State 1: Generation Trigger Card (If Cheat Sheet Not Generated) */}
+          {!cheatSheetMarkdown && !isGeneratingCheatSheet && (
+            <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center mb-4">
+                <Zap className="w-7 h-7" />
+              </div>
+
+              <h3 className="text-base sm:text-lg font-bold text-white mb-2">
+                {isHost ? 'Synthesize 1-Page Technical Cheat Sheet & FAQ' : 'Cheat Sheet Pending Generation'}
+              </h3>
+
+              <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
+                {isHost
+                  ? `Generate an ultra high-density, 1-page executive cheat sheet for Room ${roomCode}. Condenses core architectural principles, attendee FAQ, poll trade-offs, and code recipes into an actionable single-page reference.`
+                  : `The session host has not generated the 1-Page Technical Cheat Sheet for Room ${roomCode} yet. Once synthesized, the cheat sheet will appear here.`}
+              </p>
+
+              {isHost ? (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    playWhoosh();
+                    handleGenerateCheatSheet();
+                  }}
+                  className="py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-500 hover:to-amber-500 text-white text-xs font-semibold uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer transition-all shadow-lg shadow-blue-500/25"
+                >
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Synthesize 1-Page Cheat Sheet</span>
+                </motion.button>
+              ) : (
+                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] text-zinc-400 text-xs border border-white/[0.06]">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  <span>Waiting for host to publish...</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* State 2: Generating Loader */}
+          {isGeneratingCheatSheet && (
+            <div className="p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-md mx-auto my-auto shadow-xl">
+              <RefreshCw className="w-8 h-8 text-amber-400 mx-auto animate-spin mb-4" />
+              <h4 className="text-base font-bold text-white mb-1.5">Synthesizing 1-Page Technical Cheat Sheet...</h4>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Extracting core principles, resolving audience questions, and distilling code recipes.
+              </p>
+            </div>
+          )}
+
+          {/* State 3: Formatted Cheat Sheet View */}
+          {cheatSheetMarkdown && parsedCheatSheet && (
+            <div className="space-y-6 pb-12">
+              {/* Executive Hero Banner */}
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-950/30 via-[#101015] to-[#0E0E12] border border-amber-500/20 shadow-md">
+                <div className="flex items-center space-x-2 text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono mb-2">
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>1-PAGE SESSION TECHNICAL CHEAT SHEET & FAQ</span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                  {parsedCheatSheet.heroTitle || `${roomTitle} — Technical Cheat Sheet`}
+                </h1>
+                <p className="text-xs text-zinc-400 mt-2">
+                  Curated Architectural Principles, Audience FAQ & Actionable Code Recipes • Room {roomCode}
+                </p>
+              </div>
+
+              {/* Rendered Section Cards */}
+              <div className="grid grid-cols-1 gap-5">
+                {parsedCheatSheet.sections.map((sec, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: idx * 0.05 }}
+                    className="p-5 sm:p-6 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] shadow-md transition-all hover:border-white/[0.12]"
+                  >
+                    <div className="flex items-center space-x-3 pb-3 mb-4 border-b border-white/[0.06]">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                        <Zap className="w-4 h-4" />
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                         {sec.title}
                       </h3>
                     </div>
-
-                    {isQuizSection && activeQuizzesList.length > 0 && (
-                      <span className="font-mono text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                        {activeQuizzesList.length} QUESTIONS
-                      </span>
-                    )}
-
-                    {isPollSection && polls.length > 0 && (
-                      <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                        {polls.length} POLLS
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Quizzing Breakdown with Interactive Question Dropdowns */}
-                  {isQuizSection && activeQuizzesList.length > 0 ? (
-                    <div>
-                      {/* Intro text / non-table lines */}
-                      <FormattedSectionBody lines={sec.lines} skipTables={true} />
-
-                      {/* Interactive Question Cards */}
-                      <QuizQuestionsAccordion
-                        quizzes={activeQuizzesList}
-                        userQuizAnswers={userQuizAnswers}
-                        isHost={isHost}
-                      />
-                    </div>
-                  ) : isPollSection && polls.length > 0 ? (
-                    <div>
-                      {/* Intro text / non-table lines */}
-                      <FormattedSectionBody lines={sec.lines} skipTables={true} />
-
-                      {/* Interactive Poll Cards */}
-                      <PollsAccordion
-                        polls={polls}
-                        userPollVotes={userPollVotes}
-                        isHost={isHost}
-                      />
-                    </div>
-                  ) : (
-                    /* Default Formatted Section */
                     <FormattedSectionBody lines={sec.lines} />
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -93,6 +93,9 @@ export function exportToSketchCastCSV(questions: QuizQuestion[]): string {
     'Explanation',
     'Time Limit (Sec)',
     'AI Deep Dive',
+    'Question Type',
+    'Expected Answer',
+    'Acceptable Answers',
   ];
 
   const rows = questions.map((q) => {
@@ -101,17 +104,23 @@ export function exportToSketchCastCSV(questions: QuizQuestion[]): string {
       optMap[opt.id] = opt.text;
     });
 
+    const isShort = q.questionType === 'short_answer';
+    const acceptable = q.acceptableAnswers ? q.acceptableAnswers.join('; ') : '';
+
     return [
       escapeCsv(q.category || 'General Tech'),
       escapeCsv(q.question),
-      escapeCsv(optMap['A'] || ''),
-      escapeCsv(optMap['B'] || ''),
-      escapeCsv(optMap['C'] || ''),
-      escapeCsv(optMap['D'] || ''),
+      escapeCsv(isShort ? (q.expectedAnswer || optMap['A'] || '') : (optMap['A'] || '')),
+      escapeCsv(isShort ? 'Other' : (optMap['B'] || '')),
+      escapeCsv(isShort ? '' : (optMap['C'] || '')),
+      escapeCsv(isShort ? '' : (optMap['D'] || '')),
       escapeCsv(q.correctOptionId || 'A'),
       escapeCsv(q.explanation || ''),
-      escapeCsv(q.timeLimitSeconds || 25),
+      escapeCsv(q.timeLimitSeconds || (isShort ? 35 : 25)),
       escapeCsv(q.aiDeepDive || ''),
+      escapeCsv(q.questionType || (isShort ? 'short_answer' : 'multiple_choice')),
+      escapeCsv(q.expectedAnswer || ''),
+      escapeCsv(acceptable),
     ].join(',');
   });
 
@@ -179,15 +188,26 @@ export function importFromCSVOrJSON(rawText: string): ParsedQuizImportResult {
       const validQuestions: QuizQuestion[] = [];
 
       list.forEach((item, index) => {
-        if (!item.question || !Array.isArray(item.options)) {
+        const isShort = item.questionType === 'short_answer' || Boolean(item.expectedAnswer);
+        if (!item.question || (!Array.isArray(item.options) && !isShort)) {
           errors.push(`Item ${index + 1}: Missing question text or options array.`);
           return;
         }
 
-        const validOpts: QuizOption[] = item.options.map((opt: any, optIdx: number) => ({
-          id: opt.id || ['A', 'B', 'C', 'D'][optIdx] || `OPT_${optIdx}`,
-          text: String(opt.text || opt.title || opt),
-        }));
+        const cleanExpected = item.expectedAnswer ? String(item.expectedAnswer).trim() : undefined;
+        let validOpts: QuizOption[] = [];
+
+        if (Array.isArray(item.options) && item.options.length > 0) {
+          validOpts = item.options.map((opt: any, optIdx: number) => ({
+            id: opt.id || ['A', 'B', 'C', 'D'][optIdx] || `OPT_${optIdx}`,
+            text: String(opt.text || opt.title || opt),
+          }));
+        } else if (isShort) {
+          validOpts = [
+            { id: 'A', text: cleanExpected || 'Correct Answer' },
+            { id: 'B', text: 'Other' },
+          ];
+        }
 
         validQuestions.push({
           id: item.id || `imported_json_${Date.now()}_${index}`,
@@ -195,9 +215,16 @@ export function importFromCSVOrJSON(rawText: string): ParsedQuizImportResult {
           question: String(item.question),
           options: validOpts,
           correctOptionId: item.correctOptionId || item.correctAnswer || 'A',
-          explanation: item.explanation || 'Imported question challenge.',
-          timeLimitSeconds: Number(item.timeLimitSeconds) || 25,
+          explanation: item.explanation || (isShort ? `Ground truth expected answer: ${cleanExpected || 'Correct'}` : 'Imported question challenge.'),
+          timeLimitSeconds: Number(item.timeLimitSeconds) || (isShort ? 35 : 25),
           aiDeepDive: item.aiDeepDive || undefined,
+          questionType: isShort ? 'short_answer' : 'multiple_choice',
+          expectedAnswer: cleanExpected || (isShort && validOpts[0]?.text ? validOpts[0].text : undefined),
+          acceptableAnswers: Array.isArray(item.acceptableAnswers)
+            ? item.acceptableAnswers.map((s: any) => String(s).trim()).filter(Boolean)
+            : typeof item.acceptableAnswers === 'string'
+            ? item.acceptableAnswers.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : undefined,
         });
       });
 
@@ -288,13 +315,28 @@ export function importFromCSVOrJSON(rawText: string): ParsedQuizImportResult {
     const explanation = row[7] || 'Technical takeaway breakdown.';
     const timeLimit = parseInt(row[8], 10) || 25;
     const aiDeepDive = row[9] || undefined;
+    const rawType = (row[10] || '').trim().toLowerCase();
+    const rawExpected = (row[11] || '').trim();
+    const rawAcceptable = (row[12] || '').trim();
 
-    const options: QuizOption[] = [
-      { id: 'A', text: optA },
-      { id: 'B', text: optB },
-    ];
-    if (optC) options.push({ id: 'C', text: optC });
-    if (optD) options.push({ id: 'D', text: optD });
+    const isShort = rawType === 'short_answer' || Boolean(rawExpected);
+    const questionType: 'multiple_choice' | 'short_answer' = isShort ? 'short_answer' : 'multiple_choice';
+    const expectedAnswer = isShort ? (rawExpected || optA) : undefined;
+    const acceptableAnswers = rawAcceptable
+      ? rawAcceptable.split(/[;,]/).map((s) => s.trim()).filter(Boolean)
+      : undefined;
+
+    const options: QuizOption[] = isShort
+      ? [
+          { id: 'A', text: expectedAnswer || optA },
+          { id: 'B', text: optB || 'Other' },
+        ]
+      : [
+          { id: 'A', text: optA },
+          { id: 'B', text: optB },
+        ];
+    if (!isShort && optC) options.push({ id: 'C', text: optC });
+    if (!isShort && optD) options.push({ id: 'D', text: optD });
 
     scQuestions.push({
       id: `sketchcast_csv_${Date.now()}_${r}`,
@@ -305,6 +347,9 @@ export function importFromCSVOrJSON(rawText: string): ParsedQuizImportResult {
       explanation,
       timeLimitSeconds: timeLimit,
       aiDeepDive,
+      questionType,
+      expectedAnswer,
+      acceptableAnswers,
     });
   }
 

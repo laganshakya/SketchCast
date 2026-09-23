@@ -1,15 +1,16 @@
 // @ts-nocheck
 // Supabase Edge Function: mesh-ai
-// Securely forwards AI completions to Mesh API (api.meshapi.ai) keeping API keys server-side.
-// Runs on free Deno runtime inside Supabase Edge Functions.
+// Securely forwards AI completions and evaluations to Mesh API (api.meshapi.ai) keeping API keys server-side.
+// Supports both OpenAI chat completions and TypeSafe Jev-1.13 evaluation endpoints.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-mesh-model, x-mesh-task',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-mesh-model, x-mesh-task, x-mesh-endpoint',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const MESH_DIRECT_URL = 'https://api.meshapi.ai/v1/chat/completions';
+const MESH_COMPLETIONS_URL = 'https://api.meshapi.ai/v1/chat/completions';
+const MESH_EVALUATE_URL = 'https://api.meshapi.ai/v1/evaluate';
 
 Deno.serve(async (req: Request) => {
   // 1. Handle CORS Preflight
@@ -49,19 +50,82 @@ Deno.serve(async (req: Request) => {
     // 3. Parse Body
     const body = await req.json();
 
-    // Default to GPT-4o Mini or user requested model
-    const requestedModel = body.model || 'openai/gpt-4o-mini';
+    const endpointHeader = req.headers.get('x-mesh-endpoint');
+    const isEvaluate =
+      endpointHeader === 'evaluate' ||
+      (Boolean(body.questions) && !body.messages) ||
+      (body.model === 'typesafe/jev-1.13' && Boolean(body.questions));
+
+    // Route A: System One Evaluation API (TypeSafe Jev-1.13)
+    if (isEvaluate) {
+      const evalPayload = {
+        model: body.model || 'typesafe/jev-1.13',
+        state: body.state || '',
+        questions: body.questions || {},
+      };
+
+      const meshResponse = await fetch(MESH_EVALUATE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${effectiveApiKey}`,
+        },
+        body: JSON.stringify(evalPayload),
+      });
+
+      const data = await meshResponse.text();
+      return new Response(data, {
+        status: meshResponse.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    // Route B: Chat Completions API (Smart Router & Standard Models)
+    let requestedModel = body.model || 'auto';
+    const taskType = body.task || req.headers.get('x-mesh-task') || '';
+
+    // Smart Router Server-Side Model Resolution
+    if (requestedModel === 'auto') {
+      switch (taskType) {
+        case 'session_report':
+          requestedModel = 'xiaomi/mimo-v2.5';
+          break;
+        case 'clustering':
+          requestedModel = 'openai/gpt-4o-mini-2024-07-18';
+          break;
+        case 'quiz':
+        case 'survey':
+        case 'talking_points':
+        case 'poll_consensus':
+        default:
+          requestedModel = 'deepseek/deepseek-v4-flash';
+          break;
+      }
+    }
+
+    // If Jev 1.13 was passed to chat completions, route generative text to DeepSeek Flash
+    if (requestedModel === 'typesafe/jev-1.13') {
+      requestedModel = 'deepseek/deepseek-v4-flash';
+    }
+
+    let maxTokens = body.max_tokens ?? body.maxTokens ?? 2048;
+    // Provide sufficient headroom for Xiaomi MiMo reasoning tokens
+    if (requestedModel.includes('mimo') && maxTokens < 800) {
+      maxTokens = 800;
+    }
 
     const meshPayload = {
       model: requestedModel,
       messages: body.messages || [],
       temperature: body.temperature ?? 0.7,
-      max_tokens: body.max_tokens ?? body.maxTokens ?? 2048,
+      max_tokens: maxTokens,
       response_format: body.response_format || (body.jsonMode ? { type: 'json_object' } : undefined),
     };
 
-    // 4. Forward to Mesh API
-    const meshResponse = await fetch(MESH_DIRECT_URL, {
+    const meshResponse = await fetch(MESH_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

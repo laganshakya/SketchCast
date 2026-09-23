@@ -41,6 +41,9 @@ export interface QuizQuestion {
   aiDeepDive?: string;
   difficultyTier?: DifficultyTier;
   adaptiveMeta?: AdaptiveMeta;
+  questionType?: 'multiple_choice' | 'short_answer';
+  expectedAnswer?: string;
+  acceptableAnswers?: string[];
 }
 
 export interface QuizPack {

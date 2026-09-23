@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -16,11 +16,20 @@ import {
   ChevronDown,
   Smartphone,
   CheckCircle2,
+  FolderGit2,
+  Link2,
 } from 'lucide-react';
 import type { SurveyQuestion, SurveyQuestionType } from '../../types';
 import { PRESET_SURVEY_TEMPLATES } from '../../hooks/useSurveys';
-import { generateAISurvey } from '../../lib/meshApi';
+import { generateAISurvey, isGitHubRepoInput } from '../../lib/meshApi';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+
+export interface SessionSurveyContext {
+  roomTitle?: string;
+  quizzes?: string[];
+  questions?: Array<{ content: string; upvotes?: number }>;
+  polls?: string[];
+}
 
 interface CreateSurveyModalProps {
   isOpen: boolean;
@@ -31,12 +40,14 @@ interface CreateSurveyModalProps {
     questions: SurveyQuestion[];
     launchImmediately?: boolean;
   }) => void;
+  sessionContext?: SessionSurveyContext;
 }
 
 export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
   isOpen,
   onClose,
   onCreateSurvey,
+  sessionContext,
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [title, setTitle] = useState('Tech Audience Feedback Survey');
@@ -69,6 +80,76 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
   const [aiTopicPrompt, setAiTopicPrompt] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [previewActiveQuestionIndex, setPreviewActiveQuestionIndex] = useState(0);
+
+  // Sync / Reset on close
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setStep(1);
+      setAiTopicPrompt('');
+      setIsGeneratingAI(false);
+    }
+  }
+
+  // Auto-extract and prioritize session topics (from Q&A, Quizzes, Polls, and Room Title)
+  const sessionTopics = useMemo(() => {
+    const rawList: string[] = [];
+
+    // 1. Top Q&A Questions (prioritized by upvotes)
+    if (sessionContext?.questions && sessionContext.questions.length > 0) {
+      const sortedQ = [...sessionContext.questions].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+      sortedQ.forEach((q) => {
+        const clean = q.content.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 2. Active & Queued Quizzes
+    if (sessionContext?.quizzes && sessionContext.quizzes.length > 0) {
+      sessionContext.quizzes.forEach((quiz) => {
+        const clean = quiz.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 3. Polls
+    if (sessionContext?.polls && sessionContext.polls.length > 0) {
+      sessionContext.polls.forEach((poll) => {
+        const clean = poll.trim().replace(/^[\s"']+|[\s"']+$/g, '');
+        if (clean && !rawList.some((existing) => existing.toLowerCase() === clean.toLowerCase())) {
+          rawList.push(clean);
+        }
+      });
+    }
+
+    // 4. Room Title & Standard Fallbacks
+    if (sessionContext?.roomTitle) {
+      const cleanTitle = sessionContext.roomTitle.trim();
+      if (cleanTitle && !rawList.some((existing) => existing.toLowerCase() === cleanTitle.toLowerCase())) {
+        rawList.push(cleanTitle);
+      }
+    }
+
+    const fallbacks = [
+      'Session Pacing & Code Depth',
+      'Architecture Trade-offs',
+      'Production Readiness',
+      'Key Architectural Takeaways',
+    ];
+
+    fallbacks.forEach((fb) => {
+      if (rawList.length < 5 && !rawList.some((existing) => existing.toLowerCase() === fb.toLowerCase())) {
+        rawList.push(fb);
+      }
+    });
+
+    return rawList.slice(0, 5);
+  }, [sessionContext]);
 
   if (!isOpen) return null;
 
@@ -348,27 +429,66 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                     </div>
 
                     <div className="space-y-2.5">
-                      <input
-                        type="text"
-                        value={aiTopicPrompt}
-                        onChange={(e) => setAiTopicPrompt(e.target.value)}
-                        placeholder="e.g. Distributed caching architectures..."
-                        disabled={isGeneratingAI}
-                        className="w-full px-3 py-2 rounded-xl bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
-                        onKeyDown={(e) => e.key === 'Enter' && handleGenerateWithAI()}
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={aiTopicPrompt}
+                          onChange={(e) => setAiTopicPrompt(e.target.value)}
+                          placeholder="e.g. Distributed caching, https://bun.sh/docs, or facebook/react"
+                          disabled={isGeneratingAI}
+                          className="w-full px-3 py-2 pr-20 rounded-xl bg-[#0D0D10] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-blue-500 select-text"
+                          onKeyDown={(e) => e.key === 'Enter' && handleGenerateWithAI()}
+                        />
+                        {isGitHubRepoInput(aiTopicPrompt) ? (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                            <FolderGit2 className="w-2.5 h-2.5" />
+                            <span>GitHub</span>
+                          </span>
+                        ) : aiTopicPrompt.match(/https?:\/\/[^\s]+/i) ? (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                            <Link2 className="w-2.5 h-2.5" />
+                            <span>URL Doc</span>
+                          </span>
+                        ) : null}
+                      </div>
 
-                      <div className="flex flex-wrap gap-1.5">
-                        {['Kafka vs RabbitMQ', 'React 19 Deep Dive', 'Security Review'].map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => handleGenerateWithAI(tag)}
-                            className="px-2 py-0.5 rounded-full bg-zinc-800/60 hover:bg-blue-500/15 hover:text-blue-400 text-[10px] text-zinc-400 border border-white/[0.06] cursor-pointer transition-colors"
-                          >
-                            +{tag}
-                          </button>
-                        ))}
+                      {/* Session Topics (from Quizzes, Q&A Questions, Polls, and Room Title) */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                          <span className="font-bold uppercase tracking-wider text-zinc-400">Session topics:</span>
+                          {aiTopicPrompt && (
+                            <button
+                              type="button"
+                              onClick={() => setAiTopicPrompt('')}
+                              className="text-[9px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {sessionTopics.map((tag) => {
+                            const isSelected = aiTopicPrompt === tag;
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => {
+                                  playClickSound();
+                                  setAiTopicPrompt(tag);
+                                }}
+                                className={`px-2 py-0.5 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[220px] text-left border ${
+                                  isSelected
+                                    ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
+                                    : 'bg-[#1A1A20] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
+                                }`}
+                                title={tag}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <button
@@ -385,7 +505,13 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                         ) : (
                           <>
                             <Zap className="w-3.5 h-3.5 fill-white" />
-                            <span>Generate with AI →</span>
+                            <span>
+                              {isGitHubRepoInput(aiTopicPrompt)
+                                ? 'Scan Repo & Generate →'
+                                : aiTopicPrompt.match(/https?:\/\/[^\s]+/i)
+                                ? 'Scrape & Generate →'
+                                : 'Generate with AI →'}
+                            </span>
                           </>
                         )}
                       </button>

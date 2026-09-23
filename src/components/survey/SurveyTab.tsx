@@ -14,7 +14,7 @@ import {
   Radio,
 } from 'lucide-react';
 import type { Survey, SurveyResponse, SurveyQuestion } from '../../types';
-import { CreateSurveyModal } from './CreateSurveyModal';
+import { CreateSurveyModal, type SessionSurveyContext } from './CreateSurveyModal';
 import { SurveyResponseForm } from './SurveyResponseForm';
 import { SurveyResultsModal } from './SurveyResultsModal';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
@@ -26,6 +26,7 @@ interface SurveyTabProps {
   userSubmittedIds: Set<string>;
   isHost: boolean;
   isSummarizing: string | null;
+  sessionContext?: SessionSurveyContext;
   onCreateSurvey: (data: {
     title: string;
     description: string;
@@ -43,6 +44,7 @@ interface SurveyTabProps {
 export const SurveyTab: React.FC<SurveyTabProps> = ({
   surveys,
   activeSurvey,
+  sessionContext,
   responsesBySurvey,
   userSubmittedIds,
   isHost,
@@ -352,6 +354,7 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreateSurvey={onCreateSurvey}
+        sessionContext={sessionContext}
       />
 
       {viewingResultsSurvey && (

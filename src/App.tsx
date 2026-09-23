@@ -34,6 +34,7 @@ import { useSurveys } from './hooks/useSurveys';
 import { playWhoosh, playClickSound, playPopSound, playSuccessFanfare, setAudioPack } from './lib/soundFx';
 
 import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
+import { generateRemediationPoll } from './lib/meshApi';
 import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
@@ -484,7 +485,7 @@ export function App() {
   };
 
   // Check if there is a subsequent queued question or next adaptive challenge
-  const hasNextQuestion = useMemo(() => {
+  const hasNextQuestion = (() => {
     if (quizState.isAdaptiveCampaign || adaptiveCampaign?.isActive) {
       const current = quizState.adaptiveProgress?.current || adaptiveCampaign?.currentQuestionIndex || 1;
       const total = quizState.adaptiveProgress?.total || adaptiveCampaign?.totalQuestions || 1;
@@ -506,13 +507,7 @@ export function App() {
       // ignore
     }
     return false;
-  }, [
-    room.code,
-    quizState.question,
-    quizState.isAdaptiveCampaign,
-    quizState.adaptiveProgress,
-    adaptiveCampaign,
-  ]);
+  })();
 
   // Host action: Quiz completion handler (transitions to Leaderboard with fanfare & confetti)
   const handleQuizComplete = useCallback(() => {
@@ -948,6 +943,21 @@ export function App() {
                   onPauseAutoAdvance={pauseAutoAdvance}
                   onResumeAutoAdvance={resumeAutoAdvance}
                   onExtendTime={extendQuestionTime}
+                  onLaunchRemediationPoll={async ({ question, mostPickedWrong }) => {
+                    pauseAutoAdvance();
+                    const wrongOptText = mostPickedWrong?.text;
+                    const correctOpt = question.options?.find((o) => o.id === question.correctOptionId);
+                    const poll = await generateRemediationPoll({
+                      questionText: question.question,
+                      correctOptionText: question.expectedAnswer || correctOpt?.text || question.correctOptionId,
+                      wrongOptionText: question.questionType === 'short_answer'
+                        ? (wrongOptText === 'Other' ? 'Alternative architectural pattern' : wrongOptText)
+                        : wrongOptText,
+                      explanation: question.explanation,
+                    });
+                    createPoll(poll.question, poll.options);
+                    setActiveTab('polls');
+                  }}
                 />
               </div>
 
@@ -1062,6 +1072,15 @@ export function App() {
                 userSubmittedIds={userSubmittedIds}
                 isHost={userRole === 'host'}
                 isSummarizing={isSummarizing}
+                sessionContext={{
+                  roomTitle: room.title,
+                  quizzes: [
+                    ...(quizState.question ? [quizState.question.question] : []),
+                    ...queuedQuizzes.map((q: any) => q.question || q.topic),
+                  ].filter(Boolean),
+                  questions: questions.map((q) => ({ content: q.content, upvotes: q.upvotes_count || 0 })),
+                  polls: polls.map((p) => p.question).filter(Boolean),
+                }}
                 onCreateSurvey={createSurvey}
                 onLaunchSurvey={launchSurvey}
                 onCloseSurvey={closeSurvey}
@@ -1254,6 +1273,15 @@ export function App() {
         onClose={() => setIsCreatePollModalOpen(false)}
         onCreatePoll={createPoll}
         onOpenAISettings={() => setActiveTab('ai-settings')}
+        sessionContext={{
+          roomTitle: room.title,
+          quizzes: [
+            ...(quizState.question ? [quizState.question.question] : []),
+            ...queuedQuizzes.map((q: any) => q.question || q.topic),
+          ].filter(Boolean),
+          questions: questions.map((q) => ({ content: q.content, upvotes: q.upvotes_count || 0 })),
+          surveys: surveys.map((s) => s.title).filter(Boolean),
+        }}
       />
 
       <QuestionModal

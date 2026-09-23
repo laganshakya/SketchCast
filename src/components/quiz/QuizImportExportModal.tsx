@@ -348,9 +348,21 @@ export const QuizImportExportModal: React.FC<QuizImportExportModalProps> = ({
                               <td className="p-2.5 font-mono text-zinc-500">{String(idx + 1).padStart(2, '0')}</td>
                               <td className="p-2.5 font-medium text-zinc-200">{q.question}</td>
                               <td className="p-2.5 text-zinc-400 text-[10px] font-mono">
-                                {q.options.map((o) => o.id).join(', ')} ({q.options.length})
+                                {q.questionType === 'short_answer' ? (
+                                  <span className="text-purple-400 font-semibold">Short Answer</span>
+                                ) : (
+                                  `${(q.options || []).map((o) => o.id).join(', ')} (${(q.options || []).length})`
+                                )}
                               </td>
-                              <td className="p-2.5 text-center font-bold text-blue-400">{q.correctOptionId}</td>
+                              <td className="p-2.5 text-center font-bold text-blue-400">
+                                {q.questionType === 'short_answer' ? (
+                                  <span className="text-emerald-400 font-mono text-[11px] truncate max-w-[120px] inline-block" title={q.expectedAnswer}>
+                                    {q.expectedAnswer || q.correctOptionId}
+                                  </span>
+                                ) : (
+                                  q.correctOptionId
+                                )}
+                              </td>
                               <td className="p-2.5 text-right font-mono text-zinc-400">{q.timeLimitSeconds}s</td>
                             </tr>
                           ))}

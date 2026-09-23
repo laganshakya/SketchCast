@@ -37,6 +37,7 @@ import {
   getStoredMeshKey,
   isGitHubRepoInput,
   type TrendingTechStory,
+  type QuizQuestionFormat,
 } from '../../lib/meshApi';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
 import { QuizImportExportModal } from './QuizImportExportModal';
@@ -47,7 +48,8 @@ interface QuizHostPanelProps {
     topic: string,
     count: number,
     startDifficulty: 'Junior' | 'Mid' | 'Senior' | 'Principal',
-    initialQuestion?: QuizQuestion
+    initialQuestion?: QuizQuestion,
+    format?: QuizQuestionFormat
   ) => Promise<void> | void;
   activeQuestionId?: string;
   isRevealed?: boolean;
@@ -59,6 +61,9 @@ interface DraftQuestion {
   id: string;
   category: string;
   question: string;
+  questionType?: 'multiple_choice' | 'short_answer';
+  expectedAnswer?: string;
+  acceptableAnswers?: string;
   optA: string;
   optB: string;
   optC: string;
@@ -72,6 +77,9 @@ const createBlankDraftQuestion = (index: number): DraftQuestion => ({
   id: `draft-q-${Date.now()}-${index}`,
   category: 'System Design',
   question: '',
+  questionType: 'multiple_choice',
+  expectedAnswer: '',
+  acceptableAnswers: '',
   optA: '',
   optB: '',
   optC: '',
@@ -119,10 +127,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   ]);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
 
-  // AI Quiz Generation form state
-  const [aiTopic, setAiTopic] = useState('');
+  // AI Quiz Generation form state (Unified Input)
+  const [aiInput, setAiInput] = useState('');
+  const [selectedStoryUrl, setSelectedStoryUrl] = useState<string | null>(null);
   const [aiCount, setAiCount] = useState<number>(3);
   const [aiDifficulty, setAiDifficulty] = useState<'Junior' | 'Mid' | 'Senior' | 'Principal'>('Senior');
+  const [aiFormat, setAiFormat] = useState<QuizQuestionFormat>('mixed');
   const [isAdaptiveLiveMode, setIsAdaptiveLiveMode] = useState<boolean>(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
   const [aiSuccessNote, setAiSuccessNote] = useState<string | null>(null);
@@ -130,30 +140,41 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   const [groundingSources, setGroundingSources] = useState<Array<{ title: string; url: string }>>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Real-Time AI Tool State (Consolidated: Prompt with auto web search, URL/GitHub Scraper, HN Trends)
-  const [aiToolMode, setAiToolMode] = useState<'topic' | 'url_scraper' | 'hackernews'>('topic');
-  const [aiAutoWebSearch, setAiAutoWebSearch] = useState<boolean>(true);
-  const [aiUrlInput, setAiUrlInput] = useState<string>('');
-
-  // Hacker News Stories State
+  // Hacker News Stories State (Auto-loaded for Popular Topics)
   const [hnStories, setHnStories] = useState<TrendingTechStory[]>([]);
-  const [selectedHnStory, setSelectedHnStory] = useState<TrendingTechStory | null>(null);
   const [isLoadingHnStories, setIsLoadingHnStories] = useState(false);
 
   const loadHackerNewsStories = useCallback(async () => {
     setIsLoadingHnStories(true);
     try {
-      const stories = await fetchTrendingTechNews(8);
+      const stories = await fetchTrendingTechNews(6);
       setHnStories(stories);
-      if (stories.length > 0 && !selectedHnStory) {
-        setSelectedHnStory(stories[0]);
-      }
     } catch {
       // ignore
     } finally {
       setIsLoadingHnStories(false);
     }
-  }, [selectedHnStory]);
+  }, []);
+
+  // Auto-fetch Hacker News trending stories on mount or when AI modal is displayed
+  useEffect(() => {
+    if (showCustomModal && modalTab === 'ai' && hnStories.length === 0 && !isLoadingHnStories) {
+      queueMicrotask(() => {
+        loadHackerNewsStories();
+      });
+    }
+  }, [showCustomModal, modalTab, hnStories.length, isLoadingHnStories, loadHackerNewsStories]);
+
+  const defaultPopularTopics: Array<{ title: string; url?: string }> = [
+    { title: 'Next.js 15 Server Actions' },
+    { title: 'PostgreSQL 17 features' },
+    { title: 'Distributed Cache Invalidation' },
+    { title: 'Kafka vs RabbitMQ 2026' },
+  ];
+
+  const popularTopicsList: Array<{ title: string; url?: string }> = hnStories.length > 0
+    ? hnStories.slice(0, 5).map((s) => ({ title: s.title, url: s.url }))
+    : defaultPopularTopics;
 
   // Track completed questions when revealed
   const lastRecordedCompletedRef = useRef<string | null>(null);
@@ -250,32 +271,28 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     setGroundingSources([]);
 
     try {
-      if (isAdaptiveLiveMode) {
-        let targetTopic = aiTopic.trim();
-        if (aiToolMode === 'url_scraper') {
-          targetTopic = aiUrlInput.trim();
-        } else if (aiToolMode === 'hackernews') {
-          targetTopic = selectedHnStory?.title || 'Tech Trends';
-        }
-        if (!targetTopic) {
-          throw new Error('Please specify a topic, URL, or select a news story for the adaptive challenge.');
-        }
+      const cleanInput = aiInput.trim();
+      if (!cleanInput) {
+        throw new Error('Please enter an architecture topic, documentation URL, or GitHub repo.');
+      }
 
-        setAiToolStatus(`✨ Synthesizing Adaptive Challenge 1 of ${aiCount} (${aiDifficulty} tier)...`);
+      if (isAdaptiveLiveMode) {
+        setAiToolStatus(`✨ Synthesizing Adaptive Challenge 1 of ${aiCount} (${aiDifficulty} tier, ${aiFormat} format)...`);
 
         const q1 = await generateAdaptiveFollowUpQuestion({
-          topic: targetTopic,
+          topic: cleanInput,
           currentDifficulty: aiDifficulty,
           targetDifficulty: aiDifficulty,
           accuracyPct: 50,
           questionNumber: 1,
           totalQuestions: aiCount,
           adaptationType: 'maintained',
+          format: aiFormat,
         });
 
         playPopSound();
         if (onStartAdaptiveCampaign) {
-          await onStartAdaptiveCampaign(targetTopic, aiCount, aiDifficulty, q1);
+          await onStartAdaptiveCampaign(cleanInput, aiCount, aiDifficulty, q1, aiFormat);
         } else {
           onStartQuiz(q1);
         }
@@ -286,66 +303,51 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       let generated: any[] = [];
       let successMsg = '';
-      let defaultCategory = aiTopic.trim() || 'System Design';
+      let defaultCategory = cleanInput.slice(0, 30);
 
-      if (aiToolMode === 'topic') {
-        if (!aiTopic.trim()) {
-          throw new Error('Please enter a technical topic prompt (e.g. Distributed Cache Invalidation).');
-        }
-
-        if (aiAutoWebSearch) {
-          setAiToolStatus(`🌐 Searching live web for latest RFCs & docs on "${aiTopic.trim()}"...`);
-          try {
-            const res = await generateAIQuizFromWebSearch(aiTopic.trim(), aiCount, aiDifficulty);
-            generated = res.questions;
-            setGroundingSources(res.sources);
-            successMsg = res.sources.length > 0
-              ? `🌐 Grounded ${generated.length} questions using ${res.sources.length} live web sources!`
-              : `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
-          } catch (err: any) {
-            console.warn('[Quiz AI] Live web search error, falling back to pure prompt synthesis:', err);
-            setAiToolStatus('Synthesizing questions via Mesh AI...');
-            generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
-            successMsg = `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
-          }
-        } else {
-          setAiToolStatus('Synthesizing questions via Mesh AI...');
-          generated = await generateAIQuizQuestions(aiTopic.trim(), aiCount, aiDifficulty);
-          successMsg = `✨ Generated ${generated.length} questions on "${aiTopic.trim()}"!`;
-        }
-      } else if (aiToolMode === 'url_scraper') {
-        const inputTarget = aiUrlInput.trim();
-        if (!inputTarget) {
-          throw new Error('Please enter a documentation URL or GitHub repository (e.g. facebook/react).');
-        }
-
-        if (isGitHubRepoInput(inputTarget)) {
-          setAiToolStatus(`🐙 Fetching repo metadata & README for ${inputTarget}...`);
-          const res = await generateAIQuizFromGitHub(inputTarget, aiCount, aiDifficulty);
-          generated = res.questions;
-          setGroundingSources([{ title: res.repoSummary.fullName, url: `https://github.com/${res.repoSummary.fullName}` }]);
-          defaultCategory = res.repoSummary.repo;
-          successMsg = `🐙 Scanned ${res.repoSummary.fullName} (${res.repoSummary.stars.toLocaleString()} ⭐) & generated ${generated.length} questions!`;
-        } else {
-          setAiToolStatus(`🔗 Scraping & parsing content from ${inputTarget}...`);
-          const res = await generateAIQuizFromUrl(inputTarget, aiCount, aiDifficulty);
-          generated = res.questions;
-          setGroundingSources([{ title: res.pageInfo.title, url: res.pageInfo.url }]);
-          defaultCategory = res.pageInfo.title.slice(0, 20);
-          successMsg = `🔗 Scraped & constructed ${generated.length} questions from "${res.pageInfo.title}"!`;
-        }
-      } else if (aiToolMode === 'hackernews') {
-        if (!selectedHnStory) {
-          throw new Error('Please select a trending Hacker News story from the list.');
-        }
-        setAiToolStatus(`🔥 Analyzing breaking tech news: "${selectedHnStory.title}"...`);
-        const res = await generateAIQuizFromHNTrends(selectedHnStory.title, selectedHnStory.url, aiCount, aiDifficulty);
+      // Route 1: GitHub Repo Input (e.g. facebook/react or https://github.com/...)
+      if (isGitHubRepoInput(cleanInput)) {
+        setAiToolStatus(`🐙 Fetching repo metadata & README for ${cleanInput}...`);
+        const res = await generateAIQuizFromGitHub(cleanInput, aiCount, aiDifficulty, aiFormat);
         generated = res.questions;
-        if (selectedHnStory.url) {
-          setGroundingSources([{ title: selectedHnStory.title, url: selectedHnStory.url }]);
-        }
+        setGroundingSources([{ title: res.repoSummary.fullName, url: `https://github.com/${res.repoSummary.fullName}` }]);
+        defaultCategory = res.repoSummary.repo;
+        successMsg = `🐙 Scanned ${res.repoSummary.fullName} (${res.repoSummary.stars.toLocaleString()} ⭐) & generated ${generated.length} questions!`;
+      }
+      // Route 2: Web URL Documentation (e.g. https://bun.sh/docs)
+      else if (/^https?:\/\//i.test(cleanInput)) {
+        setAiToolStatus(`🔗 Scraping & parsing content from ${cleanInput}...`);
+        const res = await generateAIQuizFromUrl(cleanInput, aiCount, aiDifficulty, aiFormat);
+        generated = res.questions;
+        setGroundingSources([{ title: res.pageInfo.title, url: res.pageInfo.url }]);
+        defaultCategory = res.pageInfo.title.slice(0, 20);
+        successMsg = `🔗 Scraped & constructed ${generated.length} questions from "${res.pageInfo.title}"!`;
+      }
+      // Route 3: Selected Hacker News Story with URL
+      else if (selectedStoryUrl) {
+        setAiToolStatus(`🔥 Analyzing breaking tech news: "${cleanInput}"...`);
+        const res = await generateAIQuizFromHNTrends(cleanInput, selectedStoryUrl, aiCount, aiDifficulty, aiFormat);
+        generated = res.questions;
+        setGroundingSources([{ title: cleanInput, url: selectedStoryUrl }]);
         defaultCategory = 'Tech Trends';
-        successMsg = `🔥 Generated ${generated.length} trivia questions on today's story: "${selectedHnStory.title}"!`;
+        successMsg = `🔥 Generated ${generated.length} trivia questions on today's story: "${cleanInput}"!`;
+      }
+      // Route 4: Topic Query with Automatic Live Web Grounding & Seamless Fallback
+      else {
+        setAiToolStatus(`🌐 Searching live web for latest RFCs & docs on "${cleanInput}"...`);
+        try {
+          const res = await generateAIQuizFromWebSearch(cleanInput, aiCount, aiDifficulty, aiFormat);
+          generated = res.questions;
+          setGroundingSources(res.sources);
+          successMsg = res.sources.length > 0
+            ? `🌐 Grounded ${generated.length} questions using ${res.sources.length} live web sources!`
+            : `✨ Generated ${generated.length} questions on "${cleanInput}"!`;
+        } catch (err: any) {
+          console.warn('[Quiz AI] Live web search error, falling back to pure prompt synthesis:', err);
+          setAiToolStatus('Synthesizing questions via Mesh AI...');
+          generated = await generateAIQuizQuestions(cleanInput, aiCount, aiDifficulty, aiFormat);
+          successMsg = `✨ Generated ${generated.length} questions on "${cleanInput}"!`;
+        }
       }
 
       if (!generated || generated.length === 0) {
@@ -354,18 +356,27 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       const balanced = distributeQuestionOptions(generated);
       const timestamp = Date.now();
-      const newDrafts: DraftQuestion[] = balanced.map((g, idx) => ({
-        id: `ai-draft-${timestamp}-${idx}`,
-        category: g.category || defaultCategory,
-        question: g.question,
-        optA: g.optA,
-        optB: g.optB,
-        optC: g.optC,
-        optD: g.optD,
-        correctOpt: g.correctOpt,
-        explanation: g.explanation,
-        timeLimitSeconds: g.timeLimitSeconds || 45,
-      }));
+      const newDrafts: DraftQuestion[] = balanced.map((g, idx) => {
+        const isShort = g.questionType === 'short_answer' || Boolean(g.expectedAnswer);
+        const cleanExpected = (g.expectedAnswer || g.optA || '').trim();
+        return {
+          id: `ai-draft-${timestamp}-${idx}`,
+          category: g.category || defaultCategory,
+          question: g.question,
+          questionType: isShort ? 'short_answer' : 'multiple_choice',
+          expectedAnswer: isShort ? cleanExpected : '',
+          acceptableAnswers: Array.isArray(g.acceptableAnswers)
+            ? g.acceptableAnswers.join(', ')
+            : (g.acceptableAnswers || ''),
+          optA: g.optA || (isShort ? cleanExpected : ''),
+          optB: g.optB || (isShort ? 'Other' : ''),
+          optC: g.optC || '',
+          optD: g.optD || '',
+          correctOpt: isShort ? 'A' : (g.correctOpt || 'A'),
+          explanation: g.explanation,
+          timeLimitSeconds: g.timeLimitSeconds || (isShort ? 35 : 45),
+        };
+      });
 
       setDraftQuestions(newDrafts);
       setActiveQuestionIndex(0);
@@ -383,31 +394,49 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    // Filter valid questions with text and at least 2 options
-    const validDrafts = draftQuestions.filter(
-      (dq) => dq.question.trim() && dq.optA.trim() && dq.optB.trim()
+    // Filter valid questions: either complete multiple-choice or complete short-answer
+    const validDrafts = draftQuestions.filter((dq) =>
+      dq.questionType === 'short_answer'
+        ? Boolean(dq.question.trim() && dq.expectedAnswer?.trim())
+        : Boolean(dq.question.trim() && dq.optA.trim() && dq.optB.trim())
     );
 
     if (validDrafts.length === 0) {
-      setErrorMessage('Please fill in at least 1 complete question with prompt and Options A & B.');
+      setErrorMessage('Please fill in at least 1 complete question with prompt and required answers.');
       return;
     }
 
     const timestamp = Date.now();
-    const finalQuestions: QuizQuestion[] = validDrafts.map((dq, idx) => ({
-      id: `custom-q-${timestamp}-${idx + 1}`,
-      category: dq.category.trim() || 'System Design',
-      question: dq.question.trim(),
-      options: [
-        { id: 'A', text: dq.optA.trim() },
-        { id: 'B', text: dq.optB.trim() },
-        { id: 'C', text: dq.optC.trim() || 'Option C' },
-        { id: 'D', text: dq.optD.trim() || 'Option D' },
-      ],
-      correctOptionId: dq.correctOpt,
-      explanation: dq.explanation.trim() || 'Correct answer verified by host.',
-      timeLimitSeconds: dq.timeLimitSeconds || 45,
-    }));
+    const finalQuestions: QuizQuestion[] = validDrafts.map((dq, idx) => {
+      const isShort = dq.questionType === 'short_answer';
+      const cleanExpected = dq.expectedAnswer?.trim() || 'Correct';
+      const acceptableArr = isShort && dq.acceptableAnswers
+        ? dq.acceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined;
+
+      return {
+        id: `custom-q-${timestamp}-${idx + 1}`,
+        category: dq.category.trim() || 'System Design',
+        question: dq.question.trim(),
+        questionType: dq.questionType || 'multiple_choice',
+        expectedAnswer: isShort ? cleanExpected : undefined,
+        acceptableAnswers: acceptableArr,
+        options: isShort
+          ? [
+              { id: 'A', text: cleanExpected },
+              { id: 'B', text: 'Other' },
+            ]
+          : [
+              { id: 'A', text: dq.optA.trim() },
+              { id: 'B', text: dq.optB.trim() },
+              { id: 'C', text: dq.optC.trim() || 'Option C' },
+              { id: 'D', text: dq.optD.trim() || 'Option D' },
+            ],
+        correctOptionId: isShort ? 'A' : dq.correctOpt,
+        explanation: dq.explanation.trim() || (isShort ? `Ground truth expected answer: ${cleanExpected}` : 'Correct answer verified by host.'),
+        timeLimitSeconds: dq.timeLimitSeconds || (isShort ? 35 : 45),
+      };
+    });
 
     const updatedQueue = [...finalQuestions, ...hostQuestions];
     persistQuestions(updatedQueue);
@@ -434,8 +463,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
     });
   };
 
-  const validQuestionsCount = draftQuestions.filter(
-    (dq) => dq.question.trim() && dq.optA.trim() && dq.optB.trim()
+  const validQuestionsCount = draftQuestions.filter((dq) =>
+    dq.questionType === 'short_answer'
+      ? Boolean(dq.question.trim() && dq.expectedAnswer?.trim())
+      : Boolean(dq.question.trim() && dq.optA.trim() && dq.optB.trim())
   ).length;
 
   return (
@@ -559,6 +590,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     <span className="text-[10px] text-zinc-400 font-medium uppercase truncate max-w-28" title={q.category}>
                       {q.category}
                     </span>
+                    {q.questionType === 'short_answer' && (
+                      <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/25 text-[9px] font-mono font-bold flex items-center gap-1 shrink-0">
+                        <Terminal className="w-2.5 h-2.5" /> JEV
+                      </span>
+                    )}
                     <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1 shrink-0">
                       <Clock className="w-2.5 h-2.5" /> {q.timeLimitSeconds}S
                     </span>
@@ -708,243 +744,173 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   )}
                 </div>
 
-                {/* Sub Tool Mode Switcher */}
-                <div className="grid grid-cols-3 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.06] rounded-lg text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => setAiToolMode('topic')}
-                    className={`py-1.5 rounded-md font-bold uppercase transition-all cursor-pointer ${
-                      aiToolMode === 'topic'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    TOPIC PROMPT
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAiToolMode('url_scraper')}
-                    className={`py-1.5 rounded-md font-bold uppercase transition-all cursor-pointer ${
-                      aiToolMode === 'url_scraper'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    URL / GITHUB
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAiToolMode('hackernews');
-                      if (hnStories.length === 0) loadHackerNewsStories();
-                    }}
-                    className={`py-1.5 rounded-md font-bold uppercase transition-all cursor-pointer ${
-                      aiToolMode === 'hackernews'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    HN TRENDING
-                  </button>
-                </div>
-
-                {/* 1. TOPIC MODE */}
-                {aiToolMode === 'topic' && (
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Architecture Topic or Query:</label>
-                      <input
-                        type="text"
-                        value={aiTopic}
-                        onChange={(e) => setAiTopic(e.target.value)}
-                        placeholder="e.g. Distributed Consensus, Redis Caching, WebSockets vs gRPC"
-                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-lg text-white font-medium focus:outline-none focus:border-blue-500"
-                        required={aiToolMode === 'topic'}
-                      />
-                    </div>
-
-                    {/* Auto Web Search Toggle */}
-                    <div className="p-2.5 bg-[#16161E] border border-white/[0.08] rounded-lg flex items-center justify-between">
-                      <label className="flex items-center gap-2 cursor-pointer text-[11px] font-bold uppercase text-zinc-200 select-none">
-                        <input
-                          type="checkbox"
-                          checked={aiAutoWebSearch}
-                          onChange={(e) => setAiAutoWebSearch(e.target.checked)}
-                          className="w-4 h-4 rounded border-zinc-700 accent-blue-600 cursor-pointer"
-                        />
-                        <span className="flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-blue-400" />
-                          <span>Live Web Grounding</span>
-                        </span>
-                      </label>
-                      <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">
-                        {aiAutoWebSearch ? 'Live RFC & Article Search' : 'Offline Knowledge Mode'}
-                      </span>
-                    </div>
-
-                    {/* Suggestions */}
-                    <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-zinc-400">
-                      <span className="font-bold">Popular topics:</span>
-                      {['Next.js 15 Server Actions', 'PostgreSQL 17 features', 'Distributed Cache Invalidation', 'Kafka vs RabbitMQ 2026'].map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setAiTopic(t)}
-                          className="px-2 py-0.5 rounded-md bg-[#16161A] border border-white/[0.08] hover:border-blue-500/50 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. URL & GITHUB REPO SCRAPER MODE */}
-                {aiToolMode === 'url_scraper' && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase block flex items-center justify-between text-zinc-300">
-                      <span className="flex items-center gap-1.5">
-                        <Link2 className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Documentation URL or GitHub Repo:</span>
-                      </span>
-                      <span className="text-[10px] text-zinc-400 font-normal font-sans">Scrapes docs & repositories</span>
+                {/* Unified Intelligent Input Box */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase block text-zinc-300">
+                      Topic, URL, or GitHub Repo:
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={aiUrlInput}
-                        onChange={(e) => setAiUrlInput(e.target.value)}
-                        placeholder="e.g. https://bun.sh/docs or facebook/react or https://github.com/supabase/supabase"
-                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-lg text-white font-medium focus:outline-none focus:border-blue-500 pr-24"
-                        required
-                      />
-                      {isGitHubRepoInput(aiUrlInput) && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase flex items-center gap-1">
-                          <FolderGit2 className="w-3 h-3" />
-                          <span>GitHub</span>
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-zinc-400">
-                      <span className="font-bold">Presets:</span>
-                      {[
-                        { label: 'Bun Docs', value: 'https://bun.sh/docs' },
-                        { label: 'Docker Intro', value: 'https://docs.docker.com/get-started/' },
-                        { label: 'facebook/react', value: 'facebook/react' },
-                        { label: 'supabase/supabase', value: 'supabase/supabase' },
-                      ].map((p) => (
-                        <button
-                          key={p.label}
-                          type="button"
-                          onClick={() => setAiUrlInput(p.value)}
-                          className="px-2 py-0.5 rounded-md bg-[#16161A] border border-white/[0.08] hover:border-blue-500/50 text-zinc-300 hover:text-white text-[10px] cursor-pointer flex items-center gap-1"
-                        >
-                          {p.value.includes('github') || !p.value.startsWith('http') ? (
-                            <FolderGit2 className="w-2.5 h-2.5 text-blue-400" />
-                          ) : (
-                            <Link2 className="w-2.5 h-2.5 text-blue-400" />
-                          )}
-                          <span>{p.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. HACKER NEWS TRENDS MODE */}
-                {aiToolMode === 'hackernews' && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase flex items-center gap-1 text-slate-300">
-                        <Flame className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Breaking Tech Stories (Hacker News):</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={loadHackerNewsStories}
-                        disabled={isLoadingHnStories}
-                        className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 underline font-bold cursor-pointer"
-                      >
-                        <RefreshCw className={`w-2.5 h-2.5 ${isLoadingHnStories ? 'animate-spin' : ''}`} />
-                        <span>Refresh Stories</span>
-                      </button>
-                    </div>
-
-                    {isLoadingHnStories ? (
-                      <div className="py-4 text-center text-xs font-medium text-zinc-400 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
-                        <span>Scanning today's top Hacker News stories...</span>
-                      </div>
-                    ) : hnStories.length > 0 ? (
-                      <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                        {hnStories.map((story) => (
-                          <div
-                            key={story.id}
-                            onClick={() => setSelectedHnStory(story)}
-                            className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs ${
-                              selectedHnStory?.id === story.id
-                                ? 'bg-blue-500/10 border-blue-500/40 text-white'
-                                : 'bg-[#141418] border-white/[0.08] hover:border-zinc-700 text-zinc-300'
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0 pr-2">
-                              <div className="font-semibold truncate text-[12px] text-white">{story.title}</div>
-                              <div className="text-[10px] text-zinc-400 flex items-center gap-2.5 mt-1">
-                                <span className="font-medium text-emerald-400">▲ {story.score} pts</span>
-                                <span>💬 {story.commentsCount} comments</span>
-                                {story.domain && <span className="text-zinc-500">🌐 {story.domain}</span>}
-                              </div>
-                            </div>
-                            <input
-                              type="radio"
-                              name="hnStory"
-                              checked={selectedHnStory?.id === story.id}
-                              onChange={() => setSelectedHnStory(story)}
-                              className="accent-blue-500 cursor-pointer w-4 h-4"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={loadHackerNewsStories}
-                        className="w-full py-2.5 bg-[#16161A] border border-white/[0.08] rounded-xl text-xs font-semibold hover:bg-[#1E1E24] text-zinc-300 hover:text-white cursor-pointer transition-colors"
-                      >
-                        Load Today's Top Stories
-                      </button>
+                    {isLoadingHnStories && (
+                      <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
+                        <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" />
+                        <span>Updating trends...</span>
+                      </span>
                     )}
                   </div>
-                )}
-
-                {/* Difficulty & Count */}
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/[0.08]">
-                  <div>
-                    <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Difficulty</label>
-                    <select
-                      value={aiDifficulty}
-                      onChange={(e) => setAiDifficulty(e.target.value as any)}
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
-                    >
-                      <option value="Junior">Junior Engineer</option>
-                      <option value="Mid">Mid-Level</option>
-                      <option value="Senior">Senior Architect</option>
-                      <option value="Principal">Principal / Staff</option>
-                    </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={aiInput}
+                      onChange={(e) => {
+                        setAiInput(e.target.value);
+                        setSelectedStoryUrl(null);
+                      }}
+                      placeholder="e.g. Next.js 15, https://bun.sh/docs, or facebook/react"
+                      className="w-full px-3 py-2.5 text-xs bg-[#16161A] border border-white/[0.08] rounded-lg text-white font-medium focus:outline-none focus:border-blue-500 pr-24"
+                      required
+                    />
+                    {isGitHubRepoInput(aiInput) ? (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase flex items-center gap-1">
+                        <FolderGit2 className="w-3 h-3" />
+                        <span>GitHub</span>
+                      </span>
+                    ) : aiInput.match(/https?:\/\/[^\s]+/) ? (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase flex items-center gap-1">
+                        <Link2 className="w-3 h-3" />
+                        <span>URL Doc</span>
+                      </span>
+                    ) : null}
                   </div>
+
+                  {/* Auto-Loaded Popular / Hacker News Topics */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                      <span className="font-bold uppercase tracking-wider text-zinc-400">Popular topics:</span>
+                      {selectedStoryUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAiInput('');
+                            setSelectedStoryUrl(null);
+                          }}
+                          className="text-[9px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                        >
+                          Clear Selection
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {popularTopicsList.map((topicItem) => {
+                        const isSelected = aiInput === topicItem.title;
+                        return (
+                          <button
+                            key={topicItem.title}
+                            type="button"
+                            onClick={() => {
+                              setAiInput(topicItem.title);
+                              if (topicItem.url) {
+                                setSelectedStoryUrl(topicItem.url);
+                              } else {
+                                setSelectedStoryUrl(null);
+                              }
+                            }}
+                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
+                              isSelected
+                                ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
+                                : 'bg-[#16161A] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
+                            }`}
+                            title={topicItem.title}
+                          >
+                            {topicItem.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Format, Difficulty & Count */}
+                <div className="space-y-3 pt-2 border-t border-white/[0.08]">
                   <div>
-                    <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Question Count</label>
-                    <select
-                      value={aiCount}
-                      onChange={(e) => setAiCount(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
-                    >
-                      <option value={1}>1 Question</option>
-                      <option value={2}>2 Questions</option>
-                      <option value={3}>3 Questions</option>
-                      <option value={4}>4 Questions</option>
-                      <option value={5}>5 Questions</option>
-                    </select>
+                    <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Question Format</label>
+                    <div className="grid grid-cols-3 gap-1.5 bg-[#16161A] p-1 rounded-xl border border-white/[0.08]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClickSound();
+                          setAiFormat('mixed');
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'mixed'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Generate a balanced combination of multiple choice and short answer questions"
+                      >
+                        <span>🔀 Mixed</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClickSound();
+                          setAiFormat('multiple_choice');
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'multiple_choice'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Generate 4-option multiple-choice questions"
+                      >
+                        <span>🎯 Choice</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClickSound();
+                          setAiFormat('short_answer');
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'short_answer'
+                            ? 'bg-purple-600 text-white shadow-sm'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                        title="Generate short answer questions auto-graded by TypeSafe Jev-1.13"
+                      >
+                        <Sparkles className="w-2.5 h-2.5 text-purple-300" />
+                        <span>⚡ Short (Jev)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Difficulty</label>
+                      <select
+                        value={aiDifficulty}
+                        onChange={(e) => setAiDifficulty(e.target.value as any)}
+                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                      >
+                        <option value="Junior">Junior Engineer</option>
+                        <option value="Mid">Mid-Level</option>
+                        <option value="Senior">Senior Architect</option>
+                        <option value="Principal">Principal / Staff</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Question Count</label>
+                      <select
+                        value={aiCount}
+                        onChange={(e) => setAiCount(Number(e.target.value))}
+                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                      >
+                        <option value={1}>1 Question</option>
+                        <option value={2}>2 Questions</option>
+                        <option value={3}>3 Questions</option>
+                        <option value={4}>4 Questions</option>
+                        <option value={5}>5 Questions</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -1033,15 +999,13 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         : 'Generating Questions with AI...'
                       : isAdaptiveLiveMode
                       ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
-                      : aiToolMode === 'topic'
-                      ? aiAutoWebSearch
-                        ? `Search & Generate ${aiCount} Questions`
-                        : `Generate ${aiCount} Questions`
-                      : aiToolMode === 'url_scraper'
-                      ? isGitHubRepoInput(aiUrlInput)
-                        ? `Scan Repo & Generate ${aiCount} Questions`
-                        : `Scrape & Generate ${aiCount} Questions`
-                      : `Generate ${aiCount} HN Trivia Questions`}
+                      : aiFormat === 'short_answer'
+                      ? `⚡ Generate ${aiCount} Short-Answer Questions (Jev)`
+                      : isGitHubRepoInput(aiInput)
+                      ? `Scan Repo & Generate ${aiCount} Questions`
+                      : aiInput.match(/https?:\/\/[^\s]+/) || selectedStoryUrl
+                      ? `Scrape & Generate ${aiCount} Questions`
+                      : `Search & Generate ${aiCount} Questions`}
                   </span>
                 </button>
               </form>
@@ -1115,7 +1079,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               <div className="flex items-center space-x-2 overflow-x-auto pb-1">
                 {draftQuestions.map((dq, idx) => {
                   const isActive = activeQuestionIndex === idx;
-                  const isFilled = dq.question.trim().length > 0 && dq.optA.trim().length > 0 && dq.optB.trim().length > 0;
+                  const isFilled =
+                    dq.questionType === 'short_answer'
+                      ? Boolean(dq.question.trim().length > 0 && dq.expectedAnswer?.trim().length)
+                      : Boolean(dq.question.trim().length > 0 && dq.optA.trim().length > 0 && dq.optB.trim().length > 0);
 
                   return (
                     <div key={dq.id} className="flex items-center shrink-0">
@@ -1134,6 +1101,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         }`}
                       >
                         <span>Q{idx + 1}</span>
+                        {dq.questionType === 'short_answer' && (
+                          <span title="Short Answer (Jev 1.13)">
+                            <Sparkles className="w-2.5 h-2.5 text-purple-400 shrink-0" />
+                          </span>
+                        )}
                         {isFilled && (
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Question Complete" />
                         )}
@@ -1216,38 +1188,106 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-medium block text-zinc-400">4 Options (Select correct answer key):</label>
-                  {[
-                    { id: 'A' as const, field: 'optA' as const, val: currentDraft.optA },
-                    { id: 'B' as const, field: 'optB' as const, val: currentDraft.optB },
-                    { id: 'C' as const, field: 'optC' as const, val: currentDraft.optC },
-                    { id: 'D' as const, field: 'optD' as const, val: currentDraft.optD },
-                  ].map(({ id, field, val }) => (
-                    <div key={id} className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => updateCurrentDraft('correctOpt', id)}
-                        className={`w-8 h-8 font-semibold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
-                          currentDraft.correctOpt === id
-                            ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/30'
-                            : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
-                        }`}
-                        title="Click to designate as correct answer"
-                      >
-                        {id}
-                      </button>
+                {/* Question Type Switcher */}
+                <div className="flex items-center justify-between border-y border-white/[0.06] py-2">
+                  <span className="text-[11px] font-medium text-zinc-400">Response Mode</span>
+                  <div className="flex items-center gap-1 bg-[#16161A] p-0.5 rounded-lg border border-white/[0.08]">
+                    <button
+                      type="button"
+                      onClick={() => updateCurrentDraft('questionType', 'multiple_choice')}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                        currentDraft.questionType !== 'short_answer'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Multiple Choice
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateCurrentDraft('questionType', 'short_answer')}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        currentDraft.questionType === 'short_answer'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-2.5 h-2.5 text-purple-300" />
+                      <span>Short Answer (Jev 1.13)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {currentDraft.questionType === 'short_answer' ? (
+                  <div className="space-y-3 bg-[#0C0C10] p-3.5 rounded-xl border border-purple-500/25">
+                    <div className="flex items-center justify-between text-xs">
+                      <label className="text-[11px] font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Terminal className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Ground Truth Expected Answer:</span>
+                      </label>
+                      <span className="text-[10px] font-mono text-zinc-500">Exact match or semantic equivalent</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={currentDraft.expectedAnswer || ''}
+                      onChange={(e) => updateCurrentDraft('expectedAnswer', e.target.value)}
+                      placeholder="e.g. git cherry-pick, O(1), CAP theorem, or etcd"
+                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-purple-500/30 rounded-xl text-white font-mono focus:outline-none focus:border-purple-400 transition-colors"
+                      required={currentDraft.questionType === 'short_answer'}
+                    />
+
+                    <div>
+                      <label className="text-[10px] font-medium text-zinc-400 block mb-1">
+                        Acceptable Synonyms / Aliases (Comma-separated, optional):
+                      </label>
                       <input
                         type="text"
-                        value={val}
-                        onChange={(e) => updateCurrentDraft(field, e.target.value)}
-                        placeholder={`Option ${id}...`}
-                        className="flex-1 px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
-                        required={id === 'A' || id === 'B'}
+                        value={currentDraft.acceptableAnswers || ''}
+                        onChange={(e) => updateCurrentDraft('acceptableAnswers', e.target.value)}
+                        placeholder="e.g. cherry pick, git-cherry-pick"
+                        className="w-full px-3 py-1.5 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-zinc-300 font-mono focus:outline-none focus:border-purple-400 transition-colors"
                       />
                     </div>
-                  ))}
-                </div>
+
+                    <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
+                      <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
+                      <span>Evaluated automatically in ~150ms by TypeSafe Jev 1.13 calibrated semantic scoring ($0.042/1M tokens).</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-medium block text-zinc-400">4 Options (Select correct answer key):</label>
+                    {[
+                      { id: 'A' as const, field: 'optA' as const, val: currentDraft.optA },
+                      { id: 'B' as const, field: 'optB' as const, val: currentDraft.optB },
+                      { id: 'C' as const, field: 'optC' as const, val: currentDraft.optC },
+                      { id: 'D' as const, field: 'optD' as const, val: currentDraft.optD },
+                    ].map(({ id, field, val }) => (
+                      <div key={id} className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => updateCurrentDraft('correctOpt', id)}
+                          className={`w-8 h-8 font-semibold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                            currentDraft.correctOpt === id
+                              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/30'
+                              : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
+                          }`}
+                          title="Click to designate as correct answer"
+                        >
+                          {id}
+                        </button>
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={(e) => updateCurrentDraft(field, e.target.value)}
+                          placeholder={`Option ${id}...`}
+                          className="flex-1 px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                          required={currentDraft.questionType !== 'short_answer' && (id === 'A' || id === 'B')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div>
                   <label className="text-[11px] font-medium block mb-1 text-zinc-400">Explanation</label>
