@@ -163,6 +163,11 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   const handleDelete = async (roomId: string, code: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm(`Are you sure you want to delete Room [${code}]? All questions, polls and quiz history for this room will be cleared.`)) {
+      try {
+        playWhoosh();
+      } catch {
+        // ignore sound error
+      }
       await dbDeleteRoom(roomId, code);
       try {
         const cleanCode = code.toUpperCase().trim();
@@ -174,10 +179,26 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
         localStorage.removeItem(`sketchcast_host_quiz_completed_${cleanCode}`);
         localStorage.removeItem(`sketchcast_polls_${cleanCode}`);
         localStorage.removeItem(`sketchcast_session_report_${cleanCode}`);
+        if (localStorage.getItem('sketchcast_room_code')?.toUpperCase().trim() === cleanCode) {
+          localStorage.removeItem('sketchcast_room_code');
+        }
+        if (sessionStorage.getItem('sketchcast_room_code')?.toUpperCase().trim() === cleanCode) {
+          sessionStorage.removeItem('sketchcast_room_code');
+        }
       } catch {
         // ignore
       }
-      await loadRooms();
+      const remoteRooms = await dbFetchRooms();
+      const myRooms = (remoteRooms || []).filter((r) => isUserRoomAdmin(r, currentUser, userName));
+      setRooms(myRooms);
+      if (currentRoomCode.toUpperCase().trim() === code.toUpperCase().trim()) {
+        const nextRoom = myRooms[0] || (remoteRooms && remoteRooms[0]);
+        if (nextRoom) {
+          onSwitchRoom(nextRoom.code, nextRoom.title);
+        } else {
+          onSwitchRoom('SKT-789');
+        }
+      }
     }
   };
 

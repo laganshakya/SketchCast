@@ -26,10 +26,19 @@ alter table if exists public.rooms add column if not exists ai_settings jsonb de
 alter table if exists public.rooms add column if not exists session_report text;
 alter table if exists public.rooms add column if not exists last_active_at timestamptz default now();
 
+-- Migration safety: remove legacy restrictive foreign keys that conflict with dual room_id formats (code vs id)
+alter table if exists public.questions drop constraint if exists questions_room_id_fkey;
+alter table if exists public.polls drop constraint if exists polls_room_id_fkey;
+alter table if exists public.quiz_rounds drop constraint if exists quiz_rounds_room_id_fkey;
+alter table if exists public.leaderboard drop constraint if exists leaderboard_room_id_fkey;
+alter table if exists public.surveys drop constraint if exists surveys_room_id_fkey;
+alter table if exists public.survey_responses drop constraint if exists survey_responses_room_id_fkey;
+alter table if exists public.room_attendees drop constraint if exists room_attendees_room_code_fkey;
+
 -- 2. Questions Table (Live Q&A Upvote Feed & Host AI Talking Points)
 create table if not exists public.questions (
   id text primary key,
-  room_id text references public.rooms(id) on delete cascade,
+  room_id text not null,
   author_name text not null,
   author_session_id text not null,
   content text not null,
@@ -45,7 +54,7 @@ alter table if exists public.questions add column if not exists ai_talking_point
 -- 3. Polls Table (Live Community Polls & AI Consensus Note)
 create table if not exists public.polls (
   id text primary key,
-  room_id text references public.rooms(id) on delete cascade,
+  room_id text not null,
   question text not null,
   options jsonb not null default '[]'::jsonb,
   total_votes int default 0,
@@ -60,7 +69,7 @@ alter table if exists public.polls add column if not exists ai_consensus_note te
 -- 4. Quiz Rounds Table (Realtime Quizzing State & Category)
 create table if not exists public.quiz_rounds (
   id text primary key,
-  room_id text references public.rooms(id) on delete cascade,
+  room_id text not null,
   question_data jsonb not null,
   category text,
   quiz_type text default 'standard',
@@ -78,7 +87,7 @@ alter table if exists public.quiz_rounds add column if not exists quiz_type text
 -- 5. Leaderboard Table (Arcade High Scores & Player Rankings)
 create table if not exists public.leaderboard (
   session_id text primary key,
-  room_id text references public.rooms(id) on delete cascade,
+  room_id text not null,
   name text not null,
   correct_quizzes int default 0,
   polls_voted int default 0,
@@ -139,6 +148,8 @@ create index if not exists idx_quiz_rounds_room_created on public.quiz_rounds (r
 create index if not exists idx_quiz_rounds_room_active on public.quiz_rounds (room_id, is_active);
 
 create index if not exists idx_leaderboard_room_correct on public.leaderboard (room_id, correct_quizzes desc);
+create index if not exists idx_leaderboard_room_session on public.leaderboard (room_id, session_id);
+create index if not exists idx_questions_room_created_upvotes on public.questions (room_id, upvotes_count desc, created_at desc);
 
 create index if not exists idx_room_attendees_code on public.room_attendees (room_code, last_active desc);
 create index if not exists idx_surveys_room on public.surveys (room_id, created_at desc);
@@ -191,6 +202,7 @@ drop policy if exists "rooms_delete_host" on public.rooms;
 create policy "rooms_delete_host" on public.rooms for delete using (
   auth.uid()::text = host_id or 
   auth.jwt()->>'email' = host_email or 
+  auth.jwt()->>'email' = any(admins) or 
   host_id is null or
   host_id like 'host_%'
 );
@@ -204,7 +216,8 @@ create policy "quiz_rounds_insert_host" on public.quiz_rounds for insert with ch
   auth.role() = 'authenticated' or 
   exists (
     select 1 from public.rooms r 
-    where r.id = quiz_rounds.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+    where (r.id = quiz_rounds.room_id or r.code = quiz_rounds.room_id or ('room-' || r.code) = quiz_rounds.room_id or r.code = replace(quiz_rounds.room_id, 'room-', ''))
+      and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or auth.jwt()->>'email' = any(r.admins) or r.host_id is null or r.host_id like 'host_%')
   )
 );
 
@@ -216,7 +229,8 @@ create policy "quiz_rounds_delete_host" on public.quiz_rounds for delete using (
   auth.role() = 'authenticated' or 
   exists (
     select 1 from public.rooms r 
-    where r.id = quiz_rounds.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+    where (r.id = quiz_rounds.room_id or r.code = quiz_rounds.room_id or ('room-' || r.code) = quiz_rounds.room_id or r.code = replace(quiz_rounds.room_id, 'room-', ''))
+      and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or auth.jwt()->>'email' = any(r.admins) or r.host_id is null or r.host_id like 'host_%')
   )
 );
 
@@ -235,7 +249,8 @@ create policy "polls_delete_host" on public.polls for delete using (
   auth.role() = 'authenticated' or 
   exists (
     select 1 from public.rooms r 
-    where r.id = polls.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+    where (r.id = polls.room_id or r.code = polls.room_id or ('room-' || r.code) = polls.room_id or r.code = replace(polls.room_id, 'room-', ''))
+      and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or auth.jwt()->>'email' = any(r.admins) or r.host_id is null or r.host_id like 'host_%')
   )
 );
 
@@ -254,7 +269,8 @@ create policy "questions_delete_host" on public.questions for delete using (
   auth.role() = 'authenticated' or 
   exists (
     select 1 from public.rooms r 
-    where r.id = questions.room_id and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or r.host_id is null)
+    where (r.id = questions.room_id or r.code = questions.room_id or ('room-' || r.code) = questions.room_id or r.code = replace(questions.room_id, 'room-', ''))
+      and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or auth.jwt()->>'email' = any(r.admins) or r.host_id is null or r.host_id like 'host_%')
   )
 );
 
@@ -273,7 +289,8 @@ create policy "leaderboard_delete_host" on public.leaderboard for delete using (
   auth.role() = 'authenticated' or 
   exists (
     select 1 from public.rooms r 
-    where r.id = leaderboard.room_id and (r.host_id = auth.uid()::text or r.host_id is null)
+    where (r.id = leaderboard.room_id or r.code = leaderboard.room_id or ('room-' || r.code) = leaderboard.room_id or r.code = replace(leaderboard.room_id, 'room-', ''))
+      and (r.host_id = auth.uid()::text or r.host_email = auth.jwt()->>'email' or auth.jwt()->>'email' = any(r.admins) or r.host_id is null or r.host_id like 'host_%')
   )
 );
 
@@ -308,6 +325,12 @@ create policy "survey_responses_select_public" on public.survey_responses for se
 
 drop policy if exists "survey_responses_insert_public" on public.survey_responses;
 create policy "survey_responses_insert_public" on public.survey_responses for insert with check (true);
+
+drop policy if exists "survey_responses_update_public" on public.survey_responses;
+create policy "survey_responses_update_public" on public.survey_responses for update using (true) with check (true);
+
+drop policy if exists "survey_responses_delete_public" on public.survey_responses;
+create policy "survey_responses_delete_public" on public.survey_responses for delete using (true);
 
 -- ==============================================================================
 -- 8. Stored Procedures (Atomic Real-Time Mutations)
@@ -396,6 +419,217 @@ begin
   return v_new_count;
 end;
 $$;
+
+-- 8.4 Atomic Cascade Room Deletion (Cleans up all child tables and the room itself)
+-- Handles dual-format room identifiers: room code ('SKT-789') and room ID ('room-SKT-789')
+create or replace function public.delete_room_cascade(p_room_id text)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_raw text;
+  v_code text;
+  v_id text;
+  v_prefixed_id text;
+  v_unprefixed text;
+  v_host_id text;
+  v_host_email text;
+  v_admins text[];
+  v_target_keys text[];
+  v_rooms_count int := 0;
+  v_questions_count int := 0;
+  v_polls_count int := 0;
+  v_quiz_rounds_count int := 0;
+  v_leaderboard_count int := 0;
+  v_attendees_count int := 0;
+  v_surveys_count int := 0;
+  v_responses_count int := 0;
+begin
+  if p_room_id is null or trim(p_room_id) = '' then
+    return jsonb_build_object('success', false, 'error', 'Room identifier is required');
+  end if;
+
+  v_raw := trim(p_room_id);
+
+  if lower(v_raw) like 'room-%' then
+    v_prefixed_id := v_raw;
+    v_unprefixed := substring(v_raw from 6);
+  else
+    v_prefixed_id := 'room-' || v_raw;
+    v_unprefixed := v_raw;
+  end if;
+
+  -- Discover canonical room record if present in public.rooms (exact matching, avoids wildcard matching in LIKE)
+  select id, code, host_id, host_email, admins into v_id, v_code, v_host_id, v_host_email, v_admins
+  from public.rooms
+  where lower(id) in (lower(v_raw), lower(v_prefixed_id), lower(v_unprefixed))
+     or lower(code) in (lower(v_raw), lower(v_prefixed_id), lower(v_unprefixed))
+  limit 1;
+
+  -- Authorization check: if room exists, only host, co-admin, service_role, or unauthenticated host can delete it
+  if v_id is not null then
+    if not (
+      auth.role() = 'service_role' or
+      (v_host_id is not null and auth.uid()::text = v_host_id) or
+      (v_host_email is not null and auth.jwt()->>'email' = v_host_email) or
+      (v_admins is not null and auth.jwt()->>'email' = any(v_admins)) or
+      v_host_id is null or
+      v_host_id like 'host_%'
+    ) then
+      return jsonb_build_object('success', false, 'error', 'Unauthorized: Only the room host or admin can delete this room');
+    end if;
+  end if;
+
+  -- Build exhaustive list of all matching room identifiers
+  v_target_keys := array_remove(array[
+    v_raw,
+    upper(v_raw),
+    lower(v_raw),
+    v_prefixed_id,
+    upper(v_prefixed_id),
+    lower(v_prefixed_id),
+    v_unprefixed,
+    upper(v_unprefixed),
+    lower(v_unprefixed),
+    v_id,
+    upper(coalesce(v_id, '')),
+    lower(coalesce(v_id, '')),
+    v_code,
+    upper(coalesce(v_code, '')),
+    lower(coalesce(v_code, ''))
+  ], null);
+  v_target_keys := array_remove(v_target_keys, '');
+
+  select array_agg(distinct k) into v_target_keys from unnest(v_target_keys) t(k);
+
+  -- 1. Delete survey responses (direct room_id or linked to survey_id of this room)
+  delete from public.survey_responses
+  where room_id = any(v_target_keys)
+     or survey_id in (select id from public.surveys where room_id = any(v_target_keys));
+  get diagnostics v_responses_count = row_count;
+
+  -- 2. Delete surveys
+  delete from public.surveys
+  where room_id = any(v_target_keys);
+  get diagnostics v_surveys_count = row_count;
+
+  -- 3. Delete room attendees (matched by room_code)
+  delete from public.room_attendees
+  where room_code = any(v_target_keys);
+  get diagnostics v_attendees_count = row_count;
+
+  -- 4. Delete leaderboard entries
+  delete from public.leaderboard
+  where room_id = any(v_target_keys);
+  get diagnostics v_leaderboard_count = row_count;
+
+  -- 5. Delete quiz rounds
+  delete from public.quiz_rounds
+  where room_id = any(v_target_keys);
+  get diagnostics v_quiz_rounds_count = row_count;
+
+  -- 6. Delete polls
+  delete from public.polls
+  where room_id = any(v_target_keys);
+  get diagnostics v_polls_count = row_count;
+
+  -- 7. Delete questions
+  delete from public.questions
+  where room_id = any(v_target_keys);
+  get diagnostics v_questions_count = row_count;
+
+  -- 8. Delete room itself
+  delete from public.rooms
+  where id = any(v_target_keys) or code = any(v_target_keys);
+  get diagnostics v_rooms_count = row_count;
+
+  return jsonb_build_object(
+    'success', true,
+    'room_id', coalesce(v_id, v_prefixed_id),
+    'room_code', coalesce(v_code, v_unprefixed),
+    'deleted', jsonb_build_object(
+      'rooms', v_rooms_count,
+      'questions', v_questions_count,
+      'polls', v_polls_count,
+      'quiz_rounds', v_quiz_rounds_count,
+      'leaderboard', v_leaderboard_count,
+      'room_attendees', v_attendees_count,
+      'surveys', v_surveys_count,
+      'survey_responses', v_responses_count
+    )
+  );
+end;
+$$;
+
+grant execute on function public.delete_room_cascade(text) to authenticated, anon, service_role;
+
+-- 8.5 Automatic Trigger Cascade Deletion (Safety net for direct DELETE on public.rooms)
+create or replace function public.trg_cascade_delete_room()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  v_unprefixed_id text;
+  v_keys text[];
+begin
+  if lower(old.id) like 'room-%' then
+    v_unprefixed_id := substring(old.id from 6);
+  else
+    v_unprefixed_id := old.id;
+  end if;
+
+  v_keys := array[
+    old.id,
+    upper(coalesce(old.id, '')),
+    lower(coalesce(old.id, '')),
+    old.code,
+    upper(coalesce(old.code, '')),
+    lower(coalesce(old.code, '')),
+    'room-' || coalesce(old.code, ''),
+    upper('room-' || coalesce(old.code, '')),
+    lower('room-' || coalesce(old.code, '')),
+    v_unprefixed_id,
+    upper(coalesce(v_unprefixed_id, '')),
+    lower(coalesce(v_unprefixed_id, ''))
+  ];
+
+  v_keys := array_remove(v_keys, null);
+  v_keys := array_remove(v_keys, '');
+  select array_agg(distinct k) into v_keys from unnest(v_keys) t(k);
+
+  delete from public.survey_responses
+  where room_id = any(v_keys)
+     or survey_id in (select id from public.surveys where room_id = any(v_keys));
+
+  delete from public.surveys
+  where room_id = any(v_keys);
+
+  delete from public.room_attendees
+  where room_code = any(v_keys);
+
+  delete from public.leaderboard
+  where room_id = any(v_keys);
+
+  delete from public.quiz_rounds
+  where room_id = any(v_keys);
+
+  delete from public.polls
+  where room_id = any(v_keys);
+
+  delete from public.questions
+  where room_id = any(v_keys);
+
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_room_cascade_delete on public.rooms;
+create trigger trg_room_cascade_delete
+before delete on public.rooms
+for each row
+execute function public.trg_cascade_delete_room();
 
 -- ==============================================================================
 -- 9. Realtime Replication Publication

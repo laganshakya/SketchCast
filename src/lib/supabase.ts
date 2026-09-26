@@ -1,8 +1,8 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js';
 import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence, Survey, SurveyResponse } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
+const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
+const supabaseAnonKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
@@ -265,26 +265,47 @@ export async function dbFetchRooms(): Promise<Room[]> {
       };
     });
 
-    // Merge remote and local rooms so rooms created offline/locally are never lost
-    const mergedMap = new Map<string, Room>();
-    for (const r of remoteRooms) {
-      mergedMap.set(r.code.toUpperCase().trim(), r);
-    }
-    for (const l of localRooms) {
-      const key = l.code.toUpperCase().trim();
-      if (!mergedMap.has(key)) {
-        mergedMap.set(key, l);
-      }
-    }
-
-    const merged = Array.from(mergedMap.values());
+    // Authoritative Sync: Supabase is the single source of truth for rooms.
+    // Overwrite the local cache so that deleted, purged, or reset rooms are removed immediately.
     try {
-      localStorage.setItem('sketchcast_local_rooms', JSON.stringify(merged));
+      localStorage.setItem('sketchcast_local_rooms', JSON.stringify(remoteRooms));
     } catch {
       // ignore
     }
 
-    return merged;
+    // Reconcile and prune sketchcast_my_created_rooms so stale deleted room codes are removed
+    try {
+      const storedCreated = localStorage.getItem('sketchcast_my_created_rooms');
+      if (storedCreated) {
+        const createdList: string[] = JSON.parse(storedCreated);
+        const remoteCodes = new Set(remoteRooms.map((r) => (r.code || '').toUpperCase().trim()));
+        const pruned = createdList.filter((c) => remoteCodes.has(c.toUpperCase().trim()));
+        localStorage.setItem('sketchcast_my_created_rooms', JSON.stringify(pruned));
+      }
+    } catch {
+      // ignore
+    }
+
+    // Reconcile and prune sketchcast_room_code if it points to a deleted room
+    try {
+      const remoteCodes = new Set(remoteRooms.map((r) => (r.code || '').toUpperCase().trim()));
+      const storedRoomCode = localStorage.getItem('sketchcast_room_code');
+      if (storedRoomCode && remoteRooms.length > 0) {
+        if (!remoteCodes.has(storedRoomCode.toUpperCase().trim())) {
+          localStorage.removeItem('sketchcast_room_code');
+        }
+      }
+      const sessionRoomCode = sessionStorage.getItem('sketchcast_room_code');
+      if (sessionRoomCode && remoteRooms.length > 0) {
+        if (!remoteCodes.has(sessionRoomCode.toUpperCase().trim())) {
+          sessionStorage.removeItem('sketchcast_room_code');
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return remoteRooms;
   } catch {
     return localRooms;
   }
@@ -397,34 +418,128 @@ export async function dbUpdateRoomAIModel(roomCode: string, aiModel: string) {
   }
 }
 
-export async function dbDeleteRoom(roomId: string, roomCode: string) {
-  const targetKey = (roomCode || '').toUpperCase().trim();
+export async function dbDeleteRoom(roomId: string, roomCode: string): Promise<boolean> {
+  const rawCode = (roomCode || '').trim();
+  const rawId = (roomId || '').trim();
+
+  // Extract clean uppercase versions and handle potential 'room-' prefix variations
+  const cleanCode = (rawCode || (rawId.startsWith('room-') ? rawId.slice(5) : rawId)).toUpperCase().trim();
+  const cleanId = (rawId || (cleanCode ? `room-${cleanCode}` : '')).trim();
+  const prefixedCode = cleanCode ? `room-${cleanCode}` : '';
 
   // 1. Remove from local storage & my created rooms
-  unmarkRoomAsCreatedByMe(targetKey);
+  if (cleanCode) unmarkRoomAsCreatedByMe(cleanCode);
+  if (cleanId) unmarkRoomAsCreatedByMe(cleanId);
+  if (rawCode) unmarkRoomAsCreatedByMe(rawCode);
+
   try {
     const stored = localStorage.getItem('sketchcast_local_rooms');
     if (stored) {
       const localRooms: Room[] = JSON.parse(stored);
-      const filtered = localRooms.filter((r) => r.code.toUpperCase().trim() !== targetKey && r.id !== roomId);
+      const filtered = localRooms.filter((r) => {
+        const rCode = (r.code || '').toUpperCase().trim();
+        const rId = (r.id || '').trim();
+        return (
+          rCode !== cleanCode &&
+          rCode !== rawCode.toUpperCase().trim() &&
+          rId !== cleanId &&
+          rId !== rawId &&
+          rId !== prefixedCode
+        );
+      });
       localStorage.setItem('sketchcast_local_rooms', JSON.stringify(filtered));
     }
-    localStorage.removeItem(`sketchcast_room_admins_${targetKey}`);
-    localStorage.removeItem(`sketchcast_room_ai_model_${targetKey}`);
+
+    // Thoroughly purge all room-scoped cache entries from localStorage
+    const keysToPurge = Array.from(
+      new Set([cleanCode, cleanId, prefixedCode, rawCode, rawId].filter(Boolean))
+    );
+
+    for (const key of keysToPurge) {
+      localStorage.removeItem(`sketchcast_room_admins_${key}`);
+      localStorage.removeItem(`sketchcast_room_ai_model_${key}`);
+      localStorage.removeItem(`sketchcast_host_quiz_queue_${key}`);
+      localStorage.removeItem(`sketchcast_surveys_${key}`);
+      localStorage.removeItem(`sketchcast_survey_responses_${key}`);
+      localStorage.removeItem(`sketchcast_active_quiz_round_${key}`);
+      localStorage.removeItem(`sketchcast_quiz_user_answers_${key}`);
+      localStorage.removeItem(`sketchcast_host_quiz_completed_${key}`);
+      localStorage.removeItem(`sketchcast_polls_${key}`);
+      localStorage.removeItem(`sketchcast_session_report_${key}`);
+    }
+
+    try {
+      if (localStorage.getItem('sketchcast_room_code')?.toUpperCase().trim() === cleanCode) {
+        localStorage.removeItem('sketchcast_room_code');
+      }
+      if (sessionStorage.getItem('sketchcast_room_code')?.toUpperCase().trim() === cleanCode) {
+        sessionStorage.removeItem('sketchcast_room_code');
+      }
+    } catch {
+      // ignore
+    }
   } catch {
-    // ignore
+    // ignore local storage errors
   }
 
-  if (!supabase) return;
+  if (!supabase) return true;
+
+  // 2. Try the atomic database cascade stored procedure first
   try {
-    await supabase.from('rooms').delete().or(`id.eq.${roomId},code.eq.${targetKey}`);
-    await supabase.from('questions').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
-    await supabase.from('polls').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
-    await supabase.from('quiz_rounds').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
-    await supabase.from('leaderboard').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
-    await supabase.from('surveys').delete().or(`room_id.eq.${roomId},room_id.eq.${targetKey}`);
+    const targetIdentifier = cleanCode || cleanId || rawCode || rawId;
+    const { data, error } = await supabase.rpc('delete_room_cascade', {
+      p_room_id: targetIdentifier,
+    });
+    if (!error && data?.success) {
+      return true;
+    }
   } catch {
-    // fallback
+    // If RPC is missing or fails, proceed to resilient client-side cascading delete
+  }
+
+  // 3. Resilient Client-Side Cascading Delete
+  // Target candidates cover all representations: 'SKT-789', 'room-SKT-789', raw inputs, and case variations
+  const targetCandidates = Array.from(
+    new Set([
+      cleanCode,
+      cleanId,
+      prefixedCode,
+      rawCode,
+      rawId,
+      cleanCode.toLowerCase(),
+      cleanId.toLowerCase(),
+    ].filter(Boolean))
+  );
+
+  if (targetCandidates.length === 0) return true;
+
+  const orRoomId = targetCandidates.map((c) => `room_id.eq.${c}`).join(',');
+  const orRoomCode = targetCandidates.map((c) => `room_code.eq.${c}`).join(',');
+  const orRoomKey = targetCandidates.flatMap((c) => [`id.eq.${c}`, `code.eq.${c}`]).join(',');
+
+  try {
+    // Delete in reverse foreign-key dependency order
+    // Step A: Delete child records first so foreign keys and RLS room-existence policies do not block
+    await Promise.allSettled([
+      supabase.from('survey_responses').delete().or(orRoomId),
+      supabase.from('surveys').delete().or(orRoomId),
+      supabase.from('room_attendees').delete().or(orRoomCode),
+      supabase.from('leaderboard').delete().or(orRoomId),
+      supabase.from('quiz_rounds').delete().or(orRoomId),
+      supabase.from('polls').delete().or(orRoomId),
+      supabase.from('questions').delete().or(orRoomId),
+    ]);
+
+    // Step B: Delete room itself after all children are cleared
+    const { error: roomDeleteError } = await supabase.from('rooms').delete().or(orRoomKey);
+    if (roomDeleteError) {
+      console.warn('Fallback room cascade delete error:', roomDeleteError.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Fallback room cascade delete encountered an error:', err);
+    return false;
   }
 }
 
@@ -731,7 +846,8 @@ export async function dbFetchLeaderboard(roomId: string): Promise<LeaderboardEnt
       .from('leaderboard')
       .select('*')
       .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`)
-      .order('score', { ascending: false });
+      .order('correct_quizzes', { ascending: false })
+      .limit(200);
 
     if (error || !data) return [];
 

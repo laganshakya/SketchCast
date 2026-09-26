@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X,
   Crown,
@@ -100,23 +100,12 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
     setActionToast({ message, type });
   };
 
-  if (!isOpen) return null;
-
-  // Deduplicate attendees strictly by session_id
-  const uniqueAttendees = Array.from(
-    new Map(
-      attendees
-        .filter((a) => Boolean(a && a.session_id))
-        .map((a) => [a.session_id, a])
-    ).values()
-  );
-
-  const isAttendeeOwner = (att: AttendeePresence) => {
+  const isAttendeeOwner = useCallback((att: AttendeePresence) => {
     if (!room || !room.host_name) return false;
     return att.name.trim().toLowerCase() === room.host_name.trim().toLowerCase();
-  };
+  }, [room]);
 
-  const isAttendeeAdmin = (att: AttendeePresence) => {
+  const isAttendeeAdmin = useCallback((att: AttendeePresence) => {
     if (isAttendeeOwner(att)) return true;
     if (room && Array.isArray(room.admins)) {
       return room.admins.some(
@@ -124,29 +113,41 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
       );
     }
     return att.role === 'host';
-  };
+  }, [isAttendeeOwner, room]);
 
-  // Sort: Host first, then Co-Admins, then Alphabetically
-  const sortedAttendees = [...uniqueAttendees].sort((a, b) => {
-    const aOwner = isAttendeeOwner(a);
-    const bOwner = isAttendeeOwner(b);
-    if (aOwner && !bOwner) return -1;
-    if (!aOwner && bOwner) return 1;
+  // Deduplicate and sort: Host first, then Co-Admins, then Alphabetically
+  const sortedAttendees = useMemo(() => {
+    const unique = Array.from(
+      new Map(
+        attendees
+          .filter((a) => Boolean(a && a.session_id))
+          .map((a) => [a.session_id, a])
+      ).values()
+    );
 
-    const aAdmin = isAttendeeAdmin(a);
-    const bAdmin = isAttendeeAdmin(b);
-    if (aAdmin && !bAdmin) return -1;
-    if (!aAdmin && bAdmin) return 1;
+    return unique.sort((a, b) => {
+      const aOwner = isAttendeeOwner(a);
+      const bOwner = isAttendeeOwner(b);
+      if (aOwner && !bOwner) return -1;
+      if (!aOwner && bOwner) return 1;
 
-    return a.name.localeCompare(b.name);
-  });
+      const aAdmin = isAttendeeAdmin(a);
+      const bAdmin = isAttendeeAdmin(b);
+      if (aAdmin && !bAdmin) return -1;
+      if (!aAdmin && bAdmin) return 1;
 
-  const filteredAttendees = sortedAttendees.filter((a) =>
-    a.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
-  );
+      return a.name.localeCompare(b.name);
+    });
+  }, [attendees, isAttendeeOwner, isAttendeeAdmin]);
+
+  const filteredAttendees = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sortedAttendees;
+    return sortedAttendees.filter((a) => a.name.toLowerCase().includes(q));
+  }, [sortedAttendees, searchQuery]);
 
   const totalOnline = Math.max(1, sortedAttendees.length);
-  const adminCount = sortedAttendees.filter(isAttendeeAdmin).length;
+  const adminCount = useMemo(() => sortedAttendees.filter(isAttendeeAdmin).length, [sortedAttendees, isAttendeeAdmin]);
   const attendeeCount = Math.max(0, totalOnline - adminCount);
 
   // Action handlers with immediate visual and audible feedback
@@ -392,7 +393,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             </div>
 
             {/* Search Filter (if > 3 attendees) */}
-            {uniqueAttendees.length > 3 && (
+            {sortedAttendees.length > 3 && (
               <div className="mb-3 relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <input

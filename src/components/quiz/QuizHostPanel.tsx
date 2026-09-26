@@ -423,15 +423,15 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
         acceptableAnswers: acceptableArr,
         options: isShort
           ? [
-              { id: 'A', text: cleanExpected },
-              { id: 'B', text: 'Other' },
-            ]
+            { id: 'A', text: cleanExpected },
+            { id: 'B', text: 'Other' },
+          ]
           : [
-              { id: 'A', text: dq.optA.trim() },
-              { id: 'B', text: dq.optB.trim() },
-              { id: 'C', text: dq.optC.trim() || 'Option C' },
-              { id: 'D', text: dq.optD.trim() || 'Option D' },
-            ],
+            { id: 'A', text: dq.optA.trim() },
+            { id: 'B', text: dq.optB.trim() },
+            { id: 'C', text: dq.optC.trim() || 'Option C' },
+            { id: 'D', text: dq.optD.trim() || 'Option D' },
+          ],
         correctOptionId: isShort ? 'A' : dq.correctOpt,
         explanation: dq.explanation.trim() || (isShort ? `Ground truth expected answer: ${cleanExpected}` : 'Correct answer verified by host.'),
         timeLimitSeconds: dq.timeLimitSeconds || (isShort ? 35 : 45),
@@ -474,7 +474,6 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
         <div className="flex items-center space-x-2">
-          <Terminal className="w-4 h-4 text-blue-400" />
           <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
             HOST QUIZ STUDIO
           </h3>
@@ -566,24 +565,22 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
-                className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                  isLive
+                className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${isLive
                     ? 'bg-blue-500/10 border-blue-500/40 shadow-sm'
                     : isCompleted
-                    ? 'bg-[#0E0E11] border-white/[0.04] opacity-60'
-                    : 'bg-[#121216] hover:bg-[#16161C] border-white/[0.06]'
-                }`}
+                      ? 'bg-[#0E0E11] border-white/[0.04] opacity-60'
+                      : 'bg-[#121216] hover:bg-[#16161C] border-white/[0.06]'
+                  }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2 mb-1.5 font-mono">
                     <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
-                        isCompleted
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${isCompleted
                           ? 'bg-[#1A1A22] text-zinc-400 border-white/[0.06]'
                           : isLive
-                          ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-[#1A1A24] text-blue-400 border-blue-500/30'
-                      }`}
+                            ? 'bg-blue-600 text-white border-blue-500'
+                            : 'bg-[#1A1A24] text-blue-400 border-blue-500/30'
+                        }`}
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
@@ -600,9 +597,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     </span>
                   </div>
                   <p
-                    className={`text-xs font-medium line-clamp-2 leading-snug font-sans ${
-                      isCompleted ? 'text-zinc-400' : 'text-zinc-200'
-                    }`}
+                    className={`text-xs font-medium line-clamp-2 leading-snug font-sans ${isCompleted ? 'text-zinc-400' : 'text-zinc-200'
+                      }`}
                   >
                     {q.question}
                   </p>
@@ -702,11 +698,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setModalTab('ai')}
-                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
-                  modalTab === 'ai'
+                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${modalTab === 'ai'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-zinc-400 hover:text-white'
-                }`}
+                  }`}
               >
                 <Bot className="w-3.5 h-3.5" />
                 <span>AI GENERATOR</span>
@@ -714,11 +709,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setModalTab('editor')}
-                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
-                  modalTab === 'editor'
+                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${modalTab === 'editor'
                     ? 'bg-[#1E1E24] text-white border border-white/[0.08]'
                     : 'text-zinc-400 hover:text-white'
-                }`}
+                  }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
                 <span>MANUAL EDITOR ({draftQuestions.length} Q)</span>
@@ -814,11 +808,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                                 setSelectedStoryUrl(null);
                               }
                             }}
-                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
-                              isSelected
+                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${isSelected
                                 ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
                                 : 'bg-[#16161A] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
-                            }`}
+                              }`}
                             title={topicItem.title}
                           >
                             {topicItem.title}
@@ -840,11 +833,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           setAiFormat('mixed');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                          aiFormat === 'mixed'
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'mixed'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-zinc-400 hover:text-white'
-                        }`}
+                          }`}
                         title="Generate a balanced combination of multiple choice and short answer questions"
                       >
                         <span>🔀 Mixed</span>
@@ -855,11 +847,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           setAiFormat('multiple_choice');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                          aiFormat === 'multiple_choice'
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'multiple_choice'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-zinc-400 hover:text-white'
-                        }`}
+                          }`}
                         title="Generate 4-option multiple-choice questions"
                       >
                         <span>🎯 Choice</span>
@@ -870,11 +861,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           setAiFormat('short_answer');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                          aiFormat === 'short_answer'
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'short_answer'
                             ? 'bg-purple-600 text-white shadow-sm'
                             : 'text-zinc-400 hover:text-white'
-                        }`}
+                          }`}
                         title="Generate short answer questions auto-graded by TypeSafe Jev-1.13"
                       >
                         <Sparkles className="w-2.5 h-2.5 text-purple-300" />
@@ -921,19 +911,17 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       playClickSound();
                       setIsAdaptiveLiveMode((prev) => !prev);
                     }}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                      isAdaptiveLiveMode
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isAdaptiveLiveMode
                         ? 'bg-purple-950/20 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.12)]'
                         : 'bg-[#16161D] border-white/[0.08] hover:border-white/[0.15]'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-2.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
-                          isAdaptiveLiveMode
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${isAdaptiveLiveMode
                             ? 'bg-purple-500/20 border-purple-500/40 text-purple-400'
                             : 'bg-white/[0.04] border-white/[0.08] text-zinc-400'
-                        }`}
+                          }`}
                       >
                         <Flame className="w-4 h-4" />
                       </div>
@@ -941,11 +929,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         <div className="text-xs font-semibold text-white flex items-center gap-1.5">
                           <span>Adaptive Live Mode</span>
                           <span
-                            className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${
-                              isAdaptiveLiveMode
+                            className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${isAdaptiveLiveMode
                                 ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
                                 : 'bg-white/[0.06] text-zinc-400'
-                            }`}
+                              }`}
                           >
                             DYNAMIC
                           </span>
@@ -956,14 +943,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       </div>
                     </div>
                     <div
-                      className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${
-                        isAdaptiveLiveMode ? 'bg-purple-600' : 'bg-[#26262F]'
-                      }`}
+                      className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${isAdaptiveLiveMode ? 'bg-purple-600' : 'bg-[#26262F]'
+                        }`}
                     >
                       <div
-                        className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          isAdaptiveLiveMode ? 'translate-x-4' : 'translate-x-0'
-                        }`}
+                        className={`w-4 h-4 rounded-full bg-white transition-transform ${isAdaptiveLiveMode ? 'translate-x-4' : 'translate-x-0'
+                          }`}
                       />
                     </div>
                   </div>
@@ -981,11 +966,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <button
                   type="submit"
                   disabled={isGeneratingAI}
-                  className={`w-full py-2.5 text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm ${
-                    isAdaptiveLiveMode
+                  className={`w-full py-2.5 text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm ${isAdaptiveLiveMode
                       ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 border border-purple-500/40 shadow-[0_0_16px_rgba(168,85,247,0.2)]'
                       : 'bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 border border-blue-500/40'
-                  }`}
+                    }`}
                 >
                   {isAdaptiveLiveMode ? (
                     <Flame className="w-3.5 h-3.5 text-purple-200" />
@@ -998,14 +982,14 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         ? `Synthesizing Challenge 1 of ${aiCount}...`
                         : 'Generating Questions with AI...'
                       : isAdaptiveLiveMode
-                      ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
-                      : aiFormat === 'short_answer'
-                      ? `⚡ Generate ${aiCount} Short-Answer Questions (Jev)`
-                      : isGitHubRepoInput(aiInput)
-                      ? `Scan Repo & Generate ${aiCount} Questions`
-                      : aiInput.match(/https?:\/\/[^\s]+/) || selectedStoryUrl
-                      ? `Scrape & Generate ${aiCount} Questions`
-                      : `Search & Generate ${aiCount} Questions`}
+                        ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
+                        : aiFormat === 'short_answer'
+                          ? `⚡ Generate ${aiCount} Short-Answer Questions (Jev)`
+                          : isGitHubRepoInput(aiInput)
+                            ? `Scan Repo & Generate ${aiCount} Questions`
+                            : aiInput.match(/https?:\/\/[^\s]+/) || selectedStoryUrl
+                              ? `Scrape & Generate ${aiCount} Questions`
+                              : `Search & Generate ${aiCount} Questions`}
                   </span>
                 </button>
               </form>
@@ -1092,13 +1076,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           setActiveQuestionIndex(idx);
                           setModalTab('editor');
                         }}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
-                          draftQuestions.length > 1 ? 'rounded-l-xl' : 'rounded-xl'
-                        } ${
-                          isActive && modalTab === 'editor'
+                        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${draftQuestions.length > 1 ? 'rounded-l-xl' : 'rounded-xl'
+                          } ${isActive && modalTab === 'editor'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
-                        }`}
+                          }`}
                       >
                         <span>Q{idx + 1}</span>
                         {dq.questionType === 'short_answer' && (
@@ -1195,22 +1177,20 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     <button
                       type="button"
                       onClick={() => updateCurrentDraft('questionType', 'multiple_choice')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer ${
-                        currentDraft.questionType !== 'short_answer'
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer ${currentDraft.questionType !== 'short_answer'
                           ? 'bg-blue-600 text-white shadow-sm'
                           : 'text-zinc-400 hover:text-white'
-                      }`}
+                        }`}
                     >
                       Multiple Choice
                     </button>
                     <button
                       type="button"
                       onClick={() => updateCurrentDraft('questionType', 'short_answer')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                        currentDraft.questionType === 'short_answer'
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${currentDraft.questionType === 'short_answer'
                           ? 'bg-purple-600 text-white shadow-sm'
                           : 'text-zinc-400 hover:text-white'
-                      }`}
+                        }`}
                     >
                       <Sparkles className="w-2.5 h-2.5 text-purple-300" />
                       <span>Short Answer (Jev 1.13)</span>
@@ -1267,11 +1247,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => updateCurrentDraft('correctOpt', id)}
-                          className={`w-8 h-8 font-semibold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
-                            currentDraft.correctOpt === id
+                          className={`w-8 h-8 font-semibold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${currentDraft.correctOpt === id
                               ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/30'
                               : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
-                          }`}
+                            }`}
                           title="Click to designate as correct answer"
                         >
                           {id}

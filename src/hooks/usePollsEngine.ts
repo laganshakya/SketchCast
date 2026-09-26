@@ -137,11 +137,44 @@ export function usePollsEngine({
       });
     });
 
+    const unVoteDelta = channelManager.on('poll_vote_delta', ({ pollId, optionId, prevOptionId, voterSession }) => {
+      if (voterSession === sessionId) return;
+
+      setPolls((currentPolls) => {
+        const nextPolls = currentPolls.map((poll) => {
+          if (poll.id !== pollId) return poll;
+          const updatedOptions = poll.options.map((opt) => {
+            if (optionId && opt.id === optionId) {
+              return { ...opt, votesCount: opt.votesCount + 1 };
+            }
+            if (prevOptionId && opt.id === prevOptionId) {
+              return { ...opt, votesCount: Math.max(0, opt.votesCount - 1) };
+            }
+            return opt;
+          });
+          const recalculatedTotal = updatedOptions.reduce((acc, opt) => acc + opt.votesCount, 0);
+          return {
+            ...poll,
+            totalVotes: Math.max(0, recalculatedTotal),
+            options: updatedOptions,
+          };
+        });
+        pollsRef.current = nextPolls;
+        try {
+          localStorage.setItem(pollStorageKey, JSON.stringify(nextPolls));
+        } catch {
+          // ignore
+        }
+        return nextPolls;
+      });
+    });
+
     return () => {
       unPolls();
       unReset();
+      unVoteDelta();
     };
-  }, [channelManager, pollStorageKey, voteStorageKey, voteNameStorageKey]);
+  }, [channelManager, pollStorageKey, sessionId, voteStorageKey, voteNameStorageKey]);
 
   const persistPolls = useCallback(
     (newPolls: LivePoll[]) => {
@@ -245,7 +278,14 @@ export function usePollsEngine({
         });
 
         persistPolls(nextPolls);
-        if (channelManager) channelManager.broadcast('poll_update', nextPolls);
+        if (channelManager) {
+          channelManager.broadcast('poll_vote_delta', {
+            pollId,
+            optionId: '',
+            prevOptionId: optionId,
+            voterSession: sessionId,
+          });
+        }
 
         // Atomic DB mutation via stored procedure with fallback
         dbVoteOnPoll(pollId, null, optionId).then((serverPoll) => {
@@ -292,8 +332,14 @@ export function usePollsEngine({
 
       persistPolls(nextPolls);
 
+      // Lightweight Delta Broadcasting: Only send delta (+1 / -1) rather than entire array
       if (channelManager) {
-        channelManager.broadcast('poll_update', nextPolls);
+        channelManager.broadcast('poll_vote_delta', {
+          pollId,
+          optionId,
+          prevOptionId: currentVotedOption || null,
+          voterSession: sessionId,
+        });
       }
 
       // Atomic DB mutation via stored procedure with fallback
@@ -305,7 +351,7 @@ export function usePollsEngine({
         if (targetUpdatedPoll) dbUpdatePoll(targetUpdatedPoll);
       });
     },
-    [channelManager, persistPolls, persistUserVotes]
+    [channelManager, persistPolls, persistUserVotes, sessionId]
   );
 
   // Admin: Reset all votes for a poll back to 0 so attendees can vote again

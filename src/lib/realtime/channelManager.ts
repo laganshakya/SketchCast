@@ -28,6 +28,7 @@ export type RealtimeEventMap = {
   leaderboard_update: LeaderboardEntry[];
   poll_update: LivePoll[];
   poll_vote: { pollId: string; optionId: string; voterSession: string };
+  poll_vote_delta: { pollId: string; optionId: string; prevOptionId?: string | null; voterSession: string };
   poll_reset: { pollId: string };
   question_list: Question[];
   question_upvote: { questionId: string; upvotesCount: number; voterSession: string };
@@ -79,6 +80,7 @@ export type RealtimeEventMap = {
   survey_response_submit: { surveyId: string; response: SurveyResponse };
   survey_launched_alert: { surveyId: string; surveyTitle: string; launchedBy: string; timestamp: number };
   audience_reaction: AudienceReaction;
+  reaction_batch: { emoji: string; count: number; senderName?: string; timestamp: number };
   session_report_published: { reportMarkdown: string; generatedAt: number; publishedBy: string };
   qa_cluster_update: QuestionCluster[];
   room_audio_pack_update: { pack: 'arcade' | 'hifi'; updatedBy: string };
@@ -183,6 +185,7 @@ export class RealtimeChannelManager {
       'leaderboard_update',
       'poll_update',
       'poll_vote',
+      'poll_vote_delta',
       'poll_reset',
       'question_list',
       'question_upvote',
@@ -199,9 +202,11 @@ export class RealtimeChannelManager {
       'survey_response_submit',
       'survey_launched_alert',
       'audience_reaction',
+      'reaction_batch',
       'session_report_published',
       'qa_cluster_update',
       'room_audio_pack_update',
+      'quiz_completed',
     ];
 
     broadcastEvents.forEach((ev) => {
@@ -214,25 +219,25 @@ export class RealtimeChannelManager {
       );
     });
 
-    // 2. PostgreSQL CDC Table Change Listeners (Realtime DB Sync)
+    // 2. PostgreSQL CDC Table Change Listeners (High-Performance Debounced Sync)
+    // NOTE: High-churn tables ('room_attendees' and 'leaderboard') are intentionally omitted
+    // from CDC listeners to eliminate catastrophic O(N^2) thundering herd query storms for 100-200+ users.
+    // Presence is 100% managed via Elixir Phoenix in-memory channel presence (0 DB queries).
     this.supabaseChannel
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'room_attendees' },
-        async (payload: any) => {
-          if (
-            (payload.new && payload.new.room_code === this.roomId) ||
-            (payload.old && payload.old.room_code === this.roomId)
-          ) {
-            this.syncFromDatabasePresence();
-          }
-        }
-      )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'quiz_rounds' },
         (payload: any) => {
-          if (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) {
+          const targetKey = this.roomId.toUpperCase().trim();
+          const newRoomId = (payload.new?.room_id || '').toUpperCase().trim();
+          const isMatch =
+            payload.new &&
+            (newRoomId === targetKey ||
+              newRoomId === `ROOM-${targetKey}` ||
+              targetKey === `ROOM-${newRoomId}` ||
+              newRoomId.replace(/^ROOM-/, '') === targetKey.replace(/^ROOM-/, ''));
+
+          if (isMatch) {
             const round = payload.new;
             const state: QuizRoundState = {
               isActive: round.is_active,
@@ -242,8 +247,12 @@ export class RealtimeChannelManager {
               isRevealed: round.is_revealed,
               userSelectedOption: null,
               isCorrect: null,
-
               votesDistribution: round.votes_distribution || { A: 0, B: 0, C: 0, D: 0 },
+              autoAdvanceAt: round.auto_advance_at ? Number(round.auto_advance_at) : null,
+              isAutoAdvancePaused: Boolean(round.is_auto_advance_paused),
+              autoAdvanceRemaining: round.auto_advance_at ? Math.max(0, Math.ceil((Number(round.auto_advance_at) - Date.now()) / 1000)) : 5,
+              isAdaptiveCampaign: round.quiz_type === 'adaptive',
+              adaptiveProgress: round.adaptive_meta?.progress || undefined,
               updatedAt: round.created_at ? new Date(round.created_at).getTime() : Date.now(),
             };
             this.emitLocal('quiz_round_state', state);
@@ -253,58 +262,46 @@ export class RealtimeChannelManager {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'polls' },
-        async (payload: any) => {
+        (payload: any) => {
           if (
             (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) ||
             (payload.old && (payload.old.room_id === this.roomId || payload.old.room_id === `room-${this.roomId}`))
           ) {
-            const polls = await dbFetchPolls(this.roomId);
-            if (polls) this.emitLocal('poll_update', polls);
+            this.debouncedSyncPolls();
           }
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'questions' },
-        async (payload: any) => {
+        (payload: any) => {
           if (
             (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) ||
             (payload.old && (payload.old.room_id === this.roomId || payload.old.room_id === `room-${this.roomId}`))
           ) {
-            const questions = await dbFetchQuestions(this.roomId);
-            if (questions) this.emitLocal('question_list', questions);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'leaderboard' },
-        async (payload: any) => {
-          if (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) {
-            const board = await dbFetchLeaderboard(this.roomId);
-            if (board) this.emitLocal('leaderboard_update', board);
+            this.debouncedSyncQuestions();
           }
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'surveys' },
-        async (payload: any) => {
+        (payload: any) => {
           if (
             (payload.new && (payload.new.room_id === this.roomId || payload.new.room_id === `room-${this.roomId}`)) ||
             (payload.old && (payload.old.room_id === this.roomId || payload.old.room_id === `room-${this.roomId}`))
           ) {
-            const surveys = await dbFetchSurveys(this.roomId);
-            if (surveys) this.emitLocal('survey_list_update', surveys);
+            this.debouncedSyncSurveys();
           }
         }
       );
 
-    // 3. Supabase In-Memory Presence Handlers
+    // 3. Supabase In-Memory Presence Handlers (Pure Elixir Memory CRDT - 0 DB queries)
     const handlePresenceState = () => {
       if (!this.supabaseChannel) return;
       const state = this.supabaseChannel.presenceState();
       
+      const nextPresenceMap = new Map<string, AttendeePresence>();
       for (const key in state) {
         const presences = state[key] as any[];
         if (presences && Array.isArray(presences)) {
@@ -318,16 +315,17 @@ export class RealtimeChannelManager {
                 joined_at: p.joined_at || Date.now(),
                 last_active: p.last_active || Date.now(),
               };
-              this.presenceList.set(sid, presenceObj);
+              nextPresenceMap.set(sid, presenceObj);
             }
           });
         }
       }
 
       if (this.myPresence) {
-        this.presenceList.set(this.myPresence.session_id, this.myPresence);
+        nextPresenceMap.set(this.myPresence.session_id, this.myPresence);
       }
 
+      this.presenceList = nextPresenceMap;
       this.emitPresenceSync();
     };
 
@@ -340,18 +338,19 @@ export class RealtimeChannelManager {
           this.isSubscribed = true;
           this.flushOutgoingQueue();
 
-          // Track presence immediately upon subscription
+          // Track presence in-memory immediately upon subscription
           if (this.myPresence) {
             try {
               await this.supabaseChannel.track(this.myPresence);
-              this.broadcast('presence_ping', this.myPresence);
             } catch {
               // ignore
             }
           }
 
-          // Initial DB presence and state sync
-          this.syncAllFromDatabase();
+          // Initial DB state hydration with slight randomized delay to avoid scan stampede
+          setTimeout(() => {
+            this.syncAllFromDatabase();
+          }, Math.floor(Math.random() * 600));
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           this.isSubscribed = false;
         }
@@ -377,23 +376,45 @@ export class RealtimeChannelManager {
   }
 
   // --- LAYER 2: Presence Heartbeat & Event-Driven Sync Engine ---
+  private syncDebounceMap: Map<string, number> = new Map();
+  private presenceSyncTimer: number | null = null;
+
+  public debouncedSyncPolls() {
+    this.scheduleDebouncedFetch('polls', () => this.syncPollsFromDatabase(), 600);
+  }
+
+  public debouncedSyncQuestions() {
+    this.scheduleDebouncedFetch('questions', () => this.syncQuestionsFromDatabase(), 600);
+  }
+
+  public debouncedSyncSurveys() {
+    this.scheduleDebouncedFetch('surveys', () => this.syncSurveysFromDatabase(), 800);
+  }
+
+  private scheduleDebouncedFetch(key: string, fetchFn: () => Promise<void>, delayMs: number) {
+    if (typeof window === 'undefined') return;
+    const existing = this.syncDebounceMap.get(key);
+    if (existing) {
+      window.clearTimeout(existing);
+    }
+    const timer = window.setTimeout(async () => {
+      this.syncDebounceMap.delete(key);
+      try {
+        await fetchFn();
+      } catch {
+        // ignore
+      }
+    }, delayMs);
+    this.syncDebounceMap.set(key, timer);
+  }
+
   private startAdaptivePulseEngine() {
     if (typeof window !== 'undefined') {
       const presenceHeartbeat = () => {
         try {
           this.ensureConnected();
 
-          // 1. Lightweight presence heartbeat to Postgres DB table
-          if (this.myPresence) {
-            dbUpsertAttendeePresence(
-              this.roomId,
-              this.myPresence.session_id,
-              this.myPresence.name,
-              this.myPresence.role
-            );
-          }
-
-          // 2. Track to Supabase WebSocket channel
+          // In-memory WebSocket track (Pure Phoenix channel - Zero DB queries)
           if (this.myPresence && this.supabaseChannel && this.isSubscribed) {
             this.supabaseChannel.track(this.myPresence).catch(() => {});
           }
@@ -402,19 +423,23 @@ export class RealtimeChannelManager {
         }
       };
 
-      // Initial comprehensive state sync on joining room
-      this.syncAllFromDatabase();
+      // Initial state sync with slight randomized stagger to prevent QR scan stampedes
+      const initialDelay = Math.floor(Math.random() * 400);
+      window.setTimeout(() => {
+        this.syncAllFromDatabase();
+      }, initialDelay);
       presenceHeartbeat();
 
-      // Lightweight presence heartbeat every 15 seconds (eliminates 4-second multi-table polling storm)
-      this.pulseTimer = window.setInterval(presenceHeartbeat, 15000);
+      // Lightweight WebSocket presence refresh every 30 seconds (zero DB load)
+      this.pulseTimer = window.setInterval(presenceHeartbeat, 30000);
 
-      // Periodic slow drift reconciliation (every 60s) to guarantee synchronization under network jitter
+      // Periodic slow drift reconciliation (75s with ±10s randomized jitter to avoid synchronized thundering herds)
+      const jitter = Math.floor((Math.random() - 0.5) * 20000);
       const driftTimer = window.setInterval(() => {
         if (!this.isSubscribed || document.visibilityState === 'visible') {
           this.syncAllFromDatabase();
         }
-      }, 60000);
+      }, 75000 + jitter);
 
       // Sync immediately when window gets focus or tab becomes visible
       const onFocusOrVisible = () => {
@@ -445,6 +470,10 @@ export class RealtimeChannelManager {
     if (this.pulseTimer) {
       window.clearInterval(this.pulseTimer);
       this.pulseTimer = null;
+    }
+    if (this.presenceSyncTimer) {
+      window.clearTimeout(this.presenceSyncTimer);
+      this.presenceSyncTimer = null;
     }
   }
 
@@ -539,8 +568,17 @@ export class RealtimeChannelManager {
   }
 
   private emitPresenceSync() {
-    const users = Array.from(this.presenceList.values());
-    this.emitLocal('presence_sync', users);
+    if (this.presenceSyncTimer) return;
+    if (typeof window !== 'undefined') {
+      this.presenceSyncTimer = window.setTimeout(() => {
+        this.presenceSyncTimer = null;
+        const users = Array.from(this.presenceList.values());
+        this.emitLocal('presence_sync', users);
+      }, 80);
+    } else {
+      const users = Array.from(this.presenceList.values());
+      this.emitLocal('presence_sync', users);
+    }
   }
 
   public on<K extends EventKey>(event: K, callback: EventCallback<K>) {
@@ -581,9 +619,6 @@ export class RealtimeChannelManager {
       const senderPresence = payload as AttendeePresence;
       if (senderPresence && senderPresence.session_id) {
         this.presenceList.set(senderPresence.session_id, senderPresence);
-        if (this.myPresence && senderPresence.session_id !== this.myPresence.session_id) {
-          this.broadcast('presence_pong', this.myPresence);
-        }
         this.emitPresenceSync();
       }
     } else if (event === 'presence_pong') {
@@ -649,13 +684,10 @@ export class RealtimeChannelManager {
     this.presenceList.set(presence.session_id, presence);
     this.emitPresenceSync();
 
-    // 1. DB Heartbeat
+    // 1. Initial single DB registration on join (fire-and-forget)
     dbUpsertAttendeePresence(this.roomId, presence.session_id, presence.name, presence.role);
 
-    // 2. Realtime WebSocket Broadcast Ping
-    this.broadcast('presence_ping', presence);
-
-    // 3. Supabase WebSocket Track
+    // 2. Pure Elixir Phoenix in-memory channel presence (zero DB writes)
     if (this.supabaseChannel && isSupabaseConfigured) {
       try {
         this.supabaseChannel.track(presence).catch(() => {});

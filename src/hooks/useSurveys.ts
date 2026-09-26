@@ -425,7 +425,6 @@ export function useSurveys(
             surveyId,
             response,
           });
-          channelManager.broadcast('survey_list_update', updated);
         }
 
         return updated;

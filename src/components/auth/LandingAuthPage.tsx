@@ -54,6 +54,15 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
     }
     return roomCode || 'SKT-789';
   });
+
+  const [prevRoomCodeProp, setPrevRoomCodeProp] = useState(roomCode);
+  if (roomCode !== prevRoomCodeProp) {
+    setPrevRoomCodeProp(roomCode);
+    if (roomCode) {
+      setRoomKey(roomCode.toUpperCase().trim());
+    }
+  }
+
   const [showQRPreview, setShowQRPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

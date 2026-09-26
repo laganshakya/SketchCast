@@ -28,6 +28,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
   const [targetRoomCode, setTargetRoomCode] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [myRooms, setMyRooms] = useState<Room[]>([]);
+  const [allAvailableRooms, setAllAvailableRooms] = useState<Room[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
 
   useEffect(() => {
@@ -39,11 +40,13 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
     dbFetchRooms()
       .then((allRooms) => {
         if (isCancelled) return;
+        setAllAvailableRooms(allRooms);
         const owned = allRooms.filter((r) => isUserRoomAdmin(r, currentUser, userName));
         setMyRooms(owned);
       })
       .catch(() => {
         if (isCancelled) return;
+        setAllAvailableRooms([]);
         setMyRooms([]);
       })
       .finally(() => {
@@ -72,6 +75,10 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
     }
     if (cleanCode === currentRoomCode.toUpperCase().trim()) {
       setErrorMessage(`You are already in Room [${cleanCode}].`);
+      return;
+    }
+    if (allAvailableRooms.length > 0 && !allAvailableRooms.some((r) => (r.code || '').toUpperCase() === cleanCode)) {
+      setErrorMessage(`Room [${cleanCode}] does not exist in the database.`);
       return;
     }
     handleClose();

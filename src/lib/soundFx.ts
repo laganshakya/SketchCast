@@ -85,11 +85,18 @@ export function onAudioPackChange(callback: (pack: AudioPackType) => void): () =
   return () => packChangeListeners.delete(callback);
 }
 
+let lastClickTime = 0;
+let lastPopTime = 0;
+
 /**
  * Tactile button click sound
  */
 export function playClickSound(pitchFactor: number = 1.0): void {
   if (isMuted) return;
+  const nowMs = Date.now();
+  if (nowMs - lastClickTime < 45) return;
+  lastClickTime = nowMs;
+
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -135,6 +142,10 @@ export function playClickSound(pitchFactor: number = 1.0): void {
  */
 export function playPopSound(): void {
   if (isMuted) return;
+  const nowMs = Date.now();
+  if (nowMs - lastPopTime < 50) return;
+  lastPopTime = nowMs;
+
   try {
     const ctx = getAudioContext();
     if (!ctx) return;

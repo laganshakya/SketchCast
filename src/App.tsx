@@ -473,10 +473,17 @@ export function App() {
 
   // Handle switching rooms from Rooms Admin Hub or ChangeRoomModal
   const handleSwitchRoom = async (newCode: string, newTitle?: string) => {
-    const isOwner = isRoomCreatedByMe(newCode);
+    const cleanCode = newCode.toUpperCase().trim();
+    const isOwner = isRoomCreatedByMe(cleanCode);
     const targetRole = isOwner ? 'host' : userRole;
-    await handleAuthenticated(userName, targetRole, newCode, newTitle);
+    await handleAuthenticated(userName, targetRole, cleanCode, newTitle);
     setActiveTab('quiz');
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', cleanCode);
+      url.hash = 'quiz';
+      window.history.replaceState(null, '', url.toString());
+    }
   };
 
   const handleOpenQRForRoom = (code: string, title: string) => {
@@ -498,8 +505,13 @@ export function App() {
       if (stored) {
         const queue = JSON.parse(stored);
         if (Array.isArray(queue) && queue.length > 0) {
-          const currentId = quizState.question?.id;
-          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
+          const currentId = quizState.question?.id ? String(quizState.question.id).trim().toLowerCase() : '';
+          const currentText = quizState.question?.question ? quizState.question.question.trim().toLowerCase() : '';
+          const currentIndex = queue.findIndex(
+            (q: any) =>
+              (currentId && q && q.id && String(q.id).trim().toLowerCase() === currentId) ||
+              (currentText && q && q.question && q.question.trim().toLowerCase() === currentText)
+          );
           return currentIndex >= 0 && currentIndex + 1 < queue.length;
         }
       }
@@ -545,14 +557,15 @@ export function App() {
       if (stored) {
         const queue = JSON.parse(stored);
         if (Array.isArray(queue) && queue.length > 0) {
-          const currentId = quizState.question?.id;
-          const currentIndex = queue.findIndex((q: any) => q.id === currentId);
+          const currentId = quizState.question?.id ? String(quizState.question.id).trim().toLowerCase() : '';
+          const currentText = quizState.question?.question ? quizState.question.question.trim().toLowerCase() : '';
+          const currentIndex = queue.findIndex(
+            (q: any) =>
+              (currentId && q && q.id && String(q.id).trim().toLowerCase() === currentId) ||
+              (currentText && q && q.question && q.question.trim().toLowerCase() === currentText)
+          );
           if (currentIndex >= 0 && currentIndex + 1 < queue.length) {
             startQuizRound(queue[currentIndex + 1]);
-            return;
-          }
-          if (currentIndex === -1) {
-            startQuizRound(queue[0]);
             return;
           }
         }

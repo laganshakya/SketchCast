@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Question, QuestionStatus } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import {
@@ -142,8 +142,21 @@ export function useQAFeed({
     }
   }, [sessionId, userName, currentRoomKey]);
 
+  const questionsRef = useRef(questions);
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
+  const upvoteCooldownRef = useRef<Map<string, number>>(new Map());
+
   const toggleUpvote = useCallback(
     (questionId: string) => {
+      const now = Date.now();
+      const lastClicked = upvoteCooldownRef.current.get(questionId) || 0;
+      if (now - lastClicked < 200) {
+        return; // anti-macro cooldown (200ms)
+      }
+      upvoteCooldownRef.current.set(questionId, now);
+
       const hasUpvoted = upvotedIds.has(questionId);
       const delta = hasUpvoted ? -1 : 1;
       const nextUpvoted = new Set(upvotedIds);
@@ -155,28 +168,23 @@ export function useQAFeed({
       }
       persistUpvotes(nextUpvoted);
 
-      // Optimistic local update
-      setQuestions((prev) => {
-        const next = prev.map((q) => {
-          if (q.id === questionId) {
-            const newCount = Math.max(0, q.upvotes_count + delta);
-            if (channelManager) {
-              channelManager.broadcast('question_upvote', {
-                questionId,
-                upvotesCount: newCount,
-                voterSession: sessionId,
-              });
-            }
-            return { ...q, upvotes_count: newCount };
-          }
-          return q;
-        });
+      const target = questionsRef.current.find((q) => q.id === questionId);
+      const currentCount = target ? target.upvotes_count : 0;
+      const newCount = Math.max(0, currentCount + delta);
 
-        if (channelManager) {
-          channelManager.broadcast('question_list', next);
-        }
-        return next;
-      });
+      // Optimistic local update
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === questionId ? { ...q, upvotes_count: newCount } : q))
+      );
+
+      // Scalable delta broadcast: ONLY broadcast the single question upvote count
+      if (channelManager) {
+        channelManager.broadcast('question_upvote', {
+          questionId,
+          upvotesCount: newCount,
+          voterSession: sessionId,
+        });
+      }
 
       // Atomic DB increment via stored procedure with fallback
       dbIncrementQuestionUpvote(questionId, delta).then((serverCount) => {

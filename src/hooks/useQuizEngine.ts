@@ -19,7 +19,6 @@ import {
   dbFetchActiveQuizRound,
   dbSaveActiveQuizRound,
   dbUpdateQuizRoundReveal,
-  dbIncrementQuizVote,
 } from '../lib/supabase';
 
 export const DIFFICULTY_TIERS: DifficultyTier[] = ['Junior', 'Mid', 'Senior', 'Principal'];
@@ -135,12 +134,23 @@ export function useQuizEngine({
   const autoAdvanceStorageKey = `sketchcast_host_autoadvance_${currentRoomKey}`;
   const [isAutoAdvanceEnabled, setIsAutoAdvanceEnabled] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem(autoAdvanceStorageKey);
+      const stored = localStorage.getItem(autoAdvanceStorageKey) ?? localStorage.getItem('sketchcast_host_autoadvance');
       return stored !== null ? JSON.parse(stored) : true;
     } catch {
       return true;
     }
   });
+
+  const [prevAutoAdvanceStorageKey, setPrevAutoAdvanceStorageKey] = useState(autoAdvanceStorageKey);
+  if (prevAutoAdvanceStorageKey !== autoAdvanceStorageKey) {
+    setPrevAutoAdvanceStorageKey(autoAdvanceStorageKey);
+    try {
+      const stored = localStorage.getItem(autoAdvanceStorageKey) ?? localStorage.getItem('sketchcast_host_autoadvance');
+      setIsAutoAdvanceEnabled(stored !== null ? JSON.parse(stored) : true);
+    } catch {
+      setIsAutoAdvanceEnabled(true);
+    }
+  }
 
   const onAutoAdvanceRef = useRef(onAutoAdvance);
   useEffect(() => {
@@ -166,6 +176,7 @@ export function useQuizEngine({
   }, [adaptiveCampaign]);
 
   const pendingAdvanceRef = useRef<boolean>(false);
+  const recordedRoundScoreRef = useRef<string | null>(null);
 
   const [timeRemaining, setTimeRemaining] = useState<number>(25);
 
@@ -194,8 +205,16 @@ export function useQuizEngine({
               }
             : cleanRemoteVotes;
 
+          let effectiveAutoAdvanceAt: number | null = null;
+          if (typeof remoteRound.autoAdvanceAt === 'number') {
+            effectiveAutoAdvanceAt = remoteRound.autoAdvanceAt;
+          } else if (isSameQuestion && prev.isRevealed && prev.autoAdvanceAt) {
+            effectiveAutoAdvanceAt = isAutoAdvanceEnabled ? prev.autoAdvanceAt : null;
+          }
+
           return {
             ...remoteRound,
+            autoAdvanceAt: effectiveAutoAdvanceAt,
             userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
             isCorrect: isSameQuestion ? prev.isCorrect : null,
             votesDistribution: mergedVotes,
@@ -219,7 +238,7 @@ export function useQuizEngine({
         });
       }
     });
-  }, [currentRoomKey]);
+  }, [currentRoomKey, isAutoAdvanceEnabled]);
 
   // When roomCode switches, immediately reset quiz state and clear previous room's voted users
   const [prevRoomKey, setPrevRoomKey] = useState(currentRoomKey);
@@ -300,8 +319,22 @@ export function useQuizEngine({
             }
           : cleanRemoteVotes;
 
-        const next = {
+        let effectiveAutoAdvanceAt: number | null = null;
+        if (typeof remoteState.autoAdvanceAt === 'number') {
+          effectiveAutoAdvanceAt = remoteState.autoAdvanceAt;
+        } else if (isSameQuestion && prev.isRevealed && prev.autoAdvanceAt) {
+          effectiveAutoAdvanceAt = isAutoAdvanceEnabled ? prev.autoAdvanceAt : null;
+        }
+
+        const effectivePaused =
+          typeof remoteState.isAutoAdvancePaused === 'boolean'
+            ? remoteState.isAutoAdvancePaused
+            : (isSameQuestion ? prev.isAutoAdvancePaused : false);
+
+        const next: QuizRoundState = {
           ...remoteState,
+          autoAdvanceAt: effectiveAutoAdvanceAt,
+          isAutoAdvancePaused: effectivePaused,
           userSelectedOption: isSameQuestion ? prev.userSelectedOption : null,
           isCorrect: isSameQuestion ? prev.isCorrect : null,
           votesDistribution: mergedVotes,
@@ -358,13 +391,6 @@ export function useQuizEngine({
         }
         return updated;
       });
-
-      // Refetch latest leaderboard from database to sync all players
-      dbFetchLeaderboard(currentRoomKey).then((remoteBoard) => {
-        if (remoteBoard && remoteBoard.length > 0) {
-          setLeaderboard(remoteBoard);
-        }
-      });
     });
 
     return () => {
@@ -372,7 +398,7 @@ export function useQuizEngine({
       unQuizVote();
       unLeaderboard();
     };
-  }, [channelManager, currentRoomKey, quizStorageKey]);
+  }, [channelManager, currentRoomKey, quizStorageKey, isAutoAdvanceEnabled]);
 
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
@@ -388,6 +414,7 @@ export function useQuizEngine({
       votedUsersRef.current.clear();
       hasAutoAdvancedRef.current = false;
       pendingAdvanceRef.current = false;
+      recordedRoundScoreRef.current = null;
       setAutoAdvanceCountdown(5);
 
       const campaign = adaptiveCampaignRef.current;
@@ -598,6 +625,7 @@ export function useQuizEngine({
   const revealAnswer = useCallback(() => {
     const campaign = adaptiveCampaignRef.current;
     const hasFollowUp = campaign && campaign.isActive && campaign.currentQuestionIndex < campaign.totalQuestions;
+    hasAutoAdvancedRef.current = false;
 
     setQuizState((prev) => {
       const autoAdvanceAt = isAutoAdvanceEnabled ? Date.now() + 5000 : null;
@@ -617,7 +645,8 @@ export function useQuizEngine({
       }
 
       if (prev.question) {
-        dbUpdateQuizRoundReveal(prev.question.id);
+        dbUpdateQuizRoundReveal(prev.question.id, autoAdvanceAt);
+        dbSaveActiveQuizRound(updated, currentRoomKey);
       }
 
       if (channelManager) {
@@ -728,6 +757,7 @@ export function useQuizEngine({
     quizState.votesDistribution,
     adaptiveCampaignStorageKey,
     launchNextAdaptiveQuestion,
+    currentRoomKey,
   ]);
 
   const toggleAutoAdvance = useCallback(
@@ -737,8 +767,13 @@ export function useQuizEngine({
         const next = typeof forced === 'boolean' ? forced : !prev;
         try {
           localStorage.setItem(autoAdvanceStorageKey, JSON.stringify(next));
+          localStorage.setItem('sketchcast_host_autoadvance', JSON.stringify(next));
         } catch {
           // ignore
+        }
+
+        if (next) {
+          hasAutoAdvancedRef.current = false;
         }
 
         // If toggling while a question is currently revealed:
@@ -749,7 +784,7 @@ export function useQuizEngine({
             ...currentState,
             autoAdvanceAt,
             isAutoAdvancePaused: false,
-            autoAdvanceRemaining: 5,
+            autoAdvanceRemaining: next ? 5 : 0,
             updatedAt: Date.now(),
           };
           try {
@@ -760,13 +795,17 @@ export function useQuizEngine({
           if (channelManager) {
             channelManager.broadcast('quiz_round_state', updated);
           }
+          if (currentState.question) {
+            dbUpdateQuizRoundReveal(currentState.question.id, autoAdvanceAt);
+            dbSaveActiveQuizRound(updated, currentRoomKey);
+          }
           return updated;
         });
 
         return next;
       });
     },
-    [userRole, autoAdvanceStorageKey, quizStorageKey, channelManager]
+    [userRole, autoAdvanceStorageKey, quizStorageKey, channelManager, currentRoomKey]
   );
 
   const pauseAutoAdvance = useCallback(() => {
@@ -788,12 +827,16 @@ export function useQuizEngine({
       if (channelManager) {
         channelManager.broadcast('quiz_round_state', updated);
       }
+      if (prev.question) {
+        dbSaveActiveQuizRound(updated, currentRoomKey);
+      }
       return updated;
     });
-  }, [userRole, quizStorageKey, channelManager]);
+  }, [userRole, quizStorageKey, channelManager, currentRoomKey]);
 
   const resumeAutoAdvance = useCallback(() => {
     if (userRole !== 'host') return;
+    hasAutoAdvancedRef.current = false;
     setQuizState((prev) => {
       if (!prev.isRevealed) return prev;
       const remainingSec = prev.autoAdvanceRemaining && prev.autoAdvanceRemaining > 0 ? prev.autoAdvanceRemaining : 5;
@@ -812,9 +855,13 @@ export function useQuizEngine({
       if (channelManager) {
         channelManager.broadcast('quiz_round_state', updated);
       }
+      if (prev.question) {
+        dbUpdateQuizRoundReveal(prev.question.id, autoAdvanceAt);
+        dbSaveActiveQuizRound(updated, currentRoomKey);
+      }
       return updated;
     });
-  }, [userRole, quizStorageKey, channelManager]);
+  }, [userRole, quizStorageKey, channelManager, currentRoomKey]);
 
   // Round countdown timer loop - strictly attendee-local timing
   useEffect(() => {
@@ -841,6 +888,56 @@ export function useQuizEngine({
     }
   }, [quizState.isActive, quizState.endTime, quizState.isRevealed, revealAnswer, userRole]);
 
+  // Self-healing: If host has auto-advance enabled on an active revealed round, ensure autoAdvanceAt is scheduled
+  useEffect(() => {
+    if (
+      userRole === 'host' &&
+      isAutoAdvanceEnabled &&
+      quizState.isActive &&
+      quizState.isRevealed &&
+      !quizState.autoAdvanceAt &&
+      !quizState.isAutoAdvancePaused &&
+      !hasAutoAdvancedRef.current
+    ) {
+      const autoAdvanceAt = Date.now() + 5000;
+      setQuizState((prev) => {
+        if (!prev.isActive || !prev.isRevealed || prev.autoAdvanceAt || prev.isAutoAdvancePaused) {
+          return prev;
+        }
+        const updated: QuizRoundState = {
+          ...prev,
+          autoAdvanceAt,
+          isAutoAdvancePaused: false,
+          autoAdvanceRemaining: 5,
+          updatedAt: Date.now(),
+        };
+        try {
+          localStorage.setItem(quizStorageKey, JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        if (channelManager) {
+          channelManager.broadcast('quiz_round_state', updated);
+        }
+        if (prev.question) {
+          dbUpdateQuizRoundReveal(prev.question.id, autoAdvanceAt);
+          dbSaveActiveQuizRound(updated, currentRoomKey);
+        }
+        return updated;
+      });
+    }
+  }, [
+    userRole,
+    isAutoAdvanceEnabled,
+    quizState.isActive,
+    quizState.isRevealed,
+    quizState.autoAdvanceAt,
+    quizState.isAutoAdvancePaused,
+    quizStorageKey,
+    channelManager,
+    currentRoomKey,
+  ]);
+
   // Auto-advance review countdown effect (5 seconds after reveal)
   useEffect(() => {
     if (quizState.isActive && quizState.isRevealed) {
@@ -852,6 +949,28 @@ export function useQuizEngine({
       }
 
       if (quizState.autoAdvanceAt) {
+        // If the timestamp is far in the past (>15s ago, e.g. from an old page reload), reschedule fresh 5s window
+        if (
+          quizState.autoAdvanceAt < Date.now() - 15000 &&
+          !hasAutoAdvancedRef.current &&
+          userRole === 'host' &&
+          isAutoAdvanceEnabled
+        ) {
+          const freshAdvanceAt = Date.now() + 5000;
+          setQuizState((prev) => {
+            const next = { ...prev, autoAdvanceAt: freshAdvanceAt, updatedAt: Date.now() };
+            if (prev.question) {
+              dbUpdateQuizRoundReveal(prev.question.id, freshAdvanceAt);
+              dbSaveActiveQuizRound(next, currentRoomKey);
+            }
+            if (channelManager) {
+              channelManager.broadcast('quiz_round_state', next);
+            }
+            return next;
+          });
+          return;
+        }
+
         const updateAdvanceTimer = () => {
           const remaining = Math.max(0, Math.ceil((quizState.autoAdvanceAt! - Date.now()) / 1000));
           setAutoAdvanceCountdown(remaining);
@@ -910,8 +1029,11 @@ export function useQuizEngine({
     quizState.isAutoAdvancePaused,
     quizState.autoAdvanceRemaining,
     userRole,
+    isAutoAdvanceEnabled,
     adaptiveCampaignStorageKey,
     launchNextAdaptiveQuestion,
+    currentRoomKey,
+    channelManager,
   ]);
 
   const selectOption = useCallback(
@@ -923,44 +1045,6 @@ export function useQuizEngine({
       votedUsersRef.current.add(sessionId);
 
       const isCorrect = quizState.question?.correctOptionId === optionId;
-
-      if (isCorrect) {
-        setLeaderboard((prev) => {
-          const cleanUserName = (userName || '').trim().toLowerCase();
-          const exists = prev.find(
-            (u) =>
-              Boolean(sessionId && u.session_id === sessionId) ||
-              Boolean(cleanUserName && u.name && u.name.trim().toLowerCase() === cleanUserName)
-          );
-          let updatedBoard: LeaderboardEntry[];
-          let updatedEntry: LeaderboardEntry;
-          if (exists) {
-            updatedEntry = {
-              ...exists,
-              name: userName,
-              correct_quizzes: exists.correct_quizzes + 1,
-              avatar_color: userRole === 'host' ? '#FFE600' : exists.avatar_color || '#FF2A6D',
-            };
-            updatedBoard = prev
-              .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
-              .sort((a, b) => b.correct_quizzes - a.correct_quizzes);
-          } else {
-            updatedEntry = {
-              session_id: sessionId,
-              name: userName,
-              correct_quizzes: 1,
-              polls_voted: 0,
-              avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
-            };
-            updatedBoard = [...prev, updatedEntry].sort((a, b) => b.correct_quizzes - a.correct_quizzes);
-          }
-          dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
-          if (channelManager) {
-            channelManager.broadcast('leaderboard_update', updatedBoard);
-          }
-          return updatedBoard;
-        });
-      }
 
       const updatedVotes = {
         ...quizState.votesDistribution,
@@ -997,25 +1081,9 @@ export function useQuizEngine({
           }
           return next;
         });
-
-        dbIncrementQuizVote(targetQId, optionId).then((serverVotes) => {
-          if (serverVotes) {
-            setQuizState((prev) => {
-              if (prev.question?.id !== targetQId) return prev;
-              return {
-                ...prev,
-                votesDistribution: {
-                  A: Math.max(prev.votesDistribution?.A || 0, serverVotes.A || 0),
-                  B: Math.max(prev.votesDistribution?.B || 0, serverVotes.B || 0),
-                  C: Math.max(prev.votesDistribution?.C || 0, serverVotes.C || 0),
-                  D: Math.max(prev.votesDistribution?.D || 0, serverVotes.D || 0),
-                },
-              };
-            });
-          }
-        });
       }
 
+      // High-speed fire-and-forget broadcast (<15ms) - Zero DB row lock contention
       if (channelManager) {
         channelManager.broadcast('quiz_vote', {
           optionId,
@@ -1031,14 +1099,71 @@ export function useQuizEngine({
       quizState.question,
       quizState.votesDistribution,
       sessionId,
-      userName,
-      userRole,
-      currentRoomKey,
       quizStorageKey,
       quizAnswersStorageKey,
       channelManager,
     ]
   );
+
+  // High-concurrency leaderboard score award on reveal (Zero-lock during active round)
+  useEffect(() => {
+    if (quizState.isActive && quizState.isRevealed && quizState.question && quizState.userSelectedOption) {
+      const qId = quizState.question.id;
+      if (recordedRoundScoreRef.current === qId) return;
+      recordedRoundScoreRef.current = qId;
+
+      const isCorrect = quizState.userSelectedOption === quizState.question.correctOptionId;
+      if (isCorrect) {
+        queueMicrotask(() => {
+          setLeaderboard((prev) => {
+            const cleanUserName = (userName || '').trim().toLowerCase();
+            const exists = prev.find(
+              (u) =>
+                Boolean(sessionId && u.session_id === sessionId) ||
+                Boolean(cleanUserName && u.name && u.name.trim().toLowerCase() === cleanUserName)
+            );
+            let updatedBoard: LeaderboardEntry[];
+            let updatedEntry: LeaderboardEntry;
+            if (exists) {
+              updatedEntry = {
+                ...exists,
+                name: userName,
+                correct_quizzes: exists.correct_quizzes + 1,
+                avatar_color: userRole === 'host' ? '#FFE600' : exists.avatar_color || '#FF2A6D',
+              };
+              updatedBoard = prev
+                .map((u) => (u.session_id === exists.session_id ? updatedEntry : u))
+                .sort((a, b) => b.correct_quizzes - a.correct_quizzes);
+            } else {
+              updatedEntry = {
+                session_id: sessionId,
+                name: userName,
+                correct_quizzes: 1,
+                polls_voted: 0,
+                avatar_color: userRole === 'host' ? '#FFE600' : '#FF2A6D',
+              };
+              updatedBoard = [...prev, updatedEntry].sort((a, b) => b.correct_quizzes - a.correct_quizzes);
+            }
+            dbUpsertLeaderboardEntry(updatedEntry, currentRoomKey);
+            if (channelManager) {
+              channelManager.broadcast('leaderboard_update', updatedBoard);
+            }
+            return updatedBoard;
+          });
+        });
+      }
+    }
+  }, [
+    quizState.isActive,
+    quizState.isRevealed,
+    quizState.question,
+    quizState.userSelectedOption,
+    sessionId,
+    userName,
+    userRole,
+    currentRoomKey,
+    channelManager,
+  ]);
 
   const updateAIDeepDive = useCallback(
     (deepDive: string) => {

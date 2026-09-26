@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
@@ -81,21 +81,36 @@ export function getStoredUserRole(): 'host' | 'attendee' {
 
 export function getStoredRoomCode(fallback: string = 'SKT-789'): string {
   if (typeof window !== 'undefined') {
+    let cachedRooms: { code: string }[] = [];
+    try {
+      const storedLocal = localStorage.getItem('sketchcast_local_rooms');
+      if (storedLocal) cachedRooms = JSON.parse(storedLocal);
+    } catch {
+      // ignore
+    }
+
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
     if (roomParam && roomParam.trim()) {
       const code = roomParam.trim().toUpperCase();
-      sessionStorage.setItem(ROOM_CODE_KEY, code);
-      localStorage.setItem(ROOM_CODE_KEY, code);
       return code;
     }
     const sessionStored = sessionStorage.getItem(ROOM_CODE_KEY);
     if (sessionStored && sessionStored.trim()) {
-      return sessionStored.trim().toUpperCase();
+      const sCode = sessionStored.trim().toUpperCase();
+      if (cachedRooms.length === 0 || cachedRooms.some((r) => (r.code || '').toUpperCase() === sCode) || isRoomCreatedByMe(sCode)) {
+        return sCode;
+      }
     }
     const localStored = localStorage.getItem(ROOM_CODE_KEY);
     if (localStored && localStored.trim()) {
-      return localStored.trim().toUpperCase();
+      const lCode = localStored.trim().toUpperCase();
+      if (cachedRooms.length === 0 || cachedRooms.some((r) => (r.code || '').toUpperCase() === lCode) || isRoomCreatedByMe(lCode)) {
+        return lCode;
+      }
+    }
+    if (cachedRooms.length > 0 && cachedRooms[0].code) {
+      return cachedRooms[0].code.toUpperCase();
     }
   }
   return fallback;
@@ -119,10 +134,31 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   const [sessionId] = useState<string>(getOrCreateSessionId);
   const [userName, setUserNameState] = useState<string>(getStoredUserName);
   const [userRole, setUserRoleState] = useState<'host' | 'attendee'>(getStoredUserRole);
-  const [activeRoomCode, setActiveRoomCode] = useState<string>(() => getStoredRoomCode(initialRoomCode));
+  const [activeRoomCode, setActiveRoomCodeState] = useState<string>(() => getStoredRoomCode(initialRoomCode));
+  const activeRoomCodeRef = useRef<string>(activeRoomCode);
+
+  const setActiveRoomCode = useCallback((newCode: string) => {
+    const clean = newCode.toUpperCase().trim();
+    activeRoomCodeRef.current = clean;
+    setActiveRoomCodeState(clean);
+  }, []);
+
+  useEffect(() => {
+    activeRoomCodeRef.current = activeRoomCode;
+  }, [activeRoomCode]);
   
   const [room, setRoom] = useState<Room>(() => {
     const code = getStoredRoomCode(initialRoomCode);
+    let cachedRooms: Room[] = [];
+    try {
+      const storedLocal = localStorage.getItem('sketchcast_local_rooms');
+      if (storedLocal) cachedRooms = JSON.parse(storedLocal);
+    } catch {
+      // ignore
+    }
+    const matched = cachedRooms.find((r) => r.code?.toUpperCase() === code.toUpperCase());
+    if (matched) return matched;
+
     const storedName = getStoredUserName();
     const isHost = getStoredUserRole() === 'host' || isRoomCreatedByMe(code);
     return {
@@ -196,7 +232,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   } | null>(null);
 
   // Sync activeTab with URL Hash & Storage
-  const setActiveTab = (tab: ActiveTabType) => {
+  const setActiveTab = useCallback((tab: ActiveTabType) => {
     setActiveTabState(tab);
     try {
       sessionStorage.setItem(ACTIVE_TAB_KEY, tab);
@@ -204,13 +240,16 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
         url.hash = tab;
-        url.searchParams.set('room', activeRoomCode);
+        const currentCode = activeRoomCodeRef.current;
+        if (currentCode) {
+          url.searchParams.set('room', currentCode);
+        }
         window.history.replaceState(null, '', url.toString());
       }
     } catch {
       // ignore
     }
-  };
+  }, []);
 
   // Listen to hash change for browser back/forward navigation
   useEffect(() => {
@@ -284,10 +323,37 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
   const [promotionToast, setPromotionToast] = useState<string | null>(null);
 
-  // Check if current user is pre-authorized as owner or co-admin for the active room
+  // Check if current user is pre-authorized as owner or co-admin for the active room,
+  // and validate that the active room exists in the authoritative database
   useEffect(() => {
+    let isCancelled = false;
+
     dbFetchRooms().then((rooms) => {
-      const current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
+      if (isCancelled) return;
+
+      let current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
+
+      // If requested active room does NOT exist in database and authoritative rooms exist:
+      if (!current && rooms.length > 0) {
+        // Fall back to a valid room: prioritize user's owned/co-administered room, else latest room
+        const myOwned = rooms.find((r) => isUserRoomAdmin(r, currentUser, userName));
+        const fallbackRoom = myOwned || rooms[0];
+
+        if (fallbackRoom) {
+          current = fallbackRoom;
+          const targetCode = fallbackRoom.code.toUpperCase();
+          setActiveRoomCode(targetCode);
+          sessionStorage.setItem(ROOM_CODE_KEY, targetCode);
+          localStorage.setItem(ROOM_CODE_KEY, targetCode);
+
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', targetCode);
+            window.history.replaceState(null, '', url.toString());
+          }
+        }
+      }
+
       if (current) {
         setRoom(current);
         const isAdmin = isUserRoomAdmin(current, currentUser, userName);
@@ -310,7 +376,11 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         }
       }
     });
-  }, [activeRoomCode, userName, currentUser]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeRoomCode, userName, currentUser, setActiveRoomCode]);
 
   const userNameRef = useRef(userName);
   useEffect(() => {

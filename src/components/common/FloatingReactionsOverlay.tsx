@@ -26,6 +26,7 @@ interface FloatingReactionsOverlayProps {
 
 interface Particle extends AudienceReaction {
   drift: number;
+  count?: number;
 }
 
 export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> = ({
@@ -39,50 +40,107 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
   const [isOnCooldown, setIsOnCooldown] = useState(false);
   const lastSendTimeRef = useRef<number>(0);
   const seenReactionIdsRef = useRef<Set<string>>(new Set());
+  const reactionBufferRef = useRef<AudienceReaction[]>([]);
+  const rafIdRef = useRef<number | null>(null);
 
-  // Spawn particle locally and cleanup after animation with strict de-duplication
-  const addParticle = useCallback((reaction: AudienceReaction) => {
-    if (!reaction || !reaction.id) return;
+  // Process reaction buffer on next animation frame to eliminate DOM thrashing
+  const scheduleFlushBuffer = useCallback(() => {
+    if (rafIdRef.current !== null) return;
 
-    // Strict deduplication: ignore if this exact reaction ID was already processed
-    if (seenReactionIdsRef.current.has(reaction.id)) {
-      return;
-    }
-    seenReactionIdsRef.current.add(reaction.id);
+    const tick = () => {
+      rafIdRef.current = null;
+      const buffer = reactionBufferRef.current;
+      if (buffer.length === 0) return;
 
-    // Auto-clean ID cache after 4 seconds
-    setTimeout(() => {
-      seenReactionIdsRef.current.delete(reaction.id);
-    }, 4000);
+      // Extract batch (at most 5 items per frame tick to keep DOM smooth)
+      const toProcess = buffer.splice(0, 5);
 
-    const drift = (Math.random() - 0.5) * 70;
-    const newParticle: Particle = { ...reaction, drift };
+      setParticles((prev) => {
+        let next = [...prev];
+        for (const reaction of toProcess) {
+          if (!reaction || !reaction.id) continue;
+          if (seenReactionIdsRef.current.has(reaction.id)) continue;
+          seenReactionIdsRef.current.add(reaction.id);
 
-    // Cap concurrent particles at 20 to maintain silky 60 FPS
-    setParticles((prev) => {
-      if (prev.some((p) => p.id === reaction.id)) {
-        return prev;
+          setTimeout(() => {
+            seenReactionIdsRef.current.delete(reaction.id);
+          }, 4000);
+
+          // If we already have 20 particles, merge with an existing particle of same emoji if possible
+          if (next.length >= 20) {
+            const existingIndex = next.findIndex((p) => p.emoji === reaction.emoji);
+            if (existingIndex !== -1) {
+              const target = next[existingIndex];
+              next[existingIndex] = {
+                ...target,
+                count: (target.count || 1) + 1,
+              };
+              continue;
+            }
+            // Otherwise remove oldest
+            next = next.slice(1);
+          }
+
+          const drift = (Math.random() - 0.5) * 70;
+          const newParticle: Particle = { ...reaction, drift, count: 1 };
+          next.push(newParticle);
+
+          setTimeout(() => {
+            setParticles((pList) => pList.filter((p) => p.id !== reaction.id));
+          }, 2400);
+        }
+        return next;
+      });
+
+      // If buffer still has items, schedule next tick
+      if (reactionBufferRef.current.length > 0) {
+        rafIdRef.current = requestAnimationFrame(tick);
       }
-      return [...prev.slice(-19), newParticle];
-    });
+    };
 
-    setTimeout(() => {
-      setParticles((prev) => prev.filter((p) => p.id !== reaction.id));
-    }, 2400);
+    rafIdRef.current = requestAnimationFrame(tick);
   }, []);
 
-  // Listen for broadcast reactions from other attendees & host
+  const addParticle = useCallback(
+    (reaction: AudienceReaction) => {
+      reactionBufferRef.current.push(reaction);
+      scheduleFlushBuffer();
+    },
+    [scheduleFlushBuffer]
+  );
+
+  // Listen for broadcast reactions from other attendees & host with batching support
   useEffect(() => {
     if (!channelManager) return;
 
     const unReaction = channelManager.on('audience_reaction', (reaction) => {
-      addParticle(reaction);
+      reactionBufferRef.current.push(reaction);
+      scheduleFlushBuffer();
+    });
+
+    const unBatch = channelManager.on('reaction_batch', (batch) => {
+      if (batch && batch.emoji) {
+        const id = `batch_${batch.timestamp || Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        reactionBufferRef.current.push({
+          id,
+          emoji: batch.emoji,
+          x: 25 + Math.random() * 55,
+          senderName: batch.senderName || 'Crowd',
+          timestamp: batch.timestamp || Date.now(),
+        });
+        scheduleFlushBuffer();
+      }
     });
 
     return () => {
       unReaction();
+      unBatch();
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
-  }, [channelManager, addParticle]);
+  }, [channelManager, scheduleFlushBuffer]);
 
   const handleSendReaction = useCallback(
     (emoji: string) => {
@@ -181,10 +239,17 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                     )}
                   </div>
                 )}
-                {/* Floating Emoji */}
-                <span className="text-3xl sm:text-4xl select-none filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
-                  {p.emoji}
-                </span>
+                {/* Floating Emoji with Multiplier */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-3xl sm:text-4xl select-none filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+                    {p.emoji}
+                  </span>
+                  {p.count && p.count > 1 ? (
+                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-mono font-black text-xs shadow-md border border-amber-300 animate-pulse">
+                      ×{p.count}
+                    </span>
+                  ) : null}
+                </div>
               </motion.div>
             );
           })}
