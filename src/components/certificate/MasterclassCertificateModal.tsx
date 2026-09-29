@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import confetti from 'canvas-confetti';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
 import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
 import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
@@ -268,23 +267,13 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     ctx.fillText('Verified Realtime Keynote Credential • Powered by Studio Noma & SketchCast', width / 2, height - 16);
   }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate, score, correctQuizzes, hostName]);
 
-  // Launch celebration fanfare and confetti EXACTLY ONCE per modal opening
+  // Launch celebration fanfare EXACTLY ONCE per modal opening
   const celebrationFiredRef = useRef(false);
   useEffect(() => {
     if (isOpen) {
       if (!celebrationFiredRef.current) {
         celebrationFiredRef.current = true;
         playCertificateFanfare();
-        try {
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.45 },
-            colors: ['#FF6337', '#D7FF2F', '#101313', '#A6E5FF', '#F5F0E9'],
-          });
-        } catch {
-          // ignore
-        }
       }
     } else {
       celebrationFiredRef.current = false;
@@ -334,7 +323,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-ink/60 backdrop-blur-xs overflow-y-auto font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto font-sans"
         >
           {/* Hidden Canvas Elements for High-Res PNG Generation & QR Drawing */}
           <canvas ref={canvasRef} width={1200} height={700} className="hidden" />
@@ -352,7 +341,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
             {/* Modal Header Bar */}
             <div className="p-4 sm:p-5 bg-paper-surface text-ink border-b border-hairline flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-ink text-lime flex items-center justify-center font-bold shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center font-bold shadow-xs">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
@@ -398,7 +387,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
 
                 {/* Issuer Seal */}
                 <div className="pt-1">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-ink text-lime shadow-xs">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 shadow-xs">
                     <Trophy className="w-7 h-7" />
                   </div>
                 </div>

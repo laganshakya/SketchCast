@@ -21,7 +21,7 @@ interface LeaderboardPodiumProps {
 const getRankBadge = (rank: number) => {
   if (rank === 0) {
     return (
-      <span className="w-7 h-7 rounded-xl bg-ink text-lime flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-sm border border-ink">
+      <span className="w-7 h-7 rounded-xl bg-[#101313] dark:bg-lime text-lime dark:text-ink flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-sm border border-black/20 dark:border-lime">
         01
       </span>
     );
@@ -203,7 +203,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
 
       {/* Podium Steps or Solo Champion Showcase */}
       {!compact && top3.length > 0 && (
-        <div className="p-4 sm:p-6 md:p-8 bg-paper border-b border-hairline overflow-hidden">
+        <div className="p-4 sm:p-6 md:p-8 bg-paper border-b border-hairline">
           {top3.length === 1 ? (
             /* Solo Champion Showcase Card */
             <motion.div
@@ -251,7 +251,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
             </motion.div>
           ) : (
             /* Multi-Player Podium */
-            <div className="max-w-2xl mx-auto pt-2 sm:pt-4">
+            <div className="max-w-2xl mx-auto pt-4 sm:pt-6">
               <div className="flex items-end justify-center gap-2 sm:gap-4 md:gap-5">
                 {/* Rank 2 (Silver) */}
                 {top3[1] && (
@@ -359,7 +359,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                   <span className="text-[10px] font-mono text-ink font-bold uppercase tracking-wider">
                     YOUR CURRENT STANDING
                   </span>
-                  <span className="px-1.5 py-0.2 bg-ink text-lime text-[8px] font-mono font-bold rounded">
+                  <span className="px-1.5 py-0.2 bg-[#101313] dark:bg-lime text-lime dark:text-ink text-[8px] font-mono font-bold rounded">
                     YOU
                   </span>
                 </div>

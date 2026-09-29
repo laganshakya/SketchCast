@@ -70,7 +70,7 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
   const aiSummariesCount = surveys.filter((s) => s.aiSummary).length;
 
   return (
-    <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6 font-sans text-ink pb-20 sm:pb-24 md:pb-12">
+    <div className="max-w-5xl mx-auto w-full space-y-5 sm:space-y-6 font-sans text-ink mb-4">
       {/* Top Banner & Control Deck */}
       <div className="bg-paper border border-hairline rounded-3xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden card-noma">
         <div className="flex items-start sm:items-center space-x-4 z-10">

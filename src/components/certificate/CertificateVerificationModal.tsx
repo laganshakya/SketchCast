@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { X, Share2, Check, ExternalLink, Trophy, ShieldCheck, Printer, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
-import confetti from 'canvas-confetti';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
 import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
 import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
@@ -62,19 +61,9 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
     ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`
     : `https://sketchcast.live/?verify_cert=${certId}`;
 
-  // Launch celebration confetti and fanfare on verification render
+  // Play celebration fanfare on verification render
   useEffect(() => {
     playCertificateFanfare();
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.45 },
-        colors: ['#FF6337', '#D7FF2F', '#101313', '#A6E5FF', '#F5F0E9'],
-      });
-    } catch {
-      // ignore
-    }
   }, []);
 
   const handleCopyLink = () => {
@@ -106,7 +95,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-ink/60 backdrop-blur-xs overflow-y-auto font-sans">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto font-sans">
       <motion.div
         initial={{ scale: 0.96, y: 10, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -117,7 +106,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
         {/* Verification Status Banner */}
         <div className="p-4 sm:p-5 bg-paper-surface text-ink border-b border-hairline flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-ink text-lime flex items-center justify-center font-bold shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center font-bold shrink-0 shadow-xs">
               <ShieldCheck className="w-5 h-5 text-lime" />
             </div>
             <div>
@@ -169,7 +158,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
 
             {/* Issuer Seal Icon */}
             <div className="pt-2">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-ink text-lime shadow-xs">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 shadow-xs">
                 <Trophy className="w-7 h-7" />
               </div>
             </div>

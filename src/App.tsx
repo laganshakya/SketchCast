@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import confetti from 'canvas-confetti';
 import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
@@ -517,20 +516,10 @@ export function App() {
     return false;
   })();
 
-  // Host action: Quiz completion handler (transitions to Leaderboard with fanfare & confetti)
+  // Host action: Quiz completion handler (transitions to Leaderboard with fanfare)
   const handleQuizComplete = useCallback(() => {
     setActiveTab('leaderboard');
     playSuccessFanfare();
-    try {
-      confetti({
-        particleCount: 90,
-        spread: 80,
-        origin: { y: 0.5 },
-        colors: ['#3B82F6', '#FAFAFA', '#10B981', '#F59E0B'],
-      });
-    } catch {
-      // ignore
-    }
 
     clearActiveQuizRound({ isFinished: true });
 
@@ -602,16 +591,6 @@ export function App() {
         clearActiveQuizRound({ isFinished: true });
         setActiveTab('leaderboard');
         playSuccessFanfare();
-        try {
-          confetti({
-            particleCount: 90,
-            spread: 80,
-            origin: { y: 0.5 },
-            colors: ['#3B82F6', '#FAFAFA', '#10B981', '#F59E0B'],
-          });
-        } catch {
-          // ignore
-        }
       }
     });
     return () => {
@@ -733,7 +712,7 @@ export function App() {
                     )}
                   </div>
                   <p className="text-xs text-ink/80 font-medium mt-1">
-                    Attendee <span className="bg-ink text-lime px-1.5 py-0.5 rounded font-mono font-bold">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
+                    Attendee <span className="bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime px-1.5 py-0.5 rounded font-mono font-bold border border-black/20 dark:border-lime/30">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
                   </p>
                   <div className="text-[11px] text-muted font-sans mt-1.5 bg-paper-card p-2.5 rounded-xl border border-hairline leading-snug">
                     <span className="font-bold text-ink">Reason:</span> {violationAlert.reason}
@@ -885,7 +864,7 @@ export function App() {
         />
 
         {/* Main Content Area with Framer Motion Spring Transitions */}
-        <main className="flex-1 flex overflow-y-auto relative p-2 sm:p-4 md:p-5 pb-44 sm:pb-48 md:pb-8">
+        <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative p-2.5 sm:p-4 md:p-6 pb-36 sm:pb-40 md:pb-12 overscroll-y-contain">
         <AnimatePresence mode="wait">
           {/* TAB 1: Live Quiz Arena */}
           {activeTab === 'quiz' && (
@@ -895,7 +874,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full h-full"
+              className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full min-h-0"
             >
               {/* Mobile Host Switcher Bar (Screen < lg) */}
               {userRole === 'host' && (
@@ -1006,7 +985,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <LivePollsView
                 polls={polls}
@@ -1030,7 +1009,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col max-w-4xl mx-auto w-full h-full overflow-hidden"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <QuestionFeed
                 questions={filteredQuestions}
@@ -1060,7 +1039,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <LeaderboardPodium
                 leaderboard={leaderboard}
@@ -1083,7 +1062,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 max-w-5xl mx-auto w-full"
+              className="flex-1 flex flex-col max-w-5xl mx-auto w-full min-h-0"
             >
               <SurveyTab
                 surveys={surveys}
@@ -1120,7 +1099,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Room Settings...</div>}>
                 <RoomSettingsView
@@ -1171,7 +1150,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Profile & User Settings...</div>}>
                 <UserSettingsView
@@ -1200,7 +1179,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto"
+              className="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0"
             >
               <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading AI Settings...</div>}>
                 <AISettingsView roomCode={room.code} />
@@ -1216,7 +1195,7 @@ export function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.99 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex-1 flex flex-col overflow-y-auto pb-40 sm:pb-44 md:pb-8"
+              className="flex-1 flex flex-col max-w-5xl mx-auto w-full min-h-0"
             >
               <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Masterclass Report...</div>}>
                 <MasterclassReportView
@@ -1288,11 +1267,13 @@ export function App() {
               : 'text-muted hover:text-ink'
           }`}
         >
-          <HelpCircle className="w-4 h-4 mb-0.5" />
+          <div className="relative mb-0.5">
+            <HelpCircle className="w-4 h-4" />
+            {filteredQuestions.length > 0 && (
+              <span className="absolute -top-1 -right-1.5 w-2 h-2 bg-orange rounded-full ring-1.5 ring-paper animate-pulse" />
+            )}
+          </div>
           <span>Q&A</span>
-          {filteredQuestions.length > 0 && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-orange rounded-full ring-2 ring-paper animate-pulse" />
-          )}
         </motion.button>
 
         <motion.button
@@ -1307,11 +1288,13 @@ export function App() {
               : 'text-muted hover:text-ink'
           }`}
         >
-          <ClipboardList className="w-4 h-4 mb-0.5" />
+          <div className="relative mb-0.5">
+            <ClipboardList className="w-4 h-4" />
+            {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
+              <span className="absolute -top-1 -right-1.5 w-2 h-2 bg-orange rounded-full ring-1.5 ring-paper animate-pulse" />
+            )}
+          </div>
           <span>SURVEYS</span>
-          {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-orange rounded-full ring-2 ring-paper animate-pulse" />
-          )}
         </motion.button>
 
         <motion.button
@@ -1455,7 +1438,7 @@ export function App() {
 
       {/* Official Host Warning Modal */}
       {officialWarning && (
-        <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
           <div className="bg-paper text-ink border-2 border-orange rounded-3xl shadow-2xl p-6 max-w-md w-full font-mono">
             <div className="w-12 h-12 bg-orange/15 text-orange border border-orange/30 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 stroke-[2]" />
@@ -1491,7 +1474,7 @@ export function App() {
 
       {/* Fullscreen Banned Notice Screen */}
       {isBanned && (
-        <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 font-sans select-text">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 font-sans select-text">
           <div className="bg-paper text-ink border-2 border-red-500 rounded-3xl shadow-2xl p-6 max-w-md w-full font-mono text-center">
             <div className="w-12 h-12 bg-red-500/10 text-red-500 border border-red-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <UserX className="w-6 h-6 stroke-[2]" />

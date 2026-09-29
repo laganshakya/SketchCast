@@ -154,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/70 backdrop-blur-md font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md font-sans"
         >
           <motion.div
             initial={{ scale: 0.95, y: 12, opacity: 0 }}
@@ -179,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {/* Modal Header */}
             <div className="flex items-start space-x-3 mb-6 pr-8">
-              <div className="w-10 h-10 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
                 <Shield className="w-5 h-5 stroke-[2]" />
               </div>
               <div>

@@ -90,7 +90,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto w-full p-2.5 sm:p-4 md:p-5 space-y-4 font-sans mb-4">
+    <div className="flex flex-col max-w-4xl mx-auto w-full space-y-4 font-sans mb-4">
       {/* Header */}
       <div className="bg-paper p-4 sm:p-5 border border-hairline rounded-3xl card-noma flex items-center justify-between flex-wrap gap-2.5">
         <div>
@@ -235,12 +235,12 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                           <div
                             className={`w-6 h-6 rounded-lg border flex items-center justify-center font-mono text-xs shrink-0 font-bold ${
                               isVoted
-                                ? 'bg-ink text-lime border-ink'
+                                ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime'
                                 : 'bg-paper text-muted border-hairline'
                             }`}
                           >
                             {isVoted ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-lime" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-lime dark:text-ink stroke-[2.5]" />
                             ) : (
                               option.id.replace('opt-', '')
                             )}

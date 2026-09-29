@@ -73,9 +73,9 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
   });
 
   return (
-    <div className="flex flex-col h-full bg-paper border border-hairline rounded-3xl overflow-hidden font-sans card-noma">
+    <div className="flex flex-col w-full bg-paper border border-hairline rounded-3xl overflow-hidden font-sans card-noma">
       {/* Top Feed Bar */}
-      <div className="p-3.5 sm:p-4 border-b border-hairline bg-paper-surface">
+      <div className="p-3.5 sm:p-4 border-b border-hairline bg-paper-surface/95 backdrop-blur-md sticky top-0 z-10">
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <div className="flex items-center space-x-2.5">
             <span className="text-sm sm:text-base font-bold tracking-tight text-ink flex items-center gap-2 font-display">
@@ -117,21 +117,21 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
         </div>
 
         {/* Modern Segmented Filter Tabs */}
-        <div className="grid grid-cols-4 gap-1 p-1 bg-paper border border-hairline rounded-2xl text-[10px] sm:text-xs">
+        <div className="flex items-center gap-1 p-1 bg-paper border border-hairline rounded-2xl text-[11px] sm:text-xs overflow-x-auto no-scrollbar">
           <motion.button
             whileTap={{ y: 1 }}
             onClick={() => {
               playClickSound();
               setActiveTab('top');
             }}
-            className={`py-1.5 px-1 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
+            className={`flex-1 shrink-0 py-1.5 px-2.5 sm:px-3 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1.5 cursor-pointer min-h-[36px] whitespace-nowrap ${
               activeTab === 'top'
                 ? 'bg-ink text-paper shadow-sm'
                 : 'text-muted hover:text-ink'
             }`}
           >
             <Flame className="w-3.5 h-3.5 text-orange shrink-0" />
-            <span className="truncate">Top</span>
+            <span>Top</span>
           </motion.button>
 
           <motion.button
@@ -140,14 +140,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('recent');
             }}
-            className={`py-1.5 px-1 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
+            className={`flex-1 shrink-0 py-1.5 px-2.5 sm:px-3 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1.5 cursor-pointer min-h-[36px] whitespace-nowrap ${
               activeTab === 'recent'
                 ? 'bg-ink text-paper shadow-sm'
                 : 'text-muted hover:text-ink'
             }`}
           >
             <Clock className="w-3.5 h-3.5 text-paper shrink-0" />
-            <span className="truncate">Recent</span>
+            <span>Recent</span>
           </motion.button>
 
           <motion.button
@@ -156,14 +156,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('answered');
             }}
-            className={`py-1.5 px-1 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
+            className={`flex-1 shrink-0 py-1.5 px-2.5 sm:px-3 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1.5 cursor-pointer min-h-[36px] whitespace-nowrap ${
               activeTab === 'answered'
                 ? 'bg-ink text-paper shadow-sm'
                 : 'text-muted hover:text-ink'
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-lime shrink-0" />
-            <span className="truncate">Answered</span>
+            <span>Answered</span>
           </motion.button>
 
           <motion.button
@@ -172,14 +172,14 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
               playClickSound();
               setActiveTab('spotlight');
             }}
-            className={`py-1.5 px-1 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer min-h-[36px] ${
+            className={`flex-1 shrink-0 py-1.5 px-2.5 sm:px-3 font-bold rounded-xl transition-colors flex items-center justify-center space-x-1.5 cursor-pointer min-h-[36px] whitespace-nowrap ${
               activeTab === 'spotlight'
                 ? 'bg-ink text-paper shadow-sm'
                 : 'text-muted hover:text-ink'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-orange shrink-0" />
-            <span className="truncate">Stage</span>
+            <span>Stage</span>
           </motion.button>
         </div>
 
@@ -243,7 +243,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
       </div>
 
       {/* Feed List */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-40 sm:pb-44 md:pb-6">
+      <div className="flex-1 p-3.5 space-y-2.5">
         {filtered.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-muted">
             <Sparkles className="w-8 h-8 text-muted/60 mb-2" />

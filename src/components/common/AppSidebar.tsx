@@ -19,11 +19,14 @@ import {
   Award,
   Sliders,
   User,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { isUserRoomAdmin } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+import { useTheme } from '../../lib/theme';
 import { SketchCastLogo } from './SketchCastLogo';
 
 export interface AppSidebarProps {
@@ -260,6 +263,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   });
 
   const userInitial = (userName.trim()[0] || 'U').toUpperCase();
+  const { isDark, toggleTheme } = useTheme();
 
   const renderSidebarContent = (mobile: boolean = false) => {
     const collapsed = mobile ? false : isCollapsed;
@@ -584,6 +588,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
                       <button
                         onClick={() => {
+                          playPopSound();
+                          toggleTheme();
+                        }}
+                        className="w-full p-2.5 rounded-xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                      >
+                        {isDark ? <Sun className="w-3.5 h-3.5 text-lime" /> : <Moon className="w-3.5 h-3.5 text-orange" />}
+                        <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
                           setIsCollapsedProfileOpen(false);
                           onOpenAuthModal();
                         }}
@@ -613,7 +628,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="bg-paper-elevated border border-hairline rounded-2xl p-2.5 space-y-2">
               <div className="flex items-center space-x-2.5 min-w-0">
                 <div
-                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs bg-ink text-lime border border-ink"
+                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/20 dark:border-lime/30"
                 >
                   {userInitial}
                 </div>
@@ -666,6 +681,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 <button
                   onClick={() => {
                     playPopSound();
+                    toggleTheme();
+                  }}
+                  className="p-1.5 rounded-xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline cursor-pointer transition-colors"
+                  title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                  {isDark ? <Sun className="w-3.5 h-3.5 text-lime" /> : <Moon className="w-3.5 h-3.5 text-orange" />}
+                </button>
+
+                <button
+                  onClick={() => {
+                    playPopSound();
                     onCloseMobile();
                     onSignOut();
                   }}
@@ -706,7 +733,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 playClickSound();
                 onCloseMobile();
               }}
-              className="md:hidden fixed inset-0 bg-ink/50 backdrop-blur-xs z-50 cursor-pointer"
+              className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-xs z-50 cursor-pointer"
             />
 
             <motion.div

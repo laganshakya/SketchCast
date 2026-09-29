@@ -1,10 +1,13 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  /* Studio Noma Core Palette */
+  /* Studio Noma Core Palette (Light Mode: Paper & Ink Studio) */
   --ink: #101313;
   --paper: #f5f0e9;
   --paper-card: #fcf9f4;
+  --paper-surface: #ffffff;
   --paper-elevated: #ffffff;
   --lime: #d7ff2f;
   --orange: #ff6337;
@@ -12,6 +15,29 @@
   --muted: #65655f;
   --hairline: rgba(16, 19, 19, 0.08);
   --hairline-strong: rgba(16, 19, 19, 0.16);
+
+  /* Marquee, Ribbons & Accents */
+  --marquee-bg: #101313;
+  --marquee-text: #f5f0e9;
+  --marquee-border: rgba(16, 19, 19, 0.12);
+
+  /* Buttons */
+  --btn-ink-bg: #101313;
+  --btn-ink-color: #f5f0e9;
+  --btn-ink-border: #101313;
+  --ghost-hover-bg: rgba(16, 19, 19, 0.05);
+
+  /* Cards & Shadows */
+  --card-ink-bg: #101313;
+  --card-ink-color: #f5f0e9;
+  --shadow-subtle: 0 1px 3px 0 rgba(16, 19, 19, 0.06);
+  --shadow-card: 0 2px 14px -3px rgba(16, 19, 19, 0.05);
+  --shadow-elevated: 0 10px 30px -4px rgba(16, 19, 19, 0.08);
+
+  /* Grain Texture & Scrollbar */
+  --grain-opacity: 0.11;
+  --grain-blend: multiply;
+  --scrollbar-thumb: rgba(16, 19, 19, 0.2);
 
   /* Semantic Status Tokens */
   --status-correct: #10b981;
@@ -22,20 +48,65 @@
   --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-serif: 'DM Serif Display', Georgia, serif;
   --font-mono: 'DM Mono', 'JetBrains Mono', Menlo, monospace;
+
+  color-scheme: light;
+}
+
+.dark,
+[data-theme="dark"],
+:root.dark {
+  /* Studio Noma Core Palette (Dark Mode: Obsidian Monolith Studio) */
+  --ink: #f5f0e9;
+  --paper: #0c0f0f;
+  --paper-card: #141818;
+  --paper-surface: #181c1c;
+  --paper-elevated: #202626;
+  --lime: #d7ff2f;
+  --orange: #ff6337;
+  --sky: #38bdf8;
+  --muted: #949a9a;
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-strong: rgba(255, 255, 255, 0.17);
+
+  /* Marquee, Ribbons & Accents */
+  --marquee-bg: #070909;
+  --marquee-text: #f5f0e9;
+  --marquee-border: rgba(255, 255, 255, 0.08);
+
+  /* Buttons */
+  --btn-ink-bg: #f5f0e9;
+  --btn-ink-color: #101313;
+  --btn-ink-border: #f5f0e9;
+  --ghost-hover-bg: rgba(255, 255, 255, 0.08);
+
+  /* Cards & Shadows */
+  --card-ink-bg: #1c2222;
+  --card-ink-color: #f5f0e9;
+  --shadow-subtle: 0 1px 4px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 20px -3px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 12px 36px -4px rgba(0, 0, 0, 0.65);
+
+  /* Grain Texture & Scrollbar */
+  --grain-opacity: 0.04;
+  --grain-blend: screen;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+
+  color-scheme: dark;
 }
 
 @theme {
-  /* Studio Noma Color Tokens */
-  --color-ink: #101313;
-  --color-paper: #f5f0e9;
-  --color-paper-card: #fcf9f4;
-  --color-paper-elevated: #ffffff;
-  --color-lime: #d7ff2f;
-  --color-orange: #ff6337;
-  --color-sky: #a6e5ff;
-  --color-muted: #65655f;
-  --color-hairline: rgba(16, 19, 19, 0.08);
-  --color-hairline-strong: rgba(16, 19, 19, 0.16);
+  /* Studio Noma Color Tokens bound dynamically to CSS variables */
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-card: var(--paper-card);
+  --color-paper-surface: var(--paper-surface);
+  --color-paper-elevated: var(--paper-elevated);
+  --color-lime: var(--lime);
+  --color-orange: var(--orange);
+  --color-sky: var(--sky);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
 
   /* Backward-compatible Theme Mappings */
   --color-obsidian: #101313;
@@ -43,7 +114,7 @@
   --color-monolith-elevated: #202424;
   --color-monolith-subtle: #2b3030;
   --color-chalk: #f5f0e9;
-  --color-cobalt: #ff6337;          /* Mapped to Studio Noma Safety Orange */
+  --color-cobalt: var(--orange);
   --color-cobalt-dim: #e54f24;
   --color-cobalt-light: #ff8663;
   --color-cobalt-glow: rgba(255, 99, 55, 0.18);
@@ -52,18 +123,18 @@
   --color-status-incorrect: #ef4444;
   --color-status-warning: #f59e0b;
 
-  --color-neo-yellow: #d7ff2f;      /* Studio Noma Electric Lime */
-  --color-neo-pink: #ff6337;        /* Studio Noma Safety Orange */
-  --color-neo-cyan: #a6e5ff;        /* Studio Noma Soft Sky */
+  --color-neo-yellow: var(--lime);
+  --color-neo-pink: var(--orange);
+  --color-neo-cyan: var(--sky);
   --color-neo-mint: #10b981;
-  --color-neo-orange: #ff6337;
-  --color-neo-purple: #ff6337;
-  --color-neo-cream: #f5f0e9;
-  --color-neo-dark: #101313;
-  --color-neo-card: #fcf9f4;
-  --color-neo-card-darker: #161919;
-  --color-neo-border: rgba(16, 19, 19, 0.12);
-  --color-neo-border-hard: rgba(16, 19, 19, 0.24);
+  --color-neo-orange: var(--orange);
+  --color-neo-purple: var(--orange);
+  --color-neo-cream: var(--paper);
+  --color-neo-dark: var(--ink);
+  --color-neo-card: var(--paper-card);
+  --color-neo-card-darker: var(--paper-surface);
+  --color-neo-border: var(--hairline);
+  --color-neo-border-hard: var(--hairline-strong);
 
   /* Typography */
   --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -102,9 +173,10 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.11;
-  mix-blend-mode: multiply;
+  opacity: var(--grain-opacity, 0.11);
+  mix-blend-mode: var(--grain-blend, multiply);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.33'/%3E%3C/svg%3E");
+  transition: opacity 0.2s ease;
 }
 
 /* Fluid responsive container paddings */
@@ -173,7 +245,7 @@ input:disabled,
   cursor: not-allowed !important;
 }
 
-input, textarea {
+input, textarea, select {
   user-select: text;
   -webkit-user-select: text;
   font-family: var(--font-sans);
@@ -228,8 +300,9 @@ input, textarea {
 
 /* ================= STUDIO NOMA RIBBONS & TICKERS ================= */
 .marquee {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--marquee-bg);
+  color: var(--marquee-text);
+  border-bottom: 1px solid var(--marquee-border);
   overflow: hidden;
   height: 36px;
   display: flex;
@@ -239,6 +312,7 @@ input, textarea {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .marquee-track {
@@ -267,6 +341,7 @@ input, textarea {
   white-space: nowrap;
   padding: 14px 0;
   background: var(--paper-card);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .ticker-inner {
@@ -299,7 +374,7 @@ input, textarea {
 .circle-link {
   width: 130px;
   height: 130px;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--hairline-strong);
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -318,8 +393,9 @@ input, textarea {
 
 .circle-link:hover {
   background: var(--lime);
+  color: #101313;
   transform: rotate(-10deg) scale(1.06);
-  border-color: var(--ink);
+  border-color: var(--lime);
 }
 
 .magnet {
@@ -340,7 +416,7 @@ input, textarea {
 .spark::after {
   content: "";
   position: absolute;
-  background: var(--ink);
+  background: #101313;
   border-radius: 50%;
 }
 
@@ -368,7 +444,7 @@ input, textarea {
   background-color: var(--paper-card);
   border: 1px solid var(--hairline-strong);
   border-radius: 1.25rem;
-  box-shadow: 0 2px 14px -3px rgba(16, 19, 19, 0.05);
+  box-shadow: var(--shadow-card);
   color: var(--ink);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -379,16 +455,18 @@ input, textarea {
   background-color: var(--paper-elevated);
   border: 1px solid var(--hairline-strong);
   border-radius: 1.5rem;
-  box-shadow: 0 10px 30px -4px rgba(16, 19, 19, 0.08);
+  box-shadow: var(--shadow-elevated);
   color: var(--ink);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-noma-ink,
 .card-active {
-  background-color: var(--ink);
-  color: var(--paper);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: var(--card-ink-bg);
+  color: var(--card-ink-color);
+  border: 1px solid var(--hairline-strong);
   border-radius: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ================= STUDIO NOMA BUTTONS ================= */
@@ -429,8 +507,8 @@ input, textarea {
 
 .btn-noma-lime {
   background-color: var(--lime);
-  color: var(--ink);
-  border: 1px solid var(--ink);
+  color: #101313;
+  border: 1px solid var(--lime);
   border-radius: 9999px;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -450,9 +528,9 @@ input, textarea {
 .btn-neo-dark,
 .btn-modern,
 .btn-monolith-ghost {
-  background-color: var(--ink);
-  color: var(--paper);
-  border: 1px solid var(--ink);
+  background-color: var(--btn-ink-bg);
+  color: var(--btn-ink-color);
+  border: 1px solid var(--btn-ink-border);
   border-radius: 9999px;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -466,7 +544,7 @@ input, textarea {
 .btn-noma-ink:hover,
 .btn-neo-dark:hover,
 .btn-modern:hover {
-  background-color: #202424;
+  opacity: 0.9;
   transform: translateY(-1px);
 }
 
@@ -485,7 +563,7 @@ input, textarea {
 }
 
 .btn-noma-ghost:hover {
-  background-color: rgba(16, 19, 19, 0.05);
+  background-color: var(--ghost-hover-bg);
   border-color: var(--ink);
 }
 
@@ -516,7 +594,7 @@ input, textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 19, 19, 0.2);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
 }
 

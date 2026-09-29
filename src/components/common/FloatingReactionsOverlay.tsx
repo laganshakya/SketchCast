@@ -271,19 +271,19 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
               playClickSound();
               setIsBarExpanded(!isBarExpanded);
             }}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-muted hover:text-ink hover:bg-paper transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-3 sm:py-1.5 rounded-full text-muted hover:text-ink hover:bg-paper transition-colors cursor-pointer group"
             title={isBarExpanded ? 'Collapse reactions' : 'Expand reactions'}
           >
-            <div className="w-5 h-5 rounded-full bg-orange/10 border border-orange/20 text-orange flex items-center justify-center shrink-0 group-hover:bg-orange/20 transition-colors shadow-xs">
+            <div className="w-6 h-6 sm:w-5 sm:h-5 rounded-full bg-orange/10 border border-orange/20 text-orange flex items-center justify-center shrink-0 group-hover:bg-orange/20 transition-colors shadow-xs">
               <Smile className="w-3.5 h-3.5" />
             </div>
-            <span className="font-sans font-semibold text-xs tracking-wide text-ink">
+            <span className="font-sans font-semibold text-xs tracking-wide text-ink hidden sm:inline">
               Reactions
             </span>
             <motion.div
               animate={{ rotate: isBarExpanded ? 0 : 180 }}
               transition={{ duration: 0.2 }}
-              className="text-muted group-hover:text-ink"
+              className="text-muted group-hover:text-ink hidden sm:block"
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </motion.div>
@@ -310,7 +310,12 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                         type="button"
                         whileHover={isOnCooldown ? {} : { scale: 1.25, y: -2 }}
                         whileTap={isOnCooldown ? {} : { scale: 0.85 }}
-                        onClick={() => handleSendReaction(emoji)}
+                        onClick={() => {
+                          handleSendReaction(emoji);
+                          if (typeof window !== 'undefined' && window.innerWidth < 640) {
+                            setIsBarExpanded(false);
+                          }
+                        }}
                         disabled={isOnCooldown}
                         className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center text-lg sm:text-xl transition-all cursor-pointer ${
                           isOnCooldown

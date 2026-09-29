@@ -54,13 +54,13 @@ function getCategoryBadgeStyle(category?: string): { bg: string; text: string; b
     return { bg: 'bg-paper', text: 'text-ink', border: 'border-hairline' };
   }
   if (lower.includes('trend') || lower.includes('disrupt')) {
-    return { bg: 'bg-orange/15', text: 'text-orange-950', border: 'border-orange/25' };
+    return { bg: 'bg-orange/15 dark:bg-orange/20', text: 'text-orange-950 dark:text-orange', border: 'border-orange/25 dark:border-orange/30' };
   }
   if (lower.includes('agent') || lower.includes('ai')) {
-    return { bg: 'bg-lime/25', text: 'text-ink', border: 'border-ink/15' };
+    return { bg: 'bg-lime/25 dark:bg-lime/20', text: 'text-ink dark:text-lime', border: 'border-ink/15 dark:border-lime/30' };
   }
   if (lower.includes('secur') || lower.includes('auth')) {
-    return { bg: 'bg-red-50', text: 'text-red-900', border: 'border-red-200' };
+    return { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-900 dark:text-red-300', border: 'border-red-200 dark:border-red-800/40' };
   }
   return { bg: 'bg-paper-surface', text: 'text-ink', border: 'border-hairline' };
 }
@@ -381,7 +381,7 @@ function formatInlineText(text: string): React.ReactNode {
     }
     if (seg.isCode) {
       return (
-        <code key={seg.key} className="px-1.5 py-0.5 rounded-md bg-paper text-ink font-mono text-[11px] border border-hairline">
+        <code key={seg.key} className="px-1.5 py-0.5 rounded-md bg-paper-card dark:bg-[#181c1c] text-ink dark:text-lime font-mono text-[11px] border border-hairline dark:border-white/10 font-bold">
           {seg.raw.slice(1, -1)}
         </code>
       );
@@ -389,6 +389,51 @@ function formatInlineText(text: string): React.ReactNode {
     return seg.raw;
   });
 }
+
+// Dedicated High-Contrast Code Block Component (Always Dark Terminal with Lime Accents & Quick-Copy)
+const ReportCodeBlock: React.FC<{ lang?: string; code: string; blockKey: string }> = ({ lang, code, blockKey }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    playPopSound();
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div key={blockKey} className="my-3.5 rounded-2xl bg-[#101313] dark:bg-[#0a0d0d] text-[#f5f0e9] border border-black/40 dark:border-white/10 overflow-hidden shadow-sm">
+      <div className="px-4 py-2.5 bg-black/40 dark:bg-white/[0.04] border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-lime/80" />
+          <span className="text-[10px] font-mono font-bold text-lime uppercase tracking-wider">
+            {lang || 'CODE'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="text-[10px] font-mono font-bold text-white/60 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95"
+          title="Copy code to clipboard"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3 text-lime" />
+              <span className="text-lime">COPIED</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span>COPY</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-4 font-mono text-xs text-lime dark:text-[#d7ff2f] overflow-x-auto leading-relaxed select-text">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+};
 
 // Render formatted lines (tables, bullets, bold text, paragraphs)
 const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> = ({ lines, skipTables = false }) => {
@@ -410,16 +455,12 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
       }
       i++; // skip closing ```
       elements.push(
-        <div key={`code-${i}`} className="my-3 rounded-2xl bg-ink text-paper border border-ink overflow-hidden shadow-xs">
-          {lang && (
-            <div className="px-4 py-2 bg-ink/90 border-b border-paper/10 text-[10px] font-mono font-bold text-lime uppercase tracking-wider">
-              {lang}
-            </div>
-          )}
-          <pre className="p-4 font-mono text-xs text-lime/90 overflow-x-auto leading-relaxed">
-            <code>{codeLines.join('\n')}</code>
-          </pre>
-        </div>
+        <ReportCodeBlock
+          key={`code-${i}`}
+          blockKey={`code-${i}`}
+          lang={lang}
+          code={codeLines.join('\n')}
+        />
       );
       continue;
     }
@@ -649,8 +690,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                       <span>Correct</span>
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-950 border border-orange-200 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                      <XCircle className="w-3.5 h-3.5 text-orange-600" />
+                    <span className="px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange/15 text-orange-950 dark:text-orange border border-orange-200 dark:border-orange/30 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                      <XCircle className="w-3.5 h-3.5 text-orange-600 dark:text-orange" />
                       <span>Incorrect</span>
                     </span>
                   )
@@ -714,8 +755,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                           ? 'bg-paper-surface border-hairline'
                           : userChoiceId !== null
                           ? isUserCorrect
-                            ? 'bg-lime/15 border-ink/15'
-                            : 'bg-orange-50 border-orange-200'
+                            ? 'bg-lime/15 border-ink/15 dark:border-lime/30'
+                            : 'bg-orange-50 dark:bg-orange/15 border-orange-200 dark:border-orange/30'
                           : 'bg-paper border-hairline'
                       }`}
                     >
@@ -725,8 +766,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                             ? 'text-ink'
                             : userChoiceId !== null
                             ? isUserCorrect
-                              ? 'text-ink'
-                              : 'text-orange-900'
+                              ? 'text-ink dark:text-lime'
+                              : 'text-orange-900 dark:text-orange'
                             : 'text-muted'
                         }`}
                       >
@@ -738,12 +779,12 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                         ) : userChoiceId !== null ? (
                           isUserCorrect ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-ink" />
+                              <Check className="w-3.5 h-3.5 text-ink dark:text-lime" />
                               <span>YOUR ANSWER (CORRECT)</span>
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-3.5 h-3.5 text-orange-600" />
+                              <XCircle className="w-3.5 h-3.5 text-orange-600 dark:text-orange" />
                               <span>YOUR ANSWER (INCORRECT)</span>
                             </>
                           )
@@ -762,7 +803,7 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                             : userChoiceId !== null
                             ? isUserCorrect
                               ? 'text-ink'
-                              : 'text-orange-950'
+                              : 'text-orange-950 dark:text-orange-200'
                             : 'text-muted italic'
                         }`}
                       >
@@ -826,9 +867,9 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                               key={opt.id}
                               className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors shadow-2xs ${
                                 isThisCorrect
-                                  ? 'bg-lime/20 border-ink/20 text-ink font-semibold'
+                                  ? 'bg-lime/20 border-ink/20 dark:border-lime/30 text-ink dark:text-lime font-semibold'
                                   : isThisUser && !isThisCorrect
-                                  ? 'bg-orange-50 border-orange-200 text-orange-950 font-medium'
+                                  ? 'bg-orange-50 dark:bg-orange/15 border-orange-200 dark:border-orange/30 text-orange-950 dark:text-orange-200 font-medium'
                                   : 'bg-paper-surface border-hairline text-ink'
                               }`}
                             >
@@ -838,7 +879,7 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                                     isThisCorrect
                                       ? 'bg-lime text-ink border border-ink/20'
                                       : isThisUser && !isThisCorrect
-                                      ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                                      ? 'bg-orange-100 dark:bg-orange/25 text-orange-900 dark:text-orange border border-orange-300 dark:border-orange/40'
                                       : 'bg-paper text-muted border border-hairline'
                                   }`}
                                 >
@@ -858,7 +899,7 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                                     className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold border ${
                                       isThisCorrect
                                         ? 'bg-paper-surface text-ink border-hairline'
-                                        : 'bg-orange-200 text-orange-950 border-orange-300'
+                                        : 'bg-orange-200 dark:bg-orange/30 text-orange-950 dark:text-orange-200 border-orange-300 dark:border-orange/40'
                                     }`}
                                   >
                                     YOU CHOSE
@@ -1320,7 +1361,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-6 border-b border-hairline">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-ink text-lime flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-sm">
             <FileText className="w-6 h-6" />
           </div>
           <div>
@@ -1534,23 +1575,23 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
 
       {/* Error Alert Banner */}
       {errorNotice && (
-        <div className="p-4 mb-6 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center justify-between shadow-xs">
+        <div className="p-4 mb-6 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 text-red-900 dark:text-red-300 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
             <span>{errorNotice}</span>
           </div>
           <div className="flex items-center space-x-2">
             {onOpenAISettings && (
               <button
                 onClick={onOpenAISettings}
-                className="px-2.5 py-1 rounded bg-red-100 hover:bg-red-200 text-red-900 font-mono text-[10px] font-bold border border-red-300 cursor-pointer"
+                className="px-2.5 py-1 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-900 dark:text-red-200 font-mono text-[10px] font-bold border border-red-300 dark:border-red-700/50 cursor-pointer"
               >
                 OPEN AI SETTINGS
               </button>
             )}
             <button
               onClick={() => setErrorNotice(null)}
-              className="p-1 hover:bg-red-100 text-red-700 rounded cursor-pointer"
+              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 rounded cursor-pointer"
             >
               ✕
             </button>

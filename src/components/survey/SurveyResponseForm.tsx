@@ -219,7 +219,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                           onClick={() => handleRatingSelect(q.id, tier.value)}
                           className={`p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-ink text-lime border-ink font-bold shadow-md scale-102'
+                              ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime font-bold shadow-md scale-102'
                               : isHovered
                               ? 'bg-paper text-ink border-ink/40'
                               : 'bg-paper text-muted border-hairline hover:bg-paper-surface'
@@ -276,7 +276,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                       >
                         <span
                           className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
-                            isSelected ? 'bg-ink text-lime border-ink' : 'bg-paper-surface text-muted border-hairline'
+                            isSelected ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime' : 'bg-paper-surface text-muted border-hairline'
                           }`}
                         >
                           {isSelected ? '✓' : optionLetter}

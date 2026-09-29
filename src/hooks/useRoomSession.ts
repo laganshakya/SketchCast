@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import confetti from 'canvas-confetti';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
 import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists, isRoomCreatedByMe } from '../lib/supabase';
@@ -434,16 +433,6 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
             sessionStorage.setItem(ROLE_KEY, 'host');
             localStorage.setItem(ROLE_KEY, 'host');
             setPromotionToast(`🎉 You have been promoted to Room Admin! Host controls unlocked.`);
-            try {
-              confetti({
-                particleCount: 120,
-                spread: 80,
-                origin: { y: 0.5 },
-                colors: ['#FFE600', '#00F59B', '#00F0FF', '#FF2A6D'],
-              });
-            } catch {
-              // ignore
-            }
           } else if (event.action === 'demote') {
             setUserRoleState('attendee');
             sessionStorage.setItem(ROLE_KEY, 'attendee');

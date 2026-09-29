@@ -695,7 +695,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       {/* Multi-Question Quiz Modal */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-ink/70 backdrop-blur-md animate-fadeIn font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn font-sans">
           <div className="bg-paper text-ink w-full max-w-xl p-5 sm:p-8 rounded-3xl border border-hairline shadow-2xl relative font-sans max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
@@ -706,7 +706,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
             {/* Modal Title */}
             <div className="flex items-start space-x-3.5 mb-6 pr-8">
-              <div className="w-11 h-11 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
                 <Sparkles className="w-5 h-5 text-lime" />
               </div>
               <div>
@@ -894,12 +894,12 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         }}
                         className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
                           aiFormat === 'short_answer'
-                            ? 'bg-ink text-lime shadow-xs'
+                            ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink shadow-xs'
                             : 'text-muted hover:text-ink'
                         }`}
                         title="Generate short answer questions auto-graded by TypeSafe Jev-1.13"
                       >
-                        <Sparkles className="w-2.5 h-2.5 text-lime" />
+                        <Sparkles className="w-2.5 h-2.5 text-lime dark:text-ink" />
                         <span>⚡ Short (Jev)</span>
                       </button>
                     </div>
@@ -953,7 +953,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       <div
                         className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
                           isAdaptiveLiveMode
-                            ? 'bg-ink text-lime border-ink'
+                            ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime'
                             : 'bg-paper border-hairline text-muted'
                         }`}
                       >
@@ -965,7 +965,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           <span
                             className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${
                               isAdaptiveLiveMode
-                                ? 'bg-ink text-lime'
+                                ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink'
                                 : 'bg-paper text-muted border border-hairline'
                             }`}
                           >

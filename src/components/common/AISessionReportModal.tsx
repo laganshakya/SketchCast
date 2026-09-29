@@ -498,7 +498,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-xs font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs font-sans"
         >
           <motion.div
             initial={{ scale: 0.94, y: 12, opacity: 0 }}
@@ -522,7 +522,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
 
             {/* Modal Header */}
             <div className="flex items-start space-x-3.5 mb-5 pr-10">
-              <div className="w-11 h-11 rounded-2xl bg-ink text-lime flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
               <div>

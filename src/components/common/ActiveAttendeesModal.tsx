@@ -247,7 +247,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-40 bg-ink/60 backdrop-blur-sm rounded-3xl flex items-center justify-center p-5"
+                  className="absolute inset-0 z-40 bg-black/70 backdrop-blur-sm rounded-3xl flex items-center justify-center p-5"
                 >
                   <motion.div
                     initial={{ scale: 0.92, y: 8 }}

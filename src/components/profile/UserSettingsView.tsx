@@ -22,6 +22,9 @@ import {
   Save,
   X,
   BadgePercent,
+  Sun,
+  Moon,
+  Laptop,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Room, AffiliateRecommendation, AffiliatePlacement } from '../../types';
@@ -43,6 +46,7 @@ import {
   playPopSound,
   playWhoosh,
 } from '../../lib/soundFx';
+import { useTheme } from '../../lib/theme';
 
 export interface UserSettingsViewProps {
   userName: string;
@@ -75,6 +79,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 }) => {
   // Navigation tabs within User Settings
   const [activeSubTab, setActiveSubTab] = useState<'affiliate' | 'rooms' | 'preferences'>('affiliate');
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   // Profile editing state
   const [prevUserName, setPrevUserName] = useState(userName);
@@ -1144,6 +1149,115 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
         {/* ============================================================== */}
         {activeSubTab === 'preferences' && (
           <div className="space-y-6">
+            {/* Appearance & Visual Theme Card */}
+            <div className="bg-paper-surface border border-hairline rounded-3xl p-7 space-y-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-serif text-base font-bold text-ink flex items-center space-x-2">
+                    <Sun className="w-5 h-5 text-orange" />
+                    <span>Appearance & Visual Theme</span>
+                  </h3>
+                  <p className="text-xs text-muted mt-1">
+                    Select your preferred visual atmosphere for keynotes, live quizzing, and audience engagement.
+                  </p>
+                </div>
+
+                <div className="self-start sm:self-auto px-3 py-1 rounded-full font-mono text-[11px] font-bold border border-hairline bg-paper-card text-ink flex items-center space-x-1.5 shrink-0 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-lime shrink-0" />
+                  <span className="uppercase">{resolvedTheme} MODE ACTIVE</span>
+                </div>
+              </div>
+
+              {/* 3-Theme Mode Selector Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* Light Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound();
+                    setTheme('light');
+                  }}
+                  className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
+                    theme === 'light'
+                      ? 'bg-paper border-2 border-orange text-ink shadow-sm'
+                      : 'bg-paper-card border-hairline text-muted hover:text-ink hover:border-hairline-strong'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-xl bg-orange/10 text-orange flex items-center justify-center">
+                      <Sun className="w-4 h-4" />
+                    </div>
+                    {theme === 'light' && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-serif text-sm font-bold text-ink">Light Mode</div>
+                    <div className="text-[11px] text-muted mt-0.5 leading-snug">
+                      Studio Paper &amp; Ink tactile risograph cream canvas.
+                    </div>
+                  </div>
+                </button>
+
+                {/* Dark Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound();
+                    setTheme('dark');
+                  }}
+                  className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
+                    theme === 'dark'
+                      ? 'bg-paper border-2 border-orange text-ink shadow-sm'
+                      : 'bg-paper-card border-hairline text-muted hover:text-ink hover:border-hairline-strong'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-xl bg-lime/10 text-lime flex items-center justify-center">
+                      <Moon className="w-4 h-4" />
+                    </div>
+                    {theme === 'dark' && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-serif text-sm font-bold text-ink">Dark Mode</div>
+                    <div className="text-[11px] text-muted mt-0.5 leading-snug">
+                      Obsidian Monolith carbon noir with neon accents.
+                    </div>
+                  </div>
+                </button>
+
+                {/* System Auto Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound();
+                    setTheme('system');
+                  }}
+                  className={`p-4 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between space-y-3 ${
+                    theme === 'system'
+                      ? 'bg-paper border-2 border-orange text-ink shadow-sm'
+                      : 'bg-paper-card border-hairline text-muted hover:text-ink hover:border-hairline-strong'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-xl bg-sky/20 text-sky flex items-center justify-center">
+                      <Laptop className="w-4 h-4" />
+                    </div>
+                    {theme === 'system' && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-serif text-sm font-bold text-ink">System Auto</div>
+                    <div className="text-[11px] text-muted mt-0.5 leading-snug">
+                      Automatically follows your operating system theme.
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             {/* Account & Security Card */}
             <div className="bg-paper-surface border border-hairline rounded-3xl p-7 space-y-4 shadow-sm">
@@ -1175,7 +1289,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
       {/* ============================================================== */}
       <AnimatePresence>
         {isAffiliateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -1479,7 +1593,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
       {/* ============================================================== */}
       <AnimatePresence>
         {isCreateRoomModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

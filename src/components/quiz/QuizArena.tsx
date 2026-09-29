@@ -18,7 +18,6 @@ import {
   Terminal,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import confetti from 'canvas-confetti';
 import type { QuizRoundState, QuizQuestion, QuizOption, SponsorCTA } from '../../types';
 import { gradeShortAnswerWithJev } from '../../lib/meshApi';
 import {
@@ -77,7 +76,7 @@ const renderFormattedText = (text: string) => {
         return (
           <code
             key={seg.key}
-            className="px-2 py-0.5 mx-0.5 rounded-lg bg-ink text-lime font-mono text-[0.88em] font-semibold border border-ink/40 shadow-2xs"
+            className="px-2 py-0.5 mx-0.5 rounded-lg bg-[#101313] dark:bg-[#141818] text-lime dark:text-[#d7ff2f] font-mono text-[0.88em] font-semibold border border-black/30 dark:border-white/10 shadow-2xs"
           >
             {seg.raw.slice(1, -1)}
           </code>
@@ -239,16 +238,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       if (userSelectedOption) {
         if (isCorrect) {
           playSuccessFanfare();
-          try {
-            confetti({
-              particleCount: 50,
-              spread: 50,
-              origin: { y: 0.6 },
-              colors: ['#FF6337', '#D7FF2F', '#101313', '#A6E5FF'],
-            });
-          } catch {
-            // ignore
-          }
         } else {
           playErrorBuzz();
         }
@@ -556,7 +545,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   — Re-anchoring core mental models & essentials
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-lg bg-ink text-lime font-mono text-[10px] font-bold tracking-wider uppercase shrink-0">
+              <span className="px-2.5 py-0.5 rounded-lg bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 font-mono text-[10px] font-bold tracking-wider uppercase shrink-0">
                 {question.difficultyTier || 'Junior'} TIER
               </span>
             </motion.div>
@@ -755,7 +744,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     >
                       {option.id}
                     </span>
-                    <span className="text-sm md:text-base font-semibold leading-relaxed tracking-normal font-sans break-words text-ink">
+                    <span
+                      className={`text-sm md:text-base font-semibold leading-relaxed tracking-normal font-sans break-words ${
+                        isSelected && !isRevealed
+                          ? 'text-paper'
+                          : isRevealed
+                          ? isAnswer
+                            ? 'text-ink'
+                            : isSelected
+                            ? 'text-orange'
+                            : 'text-muted'
+                          : 'text-ink'
+                      }`}
+                    >
                       {renderFormattedText(option.text)}
                     </span>
                   </div>

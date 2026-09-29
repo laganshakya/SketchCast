@@ -53,7 +53,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     switch (question.status) {
       case 'spotlight':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-mono font-bold rounded-full bg-ink text-lime border border-ink shrink-0">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[11px] font-mono font-bold rounded-full bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 shrink-0">
             <Sparkles className="w-3 h-3 fill-lime" />
             <span>On Stage</span>
           </span>
@@ -132,7 +132,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }}
           className={`flex flex-col items-center justify-center p-2 min-w-11 sm:min-w-12 rounded-xl border transition-all cursor-pointer shrink-0 ${
             isUpvoted
-              ? 'bg-ink text-lime border-ink shadow-sm'
+              ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime shadow-sm'
               : 'bg-paper text-muted hover:text-ink hover:bg-paper-surface border-hairline hover:border-ink/40'
           }`}
           title="Vote to rank this question"
@@ -140,7 +140,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <ChevronUp className={`w-4 h-4 stroke-[2.5] transition-transform ${isUpvoted ? 'scale-110' : ''}`} />
           <RollingCounter
             value={question.upvotes_count}
-            className={`text-xs font-mono font-bold mt-0.5 ${isUpvoted ? 'text-lime' : 'text-ink'}`}
+            className={`text-xs font-mono font-bold mt-0.5 ${isUpvoted ? 'text-lime dark:text-ink' : 'text-ink'}`}
           />
         </motion.button>
 

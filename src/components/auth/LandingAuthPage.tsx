@@ -17,7 +17,9 @@ import {
   RefreshCw,
   X,
   Send,
-  Check
+  Check,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -27,6 +29,7 @@ import {
   resendVerificationEmail,
 } from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+import { useTheme } from '../../lib/theme';
 import { SketchCastLogo, SignalSparkGlyph } from '../common/SketchCastLogo';
 
 interface LandingAuthPageProps {
@@ -38,6 +41,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   onAuthenticated,
   roomCode,
 }) => {
+  const { isDark, toggleTheme } = useTheme();
   const [tab, setTab] = useState<'guest' | 'signin' | 'signup'>('guest');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -216,8 +220,22 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
           <span className="text-muted/40 shrink-0">/</span>
           <span className="text-muted uppercase text-xs truncate">REALTIME GATEWAY</span>
         </div>
-        <div className="text-[11px] text-muted font-mono tracking-wider font-semibold shrink-0">
-          EDITION 2026 • SKETCHCAST
+        <div className="flex items-center space-x-3 shrink-0">
+          <button
+            onClick={() => {
+              playPopSound();
+              toggleTheme();
+            }}
+            className="h-8 px-2.5 rounded-full bg-paper-card hover:bg-paper-elevated text-ink border border-hairline flex items-center space-x-1.5 cursor-pointer transition-colors shadow-subtle text-[11px] font-bold"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5 text-lime" /> : <Moon className="w-3.5 h-3.5 text-orange" />}
+            <span className="hidden sm:inline">{isDark ? 'LIGHT' : 'DARK'}</span>
+          </button>
+          <div className="text-[11px] text-muted font-mono tracking-wider font-semibold hidden md:inline">
+            EDITION 2026 • SKETCHCAST
+          </div>
         </div>
       </div>
 
@@ -274,7 +292,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             </div>
 
             <div className="p-4 bg-paper-elevated rounded-2xl border border-hairline hover:border-ink transition-all flex items-start space-x-3.5 min-w-0 shadow-xs">
-              <div className="p-2.5 rounded-xl bg-ink text-lime border border-ink shrink-0">
+              <div className="p-2.5 rounded-xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 shrink-0">
                 <Trophy className="w-5 h-5" />
               </div>
               <div className="min-w-0">
@@ -305,7 +323,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         <div className="w-full max-w-md bg-paper-elevated text-ink p-5 sm:p-7 md:p-8 rounded-3xl border border-hairline shadow-xl relative font-sans">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-11 h-11 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center font-mono shrink-0 shadow-xs">
+            <div className="w-11 h-11 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center font-mono shrink-0 shadow-xs">
               <Shield className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
@@ -655,7 +673,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm font-sans">
           <div className="bg-paper text-ink w-full max-w-sm p-6 sm:p-7 rounded-3xl border border-hairline shadow-2xl relative text-center max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowQRPreview(false)}
@@ -665,7 +683,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
             </button>
 
             <div className="flex flex-col items-center mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center mb-2.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center mb-2.5">
                 <QrCode className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-serif font-bold uppercase tracking-tight text-ink">

@@ -9,6 +9,23 @@
     <title>SketchCast • Realtime Interactive Keynotes &amp; Quizzing Arena</title>
     <meta name="description" content="Next-Generation Interactive Keynotes, Realtime Quizzing, Live Voting, and Crowdsourced Q&amp;A Arena." />
     <meta name="theme-color" content="#f5f0e9" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('sketchcast_theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark) || (saved === 'system' && prefersDark)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0c0f0f');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch(e) {}
+      })();
+    </script>
 
     <!-- Open Graph / Facebook / LinkedIn -->
     <meta property="og:type" content="website" />
@@ -30,7 +47,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400;1,500&family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-[#f5f0e9] text-[#101313] font-sans antialiased selection:bg-[#d7ff2f] selection:text-[#101313] overflow-x-hidden min-h-screen w-full">
+  <body class="bg-paper text-ink font-sans antialiased selection:bg-lime selection:text-ink overflow-x-hidden min-h-screen w-full transition-colors duration-200">
     <div id="root" class="min-h-screen w-full flex flex-col overflow-x-hidden"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

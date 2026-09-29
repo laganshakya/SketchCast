@@ -128,7 +128,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
       {/* Top Header Card */}
       <div className="bg-paper-surface p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-ink text-lime flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-sm">
             <Bot className="w-6 h-6" />
           </div>
           <div>
