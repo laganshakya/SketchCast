@@ -51,18 +51,18 @@ interface MasterclassReportViewProps {
 function getCategoryBadgeStyle(category?: string): { bg: string; text: string; border: string } {
   const lower = (category || '').toLowerCase();
   if (lower.includes('concept') || lower.includes('engineer')) {
-    return { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/25' };
+    return { bg: 'bg-paper', text: 'text-ink', border: 'border-hairline' };
   }
   if (lower.includes('trend') || lower.includes('disrupt')) {
-    return { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/25' };
+    return { bg: 'bg-orange/15', text: 'text-orange-950', border: 'border-orange/25' };
   }
   if (lower.includes('agent') || lower.includes('ai')) {
-    return { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/25' };
+    return { bg: 'bg-lime/25', text: 'text-ink', border: 'border-ink/15' };
   }
   if (lower.includes('secur') || lower.includes('auth')) {
-    return { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/25' };
+    return { bg: 'bg-red-50', text: 'text-red-900', border: 'border-red-200' };
   }
-  return { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/25' };
+  return { bg: 'bg-paper-surface', text: 'text-ink', border: 'border-hairline' };
 }
 
 function parseMarkdownToStyledHtml(
@@ -94,7 +94,7 @@ function parseMarkdownToStyledHtml(
       const trimmed = line.trim();
       if (trimmed.startsWith('- ')) {
         const itemText = trimmed.substring(2);
-        return `<div class="bullet-item"><span class="bullet-arrow">▸</span><span>${itemText}</span></div>`;
+        return `<div class="bullet-item"><span class="bullet-arrow">▪</span><span>${itemText}</span></div>`;
       }
       if (/^\d+\.\s+/.test(trimmed)) {
         return `<div class="numbered-item"><span class="item-num">${trimmed.match(/^\d+\./)?.[0] || '•'}</span><span>${trimmed.replace(/^\d+\.\s+/, '')}</span></div>`;
@@ -105,7 +105,6 @@ function parseMarkdownToStyledHtml(
       if (trimmed.length === 0) {
         return '';
       }
-      // If quiz section and line is table, skip it because we render rich cards below
       if ((isQuizSec || isPollSec) && trimmed.startsWith('|') && trimmed.endsWith('|')) {
         return '';
       }
@@ -218,7 +217,7 @@ function parseMarkdownToStyledHtml(
       const titleText = trimmed.replace(/^#\s+/, '').replace(/[⚡🧠📊💬🏆🚀]/gu, '').trim();
       sectionsHtml.push(`
         <div class="hero-banner">
-          <div class="hero-tag">SKETCHCAST MASTERCLASS REPORT • ROOM ${roomCode} • ${timeStr}</div>
+          <div class="hero-tag">STUDIO NOMA &bull; SKETCHCAST MASTERCLASS REPORT &bull; ROOM ${roomCode} &bull; ${timeStr}</div>
           <h1 class="hero-title">${titleText || roomTitle}</h1>
         </div>
       `);
@@ -236,33 +235,45 @@ function parseMarkdownToStyledHtml(
 <head>
   <meta charset="UTF-8">
   <title>${roomTitle} - Masterclass Session Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0A0A0C; color: #FAFAFA; padding: 40px; margin: 0; line-height: 1.6; }
-    .hero-banner { background: #121216; border: 1px solid #27272A; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; }
-    .hero-tag { font-size: 11px; font-weight: 700; color: #3B82F6; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; font-family: monospace; }
-    .hero-title { margin: 0; font-size: 28px; font-weight: 800; color: #FFFFFF; }
-    .blueprint-card { background: #121216; border: 1px solid #27272A; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-    .card-header h2 { margin: 0 0 16px; font-size: 18px; font-weight: 700; color: #60A5FA; }
-    .bullet-item { display: flex; gap: 8px; margin: 8px 0; color: #D4D4D8; }
-    .bullet-arrow { color: #3B82F6; }
-    .paragraph { color: #D4D4D8; margin: 8px 0; }
-    .divider { border: 0; border-top: 1px solid #27272A; margin: 16px 0; }
-    strong { color: #FFFFFF; }
-    .rich-drilldown-header { font-size: 13px; font-weight: 700; color: #93C5FD; text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 12px; font-family: monospace; }
-    .quiz-card-html { background: #17171C; border: 1px solid #27272A; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    :root {
+      --ink: #101313;
+      --paper: #F5F0E9;
+      --paper-surface: #FFFFFF;
+      --lime: #D7FF2F;
+      --orange: #FF6337;
+      --border-hairline: rgba(16, 19, 19, 0.12);
+      --muted: #65655F;
+    }
+    body { font-family: 'Manrope', system-ui, -apple-system, sans-serif; background: var(--paper); color: var(--ink); padding: 48px 24px; margin: 0; line-height: 1.6; }
+    .hero-banner { background: var(--paper-surface); border: 1px solid var(--border-hairline); border-radius: 24px; padding: 36px 32px; margin-bottom: 24px; text-align: center; }
+    .hero-tag { font-size: 11px; font-weight: 700; color: var(--orange); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+    .hero-title { margin: 0; font-size: 32px; font-weight: 800; color: var(--ink); font-family: 'DM Serif Display', serif; }
+    .blueprint-card { background: var(--paper-surface); border: 1px solid var(--border-hairline); border-radius: 20px; padding: 28px; margin-bottom: 24px; }
+    .card-header h2 { margin: 0 0 16px; font-size: 20px; font-weight: 700; color: var(--ink); font-family: 'DM Serif Display', serif; }
+    .bullet-item { display: flex; gap: 10px; margin: 8px 0; color: var(--ink); font-size: 13px; }
+    .bullet-arrow { color: var(--orange); font-weight: 700; }
+    .paragraph { color: var(--muted); margin: 8px 0; font-size: 13px; }
+    .divider { border: 0; border-top: 1px solid var(--border-hairline); margin: 20px 0; }
+    strong { color: var(--ink); }
+    .rich-drilldown-header { font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 14px; font-family: 'DM Mono', monospace; }
+    .quiz-card-html { background: var(--paper); border: 1px solid var(--border-hairline); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
     .quiz-header-html { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-    .q-badge { font-family: monospace; font-size: 12px; font-weight: 700; color: #3B82F6; background: rgba(59,130,246,0.1); padding: 2px 8px; border-radius: 6px; }
-    .q-title-html { font-size: 14px; font-weight: 700; color: #FFFFFF; flex: 1; min-width: 200px; }
-    .category-chip { font-family: monospace; font-size: 11px; background: rgba(255,255,255,0.06); color: #A1A1AA; padding: 2px 8px; border-radius: 6px; }
-    .correct-banner { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; color: #34D399; }
+    .q-badge { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: var(--ink); background: var(--lime); padding: 2px 8px; border-radius: 6px; }
+    .q-title-html { font-size: 14px; font-weight: 700; color: var(--ink); flex: 1; min-width: 200px; }
+    .category-chip { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--paper-surface); color: var(--muted); border: 1px solid var(--border-hairline); padding: 2px 8px; border-radius: 6px; }
+    .correct-banner { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; color: #065F46; }
     .correct-label { font-weight: 700; margin-right: 6px; }
     .options-grid-html { display: grid; gap: 6px; margin-bottom: 10px; }
-    .opt-row-html { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); font-size: 12px; }
-    .opt-row-html.is-correct { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); color: #6EE7B7; }
-    .opt-key { font-family: monospace; font-weight: 700; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: rgba(255,255,255,0.08); }
+    .opt-row-html { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; background: var(--paper-surface); border: 1px solid var(--border-hairline); font-size: 12px; }
+    .opt-row-html.is-correct { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; font-weight: 600; }
+    .opt-key { font-family: 'DM Mono', monospace; font-weight: 700; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: var(--paper); border: 1px solid var(--border-hairline); }
     .opt-body { flex: 1; }
-    .correct-tag { font-size: 10px; font-weight: 700; background: #059669; color: white; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-    .explanation-box { background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #93C5FD; }
+    .correct-tag { font-size: 10px; font-weight: 700; background: var(--lime); color: var(--ink); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; border: 1px solid rgba(16,19,19,0.15); }
+    .explanation-box { background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #9A3412; }
   </style>
 </head>
 <body>
@@ -353,23 +364,29 @@ function parseQuizzesFromTable(lines: string[]): QuizQuestion[] {
 
 // Helper for inline bold, italic, code
 function formatInlineText(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
+  const segments = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((raw, pos) => ({
+    raw,
+    key: `text_seg_${pos}_${raw.slice(0, 8)}`,
+    isBold: raw.startsWith('**') && raw.endsWith('**'),
+    isCode: raw.startsWith('`') && raw.endsWith('`'),
+  }));
+
+  return segments.map((seg) => {
+    if (seg.isBold) {
       return (
-        <strong key={idx} className="text-white font-semibold">
-          {part.slice(2, -2)}
+        <strong key={seg.key} className="text-ink font-bold">
+          {seg.raw.slice(2, -2)}
         </strong>
       );
     }
-    if (part.startsWith('`') && part.endsWith('`')) {
+    if (seg.isCode) {
       return (
-        <code key={idx} className="px-1.5 py-0.5 rounded bg-white/[0.06] text-blue-300 font-mono text-[11px] border border-white/[0.08]">
-          {part.slice(1, -1)}
+        <code key={seg.key} className="px-1.5 py-0.5 rounded-md bg-paper text-ink font-mono text-[11px] border border-hairline">
+          {seg.raw.slice(1, -1)}
         </code>
       );
     }
-    return part;
+    return seg.raw;
   });
 }
 
@@ -393,13 +410,13 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
       }
       i++; // skip closing ```
       elements.push(
-        <div key={`code-${i}`} className="my-3 rounded-xl bg-[#09090C] border border-white/[0.08] overflow-hidden">
+        <div key={`code-${i}`} className="my-3 rounded-2xl bg-ink text-paper border border-ink overflow-hidden shadow-xs">
           {lang && (
-            <div className="px-3.5 py-1.5 bg-white/[0.04] border-b border-white/[0.06] text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
+            <div className="px-4 py-2 bg-ink/90 border-b border-paper/10 text-[10px] font-mono font-bold text-lime uppercase tracking-wider">
               {lang}
             </div>
           )}
-          <pre className="p-3.5 font-mono text-xs text-cyan-300 overflow-x-auto leading-relaxed">
+          <pre className="p-4 font-mono text-xs text-lime/90 overflow-x-auto leading-relaxed">
             <code>{codeLines.join('\n')}</code>
           </pre>
         </div>
@@ -420,24 +437,36 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
       }
 
       if (!skipTables) {
+        const headerItems = headerCols.map((col, cIdx) => ({
+          col,
+          colKey: `th_${cIdx}_${col.slice(0, 10)}`,
+        }));
+        const rowItems = tableRows.map((row, rIdx) => ({
+          rowKey: `tr_${rIdx}_${row[0] || ''}`,
+          cells: row.map((cell, cIdx) => ({
+            cell,
+            cellKey: `cell_${rIdx}_${cIdx}`,
+          })),
+        }));
+
         elements.push(
-          <div key={`table-${i}`} className="my-4 overflow-x-auto table-responsive rounded-xl border border-white/[0.08] shadow-sm max-w-full">
+          <div key={`table-${i}`} className="my-4 overflow-x-auto table-responsive rounded-2xl border border-hairline bg-paper-surface shadow-xs max-w-full">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-white/[0.04] border-b border-white/[0.08] text-zinc-300 font-semibold uppercase tracking-wider text-[11px]">
-                  {headerCols.map((col, cIdx) => (
-                    <th key={cIdx} className="p-3">
-                      {col}
+                <tr className="bg-paper border-b border-hairline text-ink font-bold uppercase tracking-wider text-[11px]">
+                  {headerItems.map((h) => (
+                    <th key={h.colKey} className="p-3.5">
+                      {h.col}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {tableRows.map((row, rIdx) => (
-                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
-                    {row.map((cell, cIdx) => (
-                      <td key={cIdx} className="p-3 text-zinc-300 font-normal leading-relaxed">
-                        {formatInlineText(cell)}
+              <tbody className="divide-y divide-hairline">
+                {rowItems.map((r) => (
+                  <tr key={r.rowKey} className="hover:bg-paper/40 transition-colors">
+                    {r.cells.map((c) => (
+                      <td key={c.cellKey} className="p-3.5 text-ink font-normal leading-relaxed">
+                        {formatInlineText(c.cell)}
                       </td>
                     ))}
                   </tr>
@@ -454,8 +483,8 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       const itemText = trimmed.substring(2);
       elements.push(
-        <div key={`bullet-${i}`} className="flex items-start space-x-2.5 my-1.5 text-xs text-zinc-300 leading-relaxed">
-          <span className="text-blue-400 font-bold shrink-0 mt-0.5">▸</span>
+        <div key={`bullet-${i}`} className="flex items-start space-x-2.5 my-1.5 text-xs text-ink leading-relaxed">
+          <span className="text-orange font-bold shrink-0 mt-0.5">▪</span>
           <span className="flex-1">{formatInlineText(itemText)}</span>
         </div>
       );
@@ -469,8 +498,8 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
       const num = numMatch ? numMatch[1] : '1';
       const itemText = trimmed.replace(/^\d+\.\s+/, '');
       elements.push(
-        <div key={`num-${i}`} className="flex items-start space-x-2.5 my-1.5 text-xs text-zinc-300 leading-relaxed">
-          <span className="px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 font-mono text-[10px] font-bold shrink-0 mt-0.5 border border-blue-500/20">
+        <div key={`num-${i}`} className="flex items-start space-x-2.5 my-1.5 text-xs text-ink leading-relaxed">
+          <span className="px-2 py-0.5 rounded-lg bg-lime/25 text-ink font-mono text-[10px] font-bold shrink-0 mt-0.5 border border-ink/15">
             {num}
           </span>
           <span className="flex-1">{formatInlineText(itemText)}</span>
@@ -484,7 +513,7 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
     if (trimmed.startsWith('### ')) {
       const headingText = trimmed.replace(/^###\s+/, '');
       elements.push(
-        <h4 key={`sub-${i}`} className="text-xs sm:text-sm font-semibold text-white mt-4 mb-2 flex items-center gap-1.5 text-blue-400">
+        <h4 key={`sub-${i}`} className="text-xs sm:text-sm font-serif font-bold text-ink mt-4 mb-2 flex items-center gap-1.5">
           <span>{formatInlineText(headingText)}</span>
         </h4>
       );
@@ -494,7 +523,7 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
 
     // Horizontal dividers
     if (trimmed === '---') {
-      elements.push(<hr key={`hr-${i}`} className="border-0 border-t border-white/[0.08] my-3" />);
+      elements.push(<hr key={`hr-${i}`} className="border-0 border-t border-hairline my-3" />);
       i++;
       continue;
     }
@@ -502,7 +531,7 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
     // Paragraphs
     if (trimmed.length > 0) {
       elements.push(
-        <p key={`p-${i}`} className="text-xs text-zinc-300 leading-relaxed my-2">
+        <p key={`p-${i}`} className="text-xs text-muted leading-relaxed my-2">
           {formatInlineText(trimmed)}
         </p>
       );
@@ -514,6 +543,8 @@ const FormattedSectionBody: React.FC<{ lines: string[]; skipTables?: boolean }> 
   return <div className="space-y-1">{elements}</div>;
 };
 
+const EMPTY_RECORD: Record<string, string> = {};
+
 // ==========================================
 // INTERACTIVE QUIZ ACCORDION CARDS
 // ==========================================
@@ -523,7 +554,7 @@ interface QuizAccordionProps {
   isHost?: boolean;
 }
 
-const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQuizAnswers = {}, isHost = false }) => {
+const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQuizAnswers = EMPTY_RECORD, isHost = false }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -573,21 +604,21 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
         return (
           <div
             key={cardId}
-            className="rounded-xl bg-[#121217] border border-white/[0.08] hover:border-white/[0.14] transition-all overflow-hidden shadow-sm"
+            className="rounded-2xl bg-paper-surface border border-hairline hover:border-ink/20 transition-all overflow-hidden shadow-xs"
           >
             {/* Clickable Header */}
             <button
               type="button"
               onClick={() => toggleExpand(cardId)}
-              className="w-full text-left p-4 flex items-center justify-between gap-3 cursor-pointer group"
+              className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 cursor-pointer group"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <span className="font-mono text-xs font-bold text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
+                <span className="font-mono text-xs font-bold text-ink bg-paper px-2 py-0.5 rounded-lg border border-hairline shrink-0">
                   #{String(qIdx + 1).padStart(2, '0')}
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs sm:text-sm font-semibold text-white group-hover:text-blue-300 transition-colors line-clamp-2">
+                  <div className="text-xs sm:text-sm font-bold text-ink group-hover:text-orange transition-colors line-clamp-2">
                     {quiz.question}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -603,8 +634,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
               {/* Status Badge on Right */}
               <div className="flex items-center gap-2.5 shrink-0">
                 {isHost ? (
-                  <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="px-2.5 py-1 rounded-full bg-lime/25 text-ink border border-ink/15 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-ink" />
                     <span>
                       {quiz.questionType === 'short_answer'
                         ? `Answer: ${quiz.expectedAnswer || quiz.correctOptionId}`
@@ -613,18 +644,18 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                   </span>
                 ) : userChoiceId !== null ? (
                   isUserCorrect ? (
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="px-2.5 py-1 rounded-full bg-lime text-ink border border-ink/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-ink" />
                       <span>Correct</span>
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                      <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-950 border border-orange-200 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                      <XCircle className="w-3.5 h-3.5 text-orange-600" />
                       <span>Incorrect</span>
                     </span>
                   )
                 ) : (
-                  <span className="px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.08] font-mono text-[11px] font-medium">
+                  <span className="px-2.5 py-1 rounded-full bg-paper text-muted border border-hairline font-mono text-[11px] font-medium">
                     Not Attempted
                   </span>
                 )}
@@ -632,7 +663,7 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="w-7 h-7 rounded-lg bg-white/[0.04] text-zinc-400 group-hover:text-white flex items-center justify-center border border-white/[0.06]"
+                  className="w-7 h-7 rounded-lg bg-paper text-muted group-hover:text-ink flex items-center justify-center border border-hairline"
                 >
                   <ChevronDown className="w-4 h-4" />
                 </motion.div>
@@ -647,22 +678,22 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="border-t border-white/[0.06] bg-[#0E0E12] p-4 sm:p-5 space-y-4"
+                  className="border-t border-hairline bg-paper/40 p-4 sm:p-5 space-y-4"
                 >
                   {/* Side-by-Side Comparison Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Correct Option Card */}
-                    <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30">
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 mb-1">
-                        <CheckCircle className="w-3.5 h-3.5" />
+                    <div className="p-4 rounded-2xl bg-lime/15 border border-ink/15 shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-ink mb-1">
+                        <CheckCircle className="w-3.5 h-3.5 text-ink" />
                         <span>{quiz.questionType === 'short_answer' ? 'EXPECTED ANSWER' : 'CORRECT OPTION'}</span>
                       </div>
-                      <div className="text-xs sm:text-sm font-semibold text-emerald-300">
+                      <div className="text-xs sm:text-sm font-bold text-ink">
                         {quiz.questionType === 'short_answer' ? (
                           <div>
-                            <span className="font-mono text-emerald-300">{quiz.expectedAnswer || correctOptionText}</span>
+                            <span className="font-mono text-ink font-bold">{quiz.expectedAnswer || correctOptionText}</span>
                             {quiz.acceptableAnswers && quiz.acceptableAnswers.length > 0 && (
-                              <div className="text-[11px] font-mono text-zinc-400 mt-1">
+                              <div className="text-[11px] font-mono text-muted mt-1">
                                 (Accepted: {quiz.acceptableAnswers.join(', ')})
                               </div>
                             )}
@@ -678,41 +709,41 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
 
                     {/* User Selected Answer Card */}
                     <div
-                      className={`p-3.5 rounded-xl border ${
+                      className={`p-4 rounded-2xl border shadow-2xs ${
                         isHost
-                          ? 'bg-blue-950/20 border-blue-500/30'
+                          ? 'bg-paper-surface border-hairline'
                           : userChoiceId !== null
                           ? isUserCorrect
-                            ? 'bg-emerald-950/20 border-emerald-500/30'
-                            : 'bg-rose-950/20 border-rose-500/30'
-                          : 'bg-zinc-900/40 border-white/[0.08]'
+                            ? 'bg-lime/15 border-ink/15'
+                            : 'bg-orange-50 border-orange-200'
+                          : 'bg-paper border-hairline'
                       }`}
                     >
                       <div
                         className={`flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider mb-1 ${
                           isHost
-                            ? 'text-blue-400'
+                            ? 'text-ink'
                             : userChoiceId !== null
                             ? isUserCorrect
-                              ? 'text-emerald-400'
-                              : 'text-rose-400'
-                            : 'text-zinc-400'
+                              ? 'text-ink'
+                              : 'text-orange-900'
+                            : 'text-muted'
                         }`}
                       >
                         {isHost ? (
                           <>
                             <Users className="w-3.5 h-3.5" />
-                            <span>HOST RECOGNITION</span>
+                            <span>HOST VERIFICATION</span>
                           </>
                         ) : userChoiceId !== null ? (
                           isUserCorrect ? (
                             <>
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-3.5 h-3.5 text-ink" />
                               <span>YOUR ANSWER (CORRECT)</span>
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-3.5 h-3.5" />
+                              <XCircle className="w-3.5 h-3.5 text-orange-600" />
                               <span>YOUR ANSWER (INCORRECT)</span>
                             </>
                           )
@@ -725,14 +756,14 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                       </div>
 
                       <div
-                        className={`text-xs sm:text-sm font-semibold ${
+                        className={`text-xs sm:text-sm font-bold ${
                           isHost
-                            ? 'text-blue-300'
+                            ? 'text-ink'
                             : userChoiceId !== null
                             ? isUserCorrect
-                              ? 'text-emerald-300'
-                              : 'text-rose-300'
-                            : 'text-zinc-400 italic'
+                              ? 'text-ink'
+                              : 'text-orange-950'
+                            : 'text-muted italic'
                         }`}
                       >
                         {isHost ? (
@@ -752,24 +783,24 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                   {/* Question Options or Short-Answer Reference */}
                   {quiz.questionType === 'short_answer' ? (
                     <div>
-                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-ink" />
                         <span>GROUND TRUTH & ACCEPTABLE SYNONYMS</span>
                       </div>
-                      <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2.5">
-                        <div className="text-xs text-zinc-300 flex items-center gap-2 flex-wrap">
-                          <span className="text-zinc-400 font-mono font-semibold">Canonical Answer:</span>
-                          <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                      <div className="p-4 rounded-2xl bg-paper-surface border border-hairline space-y-2.5 shadow-2xs">
+                        <div className="text-xs text-ink flex items-center gap-2 flex-wrap">
+                          <span className="text-muted font-mono font-semibold">Canonical Answer:</span>
+                          <span className="font-mono text-ink font-bold bg-lime px-2.5 py-1 rounded-lg border border-ink/15">
                             {quiz.expectedAnswer || quiz.correctOptionId}
                           </span>
                         </div>
                         {quiz.acceptableAnswers && quiz.acceptableAnswers.length > 0 && (
-                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/[0.04]">
-                            <span className="text-zinc-400 font-mono text-[11px] mr-1">Accepted Variations:</span>
-                            {quiz.acceptableAnswers.map((syn, synIdx) => (
+                          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-hairline">
+                            <span className="text-muted font-mono text-[11px] mr-1">Accepted Variations:</span>
+                            {quiz.acceptableAnswers.map((syn) => (
                               <span
-                                key={synIdx}
-                                className="px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 font-mono text-[10px] border border-white/[0.08]"
+                                key={`${quiz.id}-${syn}`}
+                                className="px-2 py-0.5 rounded-md bg-paper text-ink font-mono text-[10px] border border-hairline"
                               >
                                 {syn}
                               </span>
@@ -780,8 +811,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                     </div>
                   ) : (
                     <div>
-                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-                        <BarChart2 className="w-3.5 h-3.5 text-blue-400" />
+                      <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1.5">
+                        <BarChart2 className="w-3.5 h-3.5 text-ink" />
                         <span>ALL OPTIONS BREAKDOWN</span>
                       </div>
 
@@ -793,22 +824,22 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                           return (
                             <div
                               key={opt.id}
-                              className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors ${
+                              className={`p-3 sm:p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs transition-colors shadow-2xs ${
                                 isThisCorrect
-                                  ? 'bg-emerald-500/[0.06] border-emerald-500/35 text-zinc-100'
+                                  ? 'bg-lime/20 border-ink/20 text-ink font-semibold'
                                   : isThisUser && !isThisCorrect
-                                  ? 'bg-rose-500/[0.06] border-rose-500/35 text-zinc-200'
-                                  : 'bg-white/[0.02] border-white/[0.06] text-zinc-300'
+                                  ? 'bg-orange-50 border-orange-200 text-orange-950 font-medium'
+                                  : 'bg-paper-surface border-hairline text-ink'
                               }`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <span
                                   className={`w-6 h-6 rounded-md font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
                                     isThisCorrect
-                                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                      ? 'bg-lime text-ink border border-ink/20'
                                       : isThisUser && !isThisCorrect
-                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                      : 'bg-white/[0.06] text-zinc-400 border border-white/[0.08]'
+                                      ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                                      : 'bg-paper text-muted border border-hairline'
                                   }`}
                                 >
                                   {opt.id}
@@ -818,7 +849,7 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
 
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {isThisCorrect && (
-                                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">
+                                  <span className="px-2 py-0.5 rounded bg-lime text-ink font-mono text-[10px] font-bold border border-ink/15">
                                     CORRECT OPTION
                                   </span>
                                 )}
@@ -826,8 +857,8 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
                                   <span
                                     className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold border ${
                                       isThisCorrect
-                                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                                        : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                                        ? 'bg-paper-surface text-ink border-hairline'
+                                        : 'bg-orange-200 text-orange-950 border-orange-300'
                                     }`}
                                   >
                                     YOU CHOSE
@@ -843,13 +874,13 @@ const QuizQuestionsAccordion: React.FC<QuizAccordionProps> = ({ quizzes, userQui
 
                   {/* Architectural Takeaway Box */}
                   {(quiz.explanation || quiz.aiDeepDive) && (
-                    <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/20 flex items-start gap-2.5">
-                      <BookOpen className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <div className="p-4 rounded-2xl bg-paper-surface border border-hairline flex items-start gap-3 shadow-2xs">
+                      <BookOpen className="w-4 h-4 text-orange shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-400 mb-0.5">
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange mb-1">
                           ARCHITECTURAL TAKEAWAY & EXPLANATION
                         </div>
-                        <p className="text-xs text-zinc-300 leading-relaxed">
+                        <p className="text-xs text-muted leading-relaxed">
                           {quiz.explanation || quiz.aiDeepDive}
                         </p>
                       </div>
@@ -874,7 +905,7 @@ interface PollAccordionProps {
   isHost?: boolean;
 }
 
-const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {} }) => {
+const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = EMPTY_RECORD }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -901,25 +932,25 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
         return (
           <div
             key={cardId}
-            className="rounded-xl bg-[#121217] border border-white/[0.08] hover:border-white/[0.14] transition-all overflow-hidden shadow-sm"
+            className="rounded-2xl bg-paper-surface border border-hairline hover:border-ink/20 transition-all overflow-hidden shadow-xs"
           >
             {/* Clickable Header */}
             <button
               type="button"
               onClick={() => toggleExpand(cardId)}
-              className="w-full text-left p-4 flex items-center justify-between gap-3 cursor-pointer group"
+              className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 cursor-pointer group"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <span className="font-mono text-xs font-bold text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
+                <span className="font-mono text-xs font-bold text-ink bg-paper px-2 py-0.5 rounded-lg border border-hairline shrink-0">
                   POLL #{String(pIdx + 1).padStart(2, '0')}
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs sm:text-sm font-semibold text-white group-hover:text-blue-300 transition-colors line-clamp-2">
+                  <div className="text-xs sm:text-sm font-bold text-ink group-hover:text-orange transition-colors line-clamp-2">
                     {poll.question}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-white/[0.04] text-zinc-400 border border-white/[0.06]">
+                    <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-paper text-muted border border-hairline">
                       {totalVotes} {totalVotes === 1 ? 'Vote' : 'Votes'} Recorded
                     </span>
                   </div>
@@ -928,12 +959,12 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
 
               <div className="flex items-center gap-2.5 shrink-0">
                 {userVotedOptId ? (
-                  <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" />
+                  <span className="px-2.5 py-1 rounded-full bg-lime/25 text-ink border border-ink/15 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-ink" />
                     <span>Voted</span>
                   </span>
                 ) : (
-                  <span className="px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.08] font-mono text-[11px] font-medium">
+                  <span className="px-2.5 py-1 rounded-full bg-paper text-muted border border-hairline font-mono text-[11px] font-medium">
                     No Vote
                   </span>
                 )}
@@ -941,7 +972,7 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="w-7 h-7 rounded-lg bg-white/[0.04] text-zinc-400 group-hover:text-white flex items-center justify-center border border-white/[0.06]"
+                  className="w-7 h-7 rounded-lg bg-paper text-muted group-hover:text-ink flex items-center justify-center border border-hairline"
                 >
                   <ChevronDown className="w-4 h-4" />
                 </motion.div>
@@ -956,9 +987,9 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="border-t border-white/[0.06] bg-[#0E0E12] p-4 sm:p-5 space-y-3"
+                  className="border-t border-hairline bg-paper/40 p-4 sm:p-5 space-y-3"
                 >
-                  <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                  <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted mb-2">
                     VOTING DISTRIBUTION & AUDIENCE CONSENSUS
                   </div>
 
@@ -971,33 +1002,33 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
                       return (
                         <div
                           key={opt.id}
-                          className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
+                          className={`p-3.5 rounded-xl border relative overflow-hidden transition-all shadow-2xs ${
                             isUserChoice
-                              ? 'bg-cyan-500/[0.06] border-cyan-500/30'
-                              : 'bg-white/[0.02] border-white/[0.06]'
+                              ? 'border-orange/30 bg-orange/5'
+                              : 'bg-paper-surface border-hairline'
                           }`}
                         >
                           {/* Progress Bar Background */}
                           <div
                             className={`absolute top-0 bottom-0 left-0 transition-all duration-500 ${
-                              isUserChoice ? 'bg-cyan-500/10' : 'bg-blue-500/[0.08]'
+                              isUserChoice ? 'bg-orange/15' : 'bg-lime/20'
                             }`}
                             style={{ width: `${pct}%` }}
                           />
 
                           <div className="relative z-10 flex items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <span className="font-semibold text-zinc-200">{opt.text}</span>
+                              <span className="font-bold text-ink">{opt.text}</span>
                               {isUserChoice && (
-                                <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono text-[9px] font-bold border border-cyan-500/30">
+                                <span className="px-1.5 py-0.5 rounded bg-orange text-paper font-mono text-[9px] font-bold shadow-xs">
                                   YOU VOTED
                                 </span>
                               )}
                             </div>
 
-                            <div className="font-mono text-xs font-bold text-zinc-300 shrink-0 flex items-center gap-2">
+                            <div className="font-mono text-xs font-bold text-ink shrink-0 flex items-center gap-2">
                               <span>{count} votes</span>
-                              <span className="text-blue-400">({pct}%)</span>
+                              <span className="text-orange font-bold">({pct}%)</span>
                             </div>
                           </div>
                         </div>
@@ -1006,13 +1037,13 @@ const PollsAccordion: React.FC<PollAccordionProps> = ({ polls, userPollVotes = {
                   </div>
 
                   {poll.aiConsensusNote && (
-                    <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 flex items-start gap-2.5 mt-3">
-                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <div className="p-4 rounded-2xl bg-paper-surface border border-hairline flex items-start gap-3 mt-3 shadow-2xs">
+                      <Sparkles className="w-4 h-4 text-orange shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-400 mb-0.5">
+                        <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange mb-1">
                           AI COMMUNITY CONSENSUS TAKEAWAY
                         </div>
-                        <p className="text-xs text-zinc-300 leading-relaxed">{poll.aiConsensusNote}</p>
+                        <p className="text-xs text-muted leading-relaxed">{poll.aiConsensusNote}</p>
                       </div>
                     </div>
                   )}
@@ -1036,8 +1067,8 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
   leaderboard,
   isHost = false,
   initialReportMarkdown,
-  userQuizAnswers = {},
-  userPollVotes = {},
+  userQuizAnswers = EMPTY_RECORD,
+  userPollVotes = EMPTY_RECORD,
   onReportGenerated,
   onOpenAISettings,
   sponsorCTA,
@@ -1285,29 +1316,29 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col flex-1">
+    <div className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col flex-1 font-sans">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-6 border-b border-white/[0.08]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-6 border-b border-hairline">
         <div className="flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 shadow-sm">
-            <FileText className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-ink text-lime flex items-center justify-center shrink-0 shadow-sm">
+            <FileText className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2.5">
-              <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-ink tracking-tight">
                 Masterclass Session Report
               </h2>
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">
+              <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-paper text-ink border border-hairline font-bold">
                 {roomCode}
               </span>
               {activeMarkdown && (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold tracking-wide border border-emerald-500/20 flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> Ready
+                <span className="px-2.5 py-0.5 rounded-full bg-lime text-ink text-[10px] font-mono font-bold tracking-wide border border-ink/10 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-ink" /> Ready
                 </span>
               )}
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
-              Unified executive synthesis with core architectural principles, interactive question drilldowns, and community consensus.
+            <p className="text-xs text-muted mt-1 leading-relaxed">
+              Unified executive editorial synthesis with architectural takeaways, interactive drilldowns, and consensus analytics.
             </p>
           </div>
         </div>
@@ -1321,10 +1352,10 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               onClick={handleCopy}
-              className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 text-xs font-semibold border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-all shadow-sm"
+              className="btn-noma-ghost px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer shadow-xs"
               title="Copy markdown to clipboard"
             >
-              {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-400" />}
+              {copied ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-ink" />}
               <span>{copied ? 'Copied' : 'Copy Report'}</span>
             </motion.button>
 
@@ -1338,7 +1369,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                   playClickSound();
                   setIsDropdownOpen(!isDropdownOpen);
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold border border-blue-400/30 flex items-center space-x-2 cursor-pointer transition-all shadow-md shadow-blue-500/20"
+                className="btn-noma-orange px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-2 cursor-pointer shadow-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Report</span>
@@ -1353,62 +1384,62 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-xl bg-[#121216] border border-white/[0.1] shadow-2xl p-1.5 z-50 backdrop-blur-xl"
+                    className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] rounded-2xl bg-paper-surface border border-hairline shadow-2xl p-2 z-50 text-ink"
                   >
                     <button
                       onClick={handleDownloadHtml}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                      className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-medium text-ink hover:bg-paper flex items-center space-x-2.5 cursor-pointer transition-colors"
                     >
-                      <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                      <Globe className="w-4 h-4 text-orange shrink-0" />
                       <div>
-                        <div className="font-semibold text-white">Styled HTML (.html)</div>
-                        <div className="text-[10px] text-zinc-400">Standalone styled document</div>
+                        <div className="font-bold text-ink">Styled HTML (.html)</div>
+                        <div className="text-[10px] text-muted">Standalone Studio Noma doc</div>
                       </div>
                     </button>
 
                     <button
                       onClick={handleDownloadMarkdown}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                      className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-medium text-ink hover:bg-paper flex items-center space-x-2.5 cursor-pointer transition-colors"
                     >
-                      <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-ink shrink-0" />
                       <div>
-                        <div className="font-semibold text-white">Markdown (.md)</div>
-                        <div className="text-[10px] text-zinc-400">Standard GitHub markdown</div>
+                        <div className="font-bold text-ink">Markdown (.md)</div>
+                        <div className="text-[10px] text-muted">Standard GitHub markdown</div>
                       </div>
                     </button>
 
                     <button
                       onClick={handleDownloadTxt}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                      className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-medium text-ink hover:bg-paper flex items-center space-x-2.5 cursor-pointer transition-colors"
                     >
-                      <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-muted shrink-0" />
                       <div>
-                        <div className="font-semibold text-white">Plain Text (.txt)</div>
-                        <div className="text-[10px] text-zinc-400">Clean text without tags</div>
+                        <div className="font-bold text-ink">Plain Text (.txt)</div>
+                        <div className="text-[10px] text-muted">Clean text without tags</div>
                       </div>
                     </button>
 
                     <button
                       onClick={handleDownloadJson}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                      className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-medium text-ink hover:bg-paper flex items-center space-x-2.5 cursor-pointer transition-colors"
                     >
-                      <FileCode className="w-4 h-4 text-purple-400 shrink-0" />
+                      <FileCode className="w-4 h-4 text-ink shrink-0" />
                       <div>
-                        <div className="font-semibold text-white">Structured JSON (.json)</div>
-                        <div className="text-[10px] text-zinc-400">Raw session data & analytics</div>
+                        <div className="font-bold text-ink">Structured JSON (.json)</div>
+                        <div className="text-[10px] text-muted">Raw session telemetry data</div>
                       </div>
                     </button>
 
-                    <div className="my-1 border-t border-white/[0.06]" />
+                    <div className="my-1 border-t border-hairline" />
 
                     <button
                       onClick={handlePrint}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.06] flex items-center space-x-2.5 cursor-pointer transition-colors"
+                      className="w-full px-3 py-2.5 rounded-xl text-left text-xs font-medium text-ink hover:bg-paper flex items-center space-x-2.5 cursor-pointer transition-colors"
                     >
-                      <Printer className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <Printer className="w-4 h-4 text-ink shrink-0" />
                       <div>
-                        <div className="font-semibold text-white">Print / Save as PDF</div>
-                        <div className="text-[10px] text-zinc-400">Printable session executive report</div>
+                        <div className="font-bold text-ink">Print / Save as PDF</div>
+                        <div className="text-[10px] text-muted">Printable executive report</div>
                       </div>
                     </button>
                   </motion.div>
@@ -1422,10 +1453,10 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 text-xs font-semibold border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-all shadow-sm"
+              className="btn-noma-ghost px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer shadow-xs"
               title="Print or Save as PDF"
             >
-              <Printer className="w-4 h-4 text-cyan-400" />
+              <Printer className="w-4 h-4 text-ink" />
               <span>Print / PDF</span>
             </motion.button>
 
@@ -1439,10 +1470,10 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                   playWhoosh();
                   handleGenerateReport();
                 }}
-                className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-colors"
+                className="btn-noma-ghost px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 cursor-pointer"
                 title="Synthesize fresh AI report"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
+                <RefreshCw className="w-3.5 h-3.5" />
                 <span>Re-generate</span>
               </motion.button>
             )}
@@ -1452,74 +1483,74 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
 
       {/* Quick Session Stats Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
-        <div className="p-4 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
-            <Zap className="w-4 h-4" />
+        <div className="p-4 sm:p-5 rounded-2xl bg-paper-surface border border-hairline shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-paper text-ink flex items-center justify-center shrink-0 border border-hairline">
+            <Zap className="w-5 h-5 text-orange" />
           </div>
           <div>
-            <div className="text-base sm:text-lg font-bold font-mono text-white leading-none">
+            <div className="text-xl sm:text-2xl font-serif font-bold text-ink leading-none">
               {quizzes.length}
             </div>
-            <div className="text-[11px] font-medium text-zinc-400 mt-1">Quizzes Run</div>
+            <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted mt-1">Quizzes Run</div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
-            <Layers className="w-4 h-4" />
+        <div className="p-4 sm:p-5 rounded-2xl bg-paper-surface border border-hairline shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-paper text-ink flex items-center justify-center shrink-0 border border-hairline">
+            <Layers className="w-5 h-5 text-ink" />
           </div>
           <div>
-            <div className="text-base sm:text-lg font-bold font-mono text-white leading-none">
+            <div className="text-xl sm:text-2xl font-serif font-bold text-ink leading-none">
               {polls.length}
             </div>
-            <div className="text-[11px] font-medium text-zinc-400 mt-1">Live Polls</div>
+            <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted mt-1">Live Polls</div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
-            <HelpCircle className="w-4 h-4" />
+        <div className="p-4 sm:p-5 rounded-2xl bg-paper-surface border border-hairline shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-paper text-ink flex items-center justify-center shrink-0 border border-hairline">
+            <HelpCircle className="w-5 h-5 text-ink" />
           </div>
           <div>
-            <div className="text-base sm:text-lg font-bold font-mono text-white leading-none">
+            <div className="text-xl sm:text-2xl font-serif font-bold text-ink leading-none">
               {questions.length}
             </div>
-            <div className="text-[11px] font-medium text-zinc-400 mt-1">Inquiries & Q&A</div>
+            <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted mt-1">Q&A Threads</div>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
-            <Users className="w-4 h-4" />
+        <div className="p-4 sm:p-5 rounded-2xl bg-paper-surface border border-hairline shadow-xs flex items-center space-x-3.5">
+          <div className="w-10 h-10 rounded-xl bg-paper text-ink flex items-center justify-center shrink-0 border border-hairline">
+            <Users className="w-5 h-5 text-ink" />
           </div>
           <div>
-            <div className="text-base sm:text-lg font-bold font-mono text-white leading-none">
+            <div className="text-xl sm:text-2xl font-serif font-bold text-ink leading-none">
               {totalAttendees}
             </div>
-            <div className="text-[11px] font-medium text-zinc-400 mt-1">Total Attendees</div>
+            <div className="text-[11px] font-mono font-semibold uppercase tracking-wider text-muted mt-1">Total Attendees</div>
           </div>
         </div>
       </div>
 
       {/* Error Alert Banner */}
       {errorNotice && (
-        <div className="p-3.5 mb-6 rounded-xl bg-red-950/80 border border-red-500/30 text-red-200 text-xs flex items-center justify-between shadow-lg">
+        <div className="p-4 mb-6 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{errorNotice}</span>
           </div>
           <div className="flex items-center space-x-2">
             {onOpenAISettings && (
               <button
                 onClick={onOpenAISettings}
-                className="px-2.5 py-1 rounded bg-red-500/20 hover:bg-red-500/30 text-white font-mono text-[10px] font-bold border border-red-500/40 cursor-pointer"
+                className="px-2.5 py-1 rounded bg-red-100 hover:bg-red-200 text-red-900 font-mono text-[10px] font-bold border border-red-300 cursor-pointer"
               >
                 OPEN AI SETTINGS
               </button>
             )}
             <button
               onClick={() => setErrorNotice(null)}
-              className="p-1 hover:bg-white/[0.06] text-zinc-400 hover:text-white rounded cursor-pointer"
+              className="p-1 hover:bg-red-100 text-red-700 rounded cursor-pointer"
             >
               ✕
             </button>
@@ -1529,156 +1560,159 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
 
       {/* State 1: Generation Trigger Card (If Report Not Generated) */}
       {!activeMarkdown && !isGenerating && (
-        <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mx-auto flex items-center justify-center mb-4">
+        <div className="p-8 sm:p-12 rounded-3xl bg-paper-surface border border-hairline text-center max-w-xl mx-auto my-auto shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-paper border border-hairline text-ink mx-auto flex items-center justify-center mb-4 shadow-2xs">
             <FileText className="w-7 h-7" />
           </div>
 
-          <h3 className="text-base sm:text-lg font-bold text-white mb-2">
+          <h3 className="text-lg sm:text-xl font-serif font-bold text-ink mb-2">
             {isHost ? 'Synthesize Masterclass Session Report' : 'Report Pending Generation'}
           </h3>
 
-          <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
+          <p className="text-xs text-muted max-w-md mx-auto mb-6 leading-relaxed">
             {isHost
-              ? `Ready to generate the masterclass synthesis for Room ${roomCode}. AI will unify technical architectural principles, quiz drilldowns, community poll consensus, and code recipes into a single high-density document.`
+              ? `Ready to generate the masterclass synthesis for Room ${roomCode}. AI will unify technical architectural principles, quiz drilldowns, community poll consensus, and code recipes into a single high-density editorial document.`
               : `The session host has not generated the AI Masterclass Report for Room ${roomCode} yet. Once synthesized, the executive report will appear here automatically.`}
           </p>
 
-              {isHost ? (
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    playWhoosh();
-                    handleGenerateReport();
-                  }}
-                  className="py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer transition-all shadow-lg shadow-blue-500/25"
+          {isHost ? (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                playWhoosh();
+                handleGenerateReport();
+              }}
+              className="btn-noma-orange py-3.5 px-7 rounded-xl text-xs font-mono uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer shadow-sm"
+            >
+              <Sparkles className="w-4 h-4 shrink-0" />
+              <span>Generate Report</span>
+            </motion.button>
+          ) : (
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-paper text-muted text-xs border border-hairline">
+              <span className="w-2 h-2 rounded-full bg-orange animate-ping" />
+              <span>Waiting for host to publish...</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* State 2: Generating Loader */}
+      {isGenerating && (
+        <div className="p-12 rounded-3xl bg-paper-surface border border-hairline text-center max-w-md mx-auto my-auto shadow-xs">
+          <RefreshCw className="w-8 h-8 text-orange mx-auto animate-spin mb-4" />
+          <h4 className="text-base font-serif font-bold text-ink mb-1.5">Synthesizing Masterclass Report...</h4>
+          <p className="text-xs text-muted leading-relaxed">
+            Analyzing quiz outcomes, voting consensus, and top architectural Q&A threads via Mesh API router.
+          </p>
+        </div>
+      )}
+
+      {/* State 3: Formatted Executive Dashboard */}
+      {activeMarkdown && parsedReport && (
+        <div className="space-y-6 pb-12">
+          {/* Executive Hero Banner */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-paper-surface border border-hairline shadow-xs">
+            <div className="flex items-center space-x-2 text-[10px] font-bold text-orange uppercase tracking-widest font-mono mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>SKETCHCAST MASTERCLASS SYNTHESIS</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-ink tracking-tight">
+              {parsedReport.heroTitle || roomTitle}
+            </h1>
+            <p className="text-xs text-muted mt-2">
+              Keynote Executive Brief &bull; Published for Room {roomCode}
+            </p>
+          </div>
+
+          {/* Rendered Section Cards */}
+          <div className="grid grid-cols-1 gap-5">
+            {parsedReport.sections.map((sec, idx) => ({
+              sec,
+              key: `report_sec_${idx}_${sec.title}`,
+              delay: idx * 0.05,
+              isQuizSection: /quiz/i.test(sec.title),
+              isPollSection: /poll/i.test(sec.title),
+            })).map(({ sec, key, delay, isQuizSection, isPollSection }) => {
+              const activeQuizzesList =
+                quizzes.length > 0 ? quizzes : parseQuizzesFromTable(sec.lines);
+
+              return (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay }}
+                  className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-paper-surface border border-hairline shadow-xs transition-all hover:border-ink/20"
                 >
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>Generate Report</span>
-                </motion.button>
-              ) : (
-                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] text-zinc-400 text-xs border border-white/[0.06]">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-                  <span>Waiting for host to publish...</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* State 2: Generating Loader */}
-          {isGenerating && (
-            <div className="p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-md mx-auto my-auto shadow-xl">
-              <RefreshCw className="w-8 h-8 text-blue-400 mx-auto animate-spin mb-4" />
-              <h4 className="text-base font-bold text-white mb-1.5">Synthesizing Masterclass Report...</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Analyzing quiz outcomes, voting consensus, and top architectural Q&A threads via Xiaomi MiMo-V2.5.
-              </p>
-            </div>
-          )}
-
-          {/* State 3: Formatted Executive Dashboard */}
-          {activeMarkdown && parsedReport && (
-            <div className="space-y-6 pb-12">
-              {/* Executive Hero Banner */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/30 via-[#101015] to-[#0E0E12] border border-blue-500/20 shadow-md">
-                <div className="flex items-center space-x-2 text-[10px] font-bold text-blue-400 uppercase tracking-widest font-mono mb-2">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>SKETCHCAST MASTERCLASS SYNTHESIS</span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  {parsedReport.heroTitle || roomTitle}
-                </h1>
-                <p className="text-xs text-zinc-400 mt-2">
-                  Keynote Executive Brief • Published for Room {roomCode}
-                </p>
-              </div>
-
-              {/* Rendered Section Cards */}
-              <div className="grid grid-cols-1 gap-5">
-                {parsedReport.sections.map((sec, idx) => {
-                  const isQuizSection = /quiz/i.test(sec.title);
-                  const isPollSection = /poll/i.test(sec.title);
-
-                  const activeQuizzesList =
-                    quizzes.length > 0 ? quizzes : parseQuizzesFromTable(sec.lines);
-
-                  return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, delay: idx * 0.05 }}
-                      className="p-5 sm:p-6 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] shadow-md transition-all hover:border-white/[0.12]"
-                    >
-                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-                            {isQuizSection ? (
-                              <Zap className="w-4 h-4" />
-                            ) : isPollSection ? (
-                              <Layers className="w-4 h-4" />
-                            ) : (
-                              <FileText className="w-4 h-4" />
-                            )}
-                          </div>
-                          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                            {sec.title}
-                          </h3>
-                        </div>
-
-                        {isQuizSection && activeQuizzesList.length > 0 && (
-                          <span className="font-mono text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                            {activeQuizzesList.length} QUESTIONS
-                          </span>
-                        )}
-
-                        {isPollSection && polls.length > 0 && (
-                          <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                            {polls.length} POLLS
-                          </span>
+                  <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-hairline">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-9 h-9 rounded-xl bg-paper text-ink border border-hairline flex items-center justify-center shrink-0">
+                        {isQuizSection ? (
+                          <Zap className="w-4 h-4 text-orange" />
+                        ) : isPollSection ? (
+                          <Layers className="w-4 h-4 text-ink" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-ink" />
                         )}
                       </div>
+                      <h3 className="text-base sm:text-lg font-serif font-bold text-ink tracking-tight">
+                        {sec.title}
+                      </h3>
+                    </div>
 
-                      {isQuizSection && activeQuizzesList.length > 0 ? (
-                        <div>
-                          <FormattedSectionBody lines={sec.lines} skipTables={true} />
-                          <QuizQuestionsAccordion
-                            quizzes={activeQuizzesList}
-                            userQuizAnswers={userQuizAnswers}
-                            isHost={isHost}
-                          />
-                        </div>
-                      ) : isPollSection && polls.length > 0 ? (
-                        <div>
-                          <FormattedSectionBody lines={sec.lines} skipTables={true} />
-                          <PollsAccordion
-                            polls={polls}
-                            userPollVotes={userPollVotes}
-                            isHost={isHost}
-                          />
-                        </div>
-                      ) : (
-                        <FormattedSectionBody lines={sec.lines} />
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    {isQuizSection && activeQuizzesList.length > 0 && (
+                      <span className="font-mono text-[10px] font-bold text-ink bg-lime/25 px-2.5 py-0.5 rounded-full border border-ink/10">
+                        {activeQuizzesList.length} QUESTIONS
+                      </span>
+                    )}
 
-              {/* Contextual Career & Certification Deep Dive */}
-              {affiliateRec && (
-                <div className="pt-2">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold mb-3 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                    <span>CURATED DEEP-DIVE & PROFESSIONAL CERTIFICATION</span>
+                    {isPollSection && polls.length > 0 && (
+                      <span className="font-mono text-[10px] font-bold text-ink bg-lime/25 px-2.5 py-0.5 rounded-full border border-ink/10">
+                        {polls.length} POLLS
+                      </span>
+                    )}
                   </div>
-                  <ContextualAffiliateCard recommendation={affiliateRec} />
-                </div>
-              )}
+
+                  {isQuizSection && activeQuizzesList.length > 0 ? (
+                    <div>
+                      <FormattedSectionBody lines={sec.lines} skipTables={true} />
+                      <QuizQuestionsAccordion
+                        quizzes={activeQuizzesList}
+                        userQuizAnswers={userQuizAnswers}
+                        isHost={isHost}
+                      />
+                    </div>
+                  ) : isPollSection && polls.length > 0 ? (
+                    <div>
+                      <FormattedSectionBody lines={sec.lines} skipTables={true} />
+                      <PollsAccordion
+                        polls={polls}
+                        userPollVotes={userPollVotes}
+                        isHost={isHost}
+                      />
+                    </div>
+                  ) : (
+                    <FormattedSectionBody lines={sec.lines} />
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Contextual Career & Certification Deep Dive */}
+          {affiliateRec && (
+            <div className="pt-2">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted font-bold mb-3 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-orange" />
+                <span>CURATED DEEP-DIVE & PROFESSIONAL CERTIFICATION</span>
+              </div>
+              <ContextualAffiliateCard recommendation={affiliateRec} />
             </div>
           )}
+        </div>
+      )}
     </div>
   );
 };

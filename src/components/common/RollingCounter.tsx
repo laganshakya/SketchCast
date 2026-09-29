@@ -18,28 +18,35 @@ export const RollingCounter: React.FC<RollingCounterProps> = ({
 
   const characters = displayValue.split('');
 
+  const charItems = characters.map((char, index) => {
+    const slot = characters.length - 1 - index;
+    return {
+      char,
+      slotId: `digit-slot-${slot}`,
+      isDigit: !isNaN(Number(char)),
+    };
+  });
+
   return (
     <span className={`inline-flex items-baseline overflow-hidden select-none font-mono ${className}`}>
-      {characters.map((char, index) => {
-        const isDigit = !isNaN(Number(char));
-
-        if (!isDigit) {
+      {charItems.map((item) => {
+        if (!item.isDigit) {
           return (
-            <span key={`char-${index}`} className="inline-block">
-              {char}
+            <span key={item.slotId} className="inline-block">
+              {item.char}
             </span>
           );
         }
 
         return (
           <span
-            key={`pos-${index}`}
+            key={item.slotId}
             className="relative inline-flex flex-col items-center justify-center overflow-hidden"
             style={{ minWidth: '0.62em' }}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
-                key={`${index}-${char}`}
+                key={`${item.slotId}-${item.char}`}
                 initial={{ y: '70%', opacity: 0 }}
                 animate={{ y: '0%', opacity: 1 }}
                 exit={{ y: '-70%', opacity: 0 }}
@@ -49,7 +56,7 @@ export const RollingCounter: React.FC<RollingCounterProps> = ({
                 }}
                 className="inline-block"
               >
-                {char}
+                {item.char}
               </motion.span>
             </AnimatePresence>
           </span>

@@ -258,11 +258,10 @@ export async function dbFetchRooms(): Promise<Room[]> {
           // ignore
         }
       }
-      return {
-        ...r,
+      return Object.assign({}, r, {
         admins,
         ai_model: aiModel,
-      };
+      });
     });
 
     // Authoritative Sync: Supabase is the single source of truth for rooms.

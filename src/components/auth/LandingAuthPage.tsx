@@ -9,7 +9,6 @@ import {
   User as UserIcon,
   ArrowRight,
   Shield,
-  Radio,
   CheckCircle,
   AlertCircle,
   Crown,
@@ -189,108 +188,131 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] font-sans selection:bg-[#3B82F6] selection:text-white overflow-x-hidden">
-      {/* Clean Top Bar */}
-      <div className="border-b border-white/[0.08] bg-[#0E0E11] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between text-xs font-mono min-w-0">
-        <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
-          <span className="text-blue-400 font-bold tracking-wider uppercase text-[11px] sm:text-xs shrink-0">ARENA LIVE</span>
-          <span className="text-zinc-600 shrink-0 hidden min-[380px]:inline">/</span>
-          <span className="text-zinc-400 uppercase text-[10px] sm:text-xs truncate hidden min-[380px]:inline">REALTIME GATEWAY</span>
+    <div className="min-h-screen w-full flex flex-col justify-between bg-paper text-ink font-sans selection:bg-lime selection:text-ink overflow-x-hidden">
+      {/* Top Editorial Ticker Ribbon */}
+      <div className="w-full bg-ink text-paper py-2 overflow-hidden border-b border-hairline font-mono text-[11px] font-bold tracking-widest uppercase select-none">
+        <div className="marquee">
+          <div className="marquee-track">
+            <span className="inline-flex items-center"><b>✦</b>STUDIO NOMA ARCHITECTURE</span>
+            <span className="inline-flex items-center"><b>✦</b>REAL-TIME AUDIENCE ARENA</span>
+            <span className="inline-flex items-center"><b>✦</b>SUB-40MS SYNCHRONIZATION</span>
+            <span className="inline-flex items-center"><b>✦</b>LIVE QUIZZING &amp; CONSENSUS</span>
+            <span className="inline-flex items-center"><b>✦</b>VERIFIABLE CREDENTIALS</span>
+            <span className="inline-flex items-center"><b>✦</b>MESH AI MODERATION &amp; SYNTHESIS</span>
+            <span className="inline-flex items-center"><b>✦</b>ZERO-FRICTION 1-CLICK JOIN</span>
+            <span className="inline-flex items-center"><b>✦</b>STUDIO NOMA ARCHITECTURE</span>
+            <span className="inline-flex items-center"><b>✦</b>REAL-TIME AUDIENCE ARENA</span>
+            <span className="inline-flex items-center"><b>✦</b>SUB-40MS SYNCHRONIZATION</span>
+            <span className="inline-flex items-center"><b>✦</b>LIVE QUIZZING &amp; CONSENSUS</span>
+          </div>
         </div>
-        <div className="text-[10px] sm:text-[11px] text-zinc-500 font-mono shrink-0">
-          SKETCHCAST v2.4
+      </div>
+
+      {/* Clean Header Bar */}
+      <div className="border-b border-hairline bg-paper px-4 sm:px-8 py-3.5 flex items-center justify-between text-xs font-mono min-w-0">
+        <div className="flex items-center space-x-2 min-w-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-orange animate-pulse shrink-0" />
+          <span className="text-orange font-bold tracking-wider uppercase text-xs shrink-0">ARENA LIVE</span>
+          <span className="text-muted/40 shrink-0">/</span>
+          <span className="text-muted uppercase text-xs truncate">REALTIME GATEWAY</span>
+        </div>
+        <div className="text-[11px] text-muted font-mono tracking-wider font-semibold shrink-0">
+          EDITION 2026 • SKETCHCAST
         </div>
       </div>
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:flex-row items-stretch lg:items-center justify-center p-3 sm:p-6 md:p-12 gap-6 lg:gap-8 xl:gap-14 max-w-6xl mx-auto w-full min-w-0">
-        {/* Left Hero Brand & Exaggerated Typography */}
-        <div className="flex-1 space-y-4 sm:space-y-6 max-w-xl text-left w-full min-w-0">
-          <div className="inline-flex items-center space-x-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-mono text-[10px] sm:text-xs text-blue-400 max-w-full">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-blue-400 shrink-0" />
-            <span className="font-bold uppercase tracking-wider truncate">LIVE AUDIENCE ENGAGEMENT ARENA</span>
+      <div className="flex-1 flex flex-col lg:flex-row items-stretch lg:items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16 gap-8 lg:gap-12 xl:gap-16 max-w-7xl mx-auto w-full min-w-0">
+        {/* Left Hero Brand & Editorial Typography */}
+        <div className="flex-1 space-y-6 max-w-xl text-left w-full min-w-0">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-xs font-bold max-w-full">
+            <span className="w-2 h-2 rounded-full bg-orange animate-pulse shrink-0" />
+            <span className="uppercase tracking-wider truncate">LIVE INTERACTIVE AUDIENCE PLATFORM</span>
           </div>
 
-          <div className="space-y-3 sm:space-y-4 max-w-full">
+          <div className="space-y-4 max-w-full">
             <SketchCastLogo size="xl" showWordmark={true} />
-            <p className="text-xs sm:text-base font-sans text-zinc-400 leading-relaxed max-w-lg break-words">
-              High-velocity interactive audience engagement platform designed for modern tech events: real-time quizzing, live consensus polling, and crowdsourced technical Q&A.
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-ink leading-[1.08] pt-2">
+              Ideas in <em className="italic font-serif text-orange">motion.</em>
+              <br />Live with the crowd.
+            </h1>
+            <p className="text-sm sm:text-base font-sans text-muted leading-relaxed max-w-lg">
+              High-velocity interactive engagement for tech meetups, masterclasses, and conferences. Real-time competitive quizzes, live audience consensus, and crowdsourced technical Q&A with sub-second synchronization.
             </p>
           </div>
 
           {/* Feature Highlights Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 w-full min-w-0">
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
-              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 flex items-center justify-center">
-                <SignalSparkGlyph size={24} />
+            <div className="p-4 bg-paper-elevated rounded-2xl border border-hairline hover:border-ink transition-all flex items-start space-x-3.5 min-w-0 shadow-xs">
+              <div className="p-2.5 rounded-xl bg-lime/25 text-ink border border-lime shrink-0 flex items-center justify-center">
+                <SignalSparkGlyph size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-mono font-bold uppercase text-white truncate">TECH QUIZZING</div>
-                <div className="text-xs text-zinc-400 mt-1 leading-snug">Real-time competitive rounds with instant takeaway analysis</div>
+                <div className="text-xs font-mono font-bold uppercase text-ink truncate">TECH QUIZZING</div>
+                <div className="text-xs text-muted mt-1 leading-snug">Competitive rounds with live takeaway analysis</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                <Vote className="w-4 h-4" />
+            <div className="p-4 bg-paper-elevated rounded-2xl border border-hairline hover:border-ink transition-all flex items-start space-x-3.5 min-w-0 shadow-xs">
+              <div className="p-2.5 rounded-xl bg-orange/15 text-orange border border-orange/30 shrink-0">
+                <Vote className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-mono font-bold uppercase text-white truncate">LIVE POLLS</div>
-                <div className="text-xs text-zinc-400 mt-1 leading-snug">Instant audience consensus with AI sentiment synthesis</div>
+                <div className="text-xs font-mono font-bold uppercase text-ink truncate">LIVE POLLS</div>
+                <div className="text-xs text-muted mt-1 leading-snug">Instant audience consensus & sentiment synthesis</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                <HelpCircle className="w-4 h-4" />
+            <div className="p-4 bg-paper-elevated rounded-2xl border border-hairline hover:border-ink transition-all flex items-start space-x-3.5 min-w-0 shadow-xs">
+              <div className="p-2.5 rounded-xl bg-sky/30 text-ink border border-sky shrink-0">
+                <HelpCircle className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-mono font-bold uppercase text-white truncate">Q&A UPVOTING</div>
-                <div className="text-xs text-zinc-400 mt-1 leading-snug">Crowdsourced question triage & live stage spotlight</div>
+                <div className="text-xs font-mono font-bold uppercase text-ink truncate">Q&A UPVOTING</div>
+                <div className="text-xs text-muted mt-1 leading-snug">Crowdsourced question triage & stage spotlight</div>
               </div>
             </div>
 
-            <div className="p-4 bg-[#121215] rounded-2xl border border-white/[0.08] hover:border-blue-500/30 transition-all flex items-start space-x-3.5 min-w-0">
-              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
-                <Trophy className="w-4 h-4" />
+            <div className="p-4 bg-paper-elevated rounded-2xl border border-hairline hover:border-ink transition-all flex items-start space-x-3.5 min-w-0 shadow-xs">
+              <div className="p-2.5 rounded-xl bg-ink text-lime border border-ink shrink-0">
+                <Trophy className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-mono font-bold uppercase text-white truncate">RANKINGS PODIUM</div>
-                <div className="text-xs text-zinc-400 mt-1 leading-snug">Live podium & verifiable masterclass credentials</div>
+                <div className="text-xs font-mono font-bold uppercase text-ink truncate">RANKINGS PODIUM</div>
+                <div className="text-xs text-muted mt-1 leading-snug">Live podium & verifiable masterclass credentials</div>
               </div>
             </div>
           </div>
 
-          {/* Quick QR Bar: Stacks on mobile to prevent horizontal overflow */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 w-full min-w-0">
+          {/* Quick QR Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full min-w-0">
             <button
               type="button"
               onClick={() => setShowQRPreview(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#121215] hover:bg-[#18181D] text-white border border-white/[0.08] font-mono text-xs font-bold transition-colors flex items-center justify-center space-x-2 cursor-pointer touch-target shrink-0"
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-paper-elevated hover:bg-black/[0.04] text-ink border border-hairline hover:border-ink font-mono text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer touch-target shrink-0 shadow-xs"
             >
-              <QrCode className="w-4 h-4 text-blue-400 shrink-0" />
+              <QrCode className="w-4 h-4 text-orange shrink-0" />
               <span>SHOW ROOM QR CODE</span>
             </button>
-            <div className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 text-xs font-mono text-zinc-400 bg-[#121215] px-4 py-2.5 rounded-xl border border-white/[0.08] shrink-0">
+            <div className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 text-xs font-mono text-muted bg-paper-card px-4 py-3 rounded-2xl border border-hairline shrink-0">
               <span>ACTIVE KEY:</span>
-              <span className="text-blue-400 font-bold">{roomKey}</span>
+              <span className="text-ink font-bold font-mono">{roomKey}</span>
             </div>
           </div>
         </div>
 
-        {/* Right Modern Auth Box */}
-        <div className="w-full max-w-md bg-[#121215] text-[#FAFAFA] p-4 sm:p-6 md:p-8 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans">
+        {/* Right Studio Noma Editorial Auth Box */}
+        <div className="w-full max-w-md bg-paper-elevated text-ink p-5 sm:p-7 md:p-8 rounded-3xl border border-hairline shadow-xl relative font-sans">
           {/* Header */}
-          <div className="flex items-center space-x-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-mono shrink-0">
-              <Shield className="w-5 h-5 stroke-[2]" />
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-11 h-11 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center font-mono shrink-0 shadow-xs">
+              <Shield className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <div className="text-[10px] font-mono tracking-widest text-blue-400 uppercase font-bold">
+              <div className="text-[10px] font-mono tracking-widest text-orange uppercase font-bold">
                 GATEWAY ACCESS
               </div>
-              <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
+              <h2 className="text-xl font-serif font-bold uppercase tracking-tight text-ink mt-0.5">
                 {verificationSentEmail ? 'EMAIL VERIFICATION' : 'ENTER ARENA'}
               </h2>
             </div>
@@ -299,20 +321,20 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
           {/* Verification Pending Screen */}
           {verificationSentEmail ? (
             <div className="space-y-4 font-mono">
-              <div className="p-4 bg-[#0A0A0C] rounded-xl border border-white/[0.08] space-y-3">
-                <div className="flex items-center space-x-2 text-blue-400 font-bold text-sm">
+              <div className="p-4 bg-paper-card rounded-2xl border border-hairline space-y-3">
+                <div className="flex items-center space-x-2 text-orange font-bold text-sm">
                   <Mail className="w-5 h-5 animate-pulse shrink-0" />
                   <span>CONFIRMATION LINK SENT</span>
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                <p className="text-xs text-muted leading-relaxed font-sans">
                   Verification link transmitted to:
                   <br />
-                  <strong className="text-white bg-[#18181D] px-2 py-0.5 rounded-lg border border-white/[0.08] break-all text-xs inline-block mt-1 font-mono">
+                  <strong className="text-ink bg-paper px-2 py-0.5 rounded-lg border border-hairline break-all text-xs inline-block mt-1 font-mono">
                     {verificationSentEmail}
                   </strong>
                 </p>
-                <div className="text-[11px] text-zinc-400 space-y-1 bg-[#121215] p-3 rounded-lg border border-white/[0.06]">
-                  <div className="font-bold text-white font-mono">NEXT STEPS:</div>
+                <div className="text-[11px] text-muted space-y-1 bg-paper p-3 rounded-xl border border-hairline">
+                  <div className="font-bold text-ink font-mono">NEXT STEPS:</div>
                   <div>1. Check your email inbox.</div>
                   <div>2. Click confirmation link to verify.</div>
                   <div>3. Return here and sign in.</div>
@@ -320,22 +342,22 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
               </div>
 
               {resendStatus && (
-                <div className={`p-2.5 rounded-xl text-xs font-mono font-bold border flex items-center space-x-2 ${
+                <div className={`p-3 rounded-xl text-xs font-mono font-bold border flex items-center space-x-2 ${
                   resendStatus.includes('sent')
-                    ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
-                    : 'bg-red-950/40 text-red-400 border-red-500/30'
+                    ? 'bg-lime/20 text-ink border-lime'
+                    : 'bg-orange/15 text-orange border-orange/30'
                 }`}>
-                  {resendStatus.includes('sent') ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  {resendStatus.includes('sent') ? <Check className="w-4 h-4 shrink-0 text-ink" /> : <AlertCircle className="w-4 h-4 shrink-0 text-orange" />}
                   <span>{resendStatus}</span>
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 <button
                   type="button"
                   onClick={() => handleResendVerification(verificationSentEmail)}
                   disabled={resendCooldown > 0}
-                  className="w-full py-2.5 bg-[#18181D] hover:bg-[#22222A] disabled:opacity-50 text-[#FAFAFA] text-xs font-mono font-bold uppercase rounded-xl border border-white/[0.08] flex items-center justify-center space-x-2 cursor-pointer transition-colors"
+                  className="w-full py-3 bg-paper-card hover:bg-black/[0.05] disabled:opacity-50 text-ink text-xs font-mono font-bold uppercase rounded-xl border border-hairline flex items-center justify-center space-x-2 cursor-pointer transition-colors"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>
@@ -351,7 +373,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     setVerificationSentEmail(null);
                     setTab('signin');
                   }}
-                  className="w-full py-2.5 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                  className="w-full py-3.5 btn-noma-orange text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
                 >
                   <span>CONFIRMED ➔ SIGN IN</span>
                   <ArrowRight className="w-4 h-4" />
@@ -361,20 +383,20 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
           ) : (
             <>
               {/* Tab Switcher */}
-              <div className="grid grid-cols-3 gap-1 p-1 bg-[#0A0A0C] border border-white/[0.08] rounded-xl mb-4 font-mono text-[10px] sm:text-xs">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-paper-card border border-hairline rounded-2xl mb-5 font-mono text-[10px] sm:text-xs">
                 <button
                   type="button"
                   onClick={() => {
                     playClickSound();
                     handleTabChange('guest');
                   }}
-                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-xl font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'guest'
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'text-zinc-400 hover:text-white border border-transparent'
+                      ? 'bg-ink text-paper shadow-xs'
+                      : 'text-muted hover:text-ink border border-transparent'
                   }`}
                 >
-                  <Zap className="w-3 h-3 text-blue-400 shrink-0" />
+                  <Zap className={`w-3 h-3 shrink-0 ${tab === 'guest' ? 'text-lime' : 'text-muted'}`} />
                   <span className="truncate">GUEST</span>
                 </button>
                 <button
@@ -383,13 +405,13 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signin');
                   }}
-                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-xl font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signin'
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'text-zinc-400 hover:text-white border border-transparent'
+                      ? 'bg-ink text-paper shadow-xs'
+                      : 'text-muted hover:text-ink border border-transparent'
                   }`}
                 >
-                  <Lock className="w-3 h-3 text-blue-400 shrink-0" />
+                  <Lock className={`w-3 h-3 shrink-0 ${tab === 'signin' ? 'text-orange' : 'text-muted'}`} />
                   <span className="truncate">SIGN IN</span>
                 </button>
                 <button
@@ -398,40 +420,38 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                     playClickSound();
                     handleTabChange('signup');
                   }}
-                  className={`py-2 px-1 rounded-lg font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
+                  className={`py-2 px-1 rounded-xl font-bold uppercase transition-all cursor-pointer text-center flex items-center justify-center space-x-1 ${
                     tab === 'signup'
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'text-zinc-400 hover:text-white border border-transparent'
+                      ? 'bg-ink text-paper shadow-xs'
+                      : 'text-muted hover:text-ink border border-transparent'
                   }`}
                 >
-                  <Crown className="w-3 h-3 text-blue-400 shrink-0" />
+                  <Crown className={`w-3 h-3 shrink-0 ${tab === 'signup' ? 'text-lime' : 'text-muted'}`} />
                   <span className="truncate">REGISTER</span>
                 </button>
               </div>
 
               {/* Feedback Banners */}
               {errorMessage && (
-                <div className="p-3 bg-red-950/40 text-red-400 border border-red-500/30 rounded-xl font-mono text-xs mb-3 flex items-start space-x-2">
+                <div className="p-3.5 bg-orange/15 text-orange border border-orange/30 rounded-2xl font-mono text-xs mb-4 flex items-start space-x-2">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <div>{errorMessage}</div>
-                  </div>
+                  <div className="flex-1 font-medium">{errorMessage}</div>
                 </div>
               )}
               {successMessage && (
-                <div className="p-3 bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 rounded-xl font-mono text-xs mb-3 flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
-                  <span>{successMessage}</span>
+                <div className="p-3.5 bg-lime/25 text-ink border border-lime rounded-2xl font-mono text-xs mb-4 flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 shrink-0 text-ink" />
+                  <span className="font-medium">{successMessage}</span>
                 </div>
               )}
 
               {/* Auth Form */}
-              <form onSubmit={handleSubmit} className="space-y-3.5 font-mono">
+              <form onSubmit={handleSubmit} className="space-y-4 font-mono">
                 {/* ROOM KEY FIELD */}
-                <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-xl">
-                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                    <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-zinc-300">
-                      <Key className="w-3.5 h-3.5 text-blue-400" />
+                <div className="p-3.5 bg-paper-card border border-hairline rounded-2xl">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                    <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-ink">
+                      <Key className="w-3.5 h-3.5 text-orange" />
                       <span>
                         {tab !== 'guest' && role === 'host'
                           ? 'HOST ROOM KEY (ASSIGNED):'
@@ -445,24 +465,24 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                           playPopSound();
                           generateRandomRoomKey();
                         }}
-                        className="text-[10px] bg-[#18181D] text-blue-400 hover:bg-[#22222A] px-2 py-0.5 rounded-md font-bold uppercase flex items-center gap-1 border border-white/[0.08] transition-colors cursor-pointer"
+                        className="text-[10px] bg-paper text-orange hover:bg-black/[0.04] px-2 py-0.5 rounded-lg font-bold uppercase flex items-center gap-1 border border-hairline transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3 h-3" /> SHUFFLE
                       </button>
                     ) : (
-                      <span className="text-[10px] text-zinc-500 font-mono">
+                      <span className="text-[10px] text-muted font-mono font-bold">
                         REQUIRED
                       </span>
                     )}
                   </div>
 
                   {tab !== 'guest' && role === 'host' ? (
-                    <div className="flex items-center bg-[#18181D] border border-white/[0.08] rounded-lg px-3 py-2">
-                      <Lock className="w-4 h-4 text-zinc-500 mr-2 shrink-0" />
-                      <span className="text-sm font-bold tracking-widest text-white flex-1 select-all">
+                    <div className="flex items-center bg-paper border border-hairline rounded-xl px-3 py-2.5">
+                      <Lock className="w-4 h-4 text-muted mr-2 shrink-0" />
+                      <span className="text-sm font-bold tracking-widest text-ink flex-1 select-all font-mono">
                         {roomKey}
                       </span>
-                      <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-lime/30 text-ink border border-lime">
                         UNIQUE
                       </span>
                     </div>
@@ -472,7 +492,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                       value={roomKey}
                       onChange={(e) => setRoomKey(e.target.value.toUpperCase())}
                       placeholder="e.g. SKT-789 or ARCH-101"
-                      className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold tracking-wider focus:outline-none focus:border-blue-500"
+                      className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-bold tracking-wider focus:outline-none focus:border-ink transition-colors"
                       required
                     />
                   )}
@@ -482,9 +502,9 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                 {tab === 'guest' ? (
                   <>
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-zinc-300">
-                          <UserIcon className="w-3.5 h-3.5 text-blue-400" />
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-ink">
+                          <UserIcon className="w-3.5 h-3.5 text-orange" />
                           <span>YOUR SCREEN ALIAS:</span>
                         </label>
                         <button
@@ -493,7 +513,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                             playPopSound();
                             generateRandomGuestHandle();
                           }}
-                          className="text-[10px] bg-[#18181D] text-blue-400 hover:bg-[#22222A] px-2 py-0.5 rounded-md font-bold uppercase flex items-center gap-1 border border-white/[0.08] transition-colors cursor-pointer"
+                          className="text-[10px] bg-paper-card text-orange hover:bg-black/[0.04] px-2 py-0.5 rounded-lg font-bold uppercase flex items-center gap-1 border border-hairline transition-colors cursor-pointer"
                         >
                           <RefreshCw className="w-3 h-3" /> RANDOM
                         </button>
@@ -503,12 +523,12 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder="e.g. PixelDev_42 (or leave blank for random)"
-                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                        className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-bold focus:outline-none focus:border-ink transition-colors"
                       />
                     </div>
 
-                    <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-xl text-[11px] font-mono text-zinc-400 flex items-center space-x-2">
-                      <Zap className="w-4 h-4 text-blue-400 shrink-0" />
+                    <div className="p-3 bg-paper-card border border-hairline rounded-2xl text-[11px] font-mono text-muted flex items-center space-x-2">
+                      <Zap className="w-4 h-4 text-orange shrink-0" />
                       <span>Frictionless 1-click access: No password or signup required.</span>
                     </div>
 
@@ -517,7 +537,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                         type="submit"
                         onClick={() => playWhoosh()}
                         disabled={isLoading}
-                        className="w-full py-3 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                        className="w-full py-3.5 btn-noma-orange text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
                       >
                         <Zap className="w-4 h-4" />
                         <span>
@@ -533,38 +553,38 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                   <>
                     {tab === 'signup' && (
                       <div>
-                        <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Full Name / Alias</label>
+                        <label className="text-xs font-bold uppercase block mb-1.5 text-ink">Full Name / Alias</label>
                         <input
                           type="text"
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
                           placeholder="e.g. Elena Rostova"
-                          className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                          className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-bold focus:outline-none focus:border-ink transition-colors"
                           required
                         />
                       </div>
                     )}
 
                     <div>
-                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Email Address</label>
+                      <label className="text-xs font-bold uppercase block mb-1.5 text-ink">Email Address</label>
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@company.com"
-                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                        className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-bold focus:outline-none focus:border-ink transition-colors"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Password</label>
+                      <label className="text-xs font-bold uppercase block mb-1.5 text-ink">Password</label>
                       <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3 py-2 text-xs bg-[#18181D] border border-white/[0.08] rounded-lg text-white font-bold focus:outline-none focus:border-blue-500"
+                        className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-bold focus:outline-none focus:border-ink transition-colors"
                         required
                         minLength={6}
                       />
@@ -572,7 +592,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
                     {/* Role Selection */}
                     <div>
-                      <label className="text-xs font-bold uppercase block mb-1 text-zinc-300">Arena Role:</label>
+                      <label className="text-xs font-bold uppercase block mb-1.5 text-ink">Arena Role:</label>
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
@@ -580,10 +600,10 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                             playPopSound();
                             setRole('attendee');
                           }}
-                          className={`py-2 rounded-lg text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                          className={`py-2.5 rounded-xl text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
                             role === 'attendee'
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                              : 'bg-[#18181D] text-zinc-400 border-white/[0.08] hover:text-white'
+                              ? 'bg-ink text-paper border-ink shadow-xs'
+                              : 'bg-paper text-muted border-hairline hover:text-ink'
                           }`}
                         >
                           <UserIcon className="w-3.5 h-3.5" />
@@ -595,13 +615,13 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                             playPopSound();
                             setRole('host');
                           }}
-                          className={`py-2 rounded-lg text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                          className={`py-2.5 rounded-xl text-xs font-bold uppercase border transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
                             role === 'host'
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                              : 'bg-[#18181D] text-zinc-400 border-white/[0.08] hover:text-white'
+                              ? 'bg-ink text-paper border-ink shadow-xs'
+                              : 'bg-paper text-muted border-hairline hover:text-ink'
                           }`}
                         >
-                          <Crown className="w-3.5 h-3.5" />
+                          <Crown className="w-3.5 h-3.5 text-lime" />
                           <span>HOST / ADMIN</span>
                         </button>
                       </div>
@@ -613,7 +633,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
                         type="submit"
                         onClick={() => playWhoosh()}
                         disabled={isLoading}
-                        className="w-full py-3 btn-cobalt text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer"
+                        className="w-full py-3.5 btn-noma-orange text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
                       >
                         <span>
                           {isLoading
@@ -635,43 +655,43 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
 
       {/* QR Code Quick Modal */}
       {showQRPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm font-sans">
-          <div className="bg-[#121215] text-[#FAFAFA] w-full max-w-xs p-4 sm:p-6 rounded-2xl border border-white/[0.08] shadow-modal relative text-center max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm font-sans">
+          <div className="bg-paper text-ink w-full max-w-sm p-6 sm:p-7 rounded-3xl border border-hairline shadow-2xl relative text-center max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowQRPreview(false)}
-              className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="absolute top-5 right-5 p-1.5 rounded-xl bg-paper-card text-muted hover:text-ink transition-colors cursor-pointer border border-hairline"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="flex flex-col items-center mb-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mb-2">
-                <QrCode className="w-5 h-5" />
+            <div className="flex flex-col items-center mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center mb-2.5">
+                <QrCode className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
+              <h3 className="text-lg font-serif font-bold uppercase tracking-tight text-ink">
                 MOBILE ACCESS QR
               </h3>
-              <p className="text-xs font-mono text-zinc-400">
-                Scan with phone camera to auto-join
+              <p className="text-xs font-mono text-muted mt-0.5">
+                Scan with camera to auto-join room
               </p>
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-white/[0.08] inline-block mx-auto mb-3">
+            <div className="p-4 bg-white rounded-2xl border border-hairline inline-block mx-auto mb-4 shadow-xs">
               <QRCodeSVG
                 value={currentJoinUrl}
-                size={160}
+                size={180}
                 bgColor="#FFFFFF"
-                fgColor="#000000"
+                fgColor="#101313"
                 level="Q"
                 includeMargin={false}
               />
             </div>
 
-            <div className="bg-[#0A0A0C] text-[#FAFAFA] p-3 rounded-xl border border-white/[0.08] font-mono">
-              <div className="text-[10px] font-bold text-zinc-500 uppercase mb-0.5">
+            <div className="bg-paper-elevated text-ink p-3.5 rounded-2xl border border-hairline font-mono">
+              <div className="text-[10px] font-bold text-muted uppercase mb-0.5">
                 ROOM PASSCODE
               </div>
-              <div className="text-lg font-bold tracking-wider text-blue-400">
+              <div className="text-xl font-bold tracking-wider text-orange">
                 {roomKey.toUpperCase() || 'SKT-789'}
               </div>
             </div>
@@ -679,12 +699,12 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
         </div>
       )}
 
-      {/* Bottom Minimalist Footer */}
-      <footer className="border-t border-white/[0.08] bg-[#0E0E11] px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-mono text-zinc-500 shrink-0 text-center sm:text-left">
-        <div>SKETCHCAST • SUPABASE REALTIME SYNC</div>
-        <div className="flex items-center gap-2 text-zinc-400">
-          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />
-          <span className="truncate">EXAGGERATED MINIMALISM & KINETIC TYPOGRAPHY</span>
+      {/* Bottom Editorial Minimalist Footer */}
+      <footer className="border-t border-hairline bg-paper px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] font-mono text-muted shrink-0 text-center sm:text-left">
+        <div>SKETCHCAST • STUDIO NOMA EDITION</div>
+        <div className="flex items-center gap-2 text-ink">
+          <span className="w-2 h-2 bg-orange rounded-full shrink-0" />
+          <span className="truncate font-semibold">TACTILE PAPER-GRAIN • HIGH CONTRAST TYPOGRAPHY</span>
         </div>
       </footer>
     </div>

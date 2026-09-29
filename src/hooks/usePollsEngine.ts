@@ -94,8 +94,14 @@ export function usePollsEngine({
 
   // Load from Supabase DB on initialization, roomCode change, and tab switch to 'polls'
   useEffect(() => {
+    if (activeTab === 'polls') {
+      syncPollsFromDB();
+    }
+  }, [activeTab, syncPollsFromDB]);
+
+  useEffect(() => {
     syncPollsFromDB();
-  }, [currentRoomKey, activeTab, syncPollsFromDB]);
+  }, [syncPollsFromDB]);
 
   // Listen to remote poll updates and resets
   useEffect(() => {
@@ -308,10 +314,10 @@ export function usePollsEngine({
         if (poll.id === pollId) {
           const updatedOptions = poll.options.map((opt) => {
             if (opt.id === optionId) {
-              return { ...opt, votesCount: opt.votesCount + 1 };
+              return Object.assign({}, opt, { votesCount: opt.votesCount + 1 });
             }
             if (currentVotedOption && opt.id === currentVotedOption) {
-              return { ...opt, votesCount: Math.max(0, opt.votesCount - 1) };
+              return Object.assign({}, opt, { votesCount: Math.max(0, opt.votesCount - 1) });
             }
             return opt;
           });
@@ -319,11 +325,10 @@ export function usePollsEngine({
           // Strict mathematical consistency: totalVotes always equals sum of options
           const recalculatedTotal = updatedOptions.reduce((acc, opt) => acc + opt.votesCount, 0);
 
-          const updated: LivePoll = {
-            ...poll,
+          const updated: LivePoll = Object.assign({}, poll, {
             totalVotes: Math.max(0, recalculatedTotal),
             options: updatedOptions,
-          };
+          });
           targetUpdatedPoll = updated;
           return updated;
         }
@@ -362,12 +367,11 @@ export function usePollsEngine({
 
       const nextPolls = currentPolls.map((poll) => {
         if (poll.id === pollId) {
-          const resetOptions = poll.options.map((opt) => ({ ...opt, votesCount: 0 }));
-          const updated: LivePoll = {
-            ...poll,
+          const resetOptions = poll.options.map((opt) => Object.assign({}, opt, { votesCount: 0 }));
+          const updated: LivePoll = Object.assign({}, poll, {
             totalVotes: 0,
             options: resetOptions,
-          };
+          });
           targetUpdatedPoll = updated;
           return updated;
         }

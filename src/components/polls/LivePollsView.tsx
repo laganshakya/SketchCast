@@ -92,15 +92,15 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
   return (
     <div className="flex flex-col max-w-4xl mx-auto w-full p-2.5 sm:p-4 md:p-5 space-y-4 font-sans mb-4">
       {/* Header */}
-      <div className="bg-[#121215] p-3.5 sm:p-5 border border-white/[0.08] rounded-2xl shadow-card flex items-center justify-between flex-wrap gap-2.5">
+      <div className="bg-paper p-4 sm:p-5 border border-hairline rounded-3xl card-noma flex items-center justify-between flex-wrap gap-2.5">
         <div>
           <div className="flex items-center space-x-2 text-xs mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">
+            <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange font-semibold border border-orange/20">
               Live Consensus
             </span>
-            <span className="text-zinc-500 font-medium">Audience Feedback</span>
+            <span className="text-muted font-medium">Audience Feedback</span>
           </div>
-          <h2 className="text-base sm:text-xl font-bold text-white tracking-tight">
+          <h2 className="text-base sm:text-xl font-serif font-bold text-ink tracking-tight">
             Community Architecture Polls
           </h2>
         </div>
@@ -113,13 +113,13 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
               playClickSound();
               onOpenCreatePoll();
             }}
-            className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] btn-cobalt text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
+            className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] btn-noma-orange text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors shrink-0 cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span>New Poll</span>
           </motion.button>
         ) : (
-          <div className="px-3 py-1.5 bg-[#18181D] border border-white/[0.08] rounded-xl text-xs font-semibold text-emerald-400 flex items-center space-x-1.5 shrink-0">
+          <div className="px-3 py-1.5 bg-lime/20 border border-lime text-ink rounded-xl text-xs font-mono font-bold flex items-center space-x-1.5 shrink-0">
             <Vote className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Voting Active</span>
           </div>
@@ -129,12 +129,12 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
       {/* Polls List */}
       <div className="space-y-4">
         {polls.length === 0 ? (
-          <div className="bg-[#121215] p-8 border border-white/[0.08] rounded-2xl shadow-card text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-zinc-600 mx-auto" />
-            <h3 className="text-base font-semibold text-white">
+          <div className="bg-paper p-8 border border-hairline rounded-3xl card-noma text-center space-y-3">
+            <Sparkles className="w-8 h-8 text-orange mx-auto" />
+            <h3 className="text-base font-serif font-bold text-ink">
               No Active Community Polls
             </h3>
-            <p className="text-xs text-zinc-400 max-w-md mx-auto">
+            <p className="text-xs text-muted max-w-md mx-auto">
               {isHost
                 ? 'Launch a poll using the action above to poll the audience on technical architecture choices.'
                 : 'Standing by. The Keynote Host will broadcast community architecture polls during this session.'}
@@ -146,7 +146,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                   playClickSound();
                   onOpenCreatePoll();
                 }}
-                className="mt-2 px-4 py-2 btn-cobalt text-xs font-semibold rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
+                className="mt-2 px-4 py-2 btn-noma-orange text-xs font-semibold rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create First Poll</span>
@@ -164,26 +164,26 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
-                className="bg-[#121215] p-4 sm:p-5 border border-white/[0.08] rounded-2xl shadow-card space-y-3.5 relative overflow-hidden"
+                className="bg-paper p-4 sm:p-5 border border-hairline rounded-3xl card-noma space-y-3.5 relative overflow-hidden"
               >
                 {/* Poll Header Bar */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center space-x-2 text-[11px] text-zinc-400 mb-1">
-                      <span className="font-semibold text-zinc-300">By {poll.author_name}</span>
+                    <div className="flex items-center space-x-2 text-[11px] text-muted mb-1 font-mono">
+                      <span className="font-semibold text-ink">By {poll.author_name}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-zinc-500" />
+                        <Clock className="w-3 h-3 text-muted" />
                         {timeAgo(poll.created_at)}
                       </span>
                     </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-white leading-snug">
+                    <h3 className="text-base sm:text-lg font-serif font-bold text-ink leading-snug">
                       {poll.question}
                     </h3>
                   </div>
 
-                  <span className="flex items-center space-x-1.5 px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-xs font-semibold shrink-0">
-                    <Users className="w-3.5 h-3.5" />
+                  <span className="flex items-center space-x-1.5 px-3 py-1 bg-paper-surface text-ink border border-hairline rounded-full text-xs font-mono font-bold shrink-0">
+                    <Users className="w-3.5 h-3.5 text-orange" />
                     <span>{poll.totalVotes} Votes</span>
                   </span>
                 </div>
@@ -213,18 +213,18 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                         }}
                         disabled={isVotingThisPoll}
                         title={isVoted ? 'Click to withdraw your vote' : 'Click to vote for this option'}
-                        className={`w-full p-3.5 rounded-xl border text-left transition-colors relative overflow-hidden flex items-center justify-between group ${
+                        className={`w-full p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden flex items-center justify-between group ${
                           isVoted
-                            ? 'bg-blue-950/20 border-blue-500/40 shadow-sm text-white cursor-pointer'
+                            ? 'bg-lime/20 border-lime shadow-sm text-ink ring-1 ring-lime/40 cursor-pointer'
                             : isVotingThisPoll
-                            ? 'bg-[#141418] text-zinc-500 border-white/[0.05] opacity-70 cursor-not-allowed pointer-events-none'
-                            : 'bg-[#141418] hover:bg-[#181820] text-zinc-300 hover:text-white border-white/[0.08] hover:border-zinc-700 cursor-pointer'
+                            ? 'bg-paper text-muted border-hairline opacity-70 cursor-not-allowed pointer-events-none'
+                            : 'bg-paper-surface hover:bg-paper text-ink border-hairline hover:border-ink/40 cursor-pointer'
                         }`}
                       >
                         {/* Animated Percentage Fill Bar */}
                         <motion.div
-                          className={`absolute inset-y-0 left-0 rounded-xl ${
-                            isVoted ? 'bg-blue-500/20' : 'bg-white/[0.04]'
+                          className={`absolute inset-y-0 left-0 rounded-2xl ${
+                            isVoted ? 'bg-lime/30' : 'bg-paper-surface/60'
                           }`}
                           style={{ width: `${percentage}%` }}
                           transition={{ duration: 0.35 }}
@@ -235,27 +235,27 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                           <div
                             className={`w-6 h-6 rounded-lg border flex items-center justify-center font-mono text-xs shrink-0 font-bold ${
                               isVoted
-                                ? 'bg-blue-600 text-white border-blue-500'
-                                : 'bg-[#1E1E24] text-zinc-400 border-white/[0.08]'
+                                ? 'bg-ink text-lime border-ink'
+                                : 'bg-paper text-muted border-hairline'
                             }`}
                           >
                             {isVoted ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-lime" />
                             ) : (
                               option.id.replace('opt-', '')
                             )}
                           </div>
-                          <span className="text-xs sm:text-sm font-medium tracking-normal">
+                          <span className="text-xs sm:text-sm font-semibold tracking-normal text-ink">
                             {option.text}
                           </span>
                         </div>
 
                         {/* Stats with Exaggerated Typography */}
                         <div className="flex items-center space-x-2 relative z-10 shrink-0 font-mono">
-                          <span className={`text-sm sm:text-base font-bold ${isVoted ? 'text-blue-400' : 'text-white'}`}>
+                          <span className="text-sm sm:text-base font-bold text-ink">
                             {percentage}%
                           </span>
-                          <span className="text-[11px] text-zinc-500 hidden sm:inline">
+                          <span className="text-[11px] text-muted hidden sm:inline">
                             ({option.votesCount})
                           </span>
                         </div>
@@ -269,33 +269,33 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="p-3.5 bg-[#0E0E11] border border-white/[0.08] rounded-xl text-xs text-zinc-300 space-y-1"
+                    className="p-4 bg-paper-surface border border-hairline rounded-2xl text-xs text-ink space-y-1"
                   >
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-blue-400">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-ink">
                       <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Audience Consensus Analysis</span>
+                        <Sparkles className="w-3.5 h-3.5 text-orange" />
+                        <span className="font-bold">Audience Consensus Analysis</span>
                       </span>
-                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20 text-[10px] font-medium">
+                      <span className="px-2 py-0.5 bg-orange/10 text-orange rounded-full border border-orange/20 text-[10px] font-mono font-bold">
                         AI Engine
                       </span>
                     </div>
-                    <p className="text-zinc-400 text-xs leading-relaxed">
+                    <p className="text-muted text-xs leading-relaxed">
                       {poll.aiConsensusNote || localConsensusNotes[poll.id]}
                     </p>
                   </motion.div>
                 )}
 
                 {aiError?.pollId === poll.id && (
-                  <div className="p-3 bg-rose-500/10 text-rose-400 text-xs border border-rose-500/25 rounded-xl flex items-start space-x-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="p-3 bg-orange/15 text-orange text-xs border border-orange/30 rounded-xl flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-orange" />
                     <div className="flex-1">
                       <span>{aiError.message}</span>
                       {onOpenAISettings && (
                         <button
                           type="button"
                           onClick={onOpenAISettings}
-                          className="ml-2 underline font-semibold text-white cursor-pointer"
+                          className="ml-2 underline font-semibold text-ink cursor-pointer"
                         >
                           Open Settings
                         </button>
@@ -306,7 +306,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
 
                 {/* Host Control Actions */}
                 {isHost && (
-                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2.5 border-t border-white/[0.08]">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2.5 border-t border-hairline">
                     <div>
                       <motion.button
                         type="button"
@@ -316,10 +316,10 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                           handleSynthesizeConsensus(poll);
                         }}
                         disabled={synthesizingPollId === poll.id || poll.totalVotes === 0}
-                        className="px-3.5 py-1.5 bg-[#18181D] hover:bg-[#22222A] disabled:opacity-50 text-white text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-blue-500/40 flex items-center space-x-1.5 transition-colors cursor-pointer shrink-0"
+                        className="px-3.5 py-1.5 bg-paper hover:bg-paper-surface disabled:opacity-50 text-ink text-xs font-semibold rounded-xl border border-hairline hover:border-ink flex items-center space-x-1.5 transition-colors cursor-pointer shrink-0"
                         title={poll.totalVotes === 0 ? 'Collect votes first to synthesize consensus' : 'Analyze consensus with Mesh AI'}
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <Sparkles className="w-3.5 h-3.5 text-orange shrink-0" />
                         <span>
                           {synthesizingPollId === poll.id
                             ? 'Analyzing...'
@@ -338,7 +338,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                             playClickSound();
                             onResetPoll(poll.id);
                           }}
-                          className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white text-xs font-semibold rounded-xl border border-white/[0.08] flex items-center space-x-1.5 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 bg-paper hover:bg-paper-surface text-muted hover:text-ink text-xs font-semibold rounded-xl border border-hairline hover:border-ink flex items-center space-x-1.5 transition-colors cursor-pointer"
                           title="Reset all votes to zero"
                         >
                           <RotateCcw className="w-3 h-3" />
@@ -354,7 +354,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                               onDeletePoll(poll.id);
                             }
                           }}
-                          className="px-3 py-1.5 bg-[#18181D] hover:bg-rose-500/10 text-zinc-500 hover:text-rose-400 text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-rose-500/30 flex items-center space-x-1.5 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 bg-paper hover:bg-orange/15 text-muted hover:text-orange text-xs font-semibold rounded-xl border border-hairline hover:border-orange/30 flex items-center space-x-1.5 transition-colors cursor-pointer"
                           title="Delete this poll"
                         >
                           <Trash2 className="w-3 h-3" />

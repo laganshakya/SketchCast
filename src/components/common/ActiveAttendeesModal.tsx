@@ -42,11 +42,13 @@ interface ActiveAttendeesModalProps {
   onResetStrikes?: (sessionId: string, name: string) => void;
 }
 
+const EMPTY_LEADERBOARD: LeaderboardEntry[] = [];
+
 export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
   isOpen,
   onClose,
   attendees,
-  leaderboard = [],
+  leaderboard = EMPTY_LEADERBOARD,
   currentSessionId,
   isHost,
   roomCode,
@@ -210,7 +212,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.96, y: 12, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-[#0f0f13] text-white w-[95vw] sm:max-w-xl p-4 sm:p-6 rounded-2xl border border-white/[0.08] shadow-2xl relative font-sans max-h-[90dvh] flex flex-col overflow-hidden"
+            className="bg-paper text-ink w-[95vw] sm:max-w-xl p-5 sm:p-7 rounded-3xl border border-hairline shadow-2xl relative font-sans max-h-[90dvh] flex flex-col overflow-hidden"
           >
             {/* Top In-Modal Toast Feedback */}
             <AnimatePresence>
@@ -219,20 +221,20 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full text-xs font-medium border flex items-center gap-2 shadow-lg backdrop-blur-md pointer-events-none ${
+                  className={`absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full text-xs font-mono font-medium border flex items-center gap-2 shadow-lg backdrop-blur-md pointer-events-none ${
                     actionToast.type === 'success'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      ? 'bg-lime/20 text-ink border-lime/40'
                       : actionToast.type === 'warn'
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      ? 'bg-orange/20 text-orange border-orange/40'
                       : actionToast.type === 'error'
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                      : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                      ? 'bg-red-500/20 text-red-700 border-red-500/40'
+                      : 'bg-paper text-ink border-hairline'
                   }`}
                 >
-                  {actionToast.type === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                  {actionToast.type === 'warn' && <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />}
-                  {actionToast.type === 'error' && <UserX className="w-3.5 h-3.5 text-rose-400" />}
-                  {actionToast.type === 'info' && <Shield className="w-3.5 h-3.5 text-blue-400" />}
+                  {actionToast.type === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-lime-700" />}
+                  {actionToast.type === 'warn' && <AlertTriangle className="w-3.5 h-3.5 text-orange" />}
+                  {actionToast.type === 'error' && <UserX className="w-3.5 h-3.5 text-red-600" />}
+                  {actionToast.type === 'info' && <Shield className="w-3.5 h-3.5 text-orange" />}
                   <span>{actionToast.message}</span>
                 </motion.div>
               )}
@@ -245,21 +247,21 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-40 bg-black/85 backdrop-blur-sm rounded-2xl flex items-center justify-center p-5"
+                  className="absolute inset-0 z-40 bg-ink/60 backdrop-blur-sm rounded-3xl flex items-center justify-center p-5"
                 >
                   <motion.div
                     initial={{ scale: 0.92, y: 8 }}
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.92, y: 8 }}
-                    className="bg-[#141419] border border-white/[0.12] rounded-xl p-5 max-w-sm w-full shadow-2xl text-center space-y-4"
+                    className="bg-paper border border-hairline rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4"
                   >
                     <div
-                      className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center border ${
+                      className={`w-12 h-12 rounded-2xl mx-auto flex items-center justify-center border ${
                         confirmAction.type === 'ban'
-                          ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                          ? 'bg-red-500/15 text-red-600 border-red-500/30'
                           : confirmAction.type === 'demote'
-                          ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                          : 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                          ? 'bg-orange/15 text-orange border-orange/30'
+                          : 'bg-lime/20 text-ink border-lime/40'
                       }`}
                     >
                       {confirmAction.type === 'ban' && <UserX className="w-6 h-6" />}
@@ -268,25 +270,25 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="text-base font-semibold text-white">
+                      <h4 className="text-base font-serif font-medium text-ink">
                         {confirmAction.type === 'ban' && 'Ban and Eject Attendee?'}
                         {confirmAction.type === 'demote' && 'Demote from Room Admin?'}
                         {confirmAction.type === 'reset' && 'Reset Safeguard Strikes?'}
                       </h4>
-                      <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      <p className="text-xs text-muted mt-2 leading-relaxed">
                         {confirmAction.type === 'ban' && (
                           <>
-                            Are you sure you want to ban <strong className="text-white">{confirmAction.attendee.name}</strong> from Room {roomCode}? They will be immediately disconnected.
+                            Are you sure you want to ban <strong className="text-ink">{confirmAction.attendee.name}</strong> from Room {roomCode}? They will be immediately disconnected.
                           </>
                         )}
                         {confirmAction.type === 'demote' && (
                           <>
-                            Revoke Co-Admin privileges for <strong className="text-white">{confirmAction.attendee.name}</strong>? They will return to standard attendee status.
+                            Revoke Co-Admin privileges for <strong className="text-ink">{confirmAction.attendee.name}</strong>? They will return to standard attendee status.
                           </>
                         )}
                         {confirmAction.type === 'reset' && (
                           <>
-                            Forgive and reset all strike counts for <strong className="text-white">{confirmAction.attendee.name}</strong> back to 0?
+                            Forgive and reset all strike counts for <strong className="text-ink">{confirmAction.attendee.name}</strong> back to 0?
                           </>
                         )}
                       </p>
@@ -299,19 +301,19 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                           playClickSound();
                           setConfirmAction(null);
                         }}
-                        className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
+                        className="flex-1 px-3 py-2 rounded-full bg-paper hover:bg-paper-surface text-ink text-xs font-medium border border-hairline transition-colors cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={executeConfirmAction}
-                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-md ${
+                        className={`flex-1 px-3 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-sm ${
                           confirmAction.type === 'ban'
-                            ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
                             : confirmAction.type === 'demote'
-                            ? 'bg-amber-600 hover:bg-amber-500 text-white'
-                            : 'bg-sky-600 hover:bg-sky-500 text-white'
+                            ? 'btn-noma-orange'
+                            : 'btn-noma-lime'
                         }`}
                       >
                         {confirmAction.type === 'ban' && 'Confirm Ban'}
@@ -332,7 +334,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-zinc-800/40 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/[0.06] transition-colors cursor-pointer shrink-0 z-10"
+              className="absolute top-4 right-4 p-2 rounded-full bg-paper text-muted hover:text-ink hover:bg-paper-surface border border-hairline transition-colors cursor-pointer shrink-0 z-10"
               title="Close modal"
             >
               <X className="w-4 h-4 stroke-2" />
@@ -341,19 +343,19 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             {/* Modal Header */}
             <div className="flex items-start justify-between mb-4 pr-10">
               <div className="flex items-start space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-                  <Radio className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center shrink-0">
+                  <Radio className="w-5 h-5 text-orange" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base sm:text-lg font-semibold text-white leading-tight font-display">
+                    <h3 className="text-base sm:text-lg font-serif font-medium text-ink leading-tight">
                       Active Participants
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-mono text-[11px] font-medium border border-blue-500/20 uppercase shrink-0">
+                    <span className="px-2.5 py-0.5 rounded-full bg-paper text-ink font-mono text-[10px] font-semibold border border-hairline uppercase shrink-0">
                       Room {roomCode}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Live connected users and room moderation controls
                   </p>
                 </div>
@@ -367,41 +369,41 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                     playPopSound();
                     onRefresh();
                   }}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/[0.06] text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                  className="px-3 py-1.5 rounded-full bg-paper hover:bg-paper-surface text-ink border border-hairline text-xs font-mono font-medium flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
                   title="Sync live presence"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
+                  <RefreshCw className="w-3.5 h-3.5 text-orange" />
                   <span className="hidden xs:inline text-xs">Sync</span>
                 </motion.button>
               )}
             </div>
 
             {/* Quick Stats Strip */}
-            <div className="grid grid-cols-3 gap-2 mb-3 bg-[#141418] p-2.5 rounded-xl border border-white/[0.08] text-center">
+            <div className="grid grid-cols-3 gap-2 mb-3 bg-paper-surface p-3 rounded-2xl border border-hairline text-center">
               <div>
-                <div className="text-[10px] text-zinc-400 font-medium">Total Online</div>
-                <div className="text-base sm:text-lg font-bold text-white font-mono mt-0.5">{totalOnline}</div>
+                <div className="text-[10px] text-muted font-mono uppercase tracking-wider">Total Online</div>
+                <div className="text-base sm:text-lg font-bold text-ink font-mono mt-0.5">{totalOnline}</div>
               </div>
-              <div className="border-x border-white/[0.08]">
-                <div className="text-[10px] text-zinc-400 font-medium">Co-Admins</div>
-                <div className="text-base sm:text-lg font-bold text-indigo-400 font-mono mt-0.5">{adminCount}</div>
+              <div className="border-x border-hairline">
+                <div className="text-[10px] text-muted font-mono uppercase tracking-wider">Co-Admins</div>
+                <div className="text-base sm:text-lg font-bold text-ink font-mono mt-0.5">{adminCount}</div>
               </div>
               <div>
-                <div className="text-[10px] text-zinc-400 font-medium">Audience</div>
-                <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-0.5">{attendeeCount}</div>
+                <div className="text-[10px] text-muted font-mono uppercase tracking-wider">Audience</div>
+                <div className="text-base sm:text-lg font-bold text-orange font-mono mt-0.5">{attendeeCount}</div>
               </div>
             </div>
 
             {/* Search Filter (if > 3 attendees) */}
             {sortedAttendees.length > 3 && (
               <div className="mb-3 relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                 <input
                   type="text"
                   placeholder="Filter attendees by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8.5 pr-3 py-1.5 rounded-lg bg-[#141418] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  className="w-full pl-8.5 pr-3 py-2 rounded-xl bg-paper border border-hairline text-xs text-ink placeholder-muted/60 focus:outline-none focus:border-ink transition-colors"
                 />
               </div>
             )}
@@ -409,7 +411,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             {/* Attendees Roster List */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-40 max-h-80 font-sans">
               {filteredAttendees.length === 0 ? (
-                <div className="py-8 text-center text-zinc-500 text-xs">
+                <div className="py-8 text-center text-muted text-xs">
                   No participants matching "{searchQuery}"
                 </div>
               ) : (
@@ -428,24 +430,24 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   return (
                     <div
                       key={attendee.session_id || index}
-                      className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                      className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
                         isOwner
-                          ? 'bg-amber-500/5 border-amber-500/20 text-white'
+                          ? 'bg-orange/5 border-orange/25 text-ink'
                           : isMemberAdmin
-                          ? 'bg-indigo-500/5 border-indigo-500/20 text-white'
-                          : 'bg-[#141418] border-white/[0.08] text-zinc-200'
-                      } ${isSelf ? 'ring-1 ring-blue-500/40' : ''}`}
+                          ? 'bg-paper-surface border-hairline text-ink'
+                          : 'bg-paper-surface border-hairline text-ink'
+                      } ${isSelf ? 'ring-2 ring-ink/20' : ''}`}
                     >
                       {/* Left: Avatar & Identity Metadata */}
                       <div className="flex items-center space-x-3 min-w-0">
                         {/* Avatar Badge */}
                         <div
-                          className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
+                          className={`w-9 h-9 rounded-2xl border flex items-center justify-center shrink-0 ${
                             isOwner
-                              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                              ? 'bg-orange/10 border-orange/30 text-orange'
                               : isMemberAdmin
-                              ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
-                              : 'bg-zinc-800/80 border-white/[0.08] text-zinc-400'
+                              ? 'bg-lime/20 border-lime/40 text-ink'
+                              : 'bg-paper border-hairline text-muted'
                           }`}
                         >
                           {isOwner ? (
@@ -460,25 +462,25 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                         {/* Name + Status Tags */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-semibold text-xs sm:text-sm truncate max-w-36 sm:max-w-56 text-white">
+                            <span className="font-serif font-medium text-xs sm:text-sm truncate max-w-36 sm:max-w-56 text-ink">
                               {attendee.name}
                             </span>
                             {isSelf && (
-                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-paper text-ink border border-hairline shrink-0">
                                 You
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mt-1 flex-wrap">
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted mt-1 flex-wrap font-mono">
                             {/* Role Badge */}
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                                 isOwner
-                                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold'
+                                  ? 'bg-orange/10 text-orange border border-orange/20 font-semibold'
                                   : isMemberAdmin
-                                  ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-medium'
-                                  : 'bg-zinc-800 text-zinc-400 border border-white/[0.06]'
+                                  ? 'bg-lime/20 text-ink border border-lime/40 font-medium'
+                                  : 'bg-paper text-muted border border-hairline'
                               }`}
                             >
                               {isOwner ? '👑 Host' : isMemberAdmin ? '🛡️ Co-Admin' : 'Attendee'}
@@ -489,8 +491,8 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                               <span
                                 className={`px-2 py-0.5 rounded-full font-medium text-[10px] shrink-0 border ${
                                   strikes >= 3
-                                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
-                                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                    ? 'bg-red-500/20 text-red-700 border-red-500/40 animate-pulse'
+                                    : 'bg-orange/20 text-orange border-orange/40'
                                 }`}
                               >
                                 ⚠️ {strikes}/3 strikes
@@ -499,7 +501,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
 
                             {/* Muted Pill */}
                             {isMuted && (
-                              <span className="px-2 py-0.5 rounded-full border border-rose-500/40 bg-rose-500/20 text-rose-300 font-medium text-[10px] flex items-center gap-1 shrink-0">
+                              <span className="px-2 py-0.5 rounded-full border border-red-500/40 bg-red-500/20 text-red-700 font-medium text-[10px] flex items-center gap-1 shrink-0">
                                 <VolumeX className="w-2.5 h-2.5" />
                                 <span>Muted</span>
                               </span>
@@ -507,14 +509,14 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
 
                             {/* Quiz Score Entry */}
                             {lbEntry && (
-                              <span className="text-zinc-300 bg-[#0c0c10] px-2 py-0.5 rounded-full border border-white/[0.06] text-[10px] font-mono">
+                              <span className="text-ink bg-paper px-2 py-0.5 rounded-full border border-hairline text-[10px] font-mono">
                                 {lbEntry.correct_quizzes} correct
                               </span>
                             )}
 
                             {/* Active Dot */}
-                            <span className="text-emerald-400 font-medium flex items-center gap-1 shrink-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                            <span className="text-lime-700 font-medium flex items-center gap-1 shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-lime inline-block animate-pulse"></span>
                               <span>Active</span>
                             </span>
                           </div>
@@ -523,7 +525,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
 
                       {/* Right: Controls & Moderation Action Group */}
                       {isHost && !isSelf && !isOwner && (
-                        <div className="shrink-0 flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.06]">
+                        <div className="shrink-0 flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-hairline">
                           {/* Role Toggle Button (Make Admin / Demote) */}
                           {!isMemberAdmin ? (
                             <motion.button
@@ -531,10 +533,10 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.97 }}
                               onClick={() => handlePromote(attendee)}
-                              className="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-[11px] font-medium border border-indigo-500/30 hover:border-indigo-500 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                              className="px-3 py-1 rounded-full btn-noma-ink text-[11px] font-medium transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                               title="Promote to Co-Admin"
                             >
-                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-lime" />
                               <span>Make Admin</span>
                             </motion.button>
                           ) : (
@@ -543,23 +545,23 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.97 }}
                               onClick={() => setConfirmAction({ type: 'demote', attendee })}
-                              className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-medium border border-white/[0.08] transition-colors flex items-center gap-1.5 cursor-pointer"
+                              className="px-3 py-1 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink text-[11px] font-medium border border-hairline transition-colors flex items-center gap-1.5 cursor-pointer"
                               title="Demote from Co-Admin"
                             >
-                              <UserX className="w-3.5 h-3.5 text-zinc-400" />
+                              <UserX className="w-3.5 h-3.5 text-muted" />
                               <span>Demote</span>
                             </motion.button>
                           )}
 
                           {/* Moderation Toolstrip (Warn, Mute/Unmute, Reset Strikes, Ban) */}
-                          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/[0.06]">
+                          <div className="flex items-center gap-1 bg-paper p-1 rounded-full border border-hairline">
                             {/* Warn */}
                             <motion.button
                               type="button"
                               whileHover={{ scale: 1.06 }}
                               whileTap={{ scale: 0.94 }}
                               onClick={() => handleWarn(attendee)}
-                              className="p-1.5 rounded-md text-amber-400 hover:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-full text-orange hover:bg-orange/10 transition-colors cursor-pointer"
                               title="Issue safeguard warning"
                             >
                               <AlertTriangle className="w-3.5 h-3.5" />
@@ -572,7 +574,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                                 whileHover={{ scale: 1.06 }}
                                 whileTap={{ scale: 0.94 }}
                                 onClick={() => handleUnmute(attendee)}
-                                className="p-1.5 rounded-md text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-full text-lime-700 hover:bg-lime/20 transition-colors cursor-pointer"
                                 title="Unmute attendee Q&A"
                               >
                                 <Volume2 className="w-3.5 h-3.5" />
@@ -583,7 +585,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                                 whileHover={{ scale: 1.06 }}
                                 whileTap={{ scale: 0.94 }}
                                 onClick={() => handleMute(attendee)}
-                                className="p-1.5 rounded-md text-zinc-400 hover:text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-full text-muted hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                                 title="Mute attendee Q&A"
                               >
                                 <VolumeX className="w-3.5 h-3.5" />
@@ -597,7 +599,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                                 whileHover={{ scale: 1.06 }}
                                 whileTap={{ scale: 0.94 }}
                                 onClick={() => setConfirmAction({ type: 'reset', attendee })}
-                                className="p-1.5 rounded-md text-sky-400 hover:text-sky-300 hover:bg-sky-500/20 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-full text-muted hover:text-ink hover:bg-paper-surface transition-colors cursor-pointer"
                                 title="Reset strikes to 0"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
@@ -610,7 +612,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                               whileHover={{ scale: 1.06 }}
                               whileTap={{ scale: 0.94 }}
                               onClick={() => setConfirmAction({ type: 'ban', attendee })}
-                              className="p-1.5 rounded-md text-zinc-400 hover:text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-full text-muted hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                               title="Ban and eject from room"
                             >
                               <UserX className="w-3.5 h-3.5" />
@@ -625,9 +627,9 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="pt-3 mt-3 border-t border-white/[0.08] flex flex-col xs:flex-row items-center justify-between gap-2.5 text-xs shrink-0">
-              <span className="text-[11px] text-zinc-400 font-medium flex items-center gap-1.5 text-center xs:text-left">
-                <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <div className="pt-3 mt-3 border-t border-hairline flex flex-col xs:flex-row items-center justify-between gap-2.5 text-xs shrink-0">
+              <span className="text-[11px] text-muted font-medium flex items-center gap-1.5 text-center xs:text-left">
+                <Sparkles className="w-3.5 h-3.5 text-orange shrink-0" />
                 <span>Room Host can assign multiple Co-Admins and manage participant permissions</span>
               </span>
               <motion.button
@@ -638,7 +640,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
                   playClickSound();
                   onClose();
                 }}
-                className="w-full xs:w-auto px-4 py-2 rounded-xl text-xs font-medium border border-white/[0.06] bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 hover:text-white cursor-pointer shrink-0 transition-colors"
+                className="w-full xs:w-auto px-4 py-2 rounded-full text-xs font-medium border border-hairline bg-paper hover:bg-paper-surface text-ink cursor-pointer shrink-0 transition-colors"
               >
                 Close
               </motion.button>

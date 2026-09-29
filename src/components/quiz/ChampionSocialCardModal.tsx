@@ -29,12 +29,12 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     canvas.width = width;
     canvas.height = height;
 
-    // 1. Deep Background
-    ctx.fillStyle = '#0A0A0C';
+    // 1. Studio Noma Warm Paper Background
+    ctx.fillStyle = '#F5F0E9';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Blueprint Grid Matrix
-    ctx.strokeStyle = '#181820';
+    // 2. Tactile Subtle Grid Lines
+    ctx.strokeStyle = 'rgba(16, 19, 19, 0.05)';
     ctx.lineWidth = 1;
     for (let x = 0; x < width; x += 40) {
       ctx.beginPath();
@@ -49,34 +49,34 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       ctx.stroke();
     }
 
-    // 3. Precision Border
+    // 3. Precision Outer Border
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#27272A';
+    ctx.strokeStyle = '#101313';
     ctx.strokeRect(16, 16, width - 32, height - 32);
 
     // 4. Header Bar
-    ctx.fillStyle = '#121216';
+    ctx.fillStyle = '#EAE4DA';
     ctx.fillRect(20, 20, width - 40, 64);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = '#27272A';
+    ctx.strokeStyle = '#101313';
     ctx.strokeRect(20, 20, width - 40, 64);
 
     // Header Title
-    ctx.fillStyle = '#FAFAFA';
-    ctx.font = '700 20px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#101313';
+    ctx.font = '800 20px "Manrope", sans-serif';
     const headerTitle = cardData.roomTitle
-      ? `SKETCHCAST LIVE • ${cardData.roomTitle.toUpperCase()}`
-      : 'SKETCHCAST LIVE • ARENA CHAMPIONSHIP';
+      ? `STUDIO NOMA • ${cardData.roomTitle.toUpperCase()}`
+      : 'STUDIO NOMA • MASTERCLASS ARENA';
     const truncatedHeader = headerTitle.length > 42 ? headerTitle.slice(0, 40) + '...' : headerTitle;
     ctx.fillText(truncatedHeader, 44, 58);
 
     // Room Code Pill in Header
-    ctx.fillStyle = '#181822';
+    ctx.fillStyle = '#101313';
     ctx.fillRect(width - 240, 32, 196, 40);
-    ctx.strokeStyle = '#3B82F6';
+    ctx.strokeStyle = '#101313';
     ctx.strokeRect(width - 240, 32, 196, 40);
-    ctx.fillStyle = '#3B82F6';
-    ctx.font = '700 16px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#D7FF2F';
+    ctx.font = '700 16px "DM Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`ROOM: ${cardData.roomCode}`, width - 142, 57);
     ctx.textAlign = 'left';
@@ -93,22 +93,22 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       ? '#03 BRONZE PODIUM'
       : `TOP PLAYER #${String(cardData.rank).padStart(2, '0')}`;
 
-    ctx.fillStyle = '#3B82F6';
+    ctx.fillStyle = '#FF6337';
     ctx.fillRect(44, 115, 340, 44);
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 18px "Space Grotesk", sans-serif';
+    ctx.font = '800 18px "Manrope", sans-serif';
     ctx.fillText(rankText, 60, 143);
 
-    // 6. Player Name
-    ctx.fillStyle = '#FAFAFA';
-    ctx.font = '700 48px "Space Grotesk", sans-serif';
+    // 6. Player Name (DM Serif Display style)
+    ctx.fillStyle = '#101313';
+    ctx.font = '700 52px "DM Serif Display", serif';
     const maxName =
       cardData.playerName.length > 22 ? cardData.playerName.slice(0, 20) + '..' : cardData.playerName;
-    ctx.fillText(maxName.toUpperCase(), 44, 212);
+    ctx.fillText(maxName, 44, 212);
 
     // Subtitle under Player Name
-    ctx.fillStyle = '#71717A';
-    ctx.font = '500 15px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#65655F';
+    ctx.font = '600 15px "Manrope", sans-serif';
     const subtitleText = cardData.roomTitle
       ? `${cardData.roomTitle} • Verified Realtime Arena Performance`
       : 'Interactive Architecture Mastery • Verified Realtime Performance';
@@ -154,29 +154,29 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       const by = boxStartY;
 
       // Box background
-      ctx.fillStyle = '#121216';
+      ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(bx, by, boxWidth, boxHeight);
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = '#27272A';
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#101313';
       ctx.strokeRect(bx, by, boxWidth, boxHeight);
 
       // Subtle top accent line
-      ctx.fillStyle = idx === 0 ? '#3B82F6' : '#27272A';
-      ctx.fillRect(bx, by, boxWidth, 2);
+      ctx.fillStyle = idx === 0 ? '#FF6337' : idx === 1 ? '#D7FF2F' : '#101313';
+      ctx.fillRect(bx, by, boxWidth, 4);
 
       // Value
-      ctx.fillStyle = '#60A5FA';
-      ctx.font = '700 24px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#101313';
+      ctx.font = '800 24px "DM Mono", monospace';
       ctx.fillText(st.value, bx + 18, by + 52);
 
       // Label
-      ctx.fillStyle = '#71717A';
-      ctx.font = '600 12px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#65655F';
+      ctx.font = '700 12px "Manrope", sans-serif';
       ctx.fillText(st.label, bx + 18, by + 84);
     });
 
     // 8. Divider Line
-    ctx.strokeStyle = '#27272A';
+    ctx.strokeStyle = 'rgba(16, 19, 19, 0.15)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(44, 535);
@@ -184,9 +184,9 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
     ctx.stroke();
 
     // 9. Clean Verified Footer
-    ctx.fillStyle = '#71717A';
-    ctx.font = '600 13px "Space Grotesk", sans-serif';
-    ctx.fillText('⚡ VERIFIED LIVE ARENA • SKETCHCAST', 44, 575);
+    ctx.fillStyle = '#65655F';
+    ctx.font = '700 13px "Manrope", sans-serif';
+    ctx.fillText('⚡ VERIFIED LIVE ARENA • STUDIO NOMA', 44, 575);
 
     const dateStr = new Date().toLocaleDateString('en-US', {
       month: 'short',
@@ -194,8 +194,8 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
       year: 'numeric',
     });
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#52525B';
-    ctx.font = '600 13px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#101313';
+    ctx.font = '700 13px "DM Mono", monospace';
     ctx.fillText(`ISSUED: ${dateStr.toUpperCase()}`, width - 44, 575);
     ctx.textAlign = 'left';
   }, [cardData]);
@@ -243,14 +243,14 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-md font-sans"
         >
           <motion.div
             initial={{ scale: 0.95, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 12, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-[#0E0E11] text-white w-[95vw] sm:max-w-2xl p-4 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto"
+            className="bg-paper text-ink w-[95vw] sm:max-w-2xl p-4 sm:p-6 border border-hairline rounded-3xl shadow-2xl relative font-sans max-h-[90dvh] overflow-y-auto"
           >
             {/* Close Button */}
             <motion.button
@@ -260,7 +260,7 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-4 right-4 p-2 bg-[#16161A] text-zinc-400 hover:text-white rounded-xl border border-white/[0.08] hover:border-zinc-700 transition-colors cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 bg-paper text-muted hover:text-ink rounded-xl border border-hairline hover:border-ink transition-colors cursor-pointer z-10"
               title="Close modal"
             >
               <X className="w-4 h-4 stroke-2" />
@@ -268,29 +268,29 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
 
             {/* Modal Header */}
             <div className="flex items-start space-x-3 mb-5 pr-10">
-              <div className="w-10 h-10 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-orange/10 text-orange border border-orange/20 rounded-2xl flex items-center justify-center shrink-0">
                 <Trophy className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2.5">
-                  <h3 className="text-base font-semibold text-white leading-tight">
+                  <h3 className="text-base font-bold text-ink leading-tight font-display">
                     Export Champion Card
                   </h3>
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded-full border border-blue-500/20">
+                  <span className="px-2 py-0.5 bg-lime text-ink text-[10px] font-mono font-bold rounded-full border border-ink/20">
                     1200 × 630
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Ready-to-share graphic card for LinkedIn, X (Twitter), or developer portfolio
                 </p>
               </div>
             </div>
 
             {/* Canvas Preview Container */}
-            <div className="p-3 bg-[#0A0A0C] border border-white/[0.08] rounded-2xl mb-4 flex items-center justify-center overflow-hidden">
+            <div className="p-3 bg-paper-surface border border-hairline rounded-2xl mb-4 flex items-center justify-center overflow-hidden">
               <canvas
                 ref={canvasRef}
-                className="w-full h-auto aspect-1200/630 rounded-xl border border-white/[0.05]"
+                className="w-full h-auto aspect-1200/630 rounded-xl border border-hairline"
               />
             </div>
 
@@ -305,7 +305,7 @@ export const ChampionSocialCardModal: React.FC<ChampionSocialCardModalProps> = (
                   handleDownloadPNG();
                 }}
                 disabled={downloading}
-                className="w-full py-3.5 px-6 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl border border-blue-400/30 flex items-center justify-center space-x-2.5 cursor-pointer transition-all shadow-[0_0_24px_rgba(59,130,246,0.25)] hover:shadow-[0_0_32px_rgba(59,130,246,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 px-6 btn-noma-orange text-sm font-bold rounded-2xl flex items-center justify-center space-x-2.5 cursor-pointer shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4 stroke-[2.5]" />
                 <span>{downloading ? 'Generating Champion Card...' : 'Download Champion Card'}</span>

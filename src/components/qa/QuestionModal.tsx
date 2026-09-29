@@ -27,6 +27,8 @@ interface QuestionModalProps {
 
 
 
+const EMPTY_QUESTIONS: Question[] = [];
+
 export const QuestionModal: React.FC<QuestionModalProps> = ({
   isOpen,
   onClose,
@@ -36,7 +38,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   sessionId = 'self',
   isMuted = false,
   currentStrikes,
-  existingQuestions = [],
+  existingQuestions = EMPTY_QUESTIONS,
   onUpvoteExisting,
   onSafeguardViolation,
   onRecordStrike,
@@ -178,14 +180,14 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-md font-sans"
         >
           <motion.div
             initial={{ scale: 0.95, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 12, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-[#0E0E11] text-white w-[95vw] sm:max-w-lg p-4 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto"
+            className="bg-paper text-ink w-[95vw] sm:max-w-lg p-5 sm:p-6 border border-hairline rounded-3xl shadow-2xl relative font-sans max-h-[90dvh] overflow-y-auto"
           >
             {/* Close Button */}
             <motion.button
@@ -196,7 +198,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                 setModerationError(null);
                 onClose();
               }}
-              className="absolute top-4 right-4 p-2 bg-[#16161A] text-zinc-400 hover:text-white rounded-xl border border-white/[0.08] hover:border-zinc-700 transition-colors cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 bg-paper text-muted hover:text-ink rounded-xl border border-hairline hover:border-ink transition-colors cursor-pointer z-10"
               title="Close modal"
             >
               <X className="w-4 h-4 stroke-2" />
@@ -204,29 +206,29 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
 
             {/* Header */}
             <div className="flex items-start space-x-3 mb-5 pr-10">
-              <div className="w-10 h-10 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-orange/10 text-orange border border-orange/20 rounded-2xl flex items-center justify-center shrink-0">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-semibold text-white leading-tight">
+                  <h3 className="text-base font-bold text-ink leading-tight font-display">
                     Submit Architecture Question
                   </h3>
                 </div>
                 <div className="flex items-center space-x-2 mt-1.5 flex-wrap gap-y-1">
-                  <p className="text-xs text-zinc-400">
-                    Posting as <span className="font-semibold text-white bg-[#181822] px-2 py-0.5 rounded-md border border-white/[0.08]">{userName}</span>
+                  <p className="text-xs text-muted">
+                    Posting as <span className="font-bold text-ink bg-paper-surface px-2 py-0.5 rounded-lg border border-hairline">{userName}</span>
                   </p>
-                  <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-lime text-ink border border-ink/20">
                     AI Safeguarded
                   </span>
                   {effectiveStrikes > 0 && (
-                    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
+                    <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
                       effectiveStrikes >= 3
-                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse'
+                        ? 'bg-orange/20 text-orange border-orange/40 animate-pulse'
                         : effectiveStrikes === 2
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                        : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        ? 'bg-orange/15 text-orange border-orange/30'
+                        : 'bg-paper-surface text-ink border-hairline'
                     }`}>
                       Strikes: {effectiveStrikes}/3
                     </span>
@@ -240,17 +242,17 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3.5 bg-rose-500/10 border border-rose-500/25 rounded-xl text-rose-200 text-xs flex items-start space-x-2.5 mb-3.5"
+                className="p-3.5 bg-orange/15 border border-orange/30 rounded-2xl text-orange text-xs flex items-start space-x-2.5 mb-3.5"
               >
-                <VolumeX className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <VolumeX className="w-4 h-4 text-orange shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-semibold text-xs text-rose-400 flex items-center gap-2">
+                  <div className="font-bold text-xs text-orange flex items-center gap-2">
                     <span>You have been muted by the host</span>
-                    <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] font-semibold rounded-full border border-rose-500/30">
+                    <span className="px-2 py-0.5 bg-orange/20 text-orange text-[10px] font-bold rounded-full border border-orange/30 font-mono">
                       Silenced
                     </span>
                   </div>
-                  <div className="text-xs text-zinc-300 mt-1 leading-snug">
+                  <div className="text-xs text-ink/80 mt-1 leading-snug">
                     Your ability to submit Q&A questions has been restricted due to repeated policy violations. You can still participate in live polls and interactive quizzes.
                   </div>
                 </div>
@@ -262,17 +264,17 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-200 text-xs flex items-start space-x-2.5 mb-3.5"
+                className="p-3.5 bg-orange/15 border border-orange/30 rounded-2xl text-orange text-xs flex items-start space-x-2.5 mb-3.5"
               >
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-orange shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-xs text-amber-300 flex items-center justify-between flex-wrap gap-1">
+                  <div className="font-bold text-xs text-orange flex items-center justify-between flex-wrap gap-1">
                     <span>⚠️ 2nd Strike Warning (2/3)</span>
-                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-semibold rounded-full border border-amber-500/30">
+                    <span className="px-2 py-0.5 bg-orange/20 text-orange text-[10px] font-bold rounded-full border border-orange/30 font-mono">
                       Final Chance
                     </span>
                   </div>
-                  <div className="text-xs text-zinc-300 mt-1 leading-snug">
+                  <div className="text-xs text-ink/80 mt-1 leading-snug">
                     You have incurred 2 safeguard strikes. One more inappropriate, offensive, or off-topic question will immediately notify the host to mute or ban you!
                   </div>
                 </div>
@@ -293,10 +295,10 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                   rows={3}
                   maxLength={280}
                   disabled={isChecking || isMuted}
-                  className="w-full p-3 bg-[#16161A] border border-white/[0.08] rounded-xl text-xs font-medium text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 resize-none transition-colors disabled:bg-[#121215] disabled:text-zinc-600 disabled:cursor-not-allowed"
+                  className="w-full p-3 bg-paper border border-hairline rounded-xl text-xs font-medium text-ink placeholder:text-muted/60 focus:outline-none focus:border-ink resize-none transition-colors disabled:bg-paper-surface disabled:text-muted disabled:cursor-not-allowed"
                   autoFocus={!isMuted}
                 />
-                <div className="flex justify-between items-center text-[11px] font-medium text-zinc-500 mt-1.5 flex-wrap gap-1">
+                <div className="flex justify-between items-center text-[11px] font-medium text-muted mt-1.5 flex-wrap gap-1">
                   <span>
                     {isCheckingDuplicate
                       ? 'AI scanning for existing similar questions...'
@@ -313,25 +315,25 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     initial={{ opacity: 0, y: -4, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    className="p-3.5 bg-[#14141E] border border-blue-500/30 rounded-xl space-y-2.5 text-zinc-200"
+                    className="p-3.5 bg-paper-surface border border-orange/30 rounded-2xl space-y-2.5 text-ink"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs flex items-center gap-1.5 text-blue-400">
-                        <Sparkles className="w-3.5 h-3.5" />
+                      <span className="font-bold text-xs flex items-center gap-1.5 text-ink">
+                        <Sparkles className="w-3.5 h-3.5 text-orange" />
                         <span>Similar Question Detected</span>
                       </span>
-                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">
+                      <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 bg-orange/15 text-orange rounded-full border border-orange/25">
                         AI Suggestion
                       </span>
                     </div>
 
                     {duplicateWarning.matchedQuestionContent && (
-                      <p className="text-xs italic bg-[#101016] p-2.5 rounded-lg border border-white/[0.08] text-zinc-300">
+                      <p className="text-xs italic bg-paper p-2.5 rounded-xl border border-hairline text-ink">
                         "{duplicateWarning.matchedQuestionContent}"
                       </p>
                     )}
 
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted">
                       {duplicateWarning.reason}
                     </p>
 
@@ -344,7 +346,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                             onUpvoteExisting(duplicateWarning.matchedQuestionId);
                             onClose();
                           }}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl border border-blue-500/40 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                          className="px-3 py-1.5 btn-noma-orange font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm"
                         >
                           <ThumbsUp className="w-3 h-3" />
                           <span>Upvote Instead</span>
@@ -353,7 +355,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setDuplicateWarning(null)}
-                        className="px-3 py-1.5 bg-[#16161A] hover:bg-[#1E1E24] text-zinc-300 hover:text-white text-xs font-semibold rounded-xl border border-white/[0.08] cursor-pointer transition-colors"
+                        className="px-3 py-1.5 bg-paper hover:bg-paper-surface text-ink text-xs font-semibold rounded-xl border border-hairline cursor-pointer transition-colors"
                       >
                         Continue Asking Anyway
                       </button>
@@ -369,38 +371,38 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     initial={{ opacity: 0, y: -4, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    className="p-3.5 bg-rose-500/10 border border-rose-500/25 rounded-xl text-rose-200 text-xs flex items-start space-x-2.5"
+                    className="p-3.5 bg-orange/15 border border-orange/30 rounded-2xl text-orange text-xs flex items-start space-x-2.5"
                   >
-                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-orange" />
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-xs flex items-center justify-between flex-wrap gap-1">
-                        <span className="text-rose-400">AI Safeguard Violation</span>
+                      <div className="font-bold text-xs flex items-center justify-between flex-wrap gap-1">
+                        <span className="text-orange">AI Safeguard Violation</span>
                         <div className="flex items-center space-x-1.5">
                           {moderationError.category && (
-                            <span className="px-2 py-0.5 bg-black/40 text-zinc-300 text-[10px] font-semibold rounded-md border border-white/[0.08]">
+                            <span className="px-2 py-0.5 bg-paper text-ink text-[10px] font-mono font-bold rounded-md border border-hairline">
                               {moderationError.category}
                             </span>
                           )}
-                          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${
-                            (moderationError.strikes || 1) >= 3 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-full border ${
+                            (moderationError.strikes || 1) >= 3 ? 'bg-orange/20 text-orange border-orange/40' : 'bg-orange/15 text-orange border-orange/30'
                           }`}>
                             Strike {moderationError.strikes || 1}/3
                           </span>
                         </div>
                       </div>
-                      <div className="text-xs mt-1.5 text-zinc-300 leading-snug">
+                      <div className="text-xs mt-1.5 text-ink/80 leading-snug">
                         {moderationError.reason}
                       </div>
                       {moderationError.strikes && moderationError.strikes >= 3 ? (
-                        <div className="text-xs text-amber-300 font-semibold mt-2 bg-black/40 p-2 rounded-lg border border-amber-500/30">
+                        <div className="text-xs text-orange font-bold mt-2 bg-paper p-2 rounded-xl border border-orange/30">
                           ⚠️ 3 Strikes Reached: Room Host and Admins have been notified.
                         </div>
                       ) : moderationError.strikes === 2 ? (
-                        <div className="text-xs text-amber-300 font-semibold mt-2 bg-black/40 p-2 rounded-lg border border-amber-500/30">
+                        <div className="text-xs text-orange font-bold mt-2 bg-paper p-2 rounded-xl border border-orange/30">
                           ⚠️ 2nd Strike Warning: One more strike will alert the host to mute or ban you.
                         </div>
                       ) : (
-                        <div className="text-[11px] text-zinc-400 mt-1.5">
+                        <div className="text-[11px] text-muted mt-1.5">
                           Please revise your question to be constructive and technical.
                         </div>
                       )}
@@ -410,7 +412,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
               </AnimatePresence>
 
               {/* Actions */}
-              <div className="flex flex-col-reverse xs:flex-row items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+              <div className="flex flex-col-reverse xs:flex-row items-center justify-end gap-2.5 pt-3 border-t border-hairline">
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.01 }}
@@ -420,7 +422,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     setModerationError(null);
                     onClose();
                   }}
-                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-white/[0.08] bg-[#16161A] hover:bg-[#1E1E24] text-zinc-300 hover:text-white cursor-pointer transition-colors text-center"
+                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-hairline bg-paper hover:bg-paper-surface text-muted hover:text-ink cursor-pointer transition-colors text-center"
                 >
                   {isMuted ? 'Close' : 'Cancel'}
                 </motion.button>
@@ -430,7 +432,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     whileHover={{ scale: isChecking ? 1 : 1.01 }}
                     whileTap={{ scale: isChecking ? 1 : 0.98 }}
                     disabled={!content.trim() || isChecking}
-                    className="w-full xs:w-auto px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                    className="w-full xs:w-auto px-5 py-2 btn-noma-orange text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                   >
                     {isChecking ? (
                       <>

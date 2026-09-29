@@ -70,37 +70,37 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[#121215] text-white border border-white/[0.08] rounded-2xl shadow-2xl p-6 sm:p-10 text-center font-sans space-y-5 relative overflow-hidden"
+        className="bg-paper text-ink border border-hairline rounded-3xl shadow-xl p-6 sm:p-10 text-center font-sans space-y-5 relative overflow-hidden card-noma"
       >
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mx-auto flex items-center justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-orange/10 text-orange border border-orange/20 mx-auto flex items-center justify-center">
           <CheckCircle2 className="w-8 h-8" />
         </div>
 
         <div>
-          <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium text-xs">
+          <span className="px-3 py-1 rounded-full bg-lime text-ink border border-ink/20 font-mono font-bold text-xs">
             Feedback Recorded
           </span>
-          <h3 className="text-xl sm:text-2xl font-semibold text-white mt-3 font-display">
+          <h3 className="text-xl sm:text-2xl font-serif font-bold text-ink mt-3">
             Feedback Submitted Successfully
           </h3>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-2 max-w-md mx-auto leading-relaxed">
-            Your responses to <span className="font-medium text-white">&ldquo;{survey.title}&rdquo;</span> have been synchronized with the presenter in real-time.
+          <p className="text-xs sm:text-sm text-muted mt-2 max-w-md mx-auto leading-relaxed">
+            Your responses to <span className="font-bold text-ink">&ldquo;{survey.title}&rdquo;</span> have been synchronized with the presenter in real-time.
           </p>
         </div>
 
         {/* Transmission Summary Receipt */}
-        <div className="max-w-md mx-auto bg-[#0D0D10] border border-white/[0.06] rounded-xl p-4 text-left text-xs space-y-2">
-          <div className="flex justify-between items-center text-zinc-400">
+        <div className="max-w-md mx-auto bg-paper-surface border border-hairline rounded-2xl p-4 text-left text-xs space-y-2">
+          <div className="flex justify-between items-center text-muted font-mono">
             <span>Reference ID</span>
-            <span className="font-mono text-zinc-200">#SRV-{survey.id.slice(-6)}</span>
+            <span className="font-bold text-ink">#SRV-{survey.id.slice(-6)}</span>
           </div>
-          <div className="flex justify-between items-center text-zinc-400">
+          <div className="flex justify-between items-center text-muted font-mono">
             <span>Submission</span>
-            <span className="font-medium text-blue-400">Anonymous & Verified</span>
+            <span className="font-bold text-orange">Anonymous & Verified</span>
           </div>
-          <div className="flex justify-between items-center text-zinc-400">
+          <div className="flex justify-between items-center text-muted font-mono">
             <span>Answers Recorded</span>
-            <span className="font-medium text-white">{survey.questions.length} questions completed</span>
+            <span className="font-bold text-ink">{survey.questions.length} questions completed</span>
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onViewResults}
-              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs sm:text-sm cursor-pointer transition-all inline-flex items-center space-x-2 shadow-lg shadow-blue-500/20"
+              className="px-6 py-3 rounded-xl btn-noma-orange font-bold text-xs sm:text-sm cursor-pointer transition-all inline-flex items-center space-x-2 shadow-sm"
             >
               <Sparkles className="w-4 h-4" />
               <span>View Survey Results ({survey.responses_count})</span>
@@ -123,24 +123,24 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
 
   // 2. Answering Flow
   return (
-    <div className="bg-[#101014] text-white border border-white/[0.08] rounded-2xl shadow-2xl p-5 sm:p-8 font-sans space-y-6">
+    <div className="bg-paper text-ink border border-hairline rounded-3xl shadow-xl p-5 sm:p-8 font-sans space-y-6 card-noma">
       {/* Survey Title & Header */}
-      <div className="border-b border-white/[0.08] pb-5">
+      <div className="border-b border-hairline pb-5">
         <div className="flex items-center gap-2 flex-wrap mb-2">
-          <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-medium">
+          <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 text-xs font-semibold">
             Live Audience Prompt
           </span>
-          <span className="px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium">
+          <span className="px-2.5 py-0.5 rounded-full bg-paper-surface text-ink border border-hairline text-xs font-mono font-bold">
             {survey.questions.length} Questions
           </span>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight font-display">
+        <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-ink leading-tight">
           {survey.title}
         </h2>
 
         {survey.description && (
-          <p className="text-xs sm:text-sm text-zinc-400 mt-2 leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted mt-2 leading-relaxed">
             {survey.description}
           </p>
         )}
@@ -151,9 +151,9 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3.5 rounded-xl bg-red-500/10 text-red-300 border border-red-500/20 text-xs flex items-center space-x-2.5"
+          className="p-3.5 rounded-2xl bg-orange/15 text-orange border border-orange/30 text-xs flex items-center space-x-2.5"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
+          <AlertCircle className="w-4 h-4 shrink-0 text-orange" />
           <span>{validationError}</span>
         </motion.div>
       )}
@@ -169,26 +169,26 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
           return (
             <div
               key={q.id}
-              className="p-5 sm:p-6 rounded-2xl bg-[#141418] border border-white/[0.08] space-y-4"
+              className="p-5 sm:p-6 rounded-2xl bg-paper-surface border border-hairline space-y-4"
             >
               {/* Question Header Bar */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start space-x-3">
-                  <span className="w-7 h-7 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-7 h-7 rounded-xl bg-ink text-paper text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <div>
                     <div className="flex items-center space-x-2 flex-wrap gap-y-1 mb-1.5">
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium">
+                      <span className="px-2 py-0.5 rounded-full bg-paper border border-hairline text-muted text-[11px] font-mono">
                         {q.type === 'rating' ? '5-Star Rating' : q.type === 'choice' ? 'Multiple Choice' : 'Open Response'}
                       </span>
                       {q.required && (
-                        <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[11px] font-medium border border-red-500/20">
+                        <span className="px-2 py-0.5 rounded-full bg-orange/15 text-orange text-[11px] font-mono font-bold border border-orange/30">
                           Required
                         </span>
                       )}
                     </div>
-                    <h3 className="text-sm sm:text-base font-semibold text-white leading-snug font-display">
+                    <h3 className="text-sm sm:text-base font-bold text-ink leading-snug font-display">
                       {q.title}
                     </h3>
                   </div>
@@ -217,25 +217,25 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                             setHoveredRating((prev) => ({ ...prev, [q.id]: 0 }))
                           }
                           onClick={() => handleRatingSelect(q.id, tier.value)}
-                          className={`p-2.5 sm:p-3.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          className={`p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-500 font-semibold shadow-lg shadow-blue-500/25 scale-102'
+                              ? 'bg-ink text-lime border-ink font-bold shadow-md scale-102'
                               : isHovered
-                              ? 'bg-blue-600/15 text-white border-blue-500/40'
-                              : 'bg-[#0D0D10] text-zinc-400 border-white/[0.08] hover:bg-zinc-800/50'
+                              ? 'bg-paper text-ink border-ink/40'
+                              : 'bg-paper text-muted border-hairline hover:bg-paper-surface'
                           }`}
                         >
                           <Star
                             className={`w-5 h-5 sm:w-6 sm:h-6 ${
                               isSelected || tier.value <= displayRating
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'fill-transparent text-zinc-700'
+                                ? 'fill-orange text-orange'
+                                : 'fill-transparent text-muted/30'
                             }`}
                           />
-                          <span className="text-xs sm:text-sm font-semibold mt-1">
+                          <span className="text-xs sm:text-sm font-bold font-mono mt-1">
                             {tier.value}★
                           </span>
-                          <span className="text-[10px] text-zinc-400 uppercase truncate max-w-full hidden xs:inline mt-0.5">
+                          <span className="text-[10px] uppercase font-mono truncate max-w-full hidden xs:inline mt-0.5 opacity-80">
                             {tier.label}
                           </span>
                         </motion.button>
@@ -244,9 +244,9 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                   </div>
 
                   {displayRating > 0 && selectedTier && (
-                    <div className="p-2.5 rounded-xl bg-[#0D0D10] border border-white/[0.06] flex items-center justify-between text-xs">
-                      <span className="text-zinc-400">Selected:</span>
-                      <span className="font-semibold text-blue-400">
+                    <div className="p-2.5 rounded-xl bg-paper border border-hairline flex items-center justify-between text-xs font-mono">
+                      <span className="text-muted">Selected:</span>
+                      <span className="font-bold text-ink">
                         {displayRating} / 5 — {selectedTier.label}
                       </span>
                     </div>
@@ -263,25 +263,25 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
 
                     return (
                       <motion.button
-                        key={optIdx}
+                        key={`${q.id}-${optionLetter}-${opt}`}
                         type="button"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleChoiceSelect(q.id, opt)}
-                        className={`p-3.5 rounded-xl text-left border text-xs sm:text-sm transition-all cursor-pointer flex items-center space-x-3 ${
+                        className={`p-3.5 rounded-2xl text-left border text-xs sm:text-sm transition-all cursor-pointer flex items-center space-x-3 ${
                           isSelected
-                            ? 'bg-blue-600/15 text-white border-blue-500/60 font-medium shadow-sm'
-                            : 'bg-[#0D0D10] hover:bg-zinc-800/40 text-zinc-200 border-white/[0.08]'
+                            ? 'bg-lime/25 text-ink border-lime font-bold shadow-sm ring-1 ring-lime/40'
+                            : 'bg-paper hover:bg-paper-surface text-ink border-hairline'
                         }`}
                       >
                         <span
-                          className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-semibold shrink-0 ${
-                            isSelected ? 'bg-blue-600 text-white border-blue-500' : 'bg-zinc-800/80 text-zinc-400 border-white/[0.08]'
+                          className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
+                            isSelected ? 'bg-ink text-lime border-ink' : 'bg-paper-surface text-muted border-hairline'
                           }`}
                         >
                           {isSelected ? '✓' : optionLetter}
                         </span>
-                        <span className="leading-snug truncate">{opt}</span>
+                        <span className="leading-snug truncate font-medium">{opt}</span>
                       </motion.button>
                     );
                   })}
@@ -291,10 +291,10 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
               {/* 3. Open Text Feedback Type */}
               {q.type === 'text' && (
                 <div className="pt-1 space-y-1.5">
-                  <div className="bg-[#0D0D10] border border-white/[0.08] rounded-xl overflow-hidden">
-                    <div className="bg-[#141418] px-3.5 py-2 border-b border-white/[0.08] flex items-center justify-between text-xs text-zinc-400">
+                  <div className="bg-paper border border-hairline rounded-2xl overflow-hidden">
+                    <div className="bg-paper-surface px-3.5 py-2 border-b border-hairline flex items-center justify-between text-xs text-muted font-mono">
                       <span>Written Response</span>
-                      <span className="text-[11px] text-blue-400">
+                      <span className="text-[11px] text-orange font-bold">
                         Anonymous
                       </span>
                     </div>
@@ -305,11 +305,11 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                       placeholder="Type your feedback, thoughts, or questions for the presenter..."
                       rows={3}
                       maxLength={500}
-                      className="w-full p-3.5 bg-transparent text-white placeholder:text-zinc-500 text-xs sm:text-sm focus:outline-none resize-none select-text"
+                      className="w-full p-3.5 bg-transparent text-ink placeholder:text-muted/60 text-xs sm:text-sm focus:outline-none resize-none select-text"
                     />
                   </div>
 
-                  <div className="flex justify-between items-center text-[11px] text-zinc-500 px-1">
+                  <div className="flex justify-between items-center text-[11px] text-muted font-mono px-1">
                     <span>Direct submission to speaker</span>
                     <span>{(answers[q.id] || '').length}/500</span>
                   </div>
@@ -325,7 +325,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
             type="submit"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full sm:w-auto px-8 py-3.5 min-h-[48px] rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-lg shadow-blue-500/20 active:scale-98"
+            className="w-full sm:w-auto px-8 py-3.5 min-h-[48px] btn-noma-orange rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-sm"
           >
             <Send className="w-4 h-4" />
             <span>Submit Feedback</span>

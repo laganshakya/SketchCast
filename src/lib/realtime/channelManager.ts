@@ -83,7 +83,6 @@ export type RealtimeEventMap = {
   reaction_batch: { emoji: string; count: number; senderName?: string; timestamp: number };
   session_report_published: { reportMarkdown: string; generatedAt: number; publishedBy: string };
   qa_cluster_update: QuestionCluster[];
-  room_audio_pack_update: { pack: 'arcade' | 'hifi'; updatedBy: string };
   quiz_completed: { roomId: string; completedAt: number };
 };
 
@@ -205,7 +204,6 @@ export class RealtimeChannelManager {
       'reaction_batch',
       'session_report_published',
       'qa_cluster_update',
-      'room_audio_pack_update',
       'quiz_completed',
     ];
 

@@ -16,15 +16,12 @@ import {
   MousePointer,
   Eye,
   Sliders,
-  Volume2,
-  VolumeX,
   QrCode,
   ArrowRight,
   LogOut,
   Save,
   X,
   BadgePercent,
-  CheckCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Room, AffiliateRecommendation, AffiliatePlacement } from '../../types';
@@ -45,12 +42,6 @@ import {
   playClickSound,
   playPopSound,
   playWhoosh,
-  playSuccessFanfare,
-  isAudioMuted,
-  setAudioMuted,
-  setAudioPack,
-  getAudioPack,
-  type AudioPackType,
 } from '../../lib/soundFx';
 
 export interface UserSettingsViewProps {
@@ -97,10 +88,6 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
     setPrevUserName(userName);
     setDisplayNameInput(userName);
   }
-
-  // Audio preference states
-  const [audioPackState, setAudioPackState] = useState<AudioPackType>(() => getAudioPack());
-  const [isMutedState, setIsMutedState] = useState<boolean>(() => isAudioMuted());
 
   // -------------------------------------------------------------
   // TAB 1: Affiliate & Partner Monetization State
@@ -506,17 +493,17 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
   const userInitial = (userName.trim()[0] || 'U').toUpperCase();
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto no-scrollbar bg-[#0A0A0C] font-sans text-white select-none">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto no-scrollbar bg-paper font-sans text-ink select-none">
       {/* Top Banner: User Profile Header */}
-      <div className="border-b border-white/[0.08] bg-[#0E0E11]/80 backdrop-blur-md px-4 sm:px-8 py-6">
+      <div className="border-b border-hairline bg-paper-surface/80 backdrop-blur-md px-4 sm:px-8 py-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* User Identity info */}
           <div className="flex items-center space-x-4">
             <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-mono font-bold text-xl border shadow-inner ${
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-serif font-bold text-xl border shadow-sm ${
                 userRole === 'host'
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 ring-4 ring-blue-500/10'
-                  : 'bg-zinc-800 text-zinc-200 border-white/[0.08] ring-4 ring-white/[0.04]'
+                  ? 'bg-orange/10 text-orange border-orange/20 ring-4 ring-orange/10'
+                  : 'bg-paper text-ink border-hairline ring-4 ring-ink/5'
               }`}
             >
               {userInitial}
@@ -530,13 +517,13 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={displayNameInput}
                     onChange={(e) => setDisplayNameInput(e.target.value)}
                     placeholder="Enter display name..."
-                    className="bg-[#141418] hover:bg-[#18181D] focus:bg-[#18181D] px-2.5 py-1 rounded-lg border border-white/[0.1] focus:border-blue-500 text-white font-mono text-sm font-bold tracking-tight outline-hidden transition-all w-48 sm:w-60"
+                    className="bg-paper hover:bg-paper-surface focus:bg-paper px-3 py-1.5 rounded-xl border border-hairline focus:border-ink text-ink font-mono text-sm font-bold tracking-tight outline-none transition-all w-48 sm:w-60"
                   />
                   {displayNameInput.trim() !== userName && (
                     <button
                       type="submit"
                       disabled={isSavingName}
-                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-mono text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-xs"
+                      className="btn-noma-ink px-3 py-1.5 rounded-xl font-mono text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-xs"
                       title="Save display name"
                     >
                       <Save className="w-3.5 h-3.5" />
@@ -544,7 +531,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     </button>
                   )}
                   {nameSavedFeedback && (
-                    <span className="text-emerald-400 font-mono text-xs flex items-center space-x-1">
+                    <span className="text-lime-700 font-mono text-xs flex items-center space-x-1">
                       <Check className="w-3.5 h-3.5" />
                       <span>Saved</span>
                     </span>
@@ -552,29 +539,29 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                 </form>
 
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
                     userRole === 'host'
-                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                      : 'bg-zinc-800 text-zinc-400 border-white/[0.08]'
+                      ? 'bg-orange/10 text-orange border-orange/20'
+                      : 'bg-paper text-muted border-hairline'
                   }`}
                 >
                   {userRole}
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400 font-mono">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted font-mono">
                 <span>{currentUser?.email || 'Guest Session (Local Device)'}</span>
                 <span>•</span>
                 <button
                   onClick={handleCopySessionId}
-                  className="hover:text-white transition-colors flex items-center space-x-1 cursor-pointer"
+                  className="hover:text-ink transition-colors flex items-center space-x-1 cursor-pointer"
                   title="Click to copy Session ID"
                 >
                   <span>ID: {sessionId.slice(0, 10)}...</span>
                   {copiedSessionId ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
+                    <Check className="w-3 h-3 text-lime-700" />
                   ) : (
-                    <Copy className="w-3 h-3 text-zinc-500" />
+                    <Copy className="w-3 h-3 text-muted" />
                   )}
                 </button>
               </div>
@@ -588,16 +575,16 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                 playClickSound();
                 setUserRole(userRole === 'host' ? 'attendee' : 'host');
               }}
-              className="px-3 py-1.5 rounded-xl bg-[#141418] hover:bg-[#1a1a22] text-zinc-200 border border-white/[0.08] font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-colors"
+              className="px-3.5 py-2 rounded-full bg-paper hover:bg-paper-surface text-ink border border-hairline font-mono text-xs font-medium flex items-center space-x-2 cursor-pointer transition-colors"
             >
-              <Crown className="w-3.5 h-3.5 text-blue-400" />
+              <Crown className="w-3.5 h-3.5 text-orange" />
               <span>Switch to {userRole === 'host' ? 'Attendee' : 'Host'}</span>
             </button>
 
             {currentUser && !currentUser.is_anonymous ? (
               <button
                 onClick={onSignOut}
-                className="px-3 py-1.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-500/20 font-mono text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors"
+                className="px-3.5 py-2 rounded-full bg-paper hover:bg-red-50 text-red-600 border border-hairline font-mono text-xs font-medium flex items-center space-x-1.5 cursor-pointer transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Log Out</span>
@@ -605,7 +592,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
             ) : (
               <button
                 onClick={onOpenAuthModal}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors shadow-xs"
+                className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors shadow-xs"
               >
                 <Shield className="w-3.5 h-3.5" />
                 <span>Sign In / Link Account</span>
@@ -615,7 +602,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
         </div>
 
         {/* Sub-Tabs Navigation Bar */}
-        <div className="max-w-6xl mx-auto mt-6 flex items-center space-x-2 border-b border-white/[0.06] -mb-6">
+        <div className="max-w-6xl mx-auto mt-6 flex items-center space-x-3 border-b border-hairline -mb-6">
           <button
             onClick={() => {
               playClickSound();
@@ -623,13 +610,13 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
             }}
             className={`px-4 py-3 font-mono text-xs font-bold flex items-center space-x-2 border-b-2 cursor-pointer transition-all ${
               activeSubTab === 'affiliate'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-ink text-ink font-semibold'
+                : 'border-transparent text-muted hover:text-ink'
             }`}
           >
-            <BadgePercent className="w-4 h-4 text-blue-400" />
+            <BadgePercent className="w-4 h-4 text-orange" />
             <span>Affiliate & Partner Hub</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 text-[9px] font-bold">
               MONETIZE
             </span>
           </button>
@@ -641,14 +628,14 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
             }}
             className={`px-4 py-3 font-mono text-xs font-bold flex items-center space-x-2 border-b-2 cursor-pointer transition-all ${
               activeSubTab === 'rooms'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-ink text-ink font-semibold'
+                : 'border-transparent text-muted hover:text-ink'
             }`}
           >
-            <Layers className="w-4 h-4 text-purple-400" />
+            <Layers className="w-4 h-4 text-ink" />
             <span>My Arena Rooms</span>
             {myRooms.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.08] text-[9px]">
+              <span className="px-2 py-0.5 rounded-full bg-paper text-muted border border-hairline text-[9px]">
                 {myRooms.length}
               </span>
             )}
@@ -661,12 +648,12 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
             }}
             className={`px-4 py-3 font-mono text-xs font-bold flex items-center space-x-2 border-b-2 cursor-pointer transition-all ${
               activeSubTab === 'preferences'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-ink text-ink font-semibold'
+                : 'border-transparent text-muted hover:text-ink'
             }`}
           >
-            <Sliders className="w-4 h-4 text-emerald-400" />
-            <span>Preferences & Audio</span>
+            <Sliders className="w-4 h-4 text-orange" />
+            <span>Preferences</span>
           </button>
         </div>
       </div>
@@ -680,69 +667,69 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
           <div className="space-y-6">
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 space-y-1">
-                <div className="text-[10px] font-mono text-zinc-500 uppercase font-bold tracking-wider">
+              <div className="bg-paper-surface border border-hairline rounded-3xl p-5 space-y-1 shadow-sm">
+                <div className="text-[10px] font-mono text-muted uppercase font-bold tracking-wider">
                   Active Tracks
                 </div>
-                <div className="text-2xl font-mono font-bold text-white flex items-center space-x-2">
+                <div className="text-2xl font-serif font-bold text-ink flex items-center space-x-2">
                   <span>{activeCount}</span>
-                  <span className="text-xs text-zinc-500">/ {affiliateList.length}</span>
+                  <span className="text-xs text-muted font-mono">/ {affiliateList.length}</span>
                 </div>
-                <div className="text-[11px] text-zinc-500">Curated recommendations</div>
+                <div className="text-[11px] text-muted">Curated recommendations</div>
               </div>
 
-              <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 space-y-1">
-                <div className="text-[10px] font-mono text-zinc-500 uppercase font-bold tracking-wider">
+              <div className="bg-paper-surface border border-hairline rounded-3xl p-5 space-y-1 shadow-sm">
+                <div className="text-[10px] font-mono text-muted uppercase font-bold tracking-wider">
                   Total Impressions
                 </div>
-                <div className="text-2xl font-mono font-bold text-white flex items-center space-x-2">
-                  <Eye className="w-4 h-4 text-blue-400" />
+                <div className="text-2xl font-serif font-bold text-ink flex items-center space-x-2">
+                  <Eye className="w-4 h-4 text-orange" />
                   <span>{totalImpressions}</span>
                 </div>
-                <div className="text-[11px] text-zinc-500">Post-quiz views recorded</div>
+                <div className="text-[11px] text-muted">Post-quiz views recorded</div>
               </div>
 
-              <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 space-y-1">
-                <div className="text-[10px] font-mono text-zinc-500 uppercase font-bold tracking-wider">
+              <div className="bg-paper-surface border border-hairline rounded-3xl p-5 space-y-1 shadow-sm">
+                <div className="text-[10px] font-mono text-muted uppercase font-bold tracking-wider">
                   Outbound Clicks
                 </div>
-                <div className="text-2xl font-mono font-bold text-white flex items-center space-x-2">
-                  <MousePointer className="w-4 h-4 text-emerald-400" />
+                <div className="text-2xl font-serif font-bold text-orange flex items-center space-x-2">
+                  <MousePointer className="w-4 h-4 text-orange" />
                   <span>{totalClicks}</span>
                 </div>
-                <div className="text-[11px] text-zinc-500">Attendee referrals sent</div>
+                <div className="text-[11px] text-muted">Attendee referrals sent</div>
               </div>
 
-              <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 space-y-1">
-                <div className="text-[10px] font-mono text-zinc-500 uppercase font-bold tracking-wider">
+              <div className="bg-paper-surface border border-hairline rounded-3xl p-5 space-y-1 shadow-sm">
+                <div className="text-[10px] font-mono text-muted uppercase font-bold tracking-wider">
                   Average CTR
                 </div>
-                <div className="text-2xl font-mono font-bold text-white flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-purple-400" />
+                <div className="text-2xl font-serif font-bold text-ink flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4 text-orange" />
                   <span>{aggregateCTR}%</span>
                 </div>
-                <div className="text-[11px] text-zinc-500">Click-through engagement</div>
+                <div className="text-[11px] text-muted">Click-through engagement</div>
               </div>
             </div>
 
             {/* Action Bar & Filter Toolbar */}
-            <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-paper-surface border border-hairline rounded-3xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="flex flex-1 items-center space-x-3">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                   <input
                     type="text"
                     value={affiliateSearch}
                     onChange={(e) => setAffiliateSearch(e.target.value)}
                     placeholder="Search by course, tool, provider or keyword..."
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white placeholder-zinc-500 focus:border-blue-500 outline-hidden transition-colors"
+                    className="w-full bg-paper border border-hairline rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-ink placeholder:text-muted/60 focus:border-ink outline-none transition-colors"
                   />
                 </div>
 
                 <select
                   value={selectedCategoryFilter}
                   onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                  className="bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 focus:border-blue-500 outline-hidden cursor-pointer"
+                  className="bg-paper border border-hairline rounded-xl px-3 py-2 text-xs font-mono text-ink focus:border-ink outline-none cursor-pointer"
                 >
                   <option value="all">All Categories</option>
                   <option value="cloud_devops">Cloud & DevOps</option>
@@ -762,7 +749,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     loadAffiliates();
                   }}
                   disabled={isLoadingAffiliates}
-                  className="p-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                  className="p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                   title="Refresh recommendations"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingAffiliates ? 'animate-spin' : ''}`} />
@@ -770,7 +757,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                 <button
                   onClick={handleOpenCreateAffiliate}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-md active:scale-95"
+                  className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Create Recommendation</span>
@@ -780,20 +767,20 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
             {/* Recommendations List Grid */}
             {isLoadingAffiliates ? (
-              <div className="py-16 text-center space-y-3 font-mono text-xs text-zinc-500">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+              <div className="py-16 text-center space-y-3 font-mono text-xs text-muted">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-orange" />
                 <p>Loading affiliate recommendations from Supabase...</p>
               </div>
             ) : filteredAffiliates.length === 0 ? (
-              <div className="bg-[#121215] border border-dashed border-white/[0.1] rounded-3xl p-12 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mx-auto">
+              <div className="bg-paper-surface border border-dashed border-hairline rounded-3xl p-12 text-center space-y-4 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center mx-auto">
                   <BadgePercent className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-mono text-sm font-bold text-white uppercase">
+                  <h3 className="font-serif text-base font-bold text-ink">
                     No Recommendations Found
                   </h3>
-                  <p className="text-xs text-zinc-400 max-w-md mx-auto">
+                  <p className="text-xs text-muted max-w-md mx-auto">
                     {affiliateSearch || selectedCategoryFilter !== 'all'
                       ? 'No items matched your current filter criteria.'
                       : 'You have not created any affiliate tracks yet. Add your first course or dev tool to monetize attendees.'}
@@ -801,7 +788,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                 </div>
                 <button
                   onClick={handleOpenCreateAffiliate}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-mono text-xs font-bold inline-flex items-center space-x-2 cursor-pointer transition-all shadow-md"
+                  className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold inline-flex items-center space-x-2 cursor-pointer transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Create First Recommendation</span>
@@ -821,31 +808,31 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       layout
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`bg-[#121215] rounded-2xl border transition-all p-5 flex flex-col justify-between space-y-4 relative ${
+                      className={`bg-paper-surface rounded-3xl border transition-all p-6 flex flex-col justify-between space-y-4 shadow-sm relative ${
                         rec.is_active
-                          ? 'border-white/[0.08] hover:border-blue-500/30'
-                          : 'border-white/[0.04] opacity-60'
+                          ? 'border-hairline hover:border-ink/20'
+                          : 'border-hairline opacity-60'
                       }`}
                     >
                       {/* Top Row: Category, Status, Priority & Badges */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center space-x-1.5 flex-wrap">
-                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono text-[9px] font-bold uppercase">
+                          <span className="px-2.5 py-0.5 rounded-full bg-paper text-ink border border-hairline font-mono text-[9px] font-bold uppercase">
                             {rec.category.replace('_', ' ')}
                           </span>
 
-                          <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.08] font-mono text-[9px] font-bold uppercase">
+                          <span className="px-2.5 py-0.5 rounded-full bg-paper text-muted border border-hairline font-mono text-[9px] font-bold uppercase">
                             {rec.provider}
                           </span>
 
                           {rec.badge_text && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono text-[9px] font-bold">
+                            <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 font-mono text-[9px] font-bold">
                               {rec.badge_text}
                             </span>
                           )}
 
                           {rec.discount_code && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[9px] font-bold">
+                            <span className="px-2.5 py-0.5 rounded-full bg-lime/20 text-ink border border-lime/40 font-mono text-[9px] font-bold">
                               CODE: {rec.discount_code}
                             </span>
                           )}
@@ -854,16 +841,16 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                         {/* Active Toggle Switch */}
                         <button
                           onClick={() => handleToggleActive(rec.id, rec.is_active)}
-                          className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-bold flex items-center space-x-1 cursor-pointer transition-colors border ${
+                          className={`px-2.5 py-0.5 rounded-full font-mono text-[9px] font-bold flex items-center space-x-1 cursor-pointer transition-colors border ${
                             rec.is_active
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                              ? 'bg-lime/20 text-ink border-lime/40'
+                              : 'bg-paper text-muted border-hairline'
                           }`}
                           title={rec.is_active ? 'Click to disable' : 'Click to enable'}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              rec.is_active ? 'bg-emerald-400' : 'bg-zinc-600'
+                              rec.is_active ? 'bg-orange' : 'bg-muted'
                             }`}
                           />
                           <span>{rec.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
@@ -872,49 +859,49 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                       {/* Content Section */}
                       <div className="space-y-1.5">
-                        <h4 className="font-mono text-sm font-bold text-white tracking-tight line-clamp-1">
+                        <h4 className="font-serif text-base font-bold text-ink tracking-tight line-clamp-1">
                           {rec.title}
                         </h4>
-                        <p className="text-xs text-zinc-300 font-medium line-clamp-2">
+                        <p className="text-xs text-muted font-medium line-clamp-2">
                           {rec.headline || rec.description}
                         </p>
                         {rec.description && rec.headline && (
-                          <p className="text-[11px] text-zinc-500 line-clamp-2">
+                          <p className="text-[11px] text-muted line-clamp-2">
                             {rec.description}
                           </p>
                         )}
                       </div>
 
                       {/* Target URL with Test External Link */}
-                      <div className="p-2.5 bg-[#0A0A0C] rounded-xl border border-white/[0.06] flex items-center justify-between text-xs font-mono">
-                        <div className="truncate text-zinc-400 text-[11px] flex-1 mr-2">
+                      <div className="p-3 bg-paper rounded-2xl border border-hairline flex items-center justify-between text-xs font-mono">
+                        <div className="truncate text-muted text-[11px] flex-1 mr-2">
                           {rec.affiliate_url}
                         </div>
                         <a
                           href={rec.affiliate_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2 py-1 rounded bg-[#18181D] hover:bg-[#22222A] text-blue-400 border border-white/[0.08] text-[10px] flex items-center space-x-1 shrink-0 transition-colors"
+                          className="px-2.5 py-1 rounded-full bg-paper-surface hover:bg-paper text-ink border border-hairline text-[10px] flex items-center space-x-1 shrink-0 transition-colors"
                           title="Open affiliate destination URL in a new tab"
                         >
                           <span>Test</span>
-                          <ExternalLink className="w-3 h-3" />
+                          <ExternalLink className="w-3 h-3 text-orange" />
                         </a>
                       </div>
 
                       {/* Keywords pills */}
                       {rec.keywords && rec.keywords.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {rec.keywords.slice(0, 4).map((kw, i) => (
+                          {rec.keywords.slice(0, 4).map((kw) => (
                             <span
-                              key={i}
-                              className="px-1.5 py-0.2 rounded bg-[#18181D] text-zinc-400 font-mono text-[9px]"
+                              key={`${rec.id}-${kw}`}
+                              className="px-2 py-0.5 rounded-full bg-paper text-muted border border-hairline font-mono text-[9px]"
                             >
                               #{kw}
                             </span>
                           ))}
                           {rec.keywords.length > 4 && (
-                            <span className="text-[9px] text-zinc-600 font-mono self-center">
+                            <span className="text-[9px] text-muted font-mono self-center">
                               +{rec.keywords.length - 4} more
                             </span>
                           )}
@@ -922,27 +909,27 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       )}
 
                       {/* Bottom Footer: Telemetry & Actions */}
-                      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                      <div className="pt-3 border-t border-hairline flex items-center justify-between">
                         {/* Telemetry Stats */}
-                        <div className="flex items-center space-x-3 text-[11px] font-mono text-zinc-400">
+                        <div className="flex items-center space-x-3 text-[11px] font-mono text-muted">
                           <span title="Impressions">
-                            <span className="text-zinc-600 font-bold">IMP:</span>{' '}
-                            <span className="text-white font-bold">{rec.impression_count || 0}</span>
+                            <span className="text-muted font-bold">IMP:</span>{' '}
+                            <span className="text-ink font-bold">{rec.impression_count || 0}</span>
                           </span>
                           <span>•</span>
                           <span title="Clicks">
-                            <span className="text-zinc-600 font-bold">CLK:</span>{' '}
-                            <span className="text-emerald-400 font-bold">{rec.click_count || 0}</span>
+                            <span className="text-muted font-bold">CLK:</span>{' '}
+                            <span className="text-orange font-bold">{rec.click_count || 0}</span>
                           </span>
                           <span>•</span>
                           <span title="Click-Through Rate">
-                            <span className="text-zinc-600 font-bold">CTR:</span>{' '}
-                            <span className="text-purple-400 font-bold">{ctr}%</span>
+                            <span className="text-muted font-bold">CTR:</span>{' '}
+                            <span className="text-ink font-bold">{ctr}%</span>
                           </span>
 
                           <button
                             onClick={() => handleResetTelemetry(rec.id)}
-                            className="text-zinc-600 hover:text-zinc-400 cursor-pointer p-0.5"
+                            className="text-muted hover:text-ink cursor-pointer p-0.5"
                             title="Reset telemetry"
                           >
                             <RefreshCw className="w-2.5 h-2.5" />
@@ -953,7 +940,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                         <div className="flex items-center space-x-1.5">
                           <button
                             onClick={() => handleOpenEditAffiliate(rec)}
-                            className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-300 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                            className="p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                             title="Edit recommendation"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -961,7 +948,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                           <button
                             onClick={() => handleDeleteAffiliate(rec.id, rec.title)}
-                            className="p-1.5 rounded-lg bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-500/20 cursor-pointer transition-colors"
+                            className="p-2 rounded-full bg-paper hover:bg-red-50 text-muted hover:text-red-600 border border-hairline cursor-pointer transition-colors"
                             title="Delete recommendation"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -981,12 +968,12 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
         {/* ============================================================== */}
         {activeSubTab === 'rooms' && (
           <div className="space-y-6">
-            <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-paper-surface border border-hairline rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
               <div>
-                <h3 className="font-mono text-sm font-bold text-white uppercase">
+                <h3 className="font-serif text-base font-bold text-ink">
                   My Arena Broadcast Rooms
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   Rooms created or co-managed by you. Switch rooms or configure current room settings.
                 </p>
               </div>
@@ -998,7 +985,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     loadRooms();
                   }}
                   disabled={isLoadingRooms}
-                  className="p-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                  className="p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                   title="Refresh rooms"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingRooms ? 'animate-spin' : ''}`} />
@@ -1006,7 +993,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                 <button
                   onClick={handleOpenCreateRoomModal}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-md active:scale-95"
+                  className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Create New Room</span>
@@ -1015,43 +1002,43 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
             </div>
 
             {isLoadingRooms ? (
-              <div className="py-16 text-center space-y-3 font-mono text-xs text-zinc-500">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+              <div className="py-16 text-center space-y-3 font-mono text-xs text-muted">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-orange" />
                 <p>Loading your rooms from Supabase...</p>
               </div>
             ) : myRooms.length === 0 ? (
-              <div className="bg-[#121215] border border-dashed border-white/[0.1] rounded-3xl p-12 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center mx-auto">
+              <div className="bg-paper-surface border border-dashed border-hairline rounded-3xl p-12 text-center space-y-4 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center mx-auto">
                   <Layers className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-mono text-sm font-bold text-white uppercase">
+                  <h3 className="font-serif text-base font-bold text-ink">
                     No Rooms Found
                   </h3>
-                  <p className="text-xs text-zinc-400 max-w-md mx-auto">
+                  <p className="text-xs text-muted max-w-md mx-auto">
                     You haven&apos;t created any rooms yet under this profile. Create a new arena room to start hosting.
                   </p>
                 </div>
                 <button
                   onClick={handleOpenCreateRoomModal}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-mono text-xs font-bold inline-flex items-center space-x-2 cursor-pointer transition-all shadow-md"
+                  className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold inline-flex items-center space-x-2 cursor-pointer transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Create First Room</span>
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {myRooms.map((r) => {
                   const isCurrent = r.code.toUpperCase().trim() === currentRoomCode.toUpperCase().trim();
 
                   return (
                     <div
                       key={r.code}
-                      className={`bg-[#121215] rounded-2xl border p-5 space-y-4 transition-all ${
+                      className={`bg-paper-surface rounded-3xl border p-6 space-y-4 transition-all shadow-sm ${
                         isCurrent
-                          ? 'border-blue-500/40 bg-blue-500/[0.02] shadow-sm'
-                          : 'border-white/[0.08] hover:border-white/[0.15]'
+                          ? 'border-2 border-orange/40 bg-orange/5'
+                          : 'border-hairline hover:border-ink/20'
                       }`}
                     >
                       {/* Top row */}
@@ -1059,20 +1046,20 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => handleCopyCode(r.code)}
-                            className="px-2.5 py-1 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] font-mono text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors"
+                            className="px-3 py-1 rounded-full bg-paper hover:bg-paper-surface text-ink border border-hairline font-mono text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors"
                             title="Click to copy room code"
                           >
                             <span>{r.code}</span>
                             {copiedRoomCode === r.code ? (
-                              <Check className="w-3 h-3 text-emerald-400" />
+                              <Check className="w-3 h-3 text-lime-700" />
                             ) : (
-                              <Copy className="w-3 h-3 text-zinc-500" />
+                              <Copy className="w-3 h-3 text-muted" />
                             )}
                           </button>
 
                           {isCurrent && (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 font-mono text-[9px] font-bold uppercase flex items-center space-x-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                            <span className="px-2.5 py-0.5 rounded-full bg-lime/20 text-ink border border-lime/40 font-mono text-[9px] font-bold uppercase flex items-center space-x-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange animate-pulse" />
                               <span>CURRENT ACTIVE</span>
                             </span>
                           )}
@@ -1081,7 +1068,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                         <div className="flex items-center space-x-1">
                           <button
                             onClick={() => onOpenQRCodeForRoom(r.code, r.title)}
-                            className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                            className="p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                             title="View Attendee QR"
                           >
                             <QrCode className="w-3.5 h-3.5" />
@@ -1089,7 +1076,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                           <button
                             onClick={() => handleDeleteRoom(r.id, r.code)}
-                            className="p-1.5 rounded-lg bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-500/20 cursor-pointer transition-colors"
+                            className="p-2 rounded-full bg-paper hover:bg-red-50 text-muted hover:text-red-600 border border-hairline cursor-pointer transition-colors"
                             title="Delete Room"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1099,10 +1086,10 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                       {/* Title & Host info */}
                       <div className="space-y-1">
-                        <h4 className="font-mono text-sm font-bold text-white truncate">
+                        <h4 className="font-serif text-base font-bold text-ink truncate">
                           {r.title}
                         </h4>
-                        <div className="text-xs text-zinc-400 font-mono flex items-center space-x-2">
+                        <div className="text-xs text-muted font-mono flex items-center space-x-2">
                           <span>Host: {r.host_name || 'Admin'}</span>
                           <span>•</span>
                           <span>
@@ -1113,23 +1100,23 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                       {/* Sponsor CTA status indicator */}
                       {r.sponsor_cta?.enabled && (
-                        <div className="p-2 bg-blue-500/5 rounded-xl border border-blue-500/20 text-xs font-mono flex items-center justify-between text-blue-400">
+                        <div className="p-2.5 bg-paper rounded-2xl border border-hairline text-xs font-mono flex items-center justify-between text-ink">
                           <span className="flex items-center space-x-1.5 truncate">
-                            <BadgePercent className="w-3.5 h-3.5 shrink-0" />
+                            <BadgePercent className="w-3.5 h-3.5 text-orange shrink-0" />
                             <span className="truncate">Sponsor: {r.sponsor_cta.sponsorName || r.sponsor_cta.title}</span>
                           </span>
-                          <span className="text-[10px] text-blue-400/80 uppercase font-bold shrink-0">
+                          <span className="text-[10px] text-orange uppercase font-bold shrink-0">
                             CTA ACTIVE
                           </span>
                         </div>
                       )}
 
                       {/* Action buttons */}
-                      <div className="pt-2 border-t border-white/[0.06] flex items-center space-x-2">
+                      <div className="pt-2 border-t border-hairline flex items-center space-x-2">
                         {!isCurrent ? (
                           <button
                             onClick={() => onSwitchRoom(r.code, r.title)}
-                            className="flex-1 py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors shadow-xs"
+                            className="flex-1 py-2 px-4 rounded-full btn-noma-ink font-mono text-xs font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                           >
                             <span>Switch to Room</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -1137,9 +1124,9 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                         ) : (
                           <button
                             onClick={onNavigateToRoomSettings}
-                            className="flex-1 py-1.5 px-3 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-blue-400 hover:text-blue-300 border border-blue-500/30 font-mono text-xs font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
+                            className="flex-1 py-2 px-4 rounded-full bg-paper hover:bg-paper-surface text-ink border border-hairline font-mono text-xs font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
                           >
-                            <Settings className="w-3.5 h-3.5" />
+                            <Settings className="w-3.5 h-3.5 text-orange" />
                             <span>Edit Room Settings</span>
                           </button>
                         )}
@@ -1153,141 +1140,29 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: PREFERENCES & AUDIO                                     */}
+        {/* TAB 3: PREFERENCES                                             */}
         {/* ============================================================== */}
         {activeSubTab === 'preferences' && (
           <div className="space-y-6">
-            {/* Audio Preferences Card */}
-            <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-mono text-sm font-bold text-white uppercase flex items-center space-x-2">
-                    <Volume2 className="w-4 h-4 text-emerald-400" />
-                    <span>Sound Effects & Audio Feedback</span>
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    Tactile synthesized web audio effects for quiz countdowns, buzzers, and leaderboard celebrations.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    const next = !isMutedState;
-                    setIsMutedState(next);
-                    setAudioMuted(next);
-                    if (!next) playPopSound();
-                  }}
-                  className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-colors border ${
-                    isMutedState
-                      ? 'bg-red-950/20 text-red-400 border-red-500/30'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  }`}
-                >
-                  {isMutedState ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  <span>{isMutedState ? 'SFX MUTED' : 'SFX ACTIVE'}</span>
-                </button>
-              </div>
-
-              {/* Sound Pack Selection */}
-              <div className="space-y-3">
-                <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
-                  Active Sound Pack
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      setAudioPack('arcade');
-                      setAudioPackState('arcade');
-                      playSuccessFanfare();
-                    }}
-                    className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
-                      audioPackState === 'arcade'
-                        ? 'bg-blue-500/10 border-blue-500/40 text-white'
-                        : 'bg-[#18181D] border-white/[0.08] text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-xs font-bold uppercase">
-                        Retro Arcade (8-Bit)
-                      </span>
-                      {audioPackState === 'arcade' && (
-                        <CheckCircle className="w-4 h-4 text-blue-400" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Crunchy retro chiptune square & sawtooth waves.
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setAudioPack('hifi');
-                      setAudioPackState('hifi');
-                      playPopSound();
-                    }}
-                    className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
-                      audioPackState === 'hifi'
-                        ? 'bg-blue-500/10 border-blue-500/40 text-white'
-                        : 'bg-[#18181D] border-white/[0.08] text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-xs font-bold uppercase">
-                        Modern Minimal (Hi-Fi)
-                      </span>
-                      {audioPackState === 'hifi' && (
-                        <CheckCircle className="w-4 h-4 text-blue-400" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Silky smooth FM-synthesis chimes and glass tones.
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Sound Test Triggers */}
-              <div className="pt-4 border-t border-white/[0.06] flex items-center space-x-2">
-                <span className="text-xs font-mono text-zinc-500 mr-2">Test SFX:</span>
-                <button
-                  onClick={() => playPopSound()}
-                  className="px-2.5 py-1 rounded bg-[#18181D] hover:bg-[#22222A] text-zinc-300 font-mono text-xs cursor-pointer border border-white/[0.06]"
-                >
-                  Pop
-                </button>
-                <button
-                  onClick={() => playWhoosh()}
-                  className="px-2.5 py-1 rounded bg-[#18181D] hover:bg-[#22222A] text-zinc-300 font-mono text-xs cursor-pointer border border-white/[0.06]"
-                >
-                  Whoosh
-                </button>
-                <button
-                  onClick={() => playSuccessFanfare()}
-                  className="px-2.5 py-1 rounded bg-[#18181D] hover:bg-[#22222A] text-zinc-300 font-mono text-xs cursor-pointer border border-white/[0.06]"
-                >
-                  Fanfare
-                </button>
-              </div>
-            </div>
 
             {/* Account & Security Card */}
-            <div className="bg-[#121215] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-              <h3 className="font-mono text-sm font-bold text-white uppercase flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-blue-400" />
+            <div className="bg-paper-surface border border-hairline rounded-3xl p-7 space-y-4 shadow-sm">
+              <h3 className="font-serif text-base font-bold text-ink flex items-center space-x-2">
+                <Shield className="w-5 h-5 text-orange" />
                 <span>Account & Session Info</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                <div className="p-3 bg-[#0A0A0C] rounded-xl border border-white/[0.06] space-y-1">
-                  <div className="text-[10px] text-zinc-500 uppercase">Authentication Provider</div>
-                  <div className="text-white font-bold">
+                <div className="p-4 bg-paper rounded-2xl border border-hairline space-y-1">
+                  <div className="text-[10px] text-muted uppercase">Authentication Provider</div>
+                  <div className="text-ink font-bold">
                     {currentUser ? currentUser.app_metadata?.provider || 'Supabase Auth' : 'Guest Device'}
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#0A0A0C] rounded-xl border border-white/[0.06] space-y-1">
-                  <div className="text-[10px] text-zinc-500 uppercase">Active Room Code</div>
-                  <div className="text-blue-400 font-bold">{currentRoomCode}</div>
+                <div className="p-4 bg-paper rounded-2xl border border-hairline space-y-1">
+                  <div className="text-[10px] text-muted uppercase">Active Room Code</div>
+                  <div className="text-orange font-bold">{currentRoomCode}</div>
                 </div>
               </div>
             </div>
@@ -1300,24 +1175,24 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
       {/* ============================================================== */}
       <AnimatePresence>
         {isAffiliateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#121215] border border-white/[0.1] rounded-3xl shadow-2xl overflow-hidden font-sans"
+              className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-paper text-ink border border-hairline rounded-3xl shadow-2xl overflow-hidden font-sans"
             >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between shrink-0 bg-[#141418]">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+              <div className="px-6 py-5 border-b border-hairline flex items-center justify-between shrink-0 bg-paper-surface">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center">
                     <BadgePercent className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-mono text-sm font-bold text-white uppercase">
+                    <h3 className="font-serif text-base font-bold text-ink">
                       {editingAffiliateId ? 'Edit Affiliate Recommendation' : 'Create Affiliate Recommendation'}
                     </h3>
-                    <p className="text-[11px] text-zinc-400 font-mono">
+                    <p className="text-[11px] text-muted font-mono">
                       Curate high-intent tool or certification for quiz takeaway & reports
                     </p>
                   </div>
@@ -1325,7 +1200,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
                 <button
                   onClick={() => setIsAffiliateModalOpen(false)}
-                  className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                  className="p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1336,13 +1211,13 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                 {/* Row 1: Category & Provider */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                    <label className="text-xs font-mono font-bold text-muted uppercase">
                       Subject / Domain Category *
                     </label>
                     <select
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden cursor-pointer"
+                      className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none cursor-pointer"
                     >
                       <option value="cloud_devops">Cloud & DevOps (Kubernetes, AWS, Docker)</option>
                       <option value="frontend">Frontend & React (Next.js, UI/UX, TypeScript)</option>
@@ -1355,7 +1230,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                    <label className="text-xs font-mono font-bold text-muted uppercase">
                       Brand / Platform / Provider *
                     </label>
                     <input
@@ -1364,14 +1239,14 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       value={formProvider}
                       onChange={(e) => setFormProvider(e.target.value)}
                       placeholder="e.g. Coursera, Datadog, ByteByteGo, Udemy"
-                      className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                      className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none placeholder:text-muted/60"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Title & Headline */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Title / Course / Tool Name *
                   </label>
                   <input
@@ -1380,12 +1255,12 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
                     placeholder="e.g. Certified Kubernetes Administrator (CKA) Masterclass"
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none placeholder:text-muted/60"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Hook / Headline
                   </label>
                   <input
@@ -1393,13 +1268,13 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={formHeadline}
                     onChange={(e) => setFormHeadline(e.target.value)}
                     placeholder="e.g. Want to go deeper into Kubernetes container architecture?"
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none placeholder:text-muted/60"
                   />
                 </div>
 
                 {/* Pitch / Description */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Takeaway Pitch & Description
                   </label>
                   <textarea
@@ -1407,13 +1282,13 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     placeholder="e.g. Master production cluster management, container networking, and pass the official Linux Foundation exam."
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:border-blue-500 outline-hidden font-sans"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs text-ink focus:border-ink outline-none font-sans placeholder:text-muted/60"
                   />
                 </div>
 
                 {/* Affiliate Target URL */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Affiliate Destination URL *
                   </label>
                   <input
@@ -1422,14 +1297,14 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={formAffiliateUrl}
                     onChange={(e) => setFormAffiliateUrl(e.target.value)}
                     placeholder="https://coursera.org/learn/kubernetes?ref=arena"
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none placeholder:text-muted/60"
                   />
                 </div>
 
                 {/* Row 3: Badge, Discount Code & Priority */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                    <label className="text-xs font-mono font-bold text-muted uppercase">
                       Badge Text
                     </label>
                     <input
@@ -1437,12 +1312,12 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       value={formBadgeText}
                       onChange={(e) => setFormBadgeText(e.target.value)}
                       placeholder="e.g. OFFICIAL CERT"
-                      className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                      className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                    <label className="text-xs font-mono font-bold text-muted uppercase">
                       Promo / Discount Code
                     </label>
                     <input
@@ -1450,12 +1325,12 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       value={formDiscountCode}
                       onChange={(e) => setFormDiscountCode(e.target.value)}
                       placeholder="e.g. SKETCH25"
-                      className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                      className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none uppercase"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                    <label className="text-xs font-mono font-bold text-muted uppercase">
                       Priority Weight (1-100)
                     </label>
                     <input
@@ -1464,14 +1339,14 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       max={100}
                       value={formPriority}
                       onChange={(e) => setFormPriority(Number(e.target.value))}
-                      className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                      className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Keywords Tagging */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Matching Keywords (Comma separated)
                   </label>
                   <input
@@ -1479,16 +1354,16 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={formKeywords}
                     onChange={(e) => setFormKeywords(e.target.value)}
                     placeholder="kubernetes, k8s, docker, containers, devops, cka"
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none placeholder:text-muted/60"
                   />
-                  <p className="text-[10px] text-zinc-500 font-mono">
+                  <p className="text-[10px] text-muted font-mono">
                     Used by AI to contextually match questions and round topics to this recommendation.
                   </p>
                 </div>
 
                 {/* Target Placements */}
                 <div className="space-y-2">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Active Placements
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -1506,10 +1381,10 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                           key={placement.id}
                           type="button"
                           onClick={() => handleTogglePlacement(placement.id)}
-                          className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold border cursor-pointer transition-colors ${
+                          className={`px-3 py-1.5 rounded-full font-mono text-xs font-medium border cursor-pointer transition-colors ${
                             selected
-                              ? 'bg-blue-600/20 text-blue-400 border-blue-500/40'
-                              : 'bg-[#18181D] text-zinc-500 border-white/[0.06] hover:text-zinc-300'
+                              ? 'bg-ink text-paper border-ink'
+                              : 'bg-paper text-muted border-hairline hover:text-ink'
                           }`}
                         >
                           {selected ? '✓ ' : '+ '}
@@ -1527,47 +1402,47 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     id="formIsActiveCheckbox"
                     checked={formIsActive}
                     onChange={(e) => setFormIsActive(e.target.checked)}
-                    className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+                    className="w-4 h-4 rounded text-orange focus:ring-orange border-hairline cursor-pointer"
                   />
                   <label
                     htmlFor="formIsActiveCheckbox"
-                    className="text-xs font-mono font-bold text-zinc-200 cursor-pointer"
+                    className="text-xs font-mono font-medium text-ink cursor-pointer"
                   >
                     Enable recommendation immediately upon saving
                   </label>
                 </div>
 
                 {/* Live Preview Card */}
-                <div className="p-4 bg-[#0A0A0C] rounded-2xl border border-white/[0.08] space-y-2">
-                  <div className="text-[10px] font-mono text-zinc-500 uppercase font-bold tracking-wider flex items-center justify-between">
+                <div className="p-4 bg-paper-surface rounded-2xl border border-hairline space-y-2">
+                  <div className="text-[10px] font-mono text-muted uppercase font-bold tracking-wider flex items-center justify-between">
                     <span>LIVE ATTENDEE CARD PREVIEW</span>
-                    <span className="text-blue-400">QUIZ TAKEAWAY</span>
+                    <span className="text-orange">QUIZ TAKEAWAY</span>
                   </div>
 
-                  <div className="bg-[#141418] border border-blue-500/30 rounded-xl p-4 space-y-2">
+                  <div className="bg-paper border-2 border-orange/40 rounded-2xl p-4 space-y-2 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono text-[9px] font-bold uppercase">
+                      <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange border border-orange/20 font-mono text-[9px] font-bold uppercase">
                         {formBadgeText || 'RECOMMENDED RESOURCE'}
                       </span>
-                      <span className="text-[10px] font-mono text-zinc-400">
+                      <span className="text-[10px] font-mono text-muted">
                         via {formProvider || 'Platform'}
                       </span>
                     </div>
 
-                    <h4 className="font-mono text-xs font-bold text-white">
+                    <h4 className="font-serif text-sm font-bold text-ink">
                       {formTitle || 'Example Certification Name'}
                     </h4>
-                    <p className="text-[11px] text-zinc-400 line-clamp-2">
+                    <p className="text-[11px] text-muted line-clamp-2">
                       {formHeadline || formDescription || 'Recommendation pitch copy shown to attendees.'}
                     </p>
 
                     <div className="flex items-center justify-between pt-1">
                       {formDiscountCode ? (
-                        <span className="font-mono text-[10px] text-emerald-400 font-bold">
+                        <span className="font-mono text-[10px] text-lime-700 font-bold">
                           Promo: {formDiscountCode}
                         </span>
                       ) : <span />}
-                      <span className="text-xs font-mono font-bold text-blue-400 flex items-center space-x-1">
+                      <span className="text-xs font-mono font-bold text-orange flex items-center space-x-1">
                         <span>Explore →</span>
                       </span>
                     </div>
@@ -1575,11 +1450,11 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                 </div>
 
                 {/* Modal Actions */}
-                <div className="pt-4 border-t border-white/[0.08] flex items-center justify-end space-x-3">
+                <div className="pt-4 border-t border-hairline flex items-center justify-end space-x-3">
                   <button
                     type="button"
                     onClick={() => setIsAffiliateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-zinc-300 font-mono text-xs font-bold border border-white/[0.08] cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink font-mono text-xs font-medium border border-hairline cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
@@ -1587,7 +1462,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                   <button
                     type="submit"
                     disabled={isSavingAffiliate}
-                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-md active:scale-95"
+                    className="btn-noma-orange px-5 py-2 rounded-full font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer transition-all shadow-sm"
                   >
                     <Save className="w-4 h-4" />
                     <span>{isSavingAffiliate ? 'Saving to Supabase...' : 'Save Recommendation'}</span>
@@ -1604,25 +1479,25 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
       {/* ============================================================== */}
       <AnimatePresence>
         {isCreateRoomModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-[#121215] border border-white/[0.1] rounded-3xl p-6 shadow-2xl space-y-5 font-sans"
+              className="w-full max-w-md bg-paper text-ink border border-hairline rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 font-sans"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center justify-center">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center">
                     <Layers className="w-4 h-4" />
                   </div>
-                  <h3 className="font-mono text-sm font-bold text-white uppercase">
+                  <h3 className="font-serif text-base font-bold text-ink">
                     Create New Arena Room
                   </h3>
                 </div>
                 <button
                   onClick={() => setIsCreateRoomModalOpen(false)}
-                  className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                  className="p-1.5 rounded-full text-muted hover:text-ink hover:bg-paper-surface border border-hairline cursor-pointer transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1630,7 +1505,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
 
               <form onSubmit={handleCreateRoom} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Unique Passcode
                   </label>
                   <div className="flex items-center space-x-2">
@@ -1639,21 +1514,21 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                       required
                       value={newRoomCode}
                       onChange={(e) => setNewRoomCode(e.target.value.toUpperCase())}
-                      className="flex-1 bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-blue-500 outline-hidden font-bold"
+                      className="flex-1 bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs font-mono text-ink focus:border-ink outline-none font-bold"
                     />
                     <button
                       type="button"
                       onClick={() => setNewRoomCode(generateUniqueCode(myRooms))}
-                      className="p-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.08] cursor-pointer transition-colors"
+                      className="p-2.5 rounded-xl bg-paper hover:bg-paper-surface text-muted hover:text-ink border border-hairline cursor-pointer transition-colors"
                       title="Generate new code"
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className="w-4 h-4 text-orange" />
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-mono font-bold text-zinc-300 uppercase">
+                  <label className="text-xs font-mono font-bold text-muted uppercase">
                     Room Session Title
                   </label>
                   <input
@@ -1661,21 +1536,21 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
                     value={newRoomTitle}
                     onChange={(e) => setNewRoomTitle(e.target.value)}
                     placeholder="e.g. Distributed Systems Architecture Arena"
-                    className="w-full bg-[#18181D] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:border-blue-500 outline-hidden font-sans"
+                    className="w-full bg-paper border border-hairline rounded-xl px-3.5 py-2 text-xs text-ink focus:border-ink outline-none font-sans placeholder:text-muted/60"
                   />
                 </div>
 
-                <div className="pt-2 flex items-center justify-end space-x-2">
+                <div className="pt-3 flex items-center justify-end space-x-2 border-t border-hairline">
                   <button
                     type="button"
                     onClick={() => setIsCreateRoomModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-[#18181D] hover:bg-[#22222A] text-zinc-300 font-mono text-xs font-bold border border-white/[0.08] cursor-pointer"
+                    className="px-4 py-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink font-mono text-xs font-medium border border-hairline cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer shadow-md"
+                    className="btn-noma-orange px-4 py-2 rounded-full font-mono text-xs font-bold flex items-center space-x-2 cursor-pointer shadow-sm"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create & Enter</span>

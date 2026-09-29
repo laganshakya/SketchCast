@@ -62,11 +62,12 @@ export async function searchWeb(query: string, maxResults: number = 4): Promise<
       const hnData = await hnRes.json();
       if (Array.isArray(hnData.hits)) {
         for (const hit of hnData.hits) {
-          if (hit.title && (hit.url || hit.story_text || hit._highlightResult)) {
+          const highlightResult = hit['_highlightResult'];
+          if (hit.title && (hit.url || hit.story_text || highlightResult)) {
             results.push({
               title: hit.title,
               url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
-              snippet: (hit.story_text || hit._highlightResult?.story_text?.value || `Points: ${hit.points || 0} | Author: ${hit.author}`).replace(/<[^>]+>/g, '').slice(0, 350),
+              snippet: (hit.story_text || highlightResult?.story_text?.value || `Points: ${hit.points || 0} | Author: ${hit.author}`).replace(/<[^>]+>/g, '').slice(0, 350),
             });
           }
         }
@@ -175,7 +176,7 @@ export async function scrapeUrlContent(targetUrl: string, maxChars: number = 600
       charCount: trimmed.length,
     };
   } catch (err: any) {
-    throw new Error(`Web scraper error: ${err.message || 'Unable to fetch page content.'}`);
+    throw new Error(`Web scraper error: ${err.message || 'Unable to fetch page content.'}`, { cause: err });
   }
 }
 

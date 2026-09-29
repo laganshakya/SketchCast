@@ -265,7 +265,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     const collapsed = mobile ? false : isCollapsed;
 
     return (
-      <div className="flex flex-col h-full overflow-hidden font-sans select-none relative bg-[#0E0E11]">
+      <div className="flex flex-col h-full overflow-hidden font-sans select-none relative bg-paper text-ink">
         {/* Host Requirement Notice Toast */}
         <AnimatePresence>
           {showHostNotice && (
@@ -273,7 +273,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="absolute top-2 inset-x-2 z-50 p-2.5 bg-red-950/90 text-red-400 border border-red-500/30 rounded-xl font-mono text-[11px] font-bold flex items-center space-x-2 text-center shadow-lg"
+              className="absolute top-2 inset-x-2 z-50 p-2.5 bg-orange/15 text-orange border border-orange/30 rounded-xl font-mono text-[11px] font-bold flex items-center space-x-2 text-center shadow-lg"
             >
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{hostNoticeMessage}</span>
@@ -283,7 +283,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
         {/* Mobile Header with Logo and Close Button */}
         {mobile && (
-          <div className="p-3 border-b border-white/[0.08] bg-[#121215] flex items-center justify-between shrink-0">
+          <div className="p-3.5 border-b border-hairline bg-paper flex items-center justify-between shrink-0">
             <SketchCastLogo size="sm" showWordmark={true} />
             <motion.button
               whileTap={{ scale: 0.94 }}
@@ -291,7 +291,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 playPopSound();
                 onCloseMobile();
               }}
-              className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.08] cursor-pointer transition-colors"
+              className="p-1.5 rounded-xl bg-paper-elevated hover:bg-black/[0.05] text-ink border border-hairline cursor-pointer transition-colors"
               title="Close Menu"
             >
               <X className="w-4 h-4" />
@@ -300,14 +300,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         )}
 
         {/* Scrollable Navigation Items */}
-        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 p-2">
+        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 p-2.5">
           {/* Section 1: LIVE ARENA TABS */}
           <div className="space-y-1">
             {!collapsed ? (
-              <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase flex items-center justify-between">
+              <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-muted uppercase flex items-center justify-between">
                 <span>CHANNELS</span>
-                <span className="text-[9px] text-blue-400 font-mono flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                <span className="text-[9px] text-orange font-mono flex items-center gap-1.5 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange animate-pulse" />
                   LIVE
                 </span>
               </div>
@@ -332,22 +332,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                         : 'px-3 py-2 space-x-2.5 min-h-[40px]'
                     } ${
                       isActive
-                        ? 'bg-blue-500/10 text-white border border-blue-500/25 shadow-sm'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+                        ? 'bg-ink text-paper shadow-sm'
+                        : 'text-ink/75 hover:text-ink hover:bg-black/[0.04] border border-transparent'
                     }`}
                   >
                     {/* Icon container */}
                     <div className="relative shrink-0 flex items-center justify-center">
                       <div
                         className={`w-5 h-5 flex items-center justify-center transition-colors ${
-                          isActive ? 'text-blue-400' : 'text-zinc-400 group-hover:text-white'
+                          isActive ? 'text-lime' : 'text-muted group-hover:text-ink'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
 
                       {collapsed && item.badge !== null && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-blue-600 text-white font-mono font-bold text-[8px] flex items-center justify-center ring-2 ring-[#0E0E11]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-orange text-white font-mono font-bold text-[8px] flex items-center justify-center ring-2 ring-paper">
                           {item.badge}
                         </span>
                       )}
@@ -358,18 +358,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       <div className="min-w-0 flex-1 flex items-center justify-between">
                         <div
                           className={`font-mono text-xs uppercase tracking-wide truncate ${
-                            isActive ? 'font-bold text-white' : 'font-medium text-zinc-400 group-hover:text-zinc-200'
+                            isActive ? 'font-bold text-paper' : 'font-medium text-ink/80 group-hover:text-ink'
                           }`}
                         >
                           {item.label}
                         </div>
 
                         {item.badge !== null ? (
-                          <span className="ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold bg-blue-600 text-white shrink-0">
+                          <span className={`ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold shrink-0 ${
+                            isActive ? 'bg-lime text-ink' : 'bg-orange text-white'
+                          }`}>
                             {item.badge}
                           </span>
                         ) : isActive ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange shrink-0" />
                         ) : null}
                       </div>
                     )}
@@ -379,26 +381,26 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           </div>
 
-          <div className="px-2 my-1">
-            <div className="h-px bg-white/[0.06]" />
+          <div className="px-2 my-1.5">
+            <div className="h-px bg-hairline" />
           </div>
 
           {/* Section 2: HOST STUDIO / PASS */}
           {visibleHostToolItems.length > 0 && (
             <div className="space-y-1">
               {!collapsed ? (
-                <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase flex items-center justify-between">
+                <div className="px-2.5 py-1 text-[10px] font-mono font-bold tracking-widest text-muted uppercase flex items-center justify-between">
                   {userRole === 'host' ? (
                     <>
                       <span>HOST TOOLS</span>
-                      <span className="px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[8px] font-bold">
+                      <span className="px-1.5 py-0.2 rounded-full bg-orange/15 text-orange border border-orange/30 text-[8px] font-bold">
                         HOST
                       </span>
                     </>
                   ) : (
                     <>
                       <span>CREDENTIALS</span>
-                      <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400 border border-white/[0.06] text-[8px] font-bold">
+                      <span className="px-1.5 py-0.2 rounded-full bg-paper-card text-muted border border-hairline text-[8px] font-bold">
                         PASS
                       </span>
                     </>
@@ -427,21 +429,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           : 'px-3 py-2 space-x-2.5 min-h-[40px]'
                       } ${
                         isActive
-                          ? 'bg-blue-500/10 text-white border border-blue-500/25 shadow-sm cursor-pointer'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent cursor-pointer'
+                          ? 'bg-ink text-paper shadow-sm cursor-pointer'
+                          : 'text-ink/75 hover:text-ink hover:bg-black/[0.04] border border-transparent cursor-pointer'
                       }`}
                     >
                       <div className="relative shrink-0 flex items-center justify-center">
                         <div
                           className={`w-5 h-5 flex items-center justify-center transition-colors ${
-                            isActive ? 'text-blue-400' : 'text-zinc-400 group-hover:text-white'
+                            isActive ? 'text-lime' : 'text-muted group-hover:text-ink'
                           }`}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
 
                         {collapsed && item.badge && (
-                          <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-[#18181D] text-blue-400 border border-white/[0.08] font-mono text-[8px] flex items-center justify-center ring-2 ring-[#0E0E11]">
+                          <span className="absolute -top-1.5 -right-1.5 min-w-3.5 h-3.5 px-1 rounded-full bg-paper-elevated text-orange border border-hairline font-mono text-[8px] flex items-center justify-center ring-2 ring-paper">
                             {item.badge}
                           </span>
                         )}
@@ -451,14 +453,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                         <div className="min-w-0 flex-1 flex items-center justify-between">
                           <div
                             className={`font-mono text-xs uppercase tracking-wide truncate ${
-                              isActive ? 'font-bold text-white' : 'font-medium text-zinc-400 group-hover:text-zinc-200'
+                              isActive ? 'font-bold text-paper' : 'font-medium text-ink/80 group-hover:text-ink'
                             }`}
                           >
                             {item.label}
                           </div>
 
                           {item.badge && (
-                            <span className="ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold bg-zinc-800 text-zinc-400 border border-white/[0.06] shrink-0">
+                            <span className={`ml-1.5 px-2 py-0.5 rounded-full font-mono text-[9px] font-bold border shrink-0 ${
+                              isActive
+                                ? 'bg-lime text-ink border-lime'
+                                : 'bg-paper-card text-muted border-hairline'
+                            }`}>
                               {item.badge}
                             </span>
                           )}
@@ -472,12 +478,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           )}
 
           {!collapsed && (
-            <div className="p-3 mx-1 mt-2 bg-[#121215] rounded-xl border border-white/[0.06] font-mono text-xs">
-              <div className="flex items-center space-x-1.5 text-blue-400 font-bold text-[10px] uppercase">
-                <Sparkles className="w-3 h-3 text-blue-400" />
+            <div className="p-3.5 mx-1 mt-3 bg-paper-elevated rounded-2xl border border-hairline font-mono text-xs">
+              <div className="flex items-center space-x-1.5 text-orange font-bold text-[10px] uppercase">
+                <Sparkles className="w-3 h-3 text-orange" />
                 <span>INTERACTIVE ARENA</span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 leading-relaxed font-sans">
+              <div className="text-[11px] text-muted mt-1 leading-relaxed font-sans">
                 Real-time synchronized interactive audience engagement.
               </div>
             </div>
@@ -485,12 +491,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         {/* ================= PINNED BOTTOM SECTION ================= */}
-        <div className={`border-t border-white/[0.08] bg-[#0E0E11] shrink-0 p-2 space-y-2 ${mobile ? 'pb-safe' : ''}`}>
+        <div className={`border-t border-hairline bg-paper shrink-0 p-2.5 space-y-2 ${mobile ? 'pb-safe' : ''}`}>
           {!mobile && (
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={toggleCollapse}
-              className="w-full h-8 rounded-lg flex items-center justify-center space-x-1.5 bg-[#121215] hover:bg-[#18181D] text-zinc-400 hover:text-white border border-white/[0.06] font-mono text-[11px] transition-colors cursor-pointer"
+              className="w-full h-8 rounded-xl flex items-center justify-center space-x-1.5 bg-paper-elevated hover:bg-black/[0.05] text-muted hover:text-ink border border-hairline font-mono text-[11px] transition-colors cursor-pointer"
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar to Icon Rail'}
             >
               {isCollapsed ? (
@@ -498,7 +504,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               ) : (
                 <>
                   <ChevronLeft className="w-3.5 h-3.5" />
-                  <span className="text-[10px] uppercase tracking-wider">COLLAPSE</span>
+                  <span className="text-[10px] uppercase tracking-wider font-bold">COLLAPSE</span>
                 </>
               )}
             </motion.button>
@@ -515,15 +521,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 }}
                 className={`w-full h-10 rounded-xl flex items-center justify-center border transition-colors relative cursor-pointer ${
                   userRole === 'host'
-                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                    : 'bg-[#121215] border-white/[0.08] text-white'
+                    ? 'bg-orange/15 border-orange/30 text-orange font-bold'
+                    : 'bg-paper-elevated border-hairline text-ink'
                 }`}
                 title={`Signed in as ${userName} (${userRole})`}
               >
                 <span className="font-mono font-bold text-xs">{userInitial}</span>
                 <span
                   className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${
-                    userRole === 'host' ? 'bg-blue-500' : 'bg-emerald-500'
+                    userRole === 'host' ? 'bg-orange' : 'bg-lime ring-1 ring-ink'
                   }`}
                 />
               </motion.button>
@@ -534,23 +540,23 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     initial={{ opacity: 0, scale: 0.95, x: 10 }}
                     animate={{ opacity: 1, scale: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.95, x: 10 }}
-                    className="absolute bottom-0 left-14 w-60 bg-[#121215] border border-white/[0.08] rounded-2xl p-2.5 space-y-2 z-50 font-mono text-xs shadow-modal"
+                    className="absolute bottom-0 left-14 w-64 bg-paper border border-hairline rounded-2xl p-2.5 space-y-2 z-50 font-mono text-xs shadow-xl"
                   >
-                    <div className="p-2.5 bg-[#0A0A0C] rounded-xl border border-white/[0.06] space-y-0.5">
+                    <div className="p-3 bg-paper-elevated rounded-xl border border-hairline space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-zinc-500 font-bold uppercase">SIGNED IN</span>
+                        <span className="text-[9px] text-muted font-bold uppercase">SIGNED IN</span>
                         <span
                           className={`px-1.5 py-0.2 rounded-full text-[8px] font-bold uppercase border ${
                             userRole === 'host'
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                              : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                              ? 'bg-orange/15 text-orange border-orange/30'
+                              : 'bg-paper-card text-muted border-hairline'
                           }`}
                         >
                           {userRole}
                         </span>
                       </div>
-                      <div className="font-bold text-white truncate text-xs">{userName}</div>
-                      <div className="text-[9px] text-zinc-500 truncate">{currentUser?.email || 'Guest Participant'}</div>
+                      <div className="font-bold text-ink truncate text-xs">{userName}</div>
+                      <div className="text-[9px] text-muted truncate">{currentUser?.email || 'Guest Participant'}</div>
                     </div>
 
                     <div className="space-y-1">
@@ -559,9 +565,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           handleSelectTab('user-settings');
                         }}
-                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2.5 rounded-xl bg-paper-card hover:bg-black/[0.05] text-ink border border-hairline flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <User className="w-3.5 h-3.5 text-blue-400" />
+                        <User className="w-3.5 h-3.5 text-orange" />
                         <span>Profile & Settings</span>
                       </button>
 
@@ -570,9 +576,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           handleRoleToggle();
                         }}
-                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2.5 rounded-xl bg-paper-card hover:bg-black/[0.05] text-ink border border-hairline flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <Crown className="w-3.5 h-3.5 text-blue-400" />
+                        <Crown className="w-3.5 h-3.5 text-orange" />
                         <span>Switch to {userRole === 'host' ? 'Attendee' : 'Host'}</span>
                       </button>
 
@@ -581,9 +587,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           onOpenAuthModal();
                         }}
-                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2.5 rounded-xl bg-paper-card hover:bg-black/[0.05] text-ink border border-hairline flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <Settings className="w-3.5 h-3.5" />
+                        <Settings className="w-3.5 h-3.5 text-muted" />
                         <span>Account & Auth</span>
                       </button>
 
@@ -592,7 +598,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           onSignOut();
                         }}
-                        className="w-full p-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/20 flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Log Out</span>
@@ -604,44 +610,40 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           ) : (
             /* EXPANDED VIEW */
-            <div className="bg-[#121215] border border-white/[0.08] rounded-xl p-2.5 space-y-2">
+            <div className="bg-paper-elevated border border-hairline rounded-2xl p-2.5 space-y-2">
               <div className="flex items-center space-x-2.5 min-w-0">
                 <div
-                  className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-mono font-bold text-xs border ${
-                    userRole === 'host'
-                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                      : 'bg-[#18181D] text-white border-white/[0.08]'
-                  }`}
+                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs bg-ink text-lime border border-ink"
                 >
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-white truncate">{userName}</span>
+                    <span className="font-mono text-xs font-bold text-ink truncate">{userName}</span>
                     <span
                       className={`px-1.5 py-0.2 rounded-full text-[8px] font-mono font-bold uppercase border ml-1 shrink-0 ${
                         userRole === 'host'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                          : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                          ? 'bg-orange/15 text-orange border-orange/30'
+                          : 'bg-paper-card text-muted border-hairline'
                       }`}
                     >
                       {userRole}
                     </span>
                   </div>
-                  <div className="text-[10px] text-zinc-500 truncate">
+                  <div className="text-[10px] text-muted truncate">
                     {currentUser?.email || 'Guest Participant'}
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center space-x-1 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center space-x-1.5 pt-2 border-t border-hairline">
                 <button
                   onClick={handleRoleToggle}
-                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] font-mono text-[10px] font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-ink hover:bg-ink-light text-paper font-mono text-[10px] font-bold flex items-center justify-center space-x-1.5 cursor-pointer transition-colors shadow-xs"
                   title={`Switch to ${userRole === 'host' ? 'Attendee' : 'Host'}`}
                 >
-                  <Crown className="w-3 h-3 text-blue-400 shrink-0" />
+                  <Crown className="w-3 h-3 text-lime shrink-0" />
                   <span className="truncate">{userRole === 'host' ? 'Attendee' : 'Host'}</span>
                 </button>
 
@@ -651,10 +653,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onCloseMobile();
                     handleSelectTab('user-settings');
                   }}
-                  className={`p-1.5 rounded-lg border cursor-pointer transition-colors ${
+                  className={`p-1.5 rounded-xl border cursor-pointer transition-colors ${
                     activeTab === 'user-settings'
-                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-xs'
-                      : 'bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border-white/[0.06]'
+                      ? 'bg-orange/15 text-orange border-orange/40 shadow-xs'
+                      : 'bg-paper-card hover:bg-black/[0.04] text-muted hover:text-ink border-hairline'
                   }`}
                   title="Profile & User Settings (Affiliate Hub & Rooms)"
                 >
@@ -667,7 +669,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onCloseMobile();
                     onSignOut();
                   }}
-                  className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 cursor-pointer transition-colors"
+                  className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/20 cursor-pointer transition-colors"
                   title="Log Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -684,7 +686,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     <>
       {/* DESKTOP SIDEBAR */}
       <aside
-        className={`hidden md:flex flex-col bg-[#0E0E11] border-r border-white/[0.08] shrink-0 relative transition-all duration-200 z-30 ${
+        className={`hidden md:flex flex-col bg-paper border-r border-hairline shrink-0 relative transition-all duration-200 z-30 ${
           isCollapsed ? 'w-16' : 'w-60'
         }`}
       >
@@ -704,7 +706,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 playClickSound();
                 onCloseMobile();
               }}
-              className="md:hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 cursor-pointer"
+              className="md:hidden fixed inset-0 bg-ink/50 backdrop-blur-xs z-50 cursor-pointer"
             />
 
             <motion.div
@@ -712,7 +714,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="md:hidden fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-[#0E0E11] border-r border-white/[0.08] rounded-r-2xl z-50 flex flex-col shadow-modal overflow-hidden"
+              className="md:hidden fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-paper border-r border-hairline rounded-r-3xl z-50 flex flex-col shadow-2xl overflow-hidden"
             >
               {renderSidebarContent(true)}
             </motion.div>

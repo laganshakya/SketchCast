@@ -126,22 +126,22 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
   return (
     <div className="max-w-4xl mx-auto w-full space-y-5 font-sans p-2.5 sm:p-4 md:p-6">
       {/* Top Header Card */}
-      <div className="bg-[#101014] p-4 sm:p-6 rounded-2xl border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+      <div className="bg-paper-surface p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center space-x-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-            <Bot className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-ink text-lime flex items-center justify-center shrink-0 shadow-sm">
+            <Bot className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                AI Settings
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-ink tracking-tight">
+                AI Intelligence & Mesh Router
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-semibold tracking-wide border border-blue-500/20">
+              <span className="px-2.5 py-0.5 rounded-full bg-lime text-ink text-[10px] font-mono font-bold tracking-wide border border-ink/10">
                 Mesh API
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Configure your Mesh API key, select LLM model routing, and manage automated content safety.
+            <p className="text-xs text-muted mt-1 leading-relaxed">
+              Configure your Mesh API key, orchestrate LLM model routing, and manage automated content safety.
             </p>
           </div>
         </div>
@@ -153,9 +153,9 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 font-medium"
+                className="flex items-center gap-1.5 text-xs text-ink bg-lime/25 px-3 py-1 rounded-full border border-ink/15 font-mono font-semibold"
               >
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-3.5 h-3.5 text-ink" />
                 <span>{saveStatus}</span>
               </motion.span>
             )}
@@ -167,7 +167,7 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
             whileTap={{ scale: 0.96 }}
             onClick={handleTest}
             disabled={isTesting || !apiKey.trim()}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-white/[0.04] disabled:text-zinc-500 text-white text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            className="btn-noma-orange px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
           >
             {isTesting ? (
               <>
@@ -189,16 +189,16 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`p-4 rounded-2xl text-xs font-medium border flex items-start space-x-3 ${
+          className={`p-4 rounded-2xl text-xs font-medium border flex items-start space-x-3 shadow-xs ${
             testResult.success
-              ? 'bg-blue-500/10 border-blue-500/30 text-white'
-              : 'bg-red-500/10 border-red-500/30 text-red-300'
+              ? 'bg-lime/15 border-ink/15 text-ink'
+              : 'bg-orange-500/10 border-orange-500/25 text-orange-950'
           }`}
         >
           {testResult.success ? (
-            <CheckCircle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-ink shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
           )}
           <div className="flex-1 font-mono break-all leading-relaxed">
             {testResult.message}
@@ -207,11 +207,11 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
       )}
 
       {/* Section 1: API Key & Connection */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-[#101014] border border-white/[0.08] shadow-sm space-y-4">
+      <div className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-paper-surface border border-hairline shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Key className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-semibold text-white">Mesh Router Service Key</h3>
+            <Key className="w-4 h-4 text-ink" />
+            <h3 className="text-sm font-bold text-ink">Mesh Router Service Key</h3>
           </div>
           {apiKey && (
             <motion.button
@@ -219,24 +219,24 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleClearKey}
-              className="text-xs text-red-400 hover:text-red-300 font-medium flex items-center gap-1 cursor-pointer transition-colors px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20"
+              className="text-xs text-red-600 hover:text-red-700 font-mono font-medium flex items-center gap-1 cursor-pointer transition-colors px-2.5 py-1 rounded-lg bg-red-50 border border-red-200"
             >
               <Trash2 className="w-3 h-3" /> Clear Key
             </motion.button>
           )}
         </div>
 
-        <p className="text-xs text-zinc-400">
-          Your key is stored locally in your browser. Live quizzes, survey questions, and moderation run through this key.
+        <p className="text-xs text-muted leading-relaxed">
+          Your key is saved locally in your browser session. Live quizzes, survey generators, and content moderation execute through this key.
         </p>
 
-        <div className="flex items-center rounded-xl bg-white/[0.03] border border-white/[0.08] focus-within:border-blue-500 transition-colors">
+        <div className="flex items-center rounded-xl bg-paper border border-hairline focus-within:border-ink transition-colors">
           <input
             type={showKey ? 'text' : 'password'}
             value={apiKey}
             onChange={(e) => handleApiKeyChange(e.target.value)}
             placeholder="rsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            className="flex-1 px-4 py-3 text-xs text-white font-mono focus:outline-none bg-transparent"
+            className="flex-1 px-4 py-3 text-xs text-ink font-mono focus:outline-none bg-transparent placeholder:text-muted/60"
           />
           <motion.button
             type="button"
@@ -245,46 +245,48 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
               playClickSound();
               setShowKey(!showKey);
             }}
-            className="px-3.5 py-3 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="px-3.5 py-3 text-muted hover:text-ink transition-colors cursor-pointer"
             title={showKey ? 'Hide key' : 'Show key'}
           >
             {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </motion.button>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-zinc-500">
+        <div className="flex items-center justify-between text-xs text-muted pt-1">
           <a
             href="https://meshapi.ai"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 underline"
+            className="inline-flex items-center gap-1 text-ink font-medium hover:text-orange underline underline-offset-2 transition-colors"
           >
             <span>Get your key from meshapi.ai</span>
             <ExternalLink className="w-3 h-3" />
           </a>
           {apiKey ? (
-            <span className="text-blue-400 font-medium flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5" /> Key Configured
+            <span className="text-ink font-mono font-medium flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-lime/20 border border-ink/10">
+              <CheckCircle className="w-3.5 h-3.5 text-ink" /> Key Configured
             </span>
           ) : (
-            <span className="text-amber-400 font-medium">Key Missing</span>
+            <span className="text-amber-700 font-mono font-medium px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+              Key Missing
+            </span>
           )}
         </div>
       </div>
 
       {/* Section 2: Active Model Presets */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-[#101014] border border-white/[0.08] shadow-sm space-y-4">
+      <div className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-paper-surface border border-hairline shadow-xs space-y-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Cpu className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-semibold text-white">Active LLM Model</h3>
+            <Cpu className="w-4 h-4 text-ink" />
+            <h3 className="text-sm font-bold text-ink">Active LLM Model Presets</h3>
           </div>
-          <p className="text-xs text-zinc-400 mt-1">
-            Choose the model preset that best balances reasoning depth, generation speed, and token cost.
+          <p className="text-xs text-muted mt-1 leading-relaxed">
+            Choose the model preset that best balances reasoning depth, generation latency, and token efficiency.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {MESH_MODEL_OPTIONS.map((m) => {
             const isSelected = selectedModel === m.id && !customModelInput.trim();
             return (
@@ -294,31 +296,31 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSelectModel(m.id, m.name)}
-                className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                className={`p-4 rounded-2xl text-left border transition-all cursor-pointer flex flex-col justify-between space-y-2.5 ${
                   isSelected
-                    ? 'bg-blue-500/10 border-blue-500/40 text-white shadow-sm'
-                    : 'bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.04] text-zinc-400'
+                    ? 'bg-ink text-paper border-ink shadow-sm'
+                    : 'bg-paper border-hairline hover:border-ink/30 text-ink'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-xs font-semibold text-white truncate">{m.name}</span>
+                    <span className={`text-xs font-bold truncate ${isSelected ? 'text-paper' : 'text-ink'}`}>{m.name}</span>
                     <span
-                      className={`text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ${
                         isSelected
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          ? 'bg-lime text-ink'
+                          : 'bg-paper-surface text-ink border border-hairline'
                       }`}
                     >
                       {m.tag}
                     </span>
                   </div>
                   {m.provider && (
-                    <div className="text-[10px] text-zinc-500 font-mono mb-1">
+                    <div className={`text-[10px] font-mono mb-1.5 ${isSelected ? 'text-paper/70' : 'text-muted'}`}>
                       {m.provider}
                     </div>
                   )}
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  <p className={`text-[11px] leading-relaxed ${isSelected ? 'text-paper/80' : 'text-muted'}`}>
                     {m.description}
                   </p>
                 </div>
@@ -329,20 +331,20 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
 
         {/* Custom Model Override */}
         <div
-          className={`p-4 rounded-xl border transition-colors space-y-2 ${
-            customModelInput.trim() ? 'border-blue-500/40 bg-blue-500/5' : 'bg-white/[0.02] border-white/[0.08]'
+          className={`p-4 rounded-2xl border transition-colors space-y-2.5 ${
+            customModelInput.trim() ? 'border-ink bg-paper' : 'bg-paper/50 border-hairline'
           }`}
         >
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-zinc-300">
-              Or enter custom model ID (any model on Mesh API):
+            <label className="text-xs font-semibold text-ink">
+              Custom Model Identifier (Mesh API Router):
             </label>
             {customModelInput.trim() ? (
-              <span className="text-[9px] font-semibold text-blue-400 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30">
+              <span className="text-[9px] font-mono font-bold text-ink px-2.5 py-0.5 rounded-full bg-lime border border-ink/10">
                 Custom Active
               </span>
             ) : (
-              <span className="text-[11px] text-zinc-500">Leave blank to use preset</span>
+              <span className="text-[11px] text-muted">Leave blank to use preset</span>
             )}
           </div>
           <input
@@ -350,33 +352,33 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
             value={customModelInput}
             onChange={(e) => handleCustomModelChange(e.target.value)}
             placeholder="e.g. xiaomi/mimo-v2.5, deepseek/deepseek-chat, or any model on Mesh API"
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-black/40 border border-white/[0.08] text-white font-mono focus:outline-none focus:border-blue-500"
+            className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-paper-surface border border-hairline text-ink font-mono focus:outline-none focus:border-ink placeholder:text-muted/60"
           />
         </div>
       </div>
 
       {/* Section 3: Safety & Content Moderation */}
-      <div className="p-5 sm:p-6 rounded-2xl bg-[#101014] border border-white/[0.08] shadow-sm">
+      <div className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-paper-surface border border-hairline shadow-xs">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start space-x-3.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-              <Shield className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-paper text-ink border border-hairline flex items-center justify-center shrink-0 mt-0.5">
+              <Shield className="w-5 h-5 text-ink" />
             </div>
             <div className="min-w-0">
-              <div className="font-semibold text-sm text-white flex items-center space-x-2 flex-wrap gap-y-1">
+              <div className="font-bold text-sm text-ink flex items-center space-x-2 flex-wrap gap-y-1">
                 <span>AI Q&A Safeguard</span>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
                     qaSafeguard
-                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                      : 'bg-white/[0.04] text-zinc-400 border-white/[0.08]'
+                      ? 'bg-lime text-ink border-ink/10'
+                      : 'bg-paper text-muted border-hairline'
                   }`}
                 >
                   {qaSafeguard ? 'Active' : 'Disabled'}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                Screens audience questions for harassment, profanity, and spam via Mesh AI before they appear on the live stage.
+              <p className="text-xs text-muted mt-1 leading-relaxed">
+                Screens audience questions for harassment, profanity, and off-topic spam via Mesh AI before they appear on the live stage.
               </p>
             </div>
           </div>
@@ -385,10 +387,10 @@ export const AISettingsView: React.FC<AISettingsViewProps> = ({ roomCode }) => {
             type="button"
             whileTap={{ scale: 0.94 }}
             onClick={handleToggleSafeguard}
-            className={`px-4 py-2 text-xs rounded-xl font-medium border cursor-pointer transition-all shrink-0 ${
+            className={`px-4 py-2 text-xs rounded-xl font-mono font-bold uppercase tracking-wider border cursor-pointer transition-all shrink-0 ${
               qaSafeguard
-                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-                : 'bg-white/[0.04] text-zinc-400 border-white/[0.08] hover:text-white'
+                ? 'btn-noma-ink'
+                : 'btn-noma-ghost'
             }`}
           >
             {qaSafeguard ? 'Enabled' : 'Disabled'}

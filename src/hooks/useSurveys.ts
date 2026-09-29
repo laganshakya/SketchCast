@@ -505,15 +505,18 @@ export function useSurveys(
       } else {
         // CSV
         const headers = ['Attendee Name', 'Submitted At', ...target.questions.map((q) => `"${q.title.replace(/"/g, '""')}"`)];
-        const rows = responses.map((r) => [
-          `"${r.attendee_name.replace(/"/g, '""')}"`,
-          new Date(r.submitted_at).toISOString(),
-          ...target.questions.map((q) => {
+        const rows = responses.map((r) => {
+          const base = [
+            `"${r.attendee_name.replace(/"/g, '""')}"`,
+            new Date(r.submitted_at).toISOString(),
+          ];
+          const answers = target.questions.map((q) => {
             const val = r.answers[q.id];
             if (val === undefined || val === null) return '""';
             return `"${String(val).replace(/"/g, '""')}"`;
-          }),
-        ]);
+          });
+          return base.concat(answers);
+        });
 
         const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
         const encodedUri = encodeURI(csvContent);

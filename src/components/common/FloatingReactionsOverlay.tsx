@@ -225,15 +225,15 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                 {/* Sender Name Pill */}
                 {p.senderName && (
                   <div
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-medium mb-1.5 whitespace-nowrap shadow-md backdrop-blur-md flex items-center gap-1.5 transition-all ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-medium mb-1.5 whitespace-nowrap shadow-sm backdrop-blur-md flex items-center gap-1.5 transition-all ${
                       isMe
-                        ? 'bg-blue-600/30 text-blue-200 border border-blue-400/40 ring-1 ring-blue-500/20'
-                        : 'bg-[#0E0E12]/85 text-zinc-300 border border-white/[0.12]'
+                        ? 'bg-lime text-ink border border-ink/20 font-bold'
+                        : 'bg-paper-surface/95 text-ink border border-hairline'
                     }`}
                   >
                     <span>{p.senderName}</span>
                     {isMe && (
-                      <span className="px-1 py-0.2 bg-blue-500 text-white rounded text-[8px] font-mono font-bold uppercase tracking-wider">
+                      <span className="px-1 py-0.2 bg-ink text-paper rounded text-[8px] font-mono font-bold uppercase tracking-wider">
                         YOU
                       </span>
                     )}
@@ -241,11 +241,11 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                 )}
                 {/* Floating Emoji with Multiplier */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-3xl sm:text-4xl select-none filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+                  <span className="text-3xl sm:text-4xl select-none filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
                     {p.emoji}
                   </span>
                   {p.count && p.count > 1 ? (
-                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-mono font-black text-xs shadow-md border border-amber-300 animate-pulse">
+                    <span className="px-1.5 py-0.5 rounded-full bg-orange text-white font-mono font-bold text-xs shadow-sm border border-orange/40 animate-pulse">
                       ×{p.count}
                     </span>
                   ) : null}
@@ -261,7 +261,7 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
         <motion.div
           layout
           transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-          className="bg-[#0E0E12]/85 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_20px_rgba(59,130,246,0.08)] rounded-full p-1 sm:p-1.5 flex items-center transition-colors hover:border-white/[0.14]"
+          className="bg-paper-surface/90 backdrop-blur-xl border border-hairline shadow-lg rounded-full p-1 sm:p-1.5 flex items-center transition-colors hover:border-ink/20"
         >
           {/* Reaction Toggle Capsule */}
           <motion.button
@@ -271,19 +271,19 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
               playClickSound();
               setIsBarExpanded(!isBarExpanded);
             }}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-muted hover:text-ink hover:bg-paper transition-colors cursor-pointer group"
             title={isBarExpanded ? 'Collapse reactions' : 'Expand reactions'}
           >
-            <div className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-400 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 group-hover:border-blue-500/35 transition-colors shadow-sm">
+            <div className="w-5 h-5 rounded-full bg-orange/10 border border-orange/20 text-orange flex items-center justify-center shrink-0 group-hover:bg-orange/20 transition-colors shadow-xs">
               <Smile className="w-3.5 h-3.5" />
             </div>
-            <span className="font-sans font-semibold text-xs tracking-wide text-zinc-200">
+            <span className="font-sans font-semibold text-xs tracking-wide text-ink">
               Reactions
             </span>
             <motion.div
               animate={{ rotate: isBarExpanded ? 0 : 180 }}
               transition={{ duration: 0.2 }}
-              className="text-zinc-500 group-hover:text-zinc-300"
+              className="text-muted group-hover:text-ink"
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </motion.div>
@@ -300,7 +300,7 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                 className="flex items-center overflow-hidden"
               >
                 {/* Hairline Divider */}
-                <div className="h-4 w-px bg-white/[0.1] mx-1 sm:mx-1.5 shrink-0" />
+                <div className="h-4 w-px bg-hairline mx-1 sm:mx-1.5 shrink-0" />
 
                 {/* Emoji Action Buttons */}
                 <div className="flex items-center space-x-0.5 sm:space-x-1 pr-1">
@@ -315,7 +315,7 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                         className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center text-lg sm:text-xl transition-all cursor-pointer ${
                           isOnCooldown
                             ? 'opacity-40 cursor-not-allowed scale-95'
-                            : 'hover:bg-white/[0.08] active:scale-90 hover:shadow-[0_0_12px_rgba(255,255,255,0.15)]'
+                            : 'hover:bg-paper active:scale-90 hover:shadow-xs'
                         }`}
                         title={label}
                       >
@@ -323,7 +323,7 @@ export const FloatingReactionsOverlay: React.FC<FloatingReactionsOverlayProps> =
                       </motion.button>
 
                       {/* Tooltip on Hover */}
-                      <div className="opacity-0 group-hover/emoji:opacity-100 pointer-events-none transition-all duration-150 transform translate-y-1 group-hover/emoji:translate-y-0 absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-[#18181D] border border-white/[0.1] text-[10px] font-sans font-medium text-zinc-200 whitespace-nowrap shadow-xl z-50">
+                      <div className="opacity-0 group-hover/emoji:opacity-100 pointer-events-none transition-all duration-150 transform translate-y-1 group-hover/emoji:translate-y-0 absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-ink text-paper text-[10px] font-sans font-medium whitespace-nowrap shadow-md z-50">
                         {label}
                       </div>
                     </div>

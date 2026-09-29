@@ -299,6 +299,7 @@ export function useQuizEngine({
   }
 
   useEffect(() => {
+    if (!currentRoomKey) return;
     votedUsersRef.current.clear();
     adaptiveCampaignRef.current = null;
     pendingAdvanceRef.current = false;
@@ -306,8 +307,10 @@ export function useQuizEngine({
 
   // Load from Supabase DB on mount, when roomCode changes, or when active tab switches to quiz/leaderboard
   useEffect(() => {
-    syncQuizAndLeaderboardFromDB();
-  }, [currentRoomKey, appActiveTab, syncQuizAndLeaderboardFromDB]);
+    if (appActiveTab === 'quiz' || appActiveTab === 'leaderboard') {
+      syncQuizAndLeaderboardFromDB();
+    }
+  }, [appActiveTab, syncQuizAndLeaderboardFromDB]);
 
   // Sync state from realtime channel
   useEffect(() => {
@@ -445,7 +448,7 @@ export function useQuizEngine({
       unQuizVote();
       unLeaderboard();
     };
-  }, [channelManager, currentRoomKey, quizStorageKey, isAutoAdvanceEnabled]);
+  }, [channelManager, quizStorageKey, isAutoAdvanceEnabled]);
 
   const startQuizRound = useCallback(
     (question: QuizQuestion) => {
@@ -682,7 +685,7 @@ export function useQuizEngine({
         autoAdvanceAt,
         isAutoAdvancePaused: false,
         autoAdvanceRemaining: 5,
-        isAIGeneratingNext: hasFollowUp && userRole === 'host' ? true : false,
+        isAIGeneratingNext: Boolean(hasFollowUp && userRole === 'host'),
         updatedAt: Date.now(),
       };
       try {

@@ -101,14 +101,14 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-sm font-sans"
         >
           <motion.div
-            initial={{ scale: 0.9, y: 15, opacity: 0 }}
+            initial={{ scale: 0.94, y: 15, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 15, opacity: 0 }}
+            exit={{ scale: 0.94, y: 15, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="bg-[#101014] text-[#FAFAFA] w-[95vw] sm:max-w-lg p-4 sm:p-7 rounded-2xl border border-white/[0.08] relative font-sans max-h-[90dvh] flex flex-col shadow-modal"
+            className="bg-paper text-ink w-[95vw] sm:max-w-lg p-5 sm:p-7 rounded-3xl border border-hairline relative font-sans max-h-[90dvh] flex flex-col shadow-2xl"
           >
             {/* Close Button */}
             <motion.button
@@ -118,37 +118,37 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                 playClickSound();
                 handleClose();
               }}
-              className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-xl bg-white/[0.04] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors border border-white/[0.06] cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 rounded-full bg-paper hover:bg-paper-surface text-muted hover:text-ink transition-colors border border-hairline cursor-pointer z-10"
               title="Close modal"
             >
               <X className="w-4 h-4" />
             </motion.button>
 
             {/* Modal Header */}
-            <div className="flex items-start space-x-3 mb-4 pr-8 sm:pr-10 shrink-0">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <div className="flex items-start space-x-3 mb-4 pr-10 shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center shrink-0">
                 <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">
+                <h3 className="text-lg font-serif font-medium tracking-tight text-ink leading-tight">
                   Switch Arena Room
                 </h3>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Enter any Room Passcode or instantly jump to your own rooms
                 </p>
               </div>
             </div>
 
             {/* Current Room Tag */}
-            <div className="mb-4 p-3 rounded-xl bg-white/[0.02] text-white border border-white/[0.08] flex items-center justify-between flex-wrap gap-2 shrink-0">
+            <div className="mb-4 p-3.5 rounded-2xl bg-paper-surface border border-hairline flex items-center justify-between flex-wrap gap-2 shrink-0">
               <div className="flex items-center space-x-2">
-                <span className="text-[11px] text-zinc-400 font-medium">Current Room:</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-mono font-semibold text-xs border border-blue-500/20 tracking-wider">
+                <span className="text-[11px] font-mono text-muted uppercase tracking-wider">Current Room:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-paper text-ink font-mono font-semibold text-xs border border-hairline tracking-wider">
                   {currentRoomCode}
                 </span>
               </div>
-              <span className="flex items-center space-x-1.5 text-blue-400 text-xs font-medium">
-                <Radio className="w-3.5 h-3.5 animate-pulse" />
+              <span className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-lime/20 border border-lime/40 text-ink text-[11px] font-mono font-medium">
+                <Radio className="w-3 h-3 text-orange animate-pulse" />
                 <span>Connected</span>
               </span>
             </div>
@@ -158,11 +158,11 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
               {myRooms.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5 text-blue-400" />
+                    <span className="text-xs font-serif font-medium text-ink flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-orange" />
                       <span>Your Created Rooms (Host)</span>
                     </span>
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-[11px] font-mono text-muted">
                       {isLoadingRooms ? 'Loading...' : `${myRooms.length} ${myRooms.length === 1 ? 'Room' : 'Rooms'}`}
                     </span>
                   </div>
@@ -173,24 +173,24 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                       return (
                         <div
                           key={r.id || r.code}
-                          className={`p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all ${
-                            isCurrent ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.04]'
+                          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2.5 transition-all ${
+                            isCurrent ? 'bg-orange/5 border-orange/30' : 'bg-paper-surface border-hairline hover:border-ink/20'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center space-x-2 flex-wrap">
-                              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-mono font-semibold border border-blue-500/20 tracking-wider">
+                              <span className="px-2 py-0.5 rounded-full bg-paper text-ink text-[10px] font-mono font-semibold border border-hairline tracking-wider">
                                 {r.code}
                               </span>
-                              <span className="text-xs font-medium text-white truncate max-w-44 sm:max-w-60">
+                              <span className="text-xs font-medium text-ink truncate max-w-44 sm:max-w-60">
                                 {r.title}
                               </span>
                             </div>
                           </div>
 
                           {isCurrent ? (
-                            <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-medium border border-blue-500/30 flex items-center gap-1 shrink-0">
-                              <Check className="w-3 h-3" />
+                            <span className="px-3 py-1 rounded-full bg-paper border border-hairline text-muted text-[10px] font-mono font-medium flex items-center gap-1 shrink-0">
+                              <Check className="w-3 h-3 text-orange" />
                               <span>Here</span>
                             </span>
                           ) : (
@@ -202,7 +202,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                                 playWhoosh();
                                 handleSelectOwnRoom(r.code, r.title);
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 shadow-sm"
+                              className="btn-noma-orange px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center space-x-1 cursor-pointer shrink-0"
                             >
                               <Crown className="w-3 h-3" />
                               <span>Enter</span>
@@ -217,10 +217,10 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
               )}
 
               {/* SECTION 2: Manual Passcode Entry */}
-              <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-white/[0.08]">
+              <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-hairline">
                 <div>
-                  <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5 text-zinc-300">
-                    <Key className="w-3.5 h-3.5 text-blue-400" />
+                  <label className="text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 mb-1.5 text-muted">
+                    <Key className="w-3.5 h-3.5 text-orange" />
                     <span>Join other Arena Room by Passcode:</span>
                   </label>
                   <input
@@ -231,20 +231,20 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                       setErrorMessage(null);
                     }}
                     placeholder="e.g. TECH-999 or ARCH-863"
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-white/[0.03] border border-white/[0.08] text-white font-mono font-medium focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm bg-paper border border-hairline text-ink font-mono font-medium focus:outline-none focus:border-ink select-text placeholder:text-muted/60"
                   />
-                  <p className="text-[11px] text-zinc-500 mt-1">
+                  <p className="text-[11px] text-muted mt-1">
                     Enter the passcode provided by another room's host to join as attendee.
                   </p>
                 </div>
 
                 {errorMessage && (
-                  <div className="p-3 rounded-xl bg-red-500/10 text-red-300 text-xs border border-red-500/20">
+                  <div className="p-3 rounded-xl bg-red-500/10 text-red-700 text-xs border border-red-500/20 font-mono">
                     {errorMessage}
                   </div>
                 )}
 
-                <div className="flex flex-col-reverse xs:flex-row justify-between items-center gap-2 pt-2 border-t border-white/[0.08]">
+                <div className="flex flex-col-reverse xs:flex-row justify-between items-center gap-2 pt-3 border-t border-hairline">
                   {onOpenRoomsHub && (
                     <motion.button
                       type="button"
@@ -255,9 +255,9 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                         handleClose();
                         onOpenRoomsHub();
                       }}
-                      className="text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                      className="text-xs font-mono text-muted hover:text-ink flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3.5 h-3.5 text-orange" />
                       <span>Manage / Create Rooms</span>
                     </motion.button>
                   )}
@@ -270,7 +270,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                         playClickSound();
                         handleClose();
                       }}
-                      className="px-4 py-2 rounded-xl text-xs font-medium border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white cursor-pointer text-center transition-colors"
+                      className="px-4 py-2 rounded-full text-xs font-medium border border-hairline bg-paper hover:bg-paper-surface text-muted hover:text-ink cursor-pointer text-center transition-colors"
                     >
                       Cancel
                     </motion.button>
@@ -279,7 +279,7 @@ export const ChangeRoomModal: React.FC<ChangeRoomModalProps> = ({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => playWhoosh()}
-                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center space-x-1.5 cursor-pointer transition-all shadow-md shadow-blue-500/20"
+                      className="btn-noma-ink px-5 py-2 text-xs font-semibold flex items-center justify-center space-x-1.5 cursor-pointer transition-all"
                     >
                       <span>Join Room</span>
                       <ArrowRight className="w-3.5 h-3.5" />

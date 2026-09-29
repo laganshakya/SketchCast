@@ -1,65 +1,110 @@
 @import "tailwindcss";
 
+:root {
+  /* Studio Noma Core Palette */
+  --ink: #101313;
+  --paper: #f5f0e9;
+  --paper-card: #fcf9f4;
+  --paper-elevated: #ffffff;
+  --lime: #d7ff2f;
+  --orange: #ff6337;
+  --sky: #a6e5ff;
+  --muted: #65655f;
+  --hairline: rgba(16, 19, 19, 0.08);
+  --hairline-strong: rgba(16, 19, 19, 0.16);
+
+  /* Semantic Status Tokens */
+  --status-correct: #10b981;
+  --status-incorrect: #ef4444;
+  --status-warning: #f59e0b;
+
+  /* Typography variables */
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', 'JetBrains Mono', Menlo, monospace;
+}
+
 @theme {
-  /* Core Obsidian & Monolith Palette */
-  --color-obsidian: #0A0A0C;
-  --color-monolith: #121215;
-  --color-monolith-elevated: #18181D;
-  --color-monolith-subtle: #1E1E24;
-  --color-chalk: #FAFAFA;
-  --color-muted: #A1A1AA;
-  --color-dim: #71717A;
-  --color-hairline: #27272A;
-  --color-hairline-strong: #3F3F46;
+  /* Studio Noma Color Tokens */
+  --color-ink: #101313;
+  --color-paper: #f5f0e9;
+  --color-paper-card: #fcf9f4;
+  --color-paper-elevated: #ffffff;
+  --color-lime: #d7ff2f;
+  --color-orange: #ff6337;
+  --color-sky: #a6e5ff;
+  --color-muted: #65655f;
+  --color-hairline: rgba(16, 19, 19, 0.08);
+  --color-hairline-strong: rgba(16, 19, 19, 0.16);
 
-  /* Surgical Accent */
-  --color-cobalt: #3B82F6;
-  --color-cobalt-dim: #1D4ED8;
-  --color-cobalt-light: #60A5FA;
-  --color-cobalt-glow: rgba(59, 130, 246, 0.15);
+  /* Backward-compatible Theme Mappings */
+  --color-obsidian: #101313;
+  --color-monolith: #161919;
+  --color-monolith-elevated: #202424;
+  --color-monolith-subtle: #2b3030;
+  --color-chalk: #f5f0e9;
+  --color-cobalt: #ff6337;          /* Mapped to Studio Noma Safety Orange */
+  --color-cobalt-dim: #e54f24;
+  --color-cobalt-light: #ff8663;
+  --color-cobalt-glow: rgba(255, 99, 55, 0.18);
 
-  /* Semantic Technical Status Tokens */
-  --color-status-correct: #10B981;
-  --color-status-incorrect: #EF4444;
-  --color-status-warning: #F59E0B;
+  --color-status-correct: #10b981;
+  --color-status-incorrect: #ef4444;
+  --color-status-warning: #f59e0b;
 
-  /* Seamless Legacy Neo-Brutalist Migration Mapping (Eliminates Flashy Rainbows) */
-  --color-neo-yellow: #3B82F6;       /* Replaced canary yellow with Electric Cobalt */
-  --color-neo-pink: #3B82F6;         /* Replaced neon pink with Electric Cobalt */
-  --color-neo-cyan: #60A5FA;         /* Replaced cyber cyan with Technical Blue */
-  --color-neo-mint: #10B981;         /* Replaced bright mint with Minimal Emerald */
-  --color-neo-orange: #F59E0B;       /* Replaced neon orange with Signal Amber */
-  --color-neo-purple: #3B82F6;       /* Replaced purple with Electric Cobalt */
-  --color-neo-cream: #121215;        /* Replaced cream with Monolith dark surface */
-  --color-neo-dark: #0A0A0C;         /* Replaced old dark with True Obsidian */
-  --color-neo-card: #121215;         /* Monolith card surface */
-  --color-neo-card-darker: #0E0E11;  /* Darker monolith base */
-  --color-neo-border: #27272A;       /* Hairline architectural border */
-  --color-neo-border-hard: #3F3F46;  /* Strong structural divider */
+  --color-neo-yellow: #d7ff2f;      /* Studio Noma Electric Lime */
+  --color-neo-pink: #ff6337;        /* Studio Noma Safety Orange */
+  --color-neo-cyan: #a6e5ff;        /* Studio Noma Soft Sky */
+  --color-neo-mint: #10b981;
+  --color-neo-orange: #ff6337;
+  --color-neo-purple: #ff6337;
+  --color-neo-cream: #f5f0e9;
+  --color-neo-dark: #101313;
+  --color-neo-card: #fcf9f4;
+  --color-neo-card-darker: #161919;
+  --color-neo-border: rgba(16, 19, 19, 0.12);
+  --color-neo-border-hard: rgba(16, 19, 19, 0.24);
 
   /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-question: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Syne', 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', Menlo, monospace;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-display: 'DM Serif Display', 'Manrope', sans-serif;
+  --font-mono: 'DM Mono', 'JetBrains Mono', Menlo, monospace;
+  --font-question: 'Manrope', sans-serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html, body {
+html {
+  scroll-behavior: smooth;
+}
+
+body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  min-height: 100%;
   width: 100%;
-  background-color: #0A0A0C;
-  color: #FAFAFA;
+  background-color: var(--paper);
+  color: var(--ink);
   touch-action: manipulation;
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Studio Noma Risograph / Tactile Paper Grain Overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.11;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.33'/%3E%3C/svg%3E");
 }
 
 /* Fluid responsive container paddings */
@@ -135,191 +180,335 @@ input, textarea {
   cursor: text;
 }
 
-/* Subtle architectural ambient canvas grid */
-.bg-ambient-canvas {
-  background-color: #0A0A0C;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 40px 40px;
+/* ================= STUDIO NOMA KEYFRAMES ================= */
+@keyframes slide {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
-/* ================= MODERN MINIMALIST CONTAINERS ================= */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(35px) rotate(0.8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse {
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 99, 55, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 99, 55, 0);
+  }
+}
+
+@keyframes morph {
+  100% {
+    border-radius: 61% 39% 31% 69% / 37% 56% 44% 63%;
+    transform: rotate(28deg);
+  }
+}
+
+@keyframes float {
+  50% {
+    translate: 0 16px;
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ================= STUDIO NOMA RIBBONS & TICKERS ================= */
+.marquee {
+  background: var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.marquee-track {
+  display: inline-flex;
+  gap: 42px;
+  min-width: max-content;
+  animation: slide 22s linear infinite;
+}
+
+.marquee b {
+  color: var(--lime);
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.ticker {
+  border-block: 1px solid var(--hairline-strong);
+  overflow: hidden;
+  display: flex;
+  white-space: nowrap;
+  padding: 14px 0;
+  background: var(--paper-card);
+}
+
+.ticker-inner {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(2rem, 4.5vw, 4.2rem);
+  letter-spacing: -0.04em;
+  min-width: max-content;
+  animation: slide 25s linear infinite reverse;
+}
+
+.ticker strong {
+  font-family: var(--font-sans);
+  font-style: normal;
+  color: var(--orange);
+  margin: 0 24px;
+}
+
+/* Pulse availability dot */
+.pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 0 rgba(255, 99, 55, 0.6);
+  animation: pulse 1.8s infinite;
+}
+
+/* Magnetic circular link */
+.circle-link {
+  width: 130px;
+  height: 130px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  line-height: 1.4;
+  background: transparent;
+  color: var(--ink);
+  transition: 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+}
+
+.circle-link:hover {
+  background: var(--lime);
+  transform: rotate(-10deg) scale(1.06);
+  border-color: var(--ink);
+}
+
+.magnet {
+  transition: transform 0.16s ease-out;
+}
+
+/* Organic Mascot Spark */
+.spark {
+  width: 220px;
+  aspect-ratio: 1;
+  border-radius: 44% 56% 60% 40% / 49% 35% 65% 51%;
+  background: var(--lime);
+  position: relative;
+  animation: morph 9s ease-in-out infinite alternate, float 5s ease-in-out infinite;
+}
+
+.spark::before,
+.spark::after {
+  content: "";
+  position: absolute;
+  background: var(--ink);
+  border-radius: 50%;
+}
+
+.spark::before {
+  width: 16px;
+  height: 16px;
+  left: 31%;
+  top: 31%;
+}
+
+.spark::after {
+  width: 32px;
+  height: 10px;
+  border-radius: 0 0 20px 20px;
+  left: 44%;
+  top: 54%;
+  transform: rotate(-18deg);
+}
+
+/* ================= MODERN STUDIO NOMA CONTAINERS (DE-CLUSTERED) ================= */
+.card-noma,
 .card-modern,
 .monolith-card,
-.brutal-card,
-.brutal-card-cream {
-  background-color: #121215;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.45);
+.brutal-card {
+  background-color: var(--paper-card);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 14px -3px rgba(16, 19, 19, 0.05);
+  color: var(--ink);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.card-noma-elevated,
 .card-elevated,
-.monolith-card-elevated,
-.brutal-card-pop {
-  background-color: #18181D;
+.monolith-card-elevated {
+  background-color: var(--paper-elevated);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -4px rgba(16, 19, 19, 0.08);
+  color: var(--ink);
+}
+
+.card-noma-ink,
+.card-active {
+  background-color: var(--ink);
+  color: var(--paper);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.25rem;
-  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.55);
 }
 
-.card-active,
-.monolith-card-active {
-  background-color: #121215;
-  border: 1px solid rgba(59, 130, 246, 0.6);
-  border-radius: 1rem;
-  box-shadow: 0 0 20px -2px rgba(59, 130, 246, 0.25);
-}
-
-/* Neutralized Brutal Shadow Fallbacks */
-.brutal-shadow-sm,
-.brutal-shadow,
-.brutal-shadow-lg,
-.brutal-shadow-yellow,
-.brutal-shadow-pink,
-.brutal-shadow-cyan,
-.brutal-shadow-green {
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45) !important;
-  border-radius: 1rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-/* ================= MODERN BUTTONS ================= */
-.btn-modern,
-.brutal-btn {
-  background-color: #18181D;
-  color: #FAFAFA;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.btn-modern:hover,
-.brutal-btn:hover {
-  background-color: #22222A;
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
-}
-
-.btn-modern:active,
-.brutal-btn:active {
-  transform: scale(0.98);
-}
-
-/* Cobalt Primary CTA */
+/* ================= STUDIO NOMA BUTTONS ================= */
+.btn-noma-orange,
 .btn-cobalt,
 .btn-neo-yellow,
 .btn-neo-pink,
-.btn-neo-cyan,
-.btn-neo-purple {
-  background-color: #3B82F6;
-  color: #FFFFFF;
-  border: 1px solid rgba(59, 130, 246, 0.8);
-  border-radius: 0.75rem;
-  font-weight: 600;
-  box-shadow: 0 4px 16px -2px rgba(59, 130, 246, 0.35);
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+.btn-neo-cyan {
+  background-color: var(--orange);
+  color: #ffffff;
+  border: 1px solid var(--orange);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(255, 99, 55, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 10px 20px;
 }
 
+.btn-noma-orange:hover,
 .btn-cobalt:hover,
 .btn-neo-yellow:hover,
 .btn-neo-pink:hover,
-.btn-neo-cyan:hover,
-.btn-neo-purple:hover {
-  background-color: #2563EB;
-  border-color: #1D4ED8;
-  box-shadow: 0 6px 20px -2px rgba(59, 130, 246, 0.5);
-  color: #FFFFFF;
+.btn-neo-cyan:hover {
+  background-color: #e54f24;
+  border-color: #e54f24;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 99, 55, 0.4);
 }
 
-.btn-cobalt:active,
-.btn-neo-yellow:active,
-.btn-neo-pink:active,
-.btn-neo-cyan:active,
-.btn-neo-purple:active {
+.btn-noma-orange:active,
+.btn-cobalt:active {
   transform: scale(0.98);
 }
 
-/* Minimalist Dark Ghost Button */
+.btn-noma-lime {
+  background-color: var(--lime);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 10px 20px;
+}
+
+.btn-noma-lime:hover {
+  transform: translateY(-1px) rotate(-1deg);
+  box-shadow: 0 4px 14px rgba(215, 255, 47, 0.4);
+}
+
+.btn-noma-ink,
 .btn-neo-dark,
+.btn-modern,
 .btn-monolith-ghost {
-  background-color: #141418;
-  color: #FAFAFA;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  font-weight: 500;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 10px 20px;
 }
 
+.btn-noma-ink:hover,
 .btn-neo-dark:hover,
-.btn-monolith-ghost:hover {
-  background-color: #1E1E24;
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
+.btn-modern:hover {
+  background-color: #202424;
+  transform: translateY(-1px);
 }
 
-.btn-neo-mint {
-  background-color: #10B981;
-  color: #FFFFFF;
-  border: 1px solid rgba(16, 185, 129, 0.8);
-  border-radius: 0.75rem;
-  font-weight: 600;
+.btn-noma-ghost {
+  background-color: transparent;
+  color: var(--ink);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  padding: 8px 16px;
 }
 
-.btn-neo-mint:hover {
-  background-color: #059669;
+.btn-noma-ghost:hover {
+  background-color: rgba(16, 19, 19, 0.05);
+  border-color: var(--ink);
 }
 
-/* Modern Minimalist Status Pills */
+/* Status Pills */
 .status-pill {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   padding: 3px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: #18181D;
-  color: #FAFAFA;
+  border: 1px solid var(--hairline-strong);
+  background-color: var(--paper-card);
+  color: var(--ink);
   border-radius: 9999px;
 }
 
-/* ================= EXAGGERATED MINIMALISM TYPOGRAPHY ================= */
-.font-monumental {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 7vw, 6.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.035em;
-  font-weight: 800;
-}
-
-.font-timer {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 8.5vw, 7rem);
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  font-weight: 900;
-}
-
-.font-metric {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 4.5vw, 4rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-weight: 800;
-}
-
-.font-question {
-  font-family: var(--font-question);
-}
-
-/* Custom Sleek Dark Scrollbar */
+/* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -327,10 +516,10 @@ input, textarea {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272A;
+  background: rgba(16, 19, 19, 0.2);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B82F6;
+  background: var(--orange);
 }

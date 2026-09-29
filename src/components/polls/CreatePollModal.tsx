@@ -192,14 +192,14 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md font-sans"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/60 backdrop-blur-md font-sans"
         >
           <motion.div
             initial={{ scale: 0.95, y: 12, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 12, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="bg-[#0E0E11] text-white w-[95vw] sm:max-w-lg p-4 sm:p-6 border border-white/[0.08] rounded-2xl shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto"
+            className="bg-paper text-ink w-[95vw] sm:max-w-lg p-5 sm:p-6 border border-hairline rounded-3xl shadow-2xl relative font-sans max-h-[90dvh] overflow-y-auto"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -208,26 +208,26 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                 playClickSound();
                 onClose();
               }}
-              className="absolute top-4 right-4 p-2 bg-[#16161A] text-zinc-400 hover:text-white rounded-xl border border-white/[0.08] hover:border-zinc-700 transition-colors cursor-pointer z-10"
+              className="absolute top-4 right-4 p-2 bg-paper text-muted hover:text-ink rounded-xl border border-hairline hover:border-ink transition-colors cursor-pointer z-10"
               title="Close modal"
             >
               <X className="w-4 h-4 stroke-2" />
             </motion.button>
 
             <div className="flex items-start space-x-3 mb-5 pr-10">
-              <div className="w-10 h-10 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-orange/10 text-orange border border-orange/20 rounded-2xl flex items-center justify-center shrink-0">
                 <Vote className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-semibold text-white leading-tight">
+                  <h3 className="text-base font-bold text-ink leading-tight font-display">
                     Create Audience Poll
                   </h3>
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-semibold rounded-full border border-blue-500/20">
+                  <span className="px-2 py-0.5 bg-lime text-ink text-[10px] font-mono font-bold rounded-full border border-ink/20">
                     Host
                   </span>
                 </div>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Survey attendees on architecture decisions, feedback, or debates
                 </p>
               </div>
@@ -243,9 +243,9 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                   playClickSound();
                   setShowAIAssistant(!showAIAssistant);
                 }}
-                className="w-full py-2.5 bg-[#16161A] hover:bg-[#1E1E24] text-zinc-200 hover:text-white text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-blue-500/40 flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+                className="w-full py-2.5 bg-paper hover:bg-paper-surface text-ink text-xs font-semibold rounded-xl border border-hairline hover:border-ink flex items-center justify-center space-x-2 transition-colors cursor-pointer"
               >
-                <Bot className="w-4 h-4 text-blue-400" />
+                <Bot className="w-4 h-4 text-orange" />
                 <span>{showAIAssistant ? 'Hide AI Poll Assistant' : 'AI Poll Prompt Generator'}</span>
               </motion.button>
             </div>
@@ -255,7 +255,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-3.5 bg-[#121215] border border-white/[0.08] rounded-xl mb-3.5 space-y-3"
+                className="p-3.5 bg-paper-surface border border-hairline rounded-2xl mb-3.5 space-y-3"
               >
                 {/* Unified Input and Action Button */}
                 <div className="space-y-2.5">
@@ -272,15 +272,15 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                           }
                         }}
                         placeholder="e.g. Rate this Architecture, https://bun.sh/docs, or facebook/react"
-                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 pr-20 transition-colors"
+                        className="w-full px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink pr-20 transition-colors"
                       />
                       {isGitHubRepoInput(aiTopic) ? (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-paper-surface border border-hairline text-ink text-[9px] font-mono font-bold rounded uppercase flex items-center gap-1">
                           <FolderGit2 className="w-2.5 h-2.5" />
                           <span>GitHub</span>
                         </span>
                       ) : aiTopic.match(/https?:\/\/[^\s]+/i) ? (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-semibold rounded uppercase flex items-center gap-1">
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-lime text-ink text-[9px] font-mono font-bold rounded uppercase flex items-center gap-1">
                           <Link2 className="w-2.5 h-2.5" />
                           <span>URL Doc</span>
                         </span>
@@ -292,7 +292,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleFetchAISuggestions()}
                       disabled={isGeneratingAI}
-                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center space-x-1 cursor-pointer shrink-0 shadow-sm transition-all"
+                      className="px-3.5 py-2 btn-noma-orange text-xs font-semibold rounded-xl flex items-center space-x-1 cursor-pointer shrink-0 shadow-sm transition-all"
                     >
                       <Zap className="w-3.5 h-3.5" />
                       <span>
@@ -307,15 +307,15 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                     </motion.button>
                   </div>
 
-                  {/* Session Topics (from Quizzes, Q&A Questions, Surveys, and Room Title) */}
+                  {/* Session Topics */}
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                      <span className="font-bold uppercase tracking-wider text-zinc-400">Session topics:</span>
+                    <div className="flex items-center justify-between text-[10px] text-muted">
+                      <span className="font-bold uppercase tracking-wider text-muted font-mono">Session topics:</span>
                       {aiTopic && (
                         <button
                           type="button"
                           onClick={() => setAiTopic('')}
-                          className="text-[9px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                          className="text-[9px] text-muted hover:text-ink underline cursor-pointer"
                         >
                           Clear
                         </button>
@@ -332,10 +332,10 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                               playClickSound();
                               setAiTopic(topicItem);
                             }}
-                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
+                            className={`px-2 py-1 rounded-lg text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
                               isSelected
-                                ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
-                                : 'bg-[#16161A] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
+                                ? 'bg-ink text-paper border-ink font-bold shadow-sm'
+                                : 'bg-paper border-hairline hover:border-ink/40 text-muted hover:text-ink'
                             }`}
                             title={topicItem}
                           >
@@ -349,22 +349,22 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
                 {/* Status Indicator */}
                 {isGeneratingAI && aiStatusMsg && (
-                  <div className="p-2 bg-blue-500/10 border border-blue-500/25 rounded-lg text-xs font-medium text-blue-400 flex items-center gap-2 animate-pulse">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  <div className="p-2 bg-lime/20 border border-lime rounded-xl text-xs font-medium text-ink flex items-center gap-2 animate-pulse">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0 text-ink" />
                     <span>{aiStatusMsg}</span>
                   </div>
                 )}
 
                 {aiError && (
-                  <div className="p-2.5 bg-rose-500/10 text-rose-300 text-xs font-medium border border-rose-500/25 rounded-lg flex items-start space-x-2">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-400" />
+                  <div className="p-2.5 bg-orange/15 text-orange text-xs font-medium border border-orange/30 rounded-xl flex items-start space-x-2">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-orange" />
                     <div className="flex-1">
                       <span>{aiError}</span>
                       {onOpenAISettings && aiError.includes('AI Settings') && (
                         <button
                           type="button"
                           onClick={onOpenAISettings}
-                          className="ml-2 underline font-semibold text-white cursor-pointer"
+                          className="ml-2 underline font-semibold text-ink cursor-pointer"
                         >
                           AI Settings
                         </button>
@@ -375,22 +375,22 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
                 {aiSuggestions.length > 0 && (
                   <div className="space-y-2 pt-1">
-                    <span className="text-xs font-medium text-zinc-400 block">
+                    <span className="text-xs font-semibold text-muted block">
                       Suggestions (click to load):
                     </span>
-                    {aiSuggestions.map((s, idx) => (
+                    {aiSuggestions.map((s) => (
                       <motion.button
-                        key={idx}
+                        key={s.question}
                         type="button"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleApplySuggestion(s)}
-                        className="w-full p-2.5 text-left bg-[#16161A] hover:bg-[#1E1E26] border border-white/[0.08] hover:border-blue-500/40 rounded-xl text-xs space-y-1.5 cursor-pointer block transition-colors"
+                        className="w-full p-2.5 text-left bg-paper hover:bg-paper-surface border border-hairline hover:border-ink rounded-xl text-xs space-y-1.5 cursor-pointer block transition-colors"
                       >
-                        <div className="font-semibold text-white">{s.question}</div>
+                        <div className="font-bold text-ink">{s.question}</div>
                         <div className="flex flex-wrap gap-1.5">
-                          {s.options.map((opt, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-[#121216] text-[11px] rounded-md border border-white/[0.08] text-zinc-300">
+                          {s.options.map((opt) => (
+                            <span key={`${s.question}-${opt}`} className="px-2 py-0.5 bg-paper-surface text-[11px] rounded-md border border-hairline text-muted">
                               {opt}
                             </span>
                           ))}
@@ -404,13 +404,13 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="text-xs font-medium block mb-1 text-zinc-300">Poll Question</label>
+                <label className="text-xs font-semibold block mb-1 text-muted">Poll Question</label>
                 <input
                   type="text"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="e.g. Which API architecture do you deploy in 2026?"
-                  className="w-full px-3.5 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 placeholder-zinc-500 transition-colors"
+                  className="w-full px-3.5 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink placeholder:text-muted/60 transition-colors"
                   required
                   autoFocus
                 />
@@ -418,33 +418,38 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-medium text-zinc-300">Options (2 to 6)</label>
+                  <label className="text-xs font-semibold text-muted">Options (2 to 6)</label>
                   {options.length < 6 && (
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={handleAddOption}
-                      className="text-xs font-medium text-white bg-[#16161A] hover:bg-[#1E1E24] px-2.5 py-1 rounded-lg border border-white/[0.08] hover:border-blue-500/40 flex items-center gap-1 cursor-pointer transition-colors"
+                      className="text-xs font-semibold text-ink bg-paper hover:bg-paper-surface px-2.5 py-1 rounded-xl border border-hairline hover:border-ink flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5 text-blue-400" />
+                      <Plus className="w-3.5 h-3.5 text-orange" />
                       <span>Add Option</span>
                     </motion.button>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  {options.map((opt, idx) => (
-                    <div key={idx} className="flex items-center space-x-2">
-                      <span className="w-7 h-7 bg-[#16161A] text-blue-400 font-mono font-bold text-xs flex items-center justify-center rounded-lg border border-white/[0.08] shrink-0">
-                        {String(idx + 1).padStart(2, '0')}
+                  {options.map((opt, idx) => ({
+                    opt,
+                    idx,
+                    slotKey: `poll_opt_slot_${idx}`,
+                    numberLabel: String(idx + 1).padStart(2, '0'),
+                  })).map(({ opt, idx, slotKey, numberLabel }) => (
+                    <div key={slotKey} className="flex items-center space-x-2">
+                      <span className="w-7 h-7 bg-paper-surface text-ink font-mono font-bold text-xs flex items-center justify-center rounded-xl border border-hairline shrink-0">
+                        {numberLabel}
                       </span>
                       <input
                         type="text"
                         value={opt}
                         onChange={(e) => handleOptionChange(idx, e.target.value)}
                         placeholder={`Option ${idx + 1}...`}
-                        className="flex-1 px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                        className="flex-1 px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink transition-colors"
                         required={idx < 2}
                       />
                       {options.length > 2 && (
@@ -453,7 +458,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleRemoveOption(idx)}
-                          className="p-2 bg-[#16161A] hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 rounded-lg border border-white/[0.08] transition-colors cursor-pointer shrink-0"
+                          className="p-2 bg-paper hover:bg-orange/15 text-muted hover:text-orange rounded-xl border border-hairline transition-colors cursor-pointer shrink-0"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </motion.button>
@@ -463,7 +468,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse xs:flex-row justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+              <div className="flex flex-col-reverse xs:flex-row justify-end gap-2.5 pt-3 border-t border-hairline">
                 <motion.button
                   type="button"
                   whileHover={{ scale: 1.01 }}
@@ -472,7 +477,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                     playClickSound();
                     onClose();
                   }}
-                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-white/[0.08] bg-[#16161A] hover:bg-[#1E1E24] text-zinc-300 hover:text-white cursor-pointer transition-colors text-center"
+                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-hairline bg-paper hover:bg-paper-surface text-muted hover:text-ink cursor-pointer transition-colors text-center"
                 >
                   Cancel
                 </motion.button>
@@ -481,7 +486,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}
-                  className="w-full xs:w-auto px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
+                  className="w-full xs:w-auto px-5 py-2 btn-noma-orange text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Launch Poll</span>

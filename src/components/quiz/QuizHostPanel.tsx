@@ -478,36 +478,36 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
   ).length;
 
   return (
-    <div className="flex flex-col h-full bg-[#0E0E11] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-3.5 font-sans shadow-sm">
+    <div className="flex flex-col h-full bg-paper-elevated border border-hairline rounded-3xl p-4 sm:p-5 space-y-4 font-sans shadow-sm text-ink">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+      <div className="flex items-center justify-between border-b border-hairline pb-3.5">
         <div className="flex items-center space-x-2 min-w-0">
-          <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider whitespace-nowrap">
+          <h3 className="text-xs font-mono font-bold text-ink uppercase tracking-wider whitespace-nowrap">
             HOST QUIZ STUDIO
           </h3>
           {activeQuestionId ? (
-            <span className="flex items-center space-x-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-[9px] font-mono font-bold text-emerald-400 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-lime/25 border border-lime text-[10px] font-mono font-bold text-ink shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange animate-pulse" />
               <span>LIVE</span>
             </span>
           ) : hostQuestions.length > 0 ? (
-            <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
+            <span className="text-[10px] font-mono text-muted px-2 py-0.5 rounded-full bg-paper-card border border-hairline shrink-0 font-bold">
               {hostQuestions.length}
             </span>
           ) : null}
         </div>
 
-        <div className="flex items-center space-x-1.5 shrink-0">
+        <div className="flex items-center space-x-2 shrink-0">
           <motion.button
             whileTap={{ scale: 0.94 }}
             onClick={() => {
               playClickSound();
               setShowImportExportModal(true);
             }}
-            className="w-8 h-8 rounded-xl bg-[#16161A] hover:bg-[#1E1E24] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors flex items-center justify-center cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-xl bg-paper hover:bg-black/[0.04] text-muted hover:text-ink border border-hairline transition-colors flex items-center justify-center cursor-pointer shrink-0 shadow-2xs"
             title="Import or Export Quiz (Kahoot CSV, SketchCast CSV/JSON)"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-blue-400" />
+            <FileSpreadsheet className="w-4 h-4 text-orange" />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.96 }}
@@ -515,7 +515,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
               playClickSound();
               handleOpenModal('ai');
             }}
-            className="h-8 px-3 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-mono font-bold uppercase rounded-xl border border-blue-500 transition-colors flex items-center justify-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+            className="h-8 px-3.5 btn-noma-orange text-[11px] font-mono font-bold uppercase rounded-xl transition-colors flex items-center justify-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
             title="Create questions (Mesh AI or Manual Editor)"
           >
             <Plus className="w-3.5 h-3.5 stroke-2" />
@@ -527,15 +527,15 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
       {/* Host Quiz Question Queue */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 pb-24 sm:pb-28 md:pb-4">
         {hostQuestions.length === 0 ? (
-          <div className="p-6 bg-[#121215] rounded-2xl border border-dashed border-white/[0.1] text-center space-y-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mx-auto">
-              <Sparkles className="w-5 h-5 text-blue-400" />
+          <div className="p-6 bg-paper-card rounded-2xl border border-dashed border-hairline text-center space-y-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-paper text-orange border border-hairline flex items-center justify-center mx-auto shadow-2xs">
+              <Sparkles className="w-5 h-5 text-orange" />
             </div>
             <div>
-              <h4 className="text-xs font-mono font-bold uppercase text-white tracking-wider">
+              <h4 className="text-xs font-mono font-bold uppercase text-ink tracking-wider">
                 NO QUESTIONS QUEUED
               </h4>
-              <p className="text-xs font-sans text-zinc-400 max-w-xs mx-auto leading-relaxed mt-1">
+              <p className="text-xs font-sans text-muted max-w-xs mx-auto leading-relaxed mt-1">
                 Synthesize challenges using AI or craft custom questions for your session.
               </p>
             </div>
@@ -546,7 +546,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   playClickSound();
                   handleOpenModal('ai');
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono font-bold uppercase rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
+                className="px-4 py-2 btn-noma-orange text-xs font-mono font-bold uppercase rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-xs"
               >
                 <Bot className="w-3.5 h-3.5" />
                 <span>AI GENERATE</span>
@@ -557,9 +557,9 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                   playClickSound();
                   handleOpenModal('editor');
                 }}
-                className="px-3.5 py-2 bg-[#16161A] hover:bg-[#1E1E24] text-zinc-300 hover:text-white text-xs font-mono font-bold uppercase rounded-xl border border-white/[0.08] inline-flex items-center space-x-1.5 cursor-pointer transition-colors"
+                className="px-3.5 py-2 bg-paper hover:bg-black/[0.04] text-ink text-xs font-mono font-bold uppercase rounded-xl border border-hairline inline-flex items-center space-x-1.5 cursor-pointer transition-colors shadow-2xs"
               >
-                <Plus className="w-3.5 h-3.5 text-blue-400 stroke-2" />
+                <Plus className="w-3.5 h-3.5 text-orange stroke-2" />
                 <span>MANUAL DRAFT</span>
               </motion.button>
             </div>
@@ -576,40 +576,45 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15 }}
-                className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${isLive
-                    ? 'bg-blue-500/10 border-blue-500/40 shadow-sm'
+                className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                  isLive
+                    ? 'bg-ink text-paper border-2 border-ink shadow-sm'
                     : isCompleted
-                      ? 'bg-[#0E0E11] border-white/[0.04] opacity-60'
-                      : 'bg-[#121216] hover:bg-[#16161C] border-white/[0.06]'
-                  }`}
+                    ? 'bg-paper-card border-hairline opacity-60'
+                    : 'bg-paper hover:bg-black/[0.03] border-hairline text-ink'
+                }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2 mb-1.5 font-mono">
                     <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${isCompleted
-                          ? 'bg-[#1A1A22] text-zinc-400 border-white/[0.06]'
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+                        isCompleted
+                          ? 'bg-paper-card text-muted border-hairline'
                           : isLive
-                            ? 'bg-blue-600 text-white border-blue-500'
-                            : 'bg-[#1A1A24] text-blue-400 border-blue-500/30'
-                        }`}
+                          ? 'bg-lime text-ink border-lime'
+                          : 'bg-paper-card text-orange border-hairline'
+                      }`}
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] text-zinc-400 font-medium uppercase truncate max-w-28" title={q.category}>
+                    <span className={`text-[10px] font-bold uppercase truncate max-w-28 ${isLive ? 'text-paper/80' : 'text-muted'}`} title={q.category}>
                       {q.category}
                     </span>
                     {q.questionType === 'short_answer' && (
-                      <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/25 text-[9px] font-mono font-bold flex items-center gap-1 shrink-0">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-1 shrink-0 ${
+                        isLive ? 'bg-lime/20 text-lime border border-lime/40' : 'bg-orange/15 text-orange border border-orange/30'
+                      }`}>
                         <Terminal className="w-2.5 h-2.5" /> JEV
                       </span>
                     )}
-                    <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1 shrink-0">
+                    <span className={`text-[10px] font-medium flex items-center gap-1 shrink-0 ${isLive ? 'text-paper/70' : 'text-muted'}`}>
                       <Clock className="w-2.5 h-2.5" /> {q.timeLimitSeconds}S
                     </span>
                   </div>
                   <p
-                    className={`text-xs font-medium line-clamp-2 leading-snug font-sans ${isCompleted ? 'text-zinc-400' : 'text-zinc-200'
-                      }`}
+                    className={`text-xs font-semibold line-clamp-2 leading-snug font-sans ${
+                      isLive ? 'text-paper' : isCompleted ? 'text-muted' : 'text-ink'
+                    }`}
                   >
                     {q.question}
                   </p>
@@ -618,8 +623,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <div className="flex items-center space-x-2 shrink-0 font-mono">
                   {isLive ? (
                     <div className="flex items-center space-x-1.5">
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 flex items-center space-x-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold uppercase border border-lime bg-lime/20 text-lime flex items-center space-x-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange animate-pulse" />
                         <span>LIVE</span>
                       </span>
                       {onClearActiveQuiz && (
@@ -630,18 +635,18 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                             playClickSound();
                             onClearActiveQuiz({ isFinished: false });
                           }}
-                          className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold uppercase bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 flex items-center space-x-1 cursor-pointer transition-colors"
+                          className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold uppercase bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 flex items-center space-x-1 cursor-pointer transition-colors"
                           title="End this live round and return arena to standby"
                         >
-                          <Square className="w-2.5 h-2.5 fill-rose-300" />
+                          <Square className="w-2.5 h-2.5 fill-red-300" />
                           <span>END</span>
                         </motion.button>
                       )}
                     </div>
                   ) : isCompleted ? (
                     <div className="flex items-center space-x-1.5">
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border border-white/[0.06] bg-[#16161A] text-zinc-400 flex items-center space-x-1">
-                        <CheckCircle className="w-3 h-3 text-emerald-400" />
+                      <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase border border-hairline bg-paper-card text-muted flex items-center space-x-1">
+                        <CheckCircle className="w-3 h-3 text-ink" />
                         <span>DONE</span>
                       </span>
                       <motion.button
@@ -650,7 +655,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           onStartQuiz(q);
                         }}
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#1E1E24] border border-white/[0.06] transition-colors cursor-pointer"
+                        className="p-1.5 rounded-xl text-muted hover:text-ink hover:bg-black/[0.05] border border-hairline transition-colors cursor-pointer"
                         title="Relaunch question"
                       >
                         <RotateCcw className="w-3 h-3" />
@@ -663,7 +668,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         playClickSound();
                         onStartQuiz(q);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase border border-blue-500 transition-all flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-500 text-white cursor-pointer shadow-sm"
+                      className="px-3 py-1.5 rounded-xl text-[11px] font-mono font-bold uppercase transition-all flex items-center space-x-1.5 btn-noma-orange cursor-pointer shadow-xs"
                     >
                       <Play className="w-2.5 h-2.5 fill-white" />
                       <span>LAUNCH</span>
@@ -676,7 +681,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       playClickSound();
                       handleDeleteQuestion(q.id, e);
                     }}
-                    className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-[#1E1E24] border border-transparent hover:border-white/[0.06] transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl text-muted hover:text-red-600 hover:bg-red-500/10 border border-transparent transition-colors cursor-pointer"
                     title="Delete question from queue"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -690,69 +695,71 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
       {/* Multi-Question Quiz Modal */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-sans">
-          <div className="bg-[#0E0E11] text-white w-full max-w-xl p-4 sm:p-7 rounded-2xl border border-white/[0.08] shadow-modal relative font-sans max-h-[90dvh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-ink/70 backdrop-blur-md animate-fadeIn font-sans">
+          <div className="bg-paper text-ink w-full max-w-xl p-5 sm:p-8 rounded-3xl border border-hairline shadow-2xl relative font-sans max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowCustomModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg bg-[#16161A] text-zinc-400 hover:text-white transition-colors border border-white/[0.08] cursor-pointer z-10"
+              className="absolute top-5 right-5 p-2 rounded-xl bg-paper-card text-muted hover:text-ink transition-colors border border-hairline cursor-pointer z-10"
             >
               <X className="w-4 h-4 stroke-2" />
             </button>
 
             {/* Modal Title */}
-            <div className="flex items-start space-x-3 mb-5 pr-8">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
-                <Sparkles className="w-5 h-5" />
+            <div className="flex items-start space-x-3.5 mb-6 pr-8">
+              <div className="w-11 h-11 rounded-2xl bg-ink text-lime border border-ink flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5 text-lime" />
               </div>
               <div>
-                <h3 className="text-base font-display font-extrabold uppercase tracking-tight text-white leading-tight">
+                <h3 className="text-lg font-serif font-bold uppercase tracking-tight text-ink leading-tight">
                   CREATE QUIZ PACK
                 </h3>
-                <p className="text-xs font-sans text-zinc-400 mt-0.5">
-                  Generate questions with Mesh AI or construct custom challenge rounds
+                <p className="text-xs font-mono text-muted mt-0.5">
+                  Synthesize questions with Mesh AI or construct custom challenge rounds
                 </p>
               </div>
             </div>
 
             {/* Modal Mode Selector: AI Generator vs Manual Editor */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#121215] border border-white/[0.08] rounded-xl mb-4 font-mono text-xs">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-paper-card border border-hairline rounded-2xl mb-5 font-mono text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setModalTab('ai')}
-                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${modalTab === 'ai'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-white'
-                  }`}
+                className={`py-2 rounded-xl uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                  modalTab === 'ai'
+                    ? 'bg-ink text-paper shadow-xs'
+                    : 'text-muted hover:text-ink'
+                }`}
               >
-                <Bot className="w-3.5 h-3.5" />
+                <Bot className="w-3.5 h-3.5 text-lime" />
                 <span>AI GENERATOR</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModalTab('editor')}
-                className={`py-2 rounded-lg font-bold uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${modalTab === 'editor'
-                    ? 'bg-[#1E1E24] text-white border border-white/[0.08]'
-                    : 'text-zinc-400 hover:text-white'
-                  }`}
+                className={`py-2 rounded-xl uppercase transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+                  modalTab === 'editor'
+                    ? 'bg-ink text-paper shadow-xs'
+                    : 'text-muted hover:text-ink'
+                }`}
               >
-                <Sliders className="w-3.5 h-3.5" />
+                <Sliders className="w-3.5 h-3.5 text-orange" />
                 <span>MANUAL EDITOR ({draftQuestions.length} Q)</span>
               </button>
             </div>
 
             {/* AI Generator Tab */}
             {modalTab === 'ai' && (
-              <form onSubmit={handleGenerateAI} className="space-y-3.5 font-mono p-4 bg-[#121215] rounded-xl border border-white/[0.08] mb-3">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5">
-                  <span className="text-xs font-bold uppercase text-blue-400 flex items-center gap-1.5">
-                    <Bot className="w-3.5 h-3.5" />
+              <form onSubmit={handleGenerateAI} className="space-y-4 font-mono p-5 bg-paper-elevated rounded-2xl border border-hairline mb-4">
+                <div className="flex items-center justify-between border-b border-hairline pb-3">
+                  <span className="text-xs font-bold uppercase text-orange flex items-center gap-1.5">
+                    <Bot className="w-4 h-4" />
                     <span>AI TOOL SUITE</span>
                   </span>
                   {onOpenAISettings && (
                     <button
                       type="button"
                       onClick={onOpenAISettings}
-                      className="text-[10px] text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                      className="text-[11px] text-muted hover:text-ink flex items-center gap-1 cursor-pointer transition-colors font-bold uppercase"
                     >
                       <span>Config API</span>
                     </button>
@@ -760,14 +767,14 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </div>
 
                 {/* Unified Intelligent Input Box */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase block text-zinc-300">
+                    <label className="text-xs font-bold uppercase block text-ink">
                       Topic, URL, or GitHub Repo:
                     </label>
                     {isLoadingHnStories && (
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
-                        <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" />
+                      <span className="text-[10px] text-muted flex items-center gap-1 font-mono">
+                        <RefreshCw className="w-2.5 h-2.5 animate-spin text-orange" />
                         <span>Updating trends...</span>
                       </span>
                     )}
@@ -781,26 +788,26 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         setSelectedStoryUrl(null);
                       }}
                       placeholder="e.g. Next.js 15, https://bun.sh/docs, or facebook/react"
-                      className="w-full px-3 py-2.5 text-xs bg-[#16161A] border border-white/[0.08] rounded-lg text-white font-medium focus:outline-none focus:border-blue-500 pr-24"
+                      className="w-full px-3.5 py-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-mono font-medium focus:outline-none focus:border-ink pr-24"
                       required
                     />
                     {isGitHubRepoInput(aiInput) ? (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase flex items-center gap-1">
-                        <FolderGit2 className="w-3 h-3" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-lg bg-paper-card border border-hairline text-ink text-[9px] font-bold uppercase flex items-center gap-1">
+                        <FolderGit2 className="w-3 h-3 text-orange" />
                         <span>GitHub</span>
                       </span>
                     ) : aiInput.match(/https?:\/\/[^\s]+/) ? (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase flex items-center gap-1">
-                        <Link2 className="w-3 h-3" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-lg bg-lime/25 border border-lime text-ink text-[9px] font-bold uppercase flex items-center gap-1">
+                        <Link2 className="w-3 h-3 text-ink" />
                         <span>URL Doc</span>
                       </span>
                     ) : null}
                   </div>
 
                   {/* Auto-Loaded Popular / Hacker News Topics */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                      <span className="font-bold uppercase tracking-wider text-zinc-400">Popular topics:</span>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] text-muted">
+                      <span className="font-bold uppercase tracking-wider text-muted">Popular topics:</span>
                       {selectedStoryUrl && (
                         <button
                           type="button"
@@ -808,7 +815,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                             setAiInput('');
                             setSelectedStoryUrl(null);
                           }}
-                          className="text-[9px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                          className="text-[9px] text-muted hover:text-ink underline cursor-pointer"
                         >
                           Clear Selection
                         </button>
@@ -829,10 +836,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                                 setSelectedStoryUrl(null);
                               }
                             }}
-                            className={`px-2 py-1 rounded-md text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${isSelected
-                                ? 'bg-blue-600/20 border-blue-500/60 text-white font-medium shadow-[0_0_10px_rgba(59,130,246,0.15)]'
-                                : 'bg-[#16161A] border-white/[0.08] hover:border-blue-500/40 text-zinc-300 hover:text-white'
-                              }`}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] transition-all cursor-pointer truncate max-w-[280px] sm:max-w-[340px] text-left border ${
+                              isSelected
+                                ? 'bg-ink text-paper font-bold shadow-xs'
+                                : 'bg-paper-card border-hairline hover:border-ink text-ink/80 hover:text-ink'
+                            }`}
                             title={topicItem.title}
                           >
                             {topicItem.title}
@@ -844,20 +852,21 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </div>
 
                 {/* Format, Difficulty & Count */}
-                <div className="space-y-3 pt-2 border-t border-white/[0.08]">
+                <div className="space-y-3 pt-3 border-t border-hairline">
                   <div>
-                    <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Question Format</label>
-                    <div className="grid grid-cols-3 gap-1.5 bg-[#16161A] p-1 rounded-xl border border-white/[0.08]">
+                    <label className="text-[11px] font-bold uppercase block mb-1.5 text-muted">Question Format</label>
+                    <div className="grid grid-cols-3 gap-1.5 bg-paper-card p-1 rounded-2xl border border-hairline">
                       <button
                         type="button"
                         onClick={() => {
                           playClickSound();
                           setAiFormat('mixed');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'mixed'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-zinc-400 hover:text-white'
-                          }`}
+                        className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'mixed'
+                            ? 'bg-ink text-paper shadow-xs'
+                            : 'text-muted hover:text-ink'
+                        }`}
                         title="Generate a balanced combination of multiple choice and short answer questions"
                       >
                         <span>🔀 Mixed</span>
@@ -868,10 +877,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           setAiFormat('multiple_choice');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'multiple_choice'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-zinc-400 hover:text-white'
-                          }`}
+                        className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'multiple_choice'
+                            ? 'bg-ink text-paper shadow-xs'
+                            : 'text-muted hover:text-ink'
+                        }`}
                         title="Generate 4-option multiple-choice questions"
                       >
                         <span>🎯 Choice</span>
@@ -882,13 +892,14 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           playClickSound();
                           setAiFormat('short_answer');
                         }}
-                        className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${aiFormat === 'short_answer'
-                            ? 'bg-purple-600 text-white shadow-sm'
-                            : 'text-zinc-400 hover:text-white'
-                          }`}
+                        className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          aiFormat === 'short_answer'
+                            ? 'bg-ink text-lime shadow-xs'
+                            : 'text-muted hover:text-ink'
+                        }`}
                         title="Generate short answer questions auto-graded by TypeSafe Jev-1.13"
                       >
-                        <Sparkles className="w-2.5 h-2.5 text-purple-300" />
+                        <Sparkles className="w-2.5 h-2.5 text-lime" />
                         <span>⚡ Short (Jev)</span>
                       </button>
                     </div>
@@ -896,11 +907,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Difficulty</label>
+                      <label className="text-[11px] font-bold uppercase block mb-1.5 text-muted">Difficulty</label>
                       <select
                         value={aiDifficulty}
                         onChange={(e) => setAiDifficulty(e.target.value as any)}
-                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-mono font-medium focus:outline-none focus:border-ink transition-colors"
                       >
                         <option value="Junior">Junior Engineer</option>
                         <option value="Mid">Mid-Level</option>
@@ -909,11 +920,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] font-medium block mb-1.5 text-zinc-400">Question Count</label>
+                      <label className="text-[11px] font-bold uppercase block mb-1.5 text-muted">Question Count</label>
                       <select
                         value={aiCount}
                         onChange={(e) => setAiCount(Number(e.target.value))}
-                        className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-mono font-medium focus:outline-none focus:border-ink transition-colors"
                       >
                         <option value={1}>1 Question</option>
                         <option value={2}>2 Questions</option>
@@ -926,50 +937,55 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 </div>
 
                 {/* Adaptive Live Mode Toggle */}
-                <div className="pt-2 border-t border-white/[0.08]">
+                <div className="pt-2 border-t border-hairline">
                   <div
                     onClick={() => {
                       playClickSound();
                       setIsAdaptiveLiveMode((prev) => !prev);
                     }}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isAdaptiveLiveMode
-                        ? 'bg-purple-950/20 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.12)]'
-                        : 'bg-[#16161D] border-white/[0.08] hover:border-white/[0.15]'
-                      }`}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                      isAdaptiveLiveMode
+                        ? 'bg-lime/25 border-lime shadow-xs text-ink'
+                        : 'bg-paper-card border-hairline hover:border-ink text-ink'
+                    }`}
                   >
                     <div className="flex items-center space-x-2.5">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${isAdaptiveLiveMode
-                            ? 'bg-purple-500/20 border-purple-500/40 text-purple-400'
-                            : 'bg-white/[0.04] border-white/[0.08] text-zinc-400'
-                          }`}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                          isAdaptiveLiveMode
+                            ? 'bg-ink text-lime border-ink'
+                            : 'bg-paper border-hairline text-muted'
+                        }`}
                       >
                         <Flame className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-ink flex items-center gap-1.5">
                           <span>Adaptive Live Mode</span>
                           <span
-                            className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${isAdaptiveLiveMode
-                                ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
-                                : 'bg-white/[0.06] text-zinc-400'
-                              }`}
+                            className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${
+                              isAdaptiveLiveMode
+                                ? 'bg-ink text-lime'
+                                : 'bg-paper text-muted border border-hairline'
+                            }`}
                           >
                             DYNAMIC
                           </span>
                         </div>
-                        <div className="text-[11px] text-zinc-400 leading-tight">
+                        <div className="text-[11px] text-muted leading-tight">
                           Generates 1 question at a time. Difficulty auto-balances by audience accuracy.
                         </div>
                       </div>
                     </div>
                     <div
-                      className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${isAdaptiveLiveMode ? 'bg-purple-600' : 'bg-[#26262F]'
-                        }`}
+                      className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${
+                        isAdaptiveLiveMode ? 'bg-ink' : 'bg-muted/40'
+                      }`}
                     >
                       <div
-                        className={`w-4 h-4 rounded-full bg-white transition-transform ${isAdaptiveLiveMode ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                        className={`w-4 h-4 rounded-full bg-paper transition-transform ${
+                          isAdaptiveLiveMode ? 'translate-x-4' : 'translate-x-0'
+                        }`}
                       />
                     </div>
                   </div>
@@ -977,7 +993,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
                 {/* Status Indicator */}
                 {isGeneratingAI && aiToolStatus && (
-                  <div className="p-2.5 bg-purple-500/10 border border-purple-500/30 rounded-xl text-xs font-medium text-purple-400 flex items-center gap-2 animate-pulse">
+                  <div className="p-3 bg-lime/20 border border-lime rounded-2xl text-xs font-mono font-bold text-ink flex items-center gap-2 animate-pulse">
                     <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
                     <span>{aiToolStatus}</span>
                   </div>
@@ -987,15 +1003,16 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <button
                   type="submit"
                   disabled={isGeneratingAI}
-                  className={`w-full py-2.5 text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm ${isAdaptiveLiveMode
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 border border-purple-500/40 shadow-[0_0_16px_rgba(168,85,247,0.2)]'
-                      : 'bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 border border-blue-500/40'
-                    }`}
+                  className={`w-full py-3 text-xs font-mono font-bold uppercase rounded-xl flex items-center justify-center space-x-2 cursor-pointer transition-all mt-2 shadow-sm ${
+                    isAdaptiveLiveMode
+                      ? 'btn-noma-lime'
+                      : 'btn-noma-orange'
+                  }`}
                 >
                   {isAdaptiveLiveMode ? (
-                    <Flame className="w-3.5 h-3.5 text-purple-200" />
+                    <Flame className="w-4 h-4 text-ink" />
                   ) : (
-                    <Zap className="w-3.5 h-3.5" />
+                    <Zap className="w-4 h-4" />
                   )}
                   <span>
                     {isGeneratingAI
@@ -1003,14 +1020,14 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         ? `Synthesizing Challenge 1 of ${aiCount}...`
                         : 'Generating Questions with AI...'
                       : isAdaptiveLiveMode
-                        ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
-                        : aiFormat === 'short_answer'
-                          ? `⚡ Generate ${aiCount} Short-Answer Questions (Jev)`
-                          : isGitHubRepoInput(aiInput)
-                            ? `Scan Repo & Generate ${aiCount} Questions`
-                            : aiInput.match(/https?:\/\/[^\s]+/) || selectedStoryUrl
-                              ? `Scrape & Generate ${aiCount} Questions`
-                              : `Search & Generate ${aiCount} Questions`}
+                      ? `✨ Launch Adaptive Journey (Challenge 1 of ${aiCount})`
+                      : aiFormat === 'short_answer'
+                      ? `⚡ Generate ${aiCount} Short-Answer Questions (Jev)`
+                      : isGitHubRepoInput(aiInput)
+                      ? `Scan Repo & Generate ${aiCount} Questions`
+                      : aiInput.match(/https?:\/\/[^\s]+/) || selectedStoryUrl
+                      ? `Scrape & Generate ${aiCount} Questions`
+                      : `Search & Generate ${aiCount} Questions`}
                   </span>
                 </button>
               </form>
@@ -1018,33 +1035,33 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
             {/* Success & Error Banners */}
             {aiSuccessNote && (
-              <div className="p-3 mb-3 bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/25 rounded-xl flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 shrink-0" />
+              <div className="p-3 mb-3 bg-lime/20 text-ink text-xs font-medium border border-lime rounded-xl flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 shrink-0 text-ink" />
                 <span>{aiSuccessNote}</span>
               </div>
             )}
 
             {/* Grounding Sources Cited */}
             {groundingSources.length > 0 && (
-              <div className="p-3 mb-3 bg-[#121218] border border-white/[0.08] rounded-xl text-xs">
-                <div className="font-semibold text-blue-400 flex items-center gap-1.5 mb-2">
-                  <Globe className="w-3.5 h-3.5" />
+              <div className="p-3 mb-3 bg-paper border border-hairline rounded-xl text-xs">
+                <div className="font-semibold text-ink flex items-center gap-1.5 mb-2">
+                  <Globe className="w-3.5 h-3.5 text-orange" />
                   <span>Grounding Sources ({groundingSources.length}):</span>
                 </div>
                 <div className="space-y-1.5">
                   {groundingSources.map((source, sIdx) => (
-                    <div key={sIdx} className="flex items-center gap-2 truncate">
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md shrink-0">
+                    <div key={source.url || `src-${sIdx}`} className="flex items-center gap-2 truncate">
+                      <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 bg-paper-surface border border-hairline text-ink rounded-md shrink-0">
                         {String(sIdx + 1).padStart(2, '0')}
                       </span>
                       <a
                         href={source.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="truncate text-zinc-300 hover:text-white hover:underline flex items-center gap-1 text-[11px]"
+                        className="truncate text-ink/80 hover:text-ink hover:underline flex items-center gap-1 text-[11px]"
                       >
                         <span className="truncate">{source.title}</span>
-                        <ExternalLink className="w-2.5 h-2.5 shrink-0 text-zinc-500" />
+                        <ExternalLink className="w-2.5 h-2.5 shrink-0 text-muted" />
                       </a>
                     </div>
                   ))}
@@ -1053,15 +1070,15 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             )}
 
             {errorMessage && (
-              <div className="p-3 mb-3 bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/25 rounded-xl flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="p-3 mb-3 bg-orange/15 text-orange text-xs font-medium border border-orange/30 rounded-xl flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-orange" />
                 <div className="flex-1">
                   <div>{errorMessage}</div>
                   {errorMessage.includes('AI Settings') && onOpenAISettings && (
                     <button
                       type="button"
                       onClick={onOpenAISettings}
-                      className="mt-2 px-2.5 py-1 bg-[#16161A] text-white text-[11px] font-medium rounded-lg border border-white/[0.1] hover:border-blue-500 cursor-pointer transition-colors"
+                      className="mt-2 px-2.5 py-1 bg-paper text-ink text-[11px] font-semibold rounded-lg border border-hairline hover:border-ink cursor-pointer transition-colors"
                     >
                       Open AI Settings
                     </button>
@@ -1073,10 +1090,10 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             {/* Questions Step Navigation Strip */}
             <div className="mb-3">
               <div className="flex items-center justify-between gap-1 mb-2">
-                <span className="text-xs font-semibold text-zinc-400">
+                <span className="text-xs font-semibold text-ink">
                   Questions ({draftQuestions.length})
                 </span>
-                <span className="text-[11px] text-zinc-500">
+                <span className="text-[11px] text-muted">
                   Click tab to edit
                 </span>
               </div>
@@ -1097,27 +1114,29 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           setActiveQuestionIndex(idx);
                           setModalTab('editor');
                         }}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${draftQuestions.length > 1 ? 'rounded-l-xl' : 'rounded-xl'
-                          } ${isActive && modalTab === 'editor'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
-                          }`}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                          draftQuestions.length > 1 ? 'rounded-l-xl' : 'rounded-xl'
+                        } ${
+                          isActive && modalTab === 'editor'
+                            ? 'bg-ink text-paper shadow-sm'
+                            : 'bg-paper text-muted border border-hairline hover:text-ink hover:border-ink/30'
+                        }`}
                       >
                         <span>Q{idx + 1}</span>
                         {dq.questionType === 'short_answer' && (
                           <span title="Short Answer (Jev 1.13)">
-                            <Sparkles className="w-2.5 h-2.5 text-purple-400 shrink-0" />
+                            <Sparkles className="w-2.5 h-2.5 text-orange shrink-0" />
                           </span>
                         )}
                         {isFilled && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Question Complete" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-lime shrink-0 ring-1 ring-ink" title="Question Complete" />
                         )}
                       </button>
                       {draftQuestions.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveDraftQuestion(idx)}
-                          className="p-1.5 hover:bg-rose-500/20 hover:text-rose-400 rounded-r-xl border-y border-r border-white/[0.08] bg-[#141418] text-zinc-500 transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-orange/20 hover:text-orange rounded-r-xl border-y border-r border-hairline bg-paper text-muted transition-colors cursor-pointer"
                           title="Delete this question"
                         >
                           <X className="w-3 h-3" />
@@ -1131,53 +1150,53 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
             {/* Active Question Editor Form */}
             <form onSubmit={(e) => handleSaveQuiz(e, true)} className="space-y-3.5">
-              <div className="p-3.5 sm:p-4 bg-[#121215] border border-white/[0.08] rounded-2xl space-y-3 sm:space-y-3.5">
-                <div className="flex items-center justify-between gap-1 border-b border-white/[0.08] pb-2">
-                  <span className="text-xs font-semibold text-blue-400">
+              <div className="p-3.5 sm:p-4 bg-paper-surface border border-hairline rounded-2xl space-y-3 sm:space-y-3.5">
+                <div className="flex items-center justify-between gap-1 border-b border-hairline pb-2">
+                  <span className="text-xs font-semibold text-ink">
                     Question {activeQuestionIndex + 1} of {draftQuestions.length}
                   </span>
-                  <span className="text-[11px] text-zinc-500">
+                  <span className="text-[11px] text-muted">
                     Select the correct answer below
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-[11px] font-medium block mb-1 text-zinc-400">Category</label>
+                    <label className="text-[11px] font-semibold block mb-1 text-muted">Category</label>
                     <input
                       type="text"
                       value={currentDraft.category}
                       onChange={(e) => updateCurrentDraft('category', e.target.value)}
                       placeholder="e.g. System Design"
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium block mb-1 text-zinc-400">Time Limit (Sec)</label>
+                    <label className="text-[11px] font-semibold block mb-1 text-muted">Time Limit (Sec)</label>
                     <input
                       type="number"
                       min="20"
                       max="180"
                       value={currentDraft.timeLimitSeconds}
                       onChange={(e) => updateCurrentDraft('timeLimitSeconds', Number(e.target.value))}
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-medium block text-zinc-400">Question Prompt</label>
+                    <label className="text-[11px] font-semibold block text-muted">Question Prompt</label>
                     <button
                       type="button"
                       onClick={() => {
                         playPopSound();
                         updateCurrentDraft('question', formatCodeSnippet(currentDraft.question));
                       }}
-                      className="text-[11px] font-medium text-zinc-400 hover:text-white flex items-center gap-1 border border-white/[0.08] px-2 py-0.5 rounded-lg bg-[#16161A] hover:bg-[#1E1E24] cursor-pointer transition-colors"
+                      className="text-[11px] font-semibold text-muted hover:text-ink flex items-center gap-1 border border-hairline px-2 py-0.5 rounded-lg bg-paper hover:bg-paper-surface cursor-pointer transition-colors"
                       title="Clean and format code indentation with markdown syntax"
                     >
-                      <Code className="w-3 h-3 text-blue-400" />
+                      <Code className="w-3 h-3 text-orange" />
                       <span>Format Code</span>
                     </button>
                   </div>
@@ -1186,59 +1205,61 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                     onChange={(e) => updateCurrentDraft('question', e.target.value)}
                     placeholder={`Type question prompt for Q${activeQuestionIndex + 1}...`}
                     rows={2}
-                    className="w-full p-3 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 resize-none transition-colors"
+                    className="w-full p-3 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink resize-none transition-colors"
                     required
                   />
                 </div>
 
                 {/* Question Type Switcher */}
-                <div className="flex items-center justify-between border-y border-white/[0.06] py-2">
-                  <span className="text-[11px] font-medium text-zinc-400">Response Mode</span>
-                  <div className="flex items-center gap-1 bg-[#16161A] p-0.5 rounded-lg border border-white/[0.08]">
+                <div className="flex items-center justify-between border-y border-hairline py-2">
+                  <span className="text-[11px] font-semibold text-muted">Response Mode</span>
+                  <div className="flex items-center gap-1 bg-paper p-0.5 rounded-lg border border-hairline">
                     <button
                       type="button"
                       onClick={() => updateCurrentDraft('questionType', 'multiple_choice')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer ${currentDraft.questionType !== 'short_answer'
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'text-zinc-400 hover:text-white'
-                        }`}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                        currentDraft.questionType !== 'short_answer'
+                          ? 'bg-ink text-paper shadow-sm'
+                          : 'text-muted hover:text-ink'
+                      }`}
                     >
                       Multiple Choice
                     </button>
                     <button
                       type="button"
                       onClick={() => updateCurrentDraft('questionType', 'short_answer')}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${currentDraft.questionType === 'short_answer'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'text-zinc-400 hover:text-white'
-                        }`}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                        currentDraft.questionType === 'short_answer'
+                          ? 'bg-ink text-paper shadow-sm'
+                          : 'text-muted hover:text-ink'
+                      }`}
                     >
-                      <Sparkles className="w-2.5 h-2.5 text-purple-300" />
+                      <Sparkles className="w-2.5 h-2.5 text-lime" />
                       <span>Short Answer (Jev 1.13)</span>
                     </button>
                   </div>
                 </div>
 
                 {currentDraft.questionType === 'short_answer' ? (
-                  <div className="space-y-3 bg-[#0C0C10] p-3.5 rounded-xl border border-purple-500/25">
+                  <div className="space-y-3 bg-paper p-3.5 rounded-xl border-2 border-hairline">
                     <div className="flex items-center justify-between text-xs">
-                      <label className="text-[11px] font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <Terminal className="w-3.5 h-3.5 text-purple-400" />
+                      <label className="text-[11px] font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                        <Terminal className="w-3.5 h-3.5 text-orange" />
                         <span>Ground Truth Expected Answer:</span>
                       </label>
-                      <span className="text-[10px] font-mono text-zinc-500">Exact match or semantic equivalent</span>
+                      <span className="text-[10px] font-mono text-muted">Exact match or semantic equivalent</span>
                     </div>
                     <input
                       type="text"
                       value={currentDraft.expectedAnswer || ''}
                       onChange={(e) => updateCurrentDraft('expectedAnswer', e.target.value)}
                       placeholder="e.g. git cherry-pick, O(1), CAP theorem, or etcd"
-                      className="w-full px-3 py-2 text-xs bg-[#16161A] border border-purple-500/30 rounded-xl text-white font-mono focus:outline-none focus:border-purple-400 transition-colors"
+                      className="w-full px-3 py-2 text-xs bg-paper-surface border border-hairline rounded-xl text-ink font-mono focus:outline-none focus:border-ink transition-colors"
                       required={currentDraft.questionType === 'short_answer'}
                     />
 
                     <div>
-                      <label className="text-[10px] font-medium text-zinc-400 block mb-1">
+                      <label className="text-[10px] font-semibold text-muted block mb-1">
                         Acceptable Synonyms / Aliases (Comma-separated, optional):
                       </label>
                       <input
@@ -1246,18 +1267,18 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         value={currentDraft.acceptableAnswers || ''}
                         onChange={(e) => updateCurrentDraft('acceptableAnswers', e.target.value)}
                         placeholder="e.g. cherry pick, git-cherry-pick"
-                        className="w-full px-3 py-1.5 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-zinc-300 font-mono focus:outline-none focus:border-purple-400 transition-colors"
+                        className="w-full px-3 py-1.5 text-xs bg-paper-surface border border-hairline rounded-xl text-ink font-mono focus:outline-none focus:border-ink transition-colors"
                       />
                     </div>
 
-                    <div className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
-                      <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
+                    <div className="text-[10px] text-muted flex items-center gap-1.5 font-mono">
+                      <Sparkles className="w-3 h-3 text-orange shrink-0" />
                       <span>Evaluated automatically in ~150ms by TypeSafe Jev 1.13 calibrated semantic scoring ($0.042/1M tokens).</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-[11px] font-medium block text-zinc-400">4 Options (Select correct answer key):</label>
+                    <label className="text-[11px] font-semibold block text-muted">4 Options (Select correct answer key):</label>
                     {[
                       { id: 'A' as const, field: 'optA' as const, val: currentDraft.optA },
                       { id: 'B' as const, field: 'optB' as const, val: currentDraft.optB },
@@ -1268,10 +1289,11 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => updateCurrentDraft('correctOpt', id)}
-                          className={`w-8 h-8 font-semibold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${currentDraft.correctOpt === id
-                              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/30'
-                              : 'bg-[#16161A] text-zinc-400 border border-white/[0.08] hover:text-white hover:border-zinc-700'
-                            }`}
+                          className={`w-8 h-8 font-mono font-bold text-xs rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                            currentDraft.correctOpt === id
+                              ? 'bg-lime text-ink border border-ink shadow-sm ring-2 ring-lime/40'
+                              : 'bg-paper text-muted border border-hairline hover:text-ink hover:border-ink'
+                          }`}
                           title="Click to designate as correct answer"
                         >
                           {id}
@@ -1281,7 +1303,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           value={val}
                           onChange={(e) => updateCurrentDraft(field, e.target.value)}
                           placeholder={`Option ${id}...`}
-                          className="flex-1 px-3 py-2 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 transition-colors"
+                          className="flex-1 px-3 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink transition-colors"
                           required={currentDraft.questionType !== 'short_answer' && (id === 'A' || id === 'B')}
                         />
                       </div>
@@ -1290,13 +1312,13 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 )}
 
                 <div>
-                  <label className="text-[11px] font-medium block mb-1 text-zinc-400">Explanation</label>
+                  <label className="text-[11px] font-semibold block mb-1 text-muted">Explanation</label>
                   <textarea
                     value={currentDraft.explanation}
                     onChange={(e) => updateCurrentDraft('explanation', e.target.value)}
                     placeholder="Explain why this option is correct..."
                     rows={2}
-                    className="w-full p-2.5 text-xs bg-[#16161A] border border-white/[0.08] rounded-xl text-white font-medium focus:outline-none focus:border-blue-500 resize-none transition-colors"
+                    className="w-full p-2.5 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink resize-none transition-colors"
                   />
                 </div>
               </div>
@@ -1306,38 +1328,38 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                 <button
                   type="button"
                   onClick={handleAddQuestionToDraft}
-                  className="w-full xs:w-auto px-3.5 py-2 bg-[#16161A] hover:bg-[#1E1E24] text-white text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-blue-500/40 flex items-center justify-center space-x-1.5 cursor-pointer transition-colors shrink-0"
+                  className="w-full xs:w-auto px-3.5 py-2 bg-paper hover:bg-paper-surface text-ink text-xs font-semibold rounded-xl border border-hairline hover:border-ink flex items-center justify-center space-x-1.5 cursor-pointer transition-colors shrink-0"
                 >
-                  <Plus className="w-3.5 h-3.5 text-blue-400 stroke-2" />
+                  <Plus className="w-3.5 h-3.5 text-ink stroke-2" />
                   <span>Add Another Question</span>
                 </button>
-                <span className="text-[11px] text-zinc-400 text-center xs:text-right shrink-0">
+                <span className="text-[11px] text-muted text-center xs:text-right shrink-0">
                   {validQuestionsCount} / {draftQuestions.length} complete
                 </span>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-end gap-2.5 pt-3 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => setShowCustomModal(false)}
-                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-white/[0.08] bg-[#16161A] hover:bg-[#1E1E24] text-zinc-300 hover:text-white order-3 xs:order-1 cursor-pointer transition-colors text-center"
+                  className="w-full xs:w-auto px-4 py-2 text-xs font-semibold rounded-xl border border-hairline bg-paper hover:bg-paper-surface text-muted hover:text-ink order-3 xs:order-1 cursor-pointer transition-colors text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={(e) => handleSaveQuiz(e, false)}
-                  className="w-full xs:w-auto px-4 py-2 bg-[#1E1E24] hover:bg-[#252530] text-white text-xs font-semibold rounded-xl border border-white/[0.08] hover:border-blue-500/40 flex items-center justify-center space-x-1.5 order-2 cursor-pointer transition-colors"
+                  className="w-full xs:w-auto px-4 py-2 bg-paper hover:bg-paper-surface text-ink text-xs font-semibold rounded-xl border border-hairline hover:border-ink flex items-center justify-center space-x-1.5 order-2 cursor-pointer transition-colors"
                   title="Save all questions to Host queue to launch later"
                 >
-                  <Plus className="w-3.5 h-3.5 text-blue-400 stroke-2" />
+                  <Plus className="w-3.5 h-3.5 text-ink stroke-2" />
                   <span>Queue ({Math.max(1, validQuestionsCount)} Q)</span>
                 </button>
                 <button
                   type="button"
                   onClick={(e) => handleSaveQuiz(e, true)}
-                  className="w-full xs:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl border border-blue-500/40 flex items-center justify-center space-x-1.5 order-1 xs:order-3 cursor-pointer transition-colors shadow-sm"
+                  className="w-full xs:w-auto px-4 py-2 btn-noma-orange flex items-center justify-center space-x-1.5 order-1 xs:order-3 cursor-pointer shadow-sm text-xs"
                   title="Publish all questions and immediately start Question 1 live"
                 >
                   <Play className="w-3 h-3 fill-white" />

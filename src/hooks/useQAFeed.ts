@@ -102,8 +102,14 @@ export function useQAFeed({
 
   // Load from Supabase DB on initialization, roomCode change, and tab switch to 'qa'
   useEffect(() => {
+    if (appActiveTab === 'qa') {
+      syncQuestionsFromDB();
+    }
+  }, [appActiveTab, syncQuestionsFromDB]);
+
+  useEffect(() => {
     syncQuestionsFromDB();
-  }, [currentRoomKey, appActiveTab, syncQuestionsFromDB]);
+  }, [syncQuestionsFromDB]);
 
   // Realtime synchronization
   useEffect(() => {

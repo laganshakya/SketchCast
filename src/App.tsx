@@ -32,12 +32,12 @@ const ChampionSocialCardModal = lazy(() => import('./components/quiz/ChampionSoc
 const MasterclassCertificateModal = lazy(() => import('./components/certificate/MasterclassCertificateModal').then((m) => ({ default: m.MasterclassCertificateModal })));
 const CertificateVerificationModal = lazy(() => import('./components/certificate/CertificateVerificationModal').then((m) => ({ default: m.CertificateVerificationModal })));
 import { useSurveys } from './hooks/useSurveys';
-import { playWhoosh, playClickSound, playPopSound, playSuccessFanfare, setAudioPack } from './lib/soundFx';
+import { playWhoosh, playClickSound, playPopSound, playSuccessFanfare } from './lib/soundFx';
 
 import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
 import { generateRemediationPoll } from './lib/meshApi';
 import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster, Room } from './types';
-import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
+import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, MicOff, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
 function parseVerificationUrl(): VerifiedCertPayload | null {
   if (typeof window === 'undefined') return null;
@@ -315,15 +315,8 @@ export function App() {
       }
     });
 
-    const unAudioPack = channelManager.on('room_audio_pack_update', ({ pack }) => {
-      if (pack === 'arcade' || pack === 'hifi') {
-        setAudioPack(pack);
-      }
-    });
-
     return () => {
       unReport();
-      unAudioPack();
     };
   }, [channelManager, setSessionReport]);
 
@@ -440,9 +433,9 @@ export function App() {
 
     const unViolation = channelManager.on('safeguard_violation_alert', (alert) => {
       if (alert.roomId.toUpperCase().trim() === room.code.toUpperCase().trim()) {
-        const isHostOrAdmin =
+        const canModerate =
           userRole === 'host' || isUserRoomAdmin(room, currentUser, userName);
-        if (isHostOrAdmin) {
+        if (canModerate) {
           playPopSound();
           setViolationAlert(alert);
         }
@@ -452,7 +445,7 @@ export function App() {
     return () => {
       unViolation();
     };
-  }, [channelManager, room.code, userRole, room, currentUser, userName]);
+  }, [channelManager, userRole, room, currentUser, userName]);
 
   const handleSafeguardViolation = (data: {
     strikeCount: number;
@@ -669,7 +662,7 @@ export function App() {
 
   // Once authenticated (or signed in as guest), show the Live Arena
   return (
-    <div className="h-screen w-full max-w-full flex flex-col bg-[#0A0A0C] bg-architectural-grid text-[#FAFAFA] overflow-hidden font-sans select-none">
+    <div className="h-screen w-full max-w-full flex flex-col bg-paper text-ink overflow-hidden font-sans select-none">
       {/* Top Header */}
       <AppHeader
         room={room}
@@ -698,12 +691,12 @@ export function App() {
       {/* Floating Promotion Toast Notification */}
       {promotionToast && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-[#141824] text-[#FAFAFA] font-mono text-xs px-4 py-2 border border-[#3B82F6] shadow-[0_0_16px_rgba(59,130,246,0.15)] flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-[#3B82F6] shrink-0" />
+          <div className="bg-ink text-paper font-mono text-xs px-4 py-2.5 rounded-xl border border-hairline shadow-xl flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-lime shrink-0" />
             <span>{promotionToast}</span>
             <button
               onClick={() => setPromotionToast(null)}
-              className="p-1 hover:bg-[#22222A] text-[#A1A1AA] hover:text-white transition-colors border border-[#27272A] ml-2 cursor-pointer"
+              className="p-1 hover:bg-white/10 text-muted hover:text-paper rounded-lg transition-colors ml-2 cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>
@@ -718,34 +711,34 @@ export function App() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-xl bg-[#1A0D0F] text-[#FAFAFA] border border-[#EF4444] shadow-[0_0_24px_rgba(239,68,68,0.2)] p-4 font-mono"
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-xl bg-paper-elevated text-ink border-2 border-orange shadow-2xl rounded-2xl p-4 font-mono"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start space-x-3 min-w-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#2A1014] text-[#EF4444] border border-[#EF4444] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-orange/15 text-orange border border-orange/30 rounded-xl flex items-center justify-center shrink-0">
                   <ShieldAlert className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs sm:text-sm uppercase tracking-tight text-[#FAFAFA] font-bold">
+                    <span className="text-xs sm:text-sm uppercase tracking-tight text-ink font-bold font-sans">
                       SAFEGUARD STRIKE ALERT
                     </span>
-                    <span className="px-1.5 py-0.2 bg-[#2A1014] text-[#EF4444] text-[9px] font-bold uppercase border border-[#EF4444]">
+                    <span className="px-2 py-0.5 bg-orange text-white text-[9px] font-bold uppercase rounded-full">
                       STRIKE {violationAlert.strikeCount}/3
                     </span>
                     {violationAlert.category && (
-                      <span className="px-1.5 py-0.2 bg-[#18181D] text-[#A1A1AA] text-[9px] font-bold uppercase border border-[#27272A]">
+                      <span className="px-2 py-0.5 bg-paper-card text-muted text-[9px] font-bold uppercase rounded-full border border-hairline">
                         {violationAlert.category}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#D4D4D8] font-medium mt-1">
-                    Attendee <span className="bg-[#18181D] text-[#3B82F6] px-1.5 py-0.2 font-mono font-bold">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
+                  <p className="text-xs text-ink/80 font-medium mt-1">
+                    Attendee <span className="bg-ink text-lime px-1.5 py-0.5 rounded font-mono font-bold">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
                   </p>
-                  <div className="text-[11px] text-[#A1A1AA] font-sans mt-1 bg-[#121215] p-2 border border-[#27272A] leading-snug">
-                    <span className="font-bold text-[#FAFAFA]">Reason:</span> {violationAlert.reason}
+                  <div className="text-[11px] text-muted font-sans mt-1.5 bg-paper-card p-2.5 rounded-xl border border-hairline leading-snug">
+                    <span className="font-bold text-ink">Reason:</span> {violationAlert.reason}
                     {violationAlert.sampleText && (
-                      <span className="block italic text-[10px] text-[#71717A] truncate mt-0.5">
+                      <span className="block italic text-[10px] text-muted truncate mt-0.5">
                         &ldquo;{violationAlert.sampleText}&rdquo;
                       </span>
                     )}
@@ -755,7 +748,7 @@ export function App() {
 
               <button
                 onClick={() => setViolationAlert(null)}
-                className="p-1 bg-[#18181D] hover:bg-[#22222A] text-[#A1A1AA] hover:text-white border border-[#27272A] cursor-pointer shrink-0"
+                className="p-1 bg-paper-card hover:bg-black/[0.05] text-muted hover:text-ink border border-hairline rounded-lg cursor-pointer shrink-0 transition-colors"
                 title="Dismiss alert"
               >
                 <X className="w-3.5 h-3.5" />
@@ -795,7 +788,7 @@ export function App() {
                 }}
                 className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-[#FAFAFA] font-mono text-xs font-bold uppercase border border-[#27272A] flex items-center space-x-1.5 cursor-pointer"
               >
-                <VolumeX className="w-3.5 h-3.5 text-[#3B82F6]" />
+                <MicOff className="w-3.5 h-3.5 text-[#3B82F6]" />
                 <span>MUTE ATTENDEE</span>
               </button>
               <button
@@ -827,39 +820,39 @@ export function App() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg bg-[#0E1A14] text-[#FAFAFA] border border-[#10B981] shadow-[0_0_24px_rgba(16,185,129,0.2)] p-3.5 sm:p-4 font-mono flex items-center justify-between gap-3"
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg bg-ink text-paper border border-lime/40 shadow-2xl rounded-2xl p-4 font-mono flex items-center justify-between gap-3"
           >
-            <div className="flex items-center space-x-2.5 min-w-0">
-              <div className="w-9 h-9 bg-[#122A1E] text-[#10B981] border border-[#10B981] flex items-center justify-center shrink-0 font-bold">
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="w-10 h-10 bg-lime/20 text-lime border border-lime/40 rounded-xl flex items-center justify-center shrink-0 font-bold">
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-bold uppercase px-1.5 py-0.2 bg-[#122A1E] text-[#10B981] border border-[#10B981]">
-                  // SURVEY LAUNCHED
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-lime text-ink rounded-full">
+                  SURVEY LAUNCHED
                 </span>
-                <h4 className="text-xs sm:text-sm font-bold uppercase tracking-tight text-[#FAFAFA] truncate mt-0.5">
+                <h4 className="text-xs sm:text-sm font-bold uppercase tracking-tight text-paper truncate mt-1">
                   {incomingSurveyAlert.surveyTitle}
                 </h4>
-                <p className="text-[11px] text-[#A1A1AA] font-sans truncate">
+                <p className="text-[11px] text-paper/70 font-sans truncate">
                   Host {incomingSurveyAlert.launchedBy} invited you to provide feedback.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-1.5 shrink-0">
+            <div className="flex items-center space-x-2 shrink-0">
               <button
                 onClick={() => {
                   playPopSound();
                   setActiveTab('surveys');
                   dismissSurveyAlert();
                 }}
-                className="px-3 py-1.5 btn-cobalt font-mono text-xs font-bold uppercase cursor-pointer whitespace-nowrap"
+                className="px-3.5 py-1.5 btn-noma-lime font-mono text-xs font-bold uppercase cursor-pointer whitespace-nowrap rounded-xl shadow-xs"
               >
                 TAKE SURVEY
               </button>
               <button
                 onClick={dismissSurveyAlert}
-                className="p-1.5 hover:bg-[#18181D] text-[#A1A1AA] hover:text-white border border-[#27272A] cursor-pointer"
+                className="p-1.5 hover:bg-white/10 text-paper/70 hover:text-paper rounded-lg cursor-pointer transition-colors"
                 title="Dismiss"
               >
                 <X className="w-3.5 h-3.5" />
@@ -906,20 +899,20 @@ export function App() {
             >
               {/* Mobile Host Switcher Bar (Screen < lg) */}
               {userRole === 'host' && (
-                <div className="lg:hidden flex items-center justify-center p-1 bg-[#121215] border border-white/[0.08] rounded-xl font-mono text-xs font-bold shrink-0">
+                <div className="lg:hidden flex items-center justify-center p-1 bg-paper-card border border-hairline rounded-2xl font-mono text-xs font-bold shrink-0">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={() => {
                       playClickSound();
                       setMobileHostQuizView('arena');
                     }}
-                    className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
                       mobileHostQuizView === 'arena'
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-ink text-paper shadow-xs'
+                        : 'text-muted hover:text-ink'
                     }`}
                   >
-                    <Zap className="w-3.5 h-3.5" />
+                    <Zap className="w-3.5 h-3.5 text-lime" />
                     <span>LIVE ARENA</span>
                   </motion.button>
                   <motion.button
@@ -928,13 +921,13 @@ export function App() {
                       playClickSound();
                       setMobileHostQuizView('controls');
                     }}
-                    className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
+                    className={`flex-1 py-2 rounded-xl flex items-center justify-center space-x-1.5 uppercase transition-all cursor-pointer ${
                       mobileHostQuizView === 'controls'
-                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-ink text-paper shadow-xs'
+                        : 'text-muted hover:text-ink'
                     }`}
                   >
-                    <Layers className="w-3.5 h-3.5" />
+                    <Layers className="w-3.5 h-3.5 text-orange" />
                     <span>HOST CONTROLS</span>
                   </motion.button>
                 </div>
@@ -1250,17 +1243,17 @@ export function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 min-h-[64px] bg-[#0E0E11]/95 backdrop-blur-md border-t border-white/[0.08] px-1 sm:px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
+      <div className="md:hidden fixed bottom-0 inset-x-0 min-h-[64px] bg-paper/95 backdrop-blur-md border-t border-hairline px-1 sm:px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => {
             playWhoosh();
             setActiveTab('quiz');
           }}
-          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'quiz'
-              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              : 'text-zinc-400 hover:text-white border border-transparent'
+              ? 'bg-ink text-paper shadow-xs'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <Zap className="w-4 h-4 mb-0.5" />
@@ -1273,10 +1266,10 @@ export function App() {
             playWhoosh();
             setActiveTab('polls');
           }}
-          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'polls'
-              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              : 'text-zinc-400 hover:text-white border border-transparent'
+              ? 'bg-ink text-paper shadow-xs'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <Vote className="w-4 h-4 mb-0.5" />
@@ -1289,16 +1282,16 @@ export function App() {
             playWhoosh();
             setActiveTab('qa');
           }}
-          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'qa'
-              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              : 'text-zinc-400 hover:text-white border border-transparent'
+              ? 'bg-ink text-paper shadow-xs'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <HelpCircle className="w-4 h-4 mb-0.5" />
           <span>Q&A</span>
           {filteredQuestions.length > 0 && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-[#0E0E11] animate-pulse" />
+            <span className="absolute top-1 right-2 w-2 h-2 bg-orange rounded-full ring-2 ring-paper animate-pulse" />
           )}
         </motion.button>
 
@@ -1308,16 +1301,16 @@ export function App() {
             playWhoosh();
             setActiveTab('surveys');
           }}
-          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'surveys'
-              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              : 'text-zinc-400 hover:text-white border border-transparent'
+              ? 'bg-ink text-paper shadow-xs'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <ClipboardList className="w-4 h-4 mb-0.5" />
           <span>SURVEYS</span>
           {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
-            <span className="absolute top-1 right-2 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-[#0E0E11] animate-pulse" />
+            <span className="absolute top-1 right-2 w-2 h-2 bg-orange rounded-full ring-2 ring-paper animate-pulse" />
           )}
         </motion.button>
 
@@ -1327,10 +1320,10 @@ export function App() {
             playWhoosh();
             setActiveTab('leaderboard');
           }}
-          className={`flex-1 py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'leaderboard'
-              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-              : 'text-zinc-400 hover:text-white border border-transparent'
+              ? 'bg-ink text-paper shadow-xs'
+              : 'text-muted hover:text-ink'
           }`}
         >
           <Trophy className="w-4 h-4 mb-0.5" />
@@ -1462,32 +1455,32 @@ export function App() {
 
       {/* Official Host Warning Modal */}
       {officialWarning && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
-          <div className="bg-[#121215] text-[#FAFAFA] border border-amber-500/30 rounded-2xl shadow-modal p-6 max-w-md w-full font-mono">
-            <div className="w-12 h-12 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-paper text-ink border-2 border-orange rounded-3xl shadow-2xl p-6 max-w-md w-full font-mono">
+            <div className="w-12 h-12 bg-orange/15 text-orange border border-orange/30 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 stroke-[2]" />
             </div>
             <div className="text-center">
-              <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-400 font-bold text-[10px] uppercase tracking-wider rounded-full border border-amber-500/20">
+              <span className="px-3 py-1 bg-orange/15 text-orange font-bold text-[10px] uppercase tracking-wider rounded-full border border-orange/30">
                 OFFICIAL HOST DIRECTIVE
               </span>
-              <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA] mt-3">
+              <h2 className="text-xl font-display font-bold uppercase tracking-tight text-ink mt-3">
                 WARNING ISSUED BY {officialWarning.issuedBy || 'HOST'}
               </h2>
-              <p className="text-xs text-zinc-300 font-sans mt-3 leading-relaxed bg-[#0A0A0C] p-3.5 rounded-xl border border-white/[0.08]">
+              <p className="text-xs text-ink/80 font-sans mt-3 leading-relaxed bg-paper-card p-4 rounded-2xl border border-hairline">
                 {officialWarning.message}
               </p>
-              <p className="text-[11px] text-amber-400 font-semibold mt-2 font-mono uppercase">
+              <p className="text-[11px] text-orange font-semibold mt-3 font-mono uppercase">
                 Continued guideline violations will trigger an automatic mute or room ejection.
               </p>
             </div>
-            <div className="mt-5">
+            <div className="mt-6">
               <button
                 onClick={() => {
                   playClickSound();
                   dismissOfficialWarning();
                 }}
-                className="w-full py-2.5 btn-cobalt font-mono text-xs font-bold uppercase rounded-xl cursor-pointer"
+                className="w-full py-3 btn-noma-orange font-mono text-xs font-bold uppercase rounded-xl cursor-pointer"
               >
                 I UNDERSTAND & AGREE
               </button>
@@ -1498,25 +1491,25 @@ export function App() {
 
       {/* Fullscreen Banned Notice Screen */}
       {isBanned && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 font-sans select-text">
-          <div className="bg-[#121215] text-[#FAFAFA] border border-red-500/30 rounded-2xl shadow-modal p-6 max-w-md w-full font-mono text-center">
-            <div className="w-12 h-12 bg-red-500/10 text-red-400 border border-red-500/30 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 font-sans select-text">
+          <div className="bg-paper text-ink border-2 border-red-500 rounded-3xl shadow-2xl p-6 max-w-md w-full font-mono text-center">
+            <div className="w-12 h-12 bg-red-500/10 text-red-500 border border-red-500/30 rounded-2xl mx-auto mb-4 flex items-center justify-center">
               <UserX className="w-6 h-6 stroke-[2]" />
             </div>
-            <h2 className="text-lg font-display font-extrabold uppercase tracking-tight text-[#FAFAFA]">
+            <h2 className="text-xl font-display font-bold uppercase tracking-tight text-ink">
               ROOM ACCESS BANNED
             </h2>
-            <p className="text-xs text-zinc-400 font-sans mt-2 leading-relaxed">
+            <p className="text-xs text-muted font-sans mt-2 leading-relaxed">
               {banNotice || `You have been removed and banned from Room ${room.code} by the host for repeated policy violations.`}
             </p>
-            <div className="mt-5">
+            <div className="mt-6">
               <button
                 onClick={() => {
                   dismissBanNotice();
                   handleSignOut();
                   window.location.href = window.location.pathname;
                 }}
-                className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase rounded-xl transition-colors cursor-pointer"
+                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-bold uppercase rounded-xl transition-colors cursor-pointer"
               >
                 RETURN TO HOME
               </button>
