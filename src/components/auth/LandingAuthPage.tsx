@@ -192,7 +192,7 @@ export const LandingAuthPage: React.FC<LandingAuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between bg-paper text-ink font-sans selection:bg-lime selection:text-ink overflow-x-hidden">
+    <div className="h-full min-h-0 flex-1 w-full flex flex-col justify-between bg-paper text-ink font-sans selection:bg-lime selection:text-ink overflow-y-auto overflow-x-hidden">
       {/* Top Editorial Ticker Ribbon */}
       <div className="w-full bg-ink text-paper py-2 overflow-hidden border-b border-hairline font-mono text-[11px] font-bold tracking-widest uppercase select-none">
         <div className="marquee">

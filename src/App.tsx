@@ -641,7 +641,7 @@ export function App() {
 
   // Once authenticated (or signed in as guest), show the Live Arena
   return (
-    <div className="h-screen w-full max-w-full flex flex-col bg-paper text-ink overflow-hidden font-sans select-none">
+    <div className="h-dvh max-h-dvh w-full max-w-full flex flex-col bg-paper text-ink overflow-hidden font-sans select-none">
       {/* Top Header */}
       <AppHeader
         room={room}
@@ -842,7 +842,7 @@ export function App() {
       </AnimatePresence>
 
       {/* Desktop Sidebar + Main Content Layout Area */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
         <AppSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -864,7 +864,7 @@ export function App() {
         />
 
         {/* Main Content Area with Framer Motion Spring Transitions */}
-        <main className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden relative p-2.5 sm:p-4 md:p-6 pb-36 sm:pb-40 md:pb-12 overscroll-y-contain">
+        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden relative p-3 sm:p-4 md:p-6 pb-56 sm:pb-60 md:pb-16 overscroll-y-contain">
         <AnimatePresence mode="wait">
           {/* TAB 1: Live Quiz Arena */}
           {activeTab === 'quiz' && (
