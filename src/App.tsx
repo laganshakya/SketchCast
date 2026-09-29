@@ -22,7 +22,8 @@ import { FloatingReactionsOverlay } from './components/common/FloatingReactionsO
 import type { VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
 
 // Dynamic lazy-loaded modals and admin views for minimal initial bundle
-const RoomsAdminView = lazy(() => import('./components/rooms/RoomsAdminView').then((m) => ({ default: m.RoomsAdminView })));
+const RoomSettingsView = lazy(() => import('./components/rooms/RoomSettingsView').then((m) => ({ default: m.RoomSettingsView })));
+const UserSettingsView = lazy(() => import('./components/profile/UserSettingsView').then((m) => ({ default: m.UserSettingsView })));
 const ChangeRoomModal = lazy(() => import('./components/rooms/ChangeRoomModal').then((m) => ({ default: m.ChangeRoomModal })));
 const ActiveAttendeesModal = lazy(() => import('./components/common/ActiveAttendeesModal').then((m) => ({ default: m.ActiveAttendeesModal })));
 const AISettingsView = lazy(() => import('./components/common/AISettingsView').then((m) => ({ default: m.AISettingsView })));
@@ -35,7 +36,7 @@ import { playWhoosh, playClickSound, playPopSound, playSuccessFanfare, setAudioP
 
 import { isUserRoomAdmin, dbFetchRooms, isRoomCreatedByMe } from './lib/supabase';
 import { generateRemediationPoll } from './lib/meshApi';
-import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster } from './types';
+import type { ChampionSocialCardData, LeaderboardEntry, QuestionCluster, Room } from './types';
 import { Zap, Vote, HelpCircle, Trophy, Layers, Sparkles, X, ShieldAlert, VolumeX, UserX, AlertTriangle, RotateCcw, ClipboardList } from 'lucide-react';
 
 function parseVerificationUrl(): VerifiedCertPayload | null {
@@ -100,6 +101,7 @@ export function App() {
     userRole,
     setUserRole,
     room,
+    setRoom,
     activeTab,
     setActiveTab,
     attendees,
@@ -150,6 +152,7 @@ export function App() {
     advanceAdaptiveQuestionNow,
     adaptiveCampaign,
     extendQuestionTime,
+    clearActiveQuizRound,
   } = useQuizEngine({
     channelManager,
     sessionId,
@@ -536,13 +539,15 @@ export function App() {
       // ignore
     }
 
+    clearActiveQuizRound({ isFinished: true });
+
     if (channelManager) {
       channelManager.broadcast('quiz_completed', {
         roomId: room.code,
         completedAt: Date.now(),
       });
     }
-  }, [channelManager, room.code, setActiveTab]);
+  }, [channelManager, clearActiveQuizRound, room.code, setActiveTab]);
 
   // Host action: Launch next queued question in sequence or advance adaptive challenge
   const handleNextQuestion = useCallback(() => {
@@ -601,6 +606,7 @@ export function App() {
     if (!channelManager) return;
     const unQuizCompleted = channelManager.on('quiz_completed', (payload) => {
       if (payload.roomId.toUpperCase().trim() === room.code.toUpperCase().trim()) {
+        clearActiveQuizRound({ isFinished: true });
         setActiveTab('leaderboard');
         playSuccessFanfare();
         try {
@@ -618,7 +624,7 @@ export function App() {
     return () => {
       unQuizCompleted();
     };
-  }, [channelManager, room.code, setActiveTab]);
+  }, [channelManager, clearActiveQuizRound, room.code, setActiveTab]);
 
   const handleOpenSocialCard = (entry: LeaderboardEntry, rank: number) => {
     const isMe =
@@ -947,6 +953,7 @@ export function App() {
                   onRevealAnswer={revealAnswer}
                   onNextQuestion={handleNextQuestion}
                   hasNextQuestion={hasNextQuestion}
+                  onClearActiveQuiz={() => clearActiveQuizRound({ isFinished: false })}
                   onViewScores={() => setActiveTab('leaderboard')}
                   isHost={userRole === 'host'}
                   autoAdvanceCountdown={autoAdvanceCountdown}
@@ -971,6 +978,9 @@ export function App() {
                     createPoll(poll.question, poll.options);
                     setActiveTab('polls');
                   }}
+                  roomCode={room.code}
+                  roomTitle={room.title}
+                  sponsorCTA={room.sponsor_cta}
                 />
               </div>
 
@@ -988,6 +998,7 @@ export function App() {
                     isRevealed={quizState.isRevealed}
                     roomCode={room.code}
                     onOpenAISettings={() => setActiveTab('ai-settings')}
+                    onClearActiveQuiz={clearActiveQuizRound}
                   />
                 </div>
               )}
@@ -1064,6 +1075,9 @@ export function App() {
                 currentUserName={userName}
                 onExportCard={handleOpenSocialCard}
                 onOpenCertificate={() => setIsCertificateModalOpen(true)}
+                roomCode={room.code}
+                roomTitle={room.title}
+                sponsorCTA={room.sponsor_cta}
               />
             </motion.div>
           )}
@@ -1105,7 +1119,7 @@ export function App() {
             </motion.div>
           )}
 
-          {/* TAB 6: Rooms Admin Management */}
+          {/* TAB 6: Current Room Settings */}
           {activeTab === 'rooms' && (
             <motion.div
               key="tab-rooms"
@@ -1115,17 +1129,71 @@ export function App() {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="flex-1 flex flex-col overflow-y-auto"
             >
-              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Rooms Admin...</div>}>
-                <RoomsAdminView
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Room Settings...</div>}>
+                <RoomSettingsView
+                  room={room}
+                  onUpdateRoomTitle={(newTitle) => {
+                    setRoom((prev: Room) => ({ ...prev, title: newTitle }));
+                  }}
+                  onUpdateRoomAdmins={(newAdmins) => {
+                    setRoom((prev: Room) => ({ ...prev, admins: newAdmins }));
+                  }}
+                  onUpdateRoomSponsor={(cta) => {
+                    setRoom((prev: Room) => ({ ...prev, sponsor_cta: cta }));
+                  }}
+                  onOpenQRCode={() => handleOpenQRForRoom(room.code, room.title)}
+                  onOpenChangeRoom={() => setIsChangeRoomModalOpen(true)}
+                  onDeleteCurrentRoom={async () => {
+                    const fallbackCode = 'SKT-789';
+                    await handleSwitchRoom(fallbackCode);
+                  }}
+                  onResetRoomState={() => {
+                    try {
+                      const cleanCode = room.code.toUpperCase().trim();
+                      localStorage.removeItem(`sketchcast_host_quiz_queue_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_surveys_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_survey_responses_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_active_quiz_round_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_quiz_user_answers_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_host_quiz_completed_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_polls_${cleanCode}`);
+                      localStorage.removeItem(`sketchcast_session_report_${cleanCode}`);
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  isHost={isHostOrAdmin}
+                  currentUser={currentUser}
+                  userName={userName}
+                />
+              </Suspense>
+            </motion.div>
+          )}
+
+          {/* TAB 6.5: User Settings & Affiliate Monetization Hub */}
+          {activeTab === 'user-settings' && (
+            <motion.div
+              key="tab-user-settings"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="flex-1 flex flex-col overflow-y-auto"
+            >
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8 font-mono text-xs text-slate-400">Loading Profile & User Settings...</div>}>
+                <UserSettingsView
+                  userName={userName}
+                  setUserName={setUserName}
+                  userRole={userRole}
+                  setUserRole={setUserRole}
+                  currentUser={currentUser}
+                  sessionId={sessionId}
                   currentRoomCode={room.code}
                   onSwitchRoom={handleSwitchRoom}
                   onOpenQRCodeForRoom={handleOpenQRForRoom}
-                  onOpenAISummary={() => setActiveTab('session-report')}
-                  onOpenAISettings={() => setActiveTab('ai-settings')}
-                  userName={userName}
-                  currentUser={currentUser}
-                  isHost={isHostOrAdmin}
-                  hasGeneratedReport={Boolean(sessionReport)}
+                  onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                  onSignOut={handleSignOut}
+                  onNavigateToRoomSettings={() => setActiveTab('rooms')}
                 />
               </Suspense>
             </motion.div>
@@ -1172,6 +1240,7 @@ export function App() {
                   userPollVotes={userVotes}
                   onReportGenerated={handlePublishReport}
                   onOpenAISettings={() => setActiveTab('ai-settings')}
+                  sponsorCTA={room.sponsor_cta}
                 />
               </Suspense>
             </motion.div>
@@ -1333,7 +1402,7 @@ export function App() {
           currentRoomCode={room.code}
           currentUser={currentUser}
           userName={userName}
-          onOpenRoomsHub={() => setActiveTab('rooms')}
+          onOpenRoomsHub={() => setActiveTab('user-settings')}
         />
 
         <ActiveAttendeesModal
@@ -1378,6 +1447,7 @@ export function App() {
           score={myLeaderboardEntry ? myLeaderboardEntry.correct_quizzes * 100 : 0}
           correctQuizzes={myLeaderboardEntry?.correct_quizzes || 0}
           hostName={resolvedHostName}
+          sponsorCTA={room.sponsor_cta}
         />
 
         {/* Public Verified Certificate Modal */}

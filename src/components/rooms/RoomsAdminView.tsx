@@ -19,11 +19,21 @@ import {
   Shield,
   Bot,
   FileText,
+  BadgePercent,
+  TrendingUp,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { Room } from '../../types';
+import type { Room, SponsorCTA } from '../../types';
 import type { User } from '@supabase/supabase-js';
-import { dbFetchRooms, dbCreateRoom, dbDeleteRoom, dbUpdateRoomAdmins, isUserRoomAdmin } from '../../lib/supabase';
+import {
+  dbFetchRooms,
+  dbCreateRoom,
+  dbDeleteRoom,
+  dbUpdateRoomAdmins,
+  isUserRoomAdmin,
+  dbUpdateRoomSponsorCTA,
+  dbFetchAffiliateAnalytics,
+} from '../../lib/supabase';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
 
 interface RoomsAdminViewProps {
@@ -36,6 +46,7 @@ interface RoomsAdminViewProps {
   currentUser?: User | null;
   isHost?: boolean;
   hasGeneratedReport?: boolean;
+  onRoomSponsorUpdated?: (roomCode: string, cta: SponsorCTA | null) => void;
 }
 
 export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
@@ -48,6 +59,7 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   currentUser,
   isHost = false,
   hasGeneratedReport = false,
+  onRoomSponsorUpdated,
 }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -58,6 +70,105 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
   // Manage Admins Modal State
   const [editingAdminsRoom, setEditingAdminsRoom] = useState<Room | null>(null);
   const [newAdminInput, setNewAdminInput] = useState('');
+
+  // Sponsor CTA Modal State
+  const [editingSponsorRoom, setEditingSponsorRoom] = useState<Room | null>(null);
+  const [sponsorEnabled, setSponsorEnabled] = useState(false);
+  const [sponsorName, setSponsorName] = useState('');
+  const [sponsorTitle, setSponsorTitle] = useState('');
+  const [sponsorDescription, setSponsorDescription] = useState('');
+  const [sponsorCtaText, setSponsorCtaText] = useState('Learn More');
+  const [sponsorCtaUrl, setSponsorCtaUrl] = useState('');
+  const [sponsorDiscountCode, setSponsorDiscountCode] = useState('');
+  const [sponsorOverrideDefault, setSponsorOverrideDefault] = useState(true);
+  const [isSavingSponsor, setIsSavingSponsor] = useState(false);
+
+  // Affiliate Telemetry Modal State
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const [analyticsList, setAnalyticsList] = useState<Array<{ id: string; provider: string; title: string; clicks: number; impressions: number; ctr: number }>>([]);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+  const handleOpenSponsorModal = (room: Room) => {
+    setEditingSponsorRoom(room);
+    const existing = room.sponsor_cta;
+    if (existing) {
+      setSponsorEnabled(Boolean(existing.enabled));
+      setSponsorName(existing.sponsorName || '');
+      setSponsorTitle(existing.title || '');
+      setSponsorDescription(existing.description || '');
+      setSponsorCtaText(existing.ctaText || 'Learn More');
+      setSponsorCtaUrl(existing.ctaUrl || '');
+      setSponsorDiscountCode(existing.discountCode || '');
+      setSponsorOverrideDefault(existing.overrideDefault ?? true);
+    } else {
+      setSponsorEnabled(false);
+      setSponsorName('');
+      setSponsorTitle('');
+      setSponsorDescription('');
+      setSponsorCtaText('Learn More');
+      setSponsorCtaUrl('');
+      setSponsorDiscountCode('');
+      setSponsorOverrideDefault(true);
+    }
+  };
+
+  const handleSaveSponsor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSponsorRoom) return;
+    setIsSavingSponsor(true);
+    playClickSound();
+
+    const ctaPayload: SponsorCTA = {
+      enabled: sponsorEnabled,
+      sponsorName: sponsorName.trim(),
+      title: sponsorTitle.trim(),
+      description: sponsorDescription.trim(),
+      ctaText: sponsorCtaText.trim() || 'Learn More',
+      ctaUrl: sponsorCtaUrl.trim(),
+      discountCode: sponsorDiscountCode.trim() || undefined,
+      overrideDefault: sponsorOverrideDefault,
+    };
+
+    await dbUpdateRoomSponsorCTA(editingSponsorRoom.code, ctaPayload);
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.code === editingSponsorRoom.code ? { ...r, sponsor_cta: ctaPayload } : r
+      )
+    );
+    onRoomSponsorUpdated?.(editingSponsorRoom.code, ctaPayload);
+    setIsSavingSponsor(false);
+    setEditingSponsorRoom(null);
+    playPopSound();
+  };
+
+  const handleClearSponsor = async () => {
+    if (!editingSponsorRoom) return;
+    setIsSavingSponsor(true);
+    playWhoosh();
+    await dbUpdateRoomSponsorCTA(editingSponsorRoom.code, null);
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.code === editingSponsorRoom.code ? { ...r, sponsor_cta: undefined } : r
+      )
+    );
+    onRoomSponsorUpdated?.(editingSponsorRoom.code, null);
+    setIsSavingSponsor(false);
+    setEditingSponsorRoom(null);
+  };
+
+  const handleOpenAnalytics = async () => {
+    setIsAnalyticsModalOpen(true);
+    setIsLoadingAnalytics(true);
+    playClickSound();
+    try {
+      const data = await dbFetchAffiliateAnalytics();
+      setAnalyticsList(data);
+    } catch {
+      setAnalyticsList([]);
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
+  };
 
   const loadRooms = useCallback(async () => {
     const remoteRooms = await dbFetchRooms();
@@ -313,6 +424,19 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
+              onClick={handleOpenAnalytics}
+              className="px-3.5 py-2 rounded-xl text-xs font-medium border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+              title="View Real-Time Affiliate & Sponsor Telemetry"
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Partner Telemetry</span>
+            </motion.button>
+          )}
+
+          {isHost && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => {
                 playClickSound();
                 handleOpenCreateModal();
@@ -396,6 +520,12 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                           <span>Active</span>
                         </span>
                       )}
+                      {r.sponsor_cta?.enabled && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-medium border border-emerald-500/20 flex items-center gap-1">
+                          <BadgePercent className="w-2.5 h-2.5 text-emerald-400" />
+                          <span>Sponsor</span>
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-1">
@@ -426,6 +556,23 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playClickSound();
+                          handleOpenSponsorModal(r);
+                        }}
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                          r.sponsor_cta?.enabled
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border-white/[0.06]'
+                        }`}
+                        title={r.sponsor_cta?.enabled ? `Sponsor Active: ${r.sponsor_cta.sponsorName || 'Custom CTA'}` : 'Configure Room Sponsor CTA'}
+                      >
+                        <BadgePercent className="w-3.5 h-3.5" />
                       </motion.button>
                       {rooms.length > 1 && (
                         <motion.button
@@ -767,6 +914,330 @@ export const RoomsAdminView: React.FC<RoomsAdminViewProps> = ({
                 >
                   Done
                 </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal: Room Sponsor & Monetization Settings */}
+        {editingSponsorRoom && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+            onClick={() => setEditingSponsorRoom(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#121216] border border-white/[0.1] rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 my-8 shadow-2xl relative"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                    <BadgePercent className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white">
+                      Room Sponsor & Monetization
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 font-mono">
+                      Target Room: <span className="text-blue-400 font-semibold">{editingSponsorRoom.code}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingSponsorRoom(null)}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveSponsor} className="space-y-3.5">
+                {/* Enable Sponsor Toggle */}
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-white">Activate Custom Sponsor CTA</div>
+                    <div className="text-[10px] text-zinc-400">
+                      Show your custom sponsor on takeaways, leaderboard, certificate, and reports
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sponsorEnabled}
+                      onChange={(e) => setSponsorEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                      Sponsor / Brand Name
+                    </label>
+                    <input
+                      type="text"
+                      value={sponsorName}
+                      onChange={(e) => setSponsorName(e.target.value)}
+                      placeholder="e.g. Supabase, Docker, Acme Corp"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                      Button Text
+                    </label>
+                    <input
+                      type="text"
+                      value={sponsorCtaText}
+                      onChange={(e) => setSponsorCtaText(e.target.value)}
+                      placeholder="e.g. Claim Offer, Learn More"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                    Headline / Campaign Title
+                  </label>
+                  <input
+                    type="text"
+                    value={sponsorTitle}
+                    onChange={(e) => setSponsorTitle(e.target.value)}
+                    placeholder="e.g. Accelerate Your Backend with Serverless Postgres"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                    Value Proposition / Pitch Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={sponsorDescription}
+                    onChange={(e) => setSponsorDescription(e.target.value)}
+                    placeholder="e.g. Get $50 in free cloud hosting credits when you start your next prototype."
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                      Destination URL
+                    </label>
+                    <input
+                      type="url"
+                      value={sponsorCtaUrl}
+                      onChange={(e) => setSponsorCtaUrl(e.target.value)}
+                      placeholder="https://sponsor.com/?ref=sketchcast"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-zinc-300 block mb-1">
+                      Promo / Discount Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={sponsorDiscountCode}
+                      onChange={(e) => setSponsorDiscountCode(e.target.value)}
+                      placeholder="e.g. SKETCHCAST20"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/[0.08] text-white text-xs placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 uppercase font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Priority Override Toggle */}
+                <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-between">
+                  <div className="pr-2">
+                    <span className="text-[11px] font-semibold text-zinc-300 block">Override Platform Recommendations</span>
+                    <span className="text-[10px] text-zinc-500 block">
+                      Prioritizes your custom sponsor over generic platform affiliate links in this room
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={sponsorOverrideDefault}
+                    onChange={(e) => setSponsorOverrideDefault(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 bg-zinc-900 border-zinc-700"
+                  />
+                </div>
+
+                {/* Modal Footer Actions */}
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
+                  {editingSponsorRoom.sponsor_cta?.enabled ? (
+                    <button
+                      type="button"
+                      disabled={isSavingSponsor}
+                      onClick={handleClearSponsor}
+                      className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/20 transition-colors cursor-pointer"
+                    >
+                      Remove Sponsor
+                    </button>
+                  ) : <div />}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSponsorRoom(null)}
+                      className="px-4 py-2 rounded-xl text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <motion.button
+                      type="submit"
+                      disabled={isSavingSponsor}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider cursor-pointer shadow-md shadow-blue-500/20 transition-all"
+                    >
+                      {isSavingSponsor ? 'Saving...' : 'Save Sponsor'}
+                    </motion.button>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal: Affiliate & Partner Telemetry Dashboard */}
+        {isAnalyticsModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+            onClick={() => setIsAnalyticsModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#121216] border border-white/[0.1] rounded-2xl max-w-2xl w-full p-5 sm:p-6 space-y-4 my-8 shadow-2xl relative max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] shrink-0">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white">
+                      Partner & Affiliate Telemetry
+                    </h3>
+                    <p className="text-[11px] text-zinc-400">
+                      Live conversion engagement & click-through metrics across masterclasses
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAnalytics}
+                    disabled={isLoadingAnalytics}
+                    className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                    title="Refresh telemetry"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAnalyticsModalOpen(false)}
+                    className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-3 gap-2.5 shrink-0">
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                  <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Total Impressions</span>
+                  <span className="text-base sm:text-lg font-bold text-white font-mono mt-0.5 block">
+                    {analyticsList.reduce((acc, item) => acc + item.impressions, 0)}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                  <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Total Clicks</span>
+                  <span className="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-0.5 block">
+                    {analyticsList.reduce((acc, item) => acc + item.clicks, 0)}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center">
+                  <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Aggregate CTR</span>
+                  <span className="text-base sm:text-lg font-bold text-blue-400 font-mono mt-0.5 block">
+                    {(() => {
+                      const totalImp = analyticsList.reduce((acc, item) => acc + item.impressions, 0);
+                      const totalClk = analyticsList.reduce((acc, item) => acc + item.clicks, 0);
+                      return totalImp > 0 ? `${(Math.round((totalClk / totalImp) * 1000) / 10).toFixed(1)}%` : '0.0%';
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Track Breakdown List */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px]">
+                {isLoadingAnalytics ? (
+                  <div className="py-12 text-center text-xs text-zinc-500 font-mono flex items-center justify-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                    <span>Loading real-time telemetry from Supabase...</span>
+                  </div>
+                ) : analyticsList.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-zinc-500">
+                    No telemetry events recorded yet. Impressions and clicks will show here in real time.
+                  </div>
+                ) : (
+                  analyticsList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-colors flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            {item.provider}
+                          </span>
+                          <span className="text-xs font-semibold text-white truncate">
+                            {item.title}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0 font-mono text-xs">
+                        <div className="text-right">
+                          <span className="text-zinc-500 text-[10px] block">Impr / Clicks</span>
+                          <span className="text-zinc-300 font-semibold">{item.impressions} / <strong className="text-emerald-400">{item.clicks}</strong></span>
+                        </div>
+                        <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs text-center min-w-[54px]">
+                          {item.ctr}%
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between shrink-0 text-[11px] text-zinc-500">
+                <span>FTC & EU disclosure compliant referral engine</span>
+                <button
+                  type="button"
+                  onClick={() => setIsAnalyticsModalOpen(false)}
+                  className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium cursor-pointer transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </motion.div>
           </motion.div>

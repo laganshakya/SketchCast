@@ -671,3 +671,240 @@ create policy "sketchcast_storage_read" on storage.objects for select using (buc
 create policy "sketchcast_storage_insert" on storage.objects for insert with check (bucket_id = 'sketchcast-assets');
 create policy "sketchcast_storage_update" on storage.objects for update using (bucket_id = 'sketchcast-assets') with check (bucket_id = 'sketchcast-assets');
 create policy "sketchcast_storage_delete" on storage.objects for delete using (bucket_id = 'sketchcast-assets');
+
+-- ==============================================================================
+-- 10. Contextual Affiliate Recommendations & Sponsor CTA
+-- ==============================================================================
+
+create table if not exists public.affiliate_recommendations (
+  id text primary key,
+  category text not null, -- 'cloud_devops' | 'frontend' | 'system_design' | 'backend' | 'ai_ml' | 'cybersecurity' | 'general'
+  keywords text[] default array[]::text[],
+  title text not null,
+  headline text not null,
+  description text,
+  provider text not null,
+  badge_text text default 'RECOMMENDED',
+  affiliate_url text not null,
+  discount_code text,
+  icon_key text default 'BookOpen',
+  theme_color text default 'blue',
+  target_placements text[] default array['quiz_takeaway', 'certificate', 'report', 'leaderboard']::text[],
+  min_difficulty text default 'any',
+  is_active boolean default true,
+  priority int default 0,
+  click_count int default 0,
+  impression_count int default 0,
+  created_at timestamptz default now()
+);
+
+-- Migration safety for rooms sponsor_cta
+alter table if exists public.rooms add column if not exists sponsor_cta jsonb default '{}'::jsonb;
+
+-- Indexes
+create index if not exists idx_affiliate_recs_category on public.affiliate_recommendations (category);
+create index if not exists idx_affiliate_recs_active on public.affiliate_recommendations (is_active, priority desc);
+
+-- RLS
+alter table public.affiliate_recommendations enable row level security;
+drop policy if exists "Allow public read access to active affiliate recommendations" on public.affiliate_recommendations;
+create policy "Allow read access to affiliate recommendations"
+  on public.affiliate_recommendations for select
+  using (true);
+
+drop policy if exists "Allow insert on affiliate recommendations" on public.affiliate_recommendations;
+create policy "Allow insert on affiliate recommendations"
+  on public.affiliate_recommendations for insert
+  with check (true);
+
+drop policy if exists "Allow update on affiliate recommendations" on public.affiliate_recommendations;
+create policy "Allow update on affiliate recommendations"
+  on public.affiliate_recommendations for update
+  using (true)
+  with check (true);
+
+drop policy if exists "Allow delete on affiliate recommendations" on public.affiliate_recommendations;
+create policy "Allow delete on affiliate recommendations"
+  on public.affiliate_recommendations for delete
+  using (true);
+
+-- RPC for atomic click counter
+create or replace function public.increment_affiliate_click(p_rec_id text)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  new_count int;
+begin
+  update public.affiliate_recommendations
+  set click_count = coalesce(click_count, 0) + 1
+  where id = p_rec_id
+  returning click_count into new_count;
+  return new_count;
+end;
+$$;
+
+-- RPC for atomic impression counter
+create or replace function public.increment_affiliate_impression(p_rec_id text)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  new_count int;
+begin
+  update public.affiliate_recommendations
+  set impression_count = coalesce(impression_count, 0) + 1
+  where id = p_rec_id
+  returning impression_count into new_count;
+  return new_count;
+end;
+$$;
+
+-- Seed initial recommendations
+insert into public.affiliate_recommendations (
+  id, category, keywords, title, headline, description, provider, badge_text, affiliate_url, discount_code, icon_key, theme_color, target_placements, min_difficulty, is_active, priority
+) values
+(
+  'rec_k8s_cka',
+  'cloud_devops',
+  array['kubernetes', 'k8s', 'docker', 'containers', 'helm', 'kubectl', 'pods', 'ingress', 'cluster', 'cloud native'],
+  'Certified Kubernetes Administrator (CKA) Hands-on Lab Path',
+  'Master Kubernetes Networking, Security & Production Clusters',
+  'Hands-on interactive lab environments preparing you for official CNCF certification.',
+  'Educative',
+  '30% OFF',
+  'https://www.educative.io/courses/certified-kubernetes-administrator?ref=sketchcast',
+  'SKETCH30',
+  'Cloud',
+  'blue',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  100
+),
+(
+  'rec_system_design',
+  'system_design',
+  array['system design', 'architecture', 'microservices', 'distributed', 'scalability', 'sharding', 'caching', 'kafka', 'load balancing', 'redis', 'high availability'],
+  'System Design Interview & High-Scale Architecture Masterclass',
+  'Architect High-Throughput Distributed Systems from Scratch',
+  'Deconstruct real-world architectures from Uber, Netflix, WhatsApp, and Stripe.',
+  'Exponent',
+  'TOP RATED',
+  'https://www.tryexponent.com/courses/system-design-interview?ref=sketchcast',
+  'EXPO20',
+  'Layers',
+  'purple',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  95
+),
+(
+  'rec_react_ts',
+  'frontend',
+  array['react', 'typescript', 'frontend', 'ui', 'hooks', 'nextjs', 'next.js', 'state management', 'virtual dom', 'tailwind', 'component', 'performance'],
+  'Advanced React Patterns, Performance & Design Systems',
+  'Elevate to Senior Frontend Engineer with Production React Patterns',
+  'Master React 19 concurrency, Server Components, memoization, and zero-runtime architecture.',
+  'Coursera',
+  'OFFICIAL CERT',
+  'https://www.coursera.org/learn/advanced-react?ref=sketchcast',
+  'REACTPRO',
+  'Code',
+  'blue',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  90
+),
+(
+  'rec_ai_ml_llm',
+  'ai_ml',
+  array['ai', 'llm', 'machine learning', 'gpt', 'genai', 'generative ai', 'transformers', 'embeddings', 'langchain', 'rag', 'deep learning', 'neural'],
+  'Generative AI & LLM Systems Engineering Path',
+  'Build Enterprise RAG, Vector Search & Autonomous Agent Systems',
+  'Production-ready LLM deployment, fine-tuning, latency optimization, and safety guardrails.',
+  'DeepLearning.AI',
+  'SPECIAL OFFER',
+  'https://www.deeplearning.ai/courses/generative-ai-with-llms?ref=sketchcast',
+  'AIPRO15',
+  'Sparkles',
+  'amber',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  85
+),
+(
+  'rec_cloud_aws',
+  'cloud_devops',
+  array['aws', 'cloud', 's3', 'lambda', 'ec2', 'iam', 'terraform', 'devops', 'ci/cd', 'infrastructure', 'vpc', 'serverless'],
+  'AWS Certified Solutions Architect & Cloud Security Track',
+  'Comprehensive Hands-on Labs for Enterprise Cloud Infrastructure',
+  'Multi-region disaster recovery, serverless pipelines, and cost-optimized infrastructure.',
+  'Whizlabs',
+  'HOT',
+  'https://www.whizlabs.com/aws-solutions-architect-associate?ref=sketchcast',
+  'CLOUD25',
+  'Cloud',
+  'amber',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  80
+),
+(
+  'rec_sql_db',
+  'backend',
+  array['sql', 'database', 'postgres', 'postgresql', 'indexes', 'query optimization', 'indexing', 'transactions', 'acid', 'nosql', 'mongodb', 'schema'],
+  'High-Performance PostgreSQL Internals & Query Optimization',
+  'Eliminate DB Bottlenecks & Scale PostgreSQL to Millions of QPS',
+  'Deep dive into explain plans, WAL logs, partition strategies, and connection pooling.',
+  'O’Reilly',
+  'BESTSELLER',
+  'https://www.oreilly.com/library/view/high-performance-postgresql?ref=sketchcast',
+  'POSTGRES',
+  'Database',
+  'emerald',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  75
+),
+(
+  'rec_cybersecurity',
+  'cybersecurity',
+  array['security', 'cybersecurity', 'xss', 'csrf', 'sql injection', 'owasp', 'penetration testing', 'auth', 'jwt', 'encryption', 'tls'],
+  'Practical Web Application Security & OWASP Defense',
+  'Defend Enterprise Apps Against Modern Exploits & Vulnerabilities',
+  'Hands-on attack and defense simulations covering OAuth2, JWT hardening, and API security.',
+  'Coursera',
+  'CERTIFIED',
+  'https://www.coursera.org/learn/web-security-owasp?ref=sketchcast',
+  'SECURE30',
+  'ShieldCheck',
+  'rose',
+  array['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+  'any',
+  true,
+  70
+)
+on conflict (id) do update set
+  category = excluded.category,
+  keywords = excluded.keywords,
+  title = excluded.title,
+  headline = excluded.headline,
+  description = excluded.description,
+  provider = excluded.provider,
+  badge_text = excluded.badge_text,
+  affiliate_url = excluded.affiliate_url,
+  discount_code = excluded.discount_code,
+  icon_key = excluded.icon_key,
+  theme_color = excluded.theme_color,
+  target_placements = excluded.target_placements,
+  min_difficulty = excluded.min_difficulty,
+  is_active = excluded.is_active,
+  priority = excluded.priority;

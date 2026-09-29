@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from '@supabase/supabase-js';
-import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence, Survey, SurveyResponse } from '../types';
+import type { Question, LivePoll, LeaderboardEntry, QuizRoundState, Room, AttendeePresence, Survey, SurveyResponse, AffiliateRecommendation, SponsorCTA } from '../types';
 
 const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://rkwrlyjdntwgvzgfxphv.supabase.co';
 const supabaseAnonKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrd3JseWpkbnR3Z3Z6Z2Z4cGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNzU5NzYsImV4cCI6MjEwMjk1MTk3Nn0.sqkO1wWH-g1RW6osbLaZN-1QXeKnTtfcgjxxcIL4q8k';
@@ -552,13 +552,14 @@ export async function dbFetchActiveQuizRound(roomId: string): Promise<QuizRoundS
       .from('quiz_rounds')
       .select('*')
       .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`)
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (error || !data || data.length === 0) return null;
     const round = data[0];
     return {
-      isActive: round.is_active,
+      isActive: Boolean(round.is_active),
       question: round.question_data,
       endTime: round.end_time ? Number(round.end_time) : null,
       totalSeconds: round.question_data?.timeLimitSeconds || 25,
@@ -573,6 +574,44 @@ export async function dbFetchActiveQuizRound(roomId: string): Promise<QuizRoundS
     };
   } catch {
     return null;
+  }
+}
+
+export async function dbClearActiveQuizRound(roomId: string, roundId?: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const targetKey = roomId.toUpperCase().trim();
+    let query = supabase
+      .from('quiz_rounds')
+      .update({ is_active: false, auto_advance_at: null })
+      .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`);
+
+    if (roundId) {
+      query = query.eq('id', roundId);
+    }
+    const { error } = await query;
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbDeleteQuizRound(roomId: string, roundId?: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const targetKey = roomId.toUpperCase().trim();
+    let query = supabase
+      .from('quiz_rounds')
+      .delete()
+      .or(`room_id.eq.${targetKey},room_id.eq.room-${targetKey}`);
+
+    if (roundId) {
+      query = query.eq('id', roundId);
+    }
+    const { error } = await query;
+    return !error;
+  } catch {
+    return false;
   }
 }
 
@@ -1102,3 +1141,307 @@ export async function dbInsertSurveyResponse(response: SurveyResponse) {
     // ignore
   }
 }
+
+// ================= CONTEXTUAL AFFILIATE & SPONSOR RECOMMENDATIONS =================
+let cachedRecommendations: AffiliateRecommendation[] | null = null;
+let lastAffiliateFetchTime = 0;
+
+export async function dbFetchAffiliateRecommendations(): Promise<AffiliateRecommendation[]> {
+  // Use memory cache for 60 seconds to avoid repeated queries
+  const now = Date.now();
+  if (cachedRecommendations && now - lastAffiliateFetchTime < 60000) {
+    return cachedRecommendations;
+  }
+
+  // 1. Try local storage cache
+  try {
+    const stored = localStorage.getItem('sketchcast_affiliate_recs');
+    if (stored) {
+      cachedRecommendations = JSON.parse(stored);
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Fetch fresh from Supabase
+  if (!supabase) {
+    return cachedRecommendations || [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('affiliate_recommendations')
+      .select('*')
+      .eq('is_active', true)
+      .order('priority', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      cachedRecommendations = [];
+      try {
+        localStorage.removeItem('sketchcast_affiliate_recs');
+      } catch {
+        // ignore
+      }
+      return [];
+    }
+
+    const parsed: AffiliateRecommendation[] = data.map((row: any) => ({
+      id: row.id,
+      category: row.category,
+      keywords: row.keywords || [],
+      title: row.title,
+      headline: row.headline,
+      description: row.description || '',
+      provider: row.provider,
+      badge_text: row.badge_text || 'RECOMMENDED',
+      affiliate_url: row.affiliate_url,
+      discount_code: row.discount_code || undefined,
+      icon_key: row.icon_key || 'BookOpen',
+      theme_color: row.theme_color || 'blue',
+      target_placements: row.target_placements || ['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+      min_difficulty: row.min_difficulty || 'any',
+      is_active: row.is_active,
+      priority: row.priority || 0,
+      click_count: row.click_count || 0,
+      impression_count: row.impression_count || 0,
+    }));
+
+    cachedRecommendations = parsed;
+    lastAffiliateFetchTime = now;
+    try {
+      localStorage.setItem('sketchcast_affiliate_recs', JSON.stringify(parsed));
+    } catch {
+      // ignore
+    }
+    return parsed;
+  } catch {
+    return cachedRecommendations || [];
+  }
+}
+
+// Debounce map for impressions so we don't spam database
+const pendingImpressionTimers = new Map<string, number>();
+
+export function dbRecordAffiliateImpression(recId: string) {
+  if (!recId || recId === 'host_sponsor_cta') return;
+
+  // Track locally
+  try {
+    const key = `sketchcast_aff_imp_${recId}`;
+    const curr = parseInt(localStorage.getItem(key) || '0', 10);
+    localStorage.setItem(key, String(curr + 1));
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return;
+
+  // Debounce impressions per recommendation ID (2.5 seconds window)
+  if (pendingImpressionTimers.has(recId)) return;
+
+  const timer = window.setTimeout(async () => {
+    pendingImpressionTimers.delete(recId);
+    try {
+      await supabase.rpc('increment_affiliate_impression', { p_rec_id: recId });
+    } catch {
+      // silent fallback
+    }
+  }, 2500);
+
+  pendingImpressionTimers.set(recId, timer);
+}
+
+export async function dbRecordAffiliateClick(recId: string): Promise<void> {
+  if (!recId || recId === 'host_sponsor_cta') return;
+
+  // Track locally
+  try {
+    const key = `sketchcast_aff_click_${recId}`;
+    const curr = parseInt(localStorage.getItem(key) || '0', 10);
+    localStorage.setItem(key, String(curr + 1));
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return;
+
+  try {
+    await supabase.rpc('increment_affiliate_click', { p_rec_id: recId });
+  } catch {
+    // silent fallback
+  }
+}
+
+export async function dbUpdateRoomSponsorCTA(roomCode: string, cta: SponsorCTA | null): Promise<void> {
+  const targetKey = roomCode.toUpperCase().trim();
+
+  // Save to local storage for instant sync
+  try {
+    const key = `sketchcast_room_sponsor_cta_${targetKey}`;
+    if (cta) {
+      localStorage.setItem(key, JSON.stringify(cta));
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore
+  }
+
+  if (!supabase) return;
+
+  try {
+    await supabase
+      .from('rooms')
+      .update({ sponsor_cta: cta || {} })
+      .or(`code.eq.${targetKey},id.eq.room-${targetKey}`);
+  } catch {
+    // fallback
+  }
+}
+
+export async function dbFetchAffiliateAnalytics(): Promise<Array<{ id: string; provider: string; title: string; clicks: number; impressions: number; ctr: number }>> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('affiliate_recommendations')
+      .select('id, provider, title, click_count, impression_count')
+      .order('click_count', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((d: any) => {
+      const clicks = d.click_count || 0;
+      const impressions = d.impression_count || 0;
+      const ctr = impressions > 0 ? Math.round((clicks / impressions) * 1000) / 10 : 0;
+      return {
+        id: d.id,
+        provider: d.provider,
+        title: d.title,
+        clicks,
+        impressions,
+        ctr,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function dbUpdateRoomTitle(roomCode: string, title: string): Promise<boolean> {
+  const targetKey = roomCode.toUpperCase().trim();
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('rooms')
+      .update({ title })
+      .or(`code.eq.${targetKey},id.eq.room-${targetKey}`);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbFetchAllAffiliateRecommendations(): Promise<AffiliateRecommendation[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('affiliate_recommendations')
+      .select('*')
+      .order('priority', { ascending: false });
+
+    if (error || !data) return [];
+    return data as AffiliateRecommendation[];
+  } catch {
+    return [];
+  }
+}
+
+export async function dbCreateAffiliateRecommendation(rec: AffiliateRecommendation): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('affiliate_recommendations')
+      .insert({
+        id: rec.id,
+        category: rec.category,
+        keywords: rec.keywords || [],
+        title: rec.title,
+        headline: rec.headline,
+        description: rec.description || null,
+        provider: rec.provider,
+        badge_text: rec.badge_text || 'OFFICIAL CERT',
+        affiliate_url: rec.affiliate_url,
+        discount_code: rec.discount_code || null,
+        icon_key: rec.icon_key || 'award',
+        theme_color: rec.theme_color || 'blue',
+        target_placements: rec.target_placements || ['quiz_takeaway', 'certificate', 'report', 'leaderboard'],
+        min_difficulty: rec.min_difficulty || 'any',
+        is_active: rec.is_active ?? true,
+        priority: rec.priority || 5,
+        click_count: 0,
+        impression_count: 0,
+        created_at: new Date().toISOString(),
+      });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbUpdateAffiliateRecommendation(
+  id: string,
+  updates: Partial<AffiliateRecommendation>
+): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const payload: any = { ...updates };
+    delete payload.id;
+    delete payload.created_at;
+    const { error } = await supabase
+      .from('affiliate_recommendations')
+      .update(payload)
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbDeleteAffiliateRecommendation(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('affiliate_recommendations')
+      .delete()
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbToggleAffiliateActive(id: string, isActive: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('affiliate_recommendations')
+      .update({ is_active: isActive })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function dbResetAffiliateTelemetry(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('affiliate_recommendations')
+      .update({ click_count: 0, impression_count: 0 })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+

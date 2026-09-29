@@ -19,6 +19,7 @@ import {
   dbFetchActiveQuizRound,
   dbSaveActiveQuizRound,
   dbUpdateQuizRoundReveal,
+  dbClearActiveQuizRound,
 } from '../lib/supabase';
 
 export const DIFFICULTY_TIERS: DifficultyTier[] = ['Junior', 'Mid', 'Senior', 'Principal'];
@@ -108,7 +109,9 @@ export function useQuizEngine({
       const stored = localStorage.getItem(quizStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored) as QuizRoundState;
-        return parsed;
+        if (parsed && parsed.isActive && parsed.question && !parsed.isQuizFinished) {
+          return parsed;
+        }
       }
     } catch {
       // ignore
@@ -192,7 +195,7 @@ export function useQuizEngine({
 
     // 2. Active Quiz Round from Supabase for this room
     dbFetchActiveQuizRound(currentRoomKey).then((remoteRound) => {
-      if (remoteRound && remoteRound.question) {
+      if (remoteRound && remoteRound.question && remoteRound.isActive) {
         setQuizState((prev) => {
           const isSameQuestion = prev.question?.id === remoteRound.question?.id;
           const cleanRemoteVotes = remoteRound.votesDistribution || { A: 0, B: 0, C: 0, D: 0 };
@@ -246,16 +249,34 @@ export function useQuizEngine({
     setPrevRoomKey(currentRoomKey);
     try {
       const stored = localStorage.getItem(quizStorageKey);
-      setQuizState(stored ? JSON.parse(stored) : {
-        isActive: false,
-        question: null,
-        endTime: null,
-        totalSeconds: 25,
-        isRevealed: false,
-        userSelectedOption: null,
-        isCorrect: null,
-        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
-      });
+      if (stored) {
+        const parsed = JSON.parse(stored) as QuizRoundState;
+        if (parsed && parsed.isActive && parsed.question && !parsed.isQuizFinished) {
+          setQuizState(parsed);
+        } else {
+          setQuizState({
+            isActive: false,
+            question: null,
+            endTime: null,
+            totalSeconds: 25,
+            isRevealed: false,
+            userSelectedOption: null,
+            isCorrect: null,
+            votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+          });
+        }
+      } else {
+        setQuizState({
+          isActive: false,
+          question: null,
+          endTime: null,
+          totalSeconds: 25,
+          isRevealed: false,
+          userSelectedOption: null,
+          isCorrect: null,
+          votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        });
+      }
     } catch {
       setQuizState({
         isActive: false,
@@ -294,6 +315,32 @@ export function useQuizEngine({
 
     const unQuizState = channelManager.on('quiz_round_state', (remoteState) => {
       setQuizState((prev) => {
+        // If remote state indicates round is cleared/inactive or finished, immediately clear local state
+        if (!remoteState || !remoteState.isActive || !remoteState.question || remoteState.isQuizFinished) {
+          const cleared: QuizRoundState = {
+            isActive: false,
+            question: null,
+            endTime: null,
+            totalSeconds: 25,
+            isRevealed: false,
+            userSelectedOption: null,
+            isCorrect: null,
+            votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+            autoAdvanceAt: null,
+            isAutoAdvancePaused: false,
+            autoAdvanceRemaining: 0,
+            isQuizFinished: remoteState?.isQuizFinished ?? false,
+            updatedAt: remoteState?.updatedAt || Date.now(),
+          };
+          try {
+            localStorage.setItem(quizStorageKey, JSON.stringify(cleared));
+          } catch {
+            // ignore
+          }
+          setTimeRemaining(0);
+          return cleared;
+        }
+
         // Prevent stale / out-of-order race conditions from DB polling or lagged messages
         if (prev.updatedAt && remoteState.updatedAt && remoteState.updatedAt < prev.updatedAt) {
           return prev;
@@ -1212,6 +1259,57 @@ export function useQuizEngine({
     [userRole, quizStorageKey, currentRoomKey, channelManager]
   );
 
+  const clearActiveQuizRound = useCallback(
+    (options?: { isFinished?: boolean }) => {
+      votedUsersRef.current.clear();
+      hasAutoAdvancedRef.current = false;
+      pendingAdvanceRef.current = false;
+      setAutoAdvanceCountdown(5);
+
+      setAdaptiveCampaign(null);
+      adaptiveCampaignRef.current = null;
+      try {
+        localStorage.removeItem(adaptiveCampaignStorageKey);
+      } catch {
+        // ignore
+      }
+
+      const clearedState: QuizRoundState = {
+        isActive: false,
+        question: null,
+        endTime: null,
+        totalSeconds: 25,
+        isRevealed: false,
+        userSelectedOption: null,
+        isCorrect: null,
+        votesDistribution: { A: 0, B: 0, C: 0, D: 0 },
+        autoAdvanceAt: null,
+        isAutoAdvancePaused: false,
+        autoAdvanceRemaining: 0,
+        isQuizFinished: options?.isFinished ?? false,
+        updatedAt: Date.now(),
+      };
+
+      setQuizState(clearedState);
+      setTimeRemaining(0);
+
+      try {
+        localStorage.setItem(quizStorageKey, JSON.stringify(clearedState));
+      } catch {
+        // ignore
+      }
+
+      // Persist deactivation in Supabase
+      dbClearActiveQuizRound(currentRoomKey);
+
+      // Broadcast cleared state to all peers
+      if (channelManager) {
+        channelManager.broadcast('quiz_round_state', clearedState);
+      }
+    },
+    [channelManager, currentRoomKey, quizStorageKey, adaptiveCampaignStorageKey]
+  );
+
   return {
     quizState,
     leaderboard,
@@ -1219,6 +1317,7 @@ export function useQuizEngine({
     userQuizAnswers,
     startQuizRound,
     revealAnswer,
+    clearActiveQuizRound,
     extendQuestionTime,
     selectOption,
     updateAIDeepDive,

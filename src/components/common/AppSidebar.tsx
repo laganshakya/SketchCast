@@ -5,7 +5,6 @@ import {
   Vote,
   HelpCircle,
   Trophy,
-  Layers,
   Bot,
   FileText,
   ChevronLeft,
@@ -18,6 +17,8 @@ import {
   ShieldAlert,
   ClipboardList,
   Award,
+  Sliders,
+  User,
 } from 'lucide-react';
 import type { Room, ActiveTabType } from '../../types';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -208,10 +209,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     {
       id: 'rooms' as ActiveTabType,
       type: 'tab',
-      label: 'Rooms Hub',
-      icon: Layers,
-      badge: 'HUB',
-      desc: 'Manage broadcast arenas',
+      label: 'Room Settings',
+      icon: Sliders,
+      badge: 'ROOM',
+      desc: 'Current room controls & sponsor',
       requiresHost: true,
       action: () => handleSelectTab('rooms'),
     },
@@ -556,6 +557,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                       <button
                         onClick={() => {
                           setIsCollapsedProfileOpen(false);
+                          handleSelectTab('user-settings');
+                        }}
+                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                      >
+                        <User className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Profile & Settings</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsCollapsedProfileOpen(false);
                           handleRoleToggle();
                         }}
                         className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
@@ -569,9 +581,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                           setIsCollapsedProfileOpen(false);
                           onOpenAuthModal();
                         }}
-                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
+                        className="w-full p-2 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.06] flex items-center space-x-2 text-[11px] font-bold cursor-pointer transition-colors"
                       >
-                        <Settings className="w-3.5 h-3.5 text-zinc-400" />
+                        <Settings className="w-3.5 h-3.5" />
                         <span>Account & Auth</span>
                       </button>
 
@@ -637,10 +649,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   onClick={() => {
                     playClickSound();
                     onCloseMobile();
-                    onOpenAuthModal();
+                    handleSelectTab('user-settings');
                   }}
-                  className="p-1.5 rounded-lg bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border border-white/[0.06] cursor-pointer transition-colors"
-                  title="Account Settings"
+                  className={`p-1.5 rounded-lg border cursor-pointer transition-colors ${
+                    activeTab === 'user-settings'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-xs'
+                      : 'bg-[#18181D] hover:bg-[#22222A] text-zinc-400 hover:text-white border-white/[0.06]'
+                  }`}
+                  title="Profile & User Settings (Affiliate Hub & Rooms)"
                 >
                   <Settings className="w-3.5 h-3.5" />
                 </button>

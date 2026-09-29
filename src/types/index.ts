@@ -1,6 +1,6 @@
 // Core Domain Types for SketchCast Live Voting & Quizzing
 
-export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard' | 'surveys' | 'rooms' | 'ai-settings' | 'session-report';
+export type ActiveTabType = 'quiz' | 'polls' | 'qa' | 'leaderboard' | 'surveys' | 'rooms' | 'ai-settings' | 'session-report' | 'user-settings';
 
 export interface Room {
   id: string;
@@ -11,6 +11,7 @@ export interface Room {
   host_email?: string;
   admins?: string[]; // List of co-host / admin display names or emails
   ai_model?: string; // Active or preferred AI model for the room
+  sponsor_cta?: SponsorCTA | null;
   created_at: string;
 }
 
@@ -210,4 +211,63 @@ export interface MasterclassCertificate {
   issuedAt: string;
   verificationUrl: string;
 }
+
+// --- Contextual Affiliate Recommendations & Sponsor CTA ---
+export type AffiliatePlacement = 'quiz_takeaway' | 'certificate' | 'report' | 'leaderboard';
+
+export interface SponsorCTA {
+  enabled: boolean;
+  title: string;
+  headline?: string;
+  description?: string;
+  url?: string;
+  ctaUrl?: string;
+  ctaText?: string;
+  sponsorName?: string;
+  badge?: string;
+  discountCode?: string;
+  provider?: string;
+  overrideDefault?: boolean;
+}
+
+export interface AffiliateRecommendation {
+  id: string;
+  category: 'cloud_devops' | 'frontend' | 'system_design' | 'backend' | 'ai_ml' | 'cybersecurity' | 'general' | string;
+  keywords: string[];
+  title: string;
+  headline: string;
+  description?: string;
+  provider: string;
+  badge_text: string;
+  affiliate_url: string;
+  discount_code?: string;
+  icon_key?: string;
+  theme_color?: 'blue' | 'purple' | 'amber' | 'emerald' | 'rose' | string;
+  target_placements: AffiliatePlacement[];
+  min_difficulty?: 'any' | 'junior' | 'mid' | 'senior' | 'lead';
+  is_active: boolean;
+  priority: number;
+  click_count?: number;
+  impression_count?: number;
+  created_at?: string;
+}
+
+export interface ResolvedAffiliateCardData {
+  id: string;
+  title: string;
+  headline: string;
+  description?: string;
+  provider: string;
+  badgeText: string;
+  affiliateUrl: string;
+  ctaUrl?: string;
+  ctaText?: string;
+  customCopy?: string;
+  discountCode?: string;
+  iconKey?: string;
+  themeColor: 'blue' | 'purple' | 'amber' | 'emerald' | 'rose';
+  isCustomSponsor?: boolean;
+  dynamicContextNote?: string;
+}
+
 

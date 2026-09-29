@@ -24,11 +24,12 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import {
   generateSessionSummaryReport,
-  generateTechnicalCheatSheet,
   getStoredMeshKey,
 } from '../../lib/meshApi';
-import type { QuizQuestion, LivePoll, Question, LeaderboardEntry } from '../../types';
+import type { QuizQuestion, LivePoll, Question, LeaderboardEntry, SponsorCTA } from '../../types';
 import { playClickSound, playPopSound, playWhoosh } from '../../lib/soundFx';
+import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
+import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
 
 interface MasterclassReportViewProps {
   roomTitle: string;
@@ -44,6 +45,7 @@ interface MasterclassReportViewProps {
   userPollVotes?: Record<string, string>;
   onReportGenerated?: (markdown: string) => void;
   onOpenAISettings?: () => void;
+  sponsorCTA?: SponsorCTA | null;
 }
 
 function getCategoryBadgeStyle(category?: string): { bg: string; text: string; border: string } {
@@ -1038,16 +1040,30 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
   userPollVotes = {},
   onReportGenerated,
   onOpenAISettings,
+  sponsorCTA,
 }) => {
   const [activeMarkdown, setActiveMarkdown] = useState<string>(initialReportMarkdown || '');
-  const [cheatSheetMarkdown, setCheatSheetMarkdown] = useState<string>('');
-  const [activeDocType, setActiveDocType] = useState<'report' | 'cheatsheet'>('report');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingCheatSheet, setIsGeneratingCheatSheet] = useState(false);
   const [copied, setCopied] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const contextKeywords = useMemo(() => {
+    const list = [roomTitle];
+    quizzes.forEach((q) => {
+      if (q.category) list.push(q.category);
+      if (q.question) list.push(q.question);
+    });
+    return list;
+  }, [roomTitle, quizzes]);
+
+  const affiliateRec = useAffiliateRecommendation({
+    placement: 'report',
+    contextKeywords,
+    roomCode,
+    sponsorCTA,
+  });
 
   const [prevInitialMarkdown, setPrevInitialMarkdown] = useState(initialReportMarkdown);
   if (initialReportMarkdown !== prevInitialMarkdown) {
@@ -1072,11 +1088,6 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     if (!activeMarkdown) return null;
     return parseMarkdownIntoSections(activeMarkdown);
   }, [activeMarkdown]);
-
-  const parsedCheatSheet = useMemo(() => {
-    if (!cheatSheetMarkdown) return null;
-    return parseMarkdownIntoSections(cheatSheetMarkdown);
-  }, [cheatSheetMarkdown]);
 
   // Handle Full Masterclass Report Generation
   const handleGenerateReport = async () => {
@@ -1147,68 +1158,13 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     }
   };
 
-  // Handle 1-Page Technical Cheat Sheet Generation
-  const handleGenerateCheatSheet = async () => {
-    const apiKey = getStoredMeshKey();
-    if (!apiKey) {
-      setErrorNotice('Mesh API Key missing. Please click AI Settings to configure your key.');
-      onOpenAISettings?.();
-      return;
-    }
-
-    setIsGeneratingCheatSheet(true);
-    setErrorNotice(null);
-    playWhoosh();
-
-    try {
-      const topQuestions = questions
-        .slice()
-        .sort((a, b) => b.upvotes_count - a.upvotes_count)
-        .slice(0, 10)
-        .map((q) => ({
-          content: q.content,
-          upvotes: q.upvotes_count,
-        }));
-
-      const pollData = polls.map((p) => ({
-        question: p.question,
-        aiConsensusNote: p.aiConsensusNote,
-      }));
-
-      const quizData = quizzes.map((q) => ({
-        question: q.question,
-        expectedAnswer: q.questionType === 'short_answer'
-          ? (q.expectedAnswer || q.correctOptionId)
-          : (q.options || []).find((o) => o.id === q.correctOptionId)?.text || q.correctOptionId,
-        explanation: q.explanation,
-      }));
-
-      const sheet = await generateTechnicalCheatSheet({
-        roomTitle,
-        quizzes: quizData,
-        questions: topQuestions,
-        polls: pollData,
-      });
-
-      if (sheet && sheet.trim().length > 20) {
-        setCheatSheetMarkdown(sheet);
-        playPopSound();
-      } else {
-        throw new Error('Received an empty cheat sheet from the AI engine.');
-      }
-    } catch (err: any) {
-      console.error('[MasterclassReportView] cheat sheet generation error:', err);
-      setErrorNotice(err?.message || 'Failed to generate technical cheat sheet. Please verify API key.');
-    } finally {
-      setIsGeneratingCheatSheet(false);
-    }
-  };
-
-  const currentMarkdown = activeDocType === 'report' ? activeMarkdown : cheatSheetMarkdown;
-
   const handleCopy = () => {
-    if (!currentMarkdown) return;
-    navigator.clipboard.writeText(currentMarkdown);
+    if (!activeMarkdown) return;
+    let textToCopy = activeMarkdown;
+    if (affiliateRec && !textToCopy.includes('### Recommended Next-Step Deep Dive')) {
+      textToCopy += `\n\n### Recommended Next-Step Deep Dive & Certification\n- **Resource:** [${affiliateRec.title}](${affiliateRec.ctaUrl})\n- **Provider:** ${affiliateRec.provider}\n- **Takeaway:** ${affiliateRec.customCopy || affiliateRec.description}${affiliateRec.discountCode ? `\n- **Promo Code:** \`${affiliateRec.discountCode}\`` : ''}\n`;
+    }
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     playPopSound();
     setTimeout(() => setCopied(false), 2000);
@@ -1216,28 +1172,41 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
 
   // Download formats
   const handleDownloadHtml = () => {
-    if (!currentMarkdown) return;
+    if (!activeMarkdown) return;
     playClickSound();
     const timeStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const fullHtml = activeDocType === 'report'
-      ? parseMarkdownToStyledHtml(currentMarkdown, roomTitle, roomCode, timeStr, quizzes, polls)
-      : parseMarkdownToStyledHtml(currentMarkdown, roomTitle, roomCode, timeStr, [], []);
+    let fullHtml = parseMarkdownToStyledHtml(activeMarkdown, roomTitle, roomCode, timeStr, quizzes, polls);
+
+    if (affiliateRec && !fullHtml.includes('recommended-resource-card')) {
+      const affiliateSection = `
+      <div class="recommended-resource-card" style="margin-top: 32px; padding: 20px; border-radius: 12px; background: #121218; border: 1px solid rgba(59,130,246,0.3); font-family: sans-serif;">
+        <div style="font-size: 11px; font-weight: bold; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">RECOMMENDED DEEP DIVE & CERTIFICATION</div>
+        <div style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 6px;">${affiliateRec.title} &mdash; <span style="font-size: 13px; color: #93c5fd;">${affiliateRec.provider}</span></div>
+        <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5; margin-bottom: 12px;">${affiliateRec.customCopy || affiliateRec.description}</p>
+        <a href="${affiliateRec.ctaUrl}" target="_blank" rel="noopener noreferrer sponsored" style="display: inline-block; padding: 8px 16px; border-radius: 8px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 12px;">${affiliateRec.ctaText || 'Learn More'} &rarr;</a>
+        ${affiliateRec.discountCode ? `<span style="margin-left: 12px; font-size: 11px; color: #34d399; font-family: monospace;">Use Code: ${affiliateRec.discountCode}</span>` : ''}
+        <div style="font-size: 10px; color: #71717a; margin-top: 10px;">Partner referral link &bull; Supports SketchCast educational platform</div>
+      </div>
+      `;
+      fullHtml = fullHtml.replace('</div>\n</body>', `${affiliateSection}\n</div>\n</body>`);
+    }
+
     const blob = new Blob([fullHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.html` : `Technical_CheatSheet_${roomCode}.html`;
+    a.download = `Masterclass_Report_${roomCode}.html`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadMarkdown = () => {
-    if (!currentMarkdown) return;
+    if (!activeMarkdown) return;
     playClickSound();
 
-    let enrichedMd = currentMarkdown;
-    if (activeDocType === 'report' && quizzes.length > 0 && !currentMarkdown.includes('### Detailed Question Analysis')) {
+    let enrichedMd = activeMarkdown;
+    if (quizzes.length > 0 && !activeMarkdown.includes('### Detailed Question Analysis')) {
       const detailedQuizMd = quizzes
         .map((q, idx) => {
           if (q.questionType === 'short_answer') {
@@ -1250,20 +1219,24 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
       enrichedMd += `\n\n### Detailed Question Analysis\n${detailedQuizMd}`;
     }
 
+    if (affiliateRec && !enrichedMd.includes('### Recommended Next-Step Deep Dive')) {
+      enrichedMd += `\n\n### Recommended Next-Step Deep Dive & Certification\n- **Resource:** [${affiliateRec.title}](${affiliateRec.ctaUrl})\n- **Provider:** ${affiliateRec.provider}\n- **Takeaway:** ${affiliateRec.customCopy || affiliateRec.description}${affiliateRec.discountCode ? `\n- **Promo Code:** \`${affiliateRec.discountCode}\`` : ''}\n`;
+    }
+
     const blob = new Blob([enrichedMd], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.md` : `Technical_CheatSheet_${roomCode}.md`;
+    a.download = `Masterclass_Report_${roomCode}.md`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadTxt = () => {
-    if (!currentMarkdown) return;
+    if (!activeMarkdown) return;
     playClickSound();
-    const plainText = currentMarkdown
+    const plainText = activeMarkdown
       .replace(/^#+\s+/gm, '')
       .replace(/\*\*(.+?)\*\*/g, '$1')
       .replace(/`([^`]+)`/g, '$1')
@@ -1273,40 +1246,39 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.txt` : `Technical_CheatSheet_${roomCode}.txt`;
+    a.download = `Masterclass_Report_${roomCode}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handleDownloadJson = () => {
-    if (!currentMarkdown) return;
+    if (!activeMarkdown) return;
     playClickSound();
     const jsonPayload = {
       roomTitle,
       roomCode,
       generatedAt: new Date().toISOString(),
-      documentType: activeDocType,
       totalAttendees,
       quizzesCount: quizzes.length,
       pollsCount: polls.length,
       questionsCount: questions.length,
       quizzes,
       polls,
-      reportMarkdown: currentMarkdown,
+      reportMarkdown: activeMarkdown,
     };
     const blob = new Blob([JSON.stringify(jsonPayload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeDocType === 'report' ? `Masterclass_Report_${roomCode}.json` : `Technical_CheatSheet_${roomCode}.json`;
+    a.download = `Masterclass_Report_${roomCode}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setIsDropdownOpen(false);
   };
 
   const handlePrint = () => {
-    if (!currentMarkdown) return;
+    if (!activeMarkdown) return;
     playClickSound();
     setIsDropdownOpen(false);
     window.print();
@@ -1323,25 +1295,25 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
           <div>
             <div className="flex items-center space-x-2.5">
               <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                Masterclass Report & Technical Cheat Sheet
+                Masterclass Session Report
               </h2>
               <span className="font-mono text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">
                 {roomCode}
               </span>
-              {currentMarkdown && (
+              {activeMarkdown && (
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold tracking-wide border border-emerald-500/20 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Ready
                 </span>
               )}
             </div>
             <p className="text-xs text-zinc-400 mt-1">
-              Unified executive synthesis with core architectural principles, technical FAQ, interactive question drilldowns, and community consensus.
+              Unified executive synthesis with core architectural principles, interactive question drilldowns, and community consensus.
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        {currentMarkdown && (
+        {activeMarkdown && (
           <div className="flex items-center space-x-2 flex-wrap gap-y-2 shrink-0">
             {/* Quick Copy Button */}
             <motion.button
@@ -1353,7 +1325,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
               title="Copy markdown to clipboard"
             >
               {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-400" />}
-              <span>{copied ? 'Copied' : activeDocType === 'report' ? 'Copy Report' : 'Copy Cheat Sheet'}</span>
+              <span>{copied ? 'Copied' : 'Copy Report'}</span>
             </motion.button>
 
             {/* Download Dropdown */}
@@ -1369,7 +1341,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                 className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold border border-blue-400/30 flex items-center space-x-2 cursor-pointer transition-all shadow-md shadow-blue-500/20"
               >
                 <Download className="w-4 h-4" />
-                <span>{activeDocType === 'report' ? 'Download Report' : 'Download Cheat Sheet'}</span>
+                <span>Download Report</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </motion.button>
 
@@ -1436,7 +1408,7 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                       <Printer className="w-4 h-4 text-cyan-400 shrink-0" />
                       <div>
                         <div className="font-semibold text-white">Print / Save as PDF</div>
-                        <div className="text-[10px] text-zinc-400">Printable cheat sheet & report</div>
+                        <div className="text-[10px] text-zinc-400">Printable session executive report</div>
                       </div>
                     </button>
                   </motion.div>
@@ -1465,14 +1437,10 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   playWhoosh();
-                  if (activeDocType === 'report') {
-                    handleGenerateReport();
-                  } else {
-                    handleGenerateCheatSheet();
-                  }
+                  handleGenerateReport();
                 }}
                 className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white text-xs font-medium border border-white/[0.08] flex items-center space-x-1.5 cursor-pointer transition-colors"
-                title="Synthesize fresh AI content"
+                title="Synthesize fresh AI report"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-blue-400" />
                 <span>Re-generate</span>
@@ -1559,65 +1527,22 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
         </div>
       )}
 
-      {/* Document Selector Tabs */}
-      <div className="flex items-center space-x-2 mb-6 p-1.5 rounded-xl bg-[#0E0E12]/90 border border-white/[0.08] w-fit">
-        <button
-          type="button"
-          onClick={() => {
-            playClickSound();
-            setActiveDocType('report');
-          }}
-          className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
-            activeDocType === 'report'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Full Masterclass Report</span>
-          {activeMarkdown && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          )}
-        </button>
+      {/* State 1: Generation Trigger Card (If Report Not Generated) */}
+      {!activeMarkdown && !isGenerating && (
+        <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mx-auto flex items-center justify-center mb-4">
+            <FileText className="w-7 h-7" />
+          </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            playClickSound();
-            setActiveDocType('cheatsheet');
-          }}
-          className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 transition-all cursor-pointer ${
-            activeDocType === 'cheatsheet'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>⚡ 1-Page Technical Cheat Sheet</span>
-          {cheatSheetMarkdown && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          )}
-        </button>
-      </div>
+          <h3 className="text-base sm:text-lg font-bold text-white mb-2">
+            {isHost ? 'Synthesize Masterclass Session Report' : 'Report Pending Generation'}
+          </h3>
 
-      {activeDocType === 'report' && (
-        <>
-          {/* State 1: Generation Trigger Card (If Report Not Generated) */}
-          {!activeMarkdown && !isGenerating && (
-            <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mx-auto flex items-center justify-center mb-4">
-                <FileText className="w-7 h-7" />
-              </div>
-
-              <h3 className="text-base sm:text-lg font-bold text-white mb-2">
-                {isHost ? 'Synthesize Masterclass Report & Technical Cheat Sheet' : 'Report Pending Generation'}
-              </h3>
-
-              <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
-                {isHost
-                  ? `Ready to generate the masterclass synthesis for Room ${roomCode}. AI will unify technical architectural principles, audience FAQ, quiz drilldowns, community poll consensus, and code recipes into a single high-density document.`
-                  : `The session host has not generated the AI Masterclass Report for Room ${roomCode} yet. Once synthesized, the executive report will appear here automatically.`}
-              </p>
+          <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
+            {isHost
+              ? `Ready to generate the masterclass synthesis for Room ${roomCode}. AI will unify technical architectural principles, quiz drilldowns, community poll consensus, and code recipes into a single high-density document.`
+              : `The session host has not generated the AI Masterclass Report for Room ${roomCode} yet. Once synthesized, the executive report will appear here automatically.`}
+          </p>
 
               {isHost ? (
                 <motion.button
@@ -1741,107 +1666,19 @@ export const MasterclassReportView: React.FC<MasterclassReportViewProps> = ({
                   );
                 })}
               </div>
-            </div>
-          )}
-        </>
-      )}
 
-      {activeDocType === 'cheatsheet' && (
-        <>
-          {/* State 1: Generation Trigger Card (If Cheat Sheet Not Generated) */}
-          {!cheatSheetMarkdown && !isGeneratingCheatSheet && (
-            <div className="p-8 sm:p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-xl mx-auto my-auto shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center mb-4">
-                <Zap className="w-7 h-7" />
-              </div>
-
-              <h3 className="text-base sm:text-lg font-bold text-white mb-2">
-                {isHost ? 'Synthesize 1-Page Technical Cheat Sheet & FAQ' : 'Cheat Sheet Pending Generation'}
-              </h3>
-
-              <p className="text-xs text-zinc-400 max-w-md mx-auto mb-6 leading-relaxed">
-                {isHost
-                  ? `Generate an ultra high-density, 1-page executive cheat sheet for Room ${roomCode}. Condenses core architectural principles, attendee FAQ, poll trade-offs, and code recipes into an actionable single-page reference.`
-                  : `The session host has not generated the 1-Page Technical Cheat Sheet for Room ${roomCode} yet. Once synthesized, the cheat sheet will appear here.`}
-              </p>
-
-              {isHost ? (
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    playWhoosh();
-                    handleGenerateCheatSheet();
-                  }}
-                  className="py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-amber-600 hover:from-blue-500 hover:to-amber-500 text-white text-xs font-semibold uppercase tracking-wider inline-flex items-center space-x-2.5 cursor-pointer transition-all shadow-lg shadow-blue-500/25"
-                >
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>Synthesize 1-Page Cheat Sheet</span>
-                </motion.button>
-              ) : (
-                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] text-zinc-400 text-xs border border-white/[0.06]">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                  <span>Waiting for host to publish...</span>
+              {/* Contextual Career & Certification Deep Dive */}
+              {affiliateRec && (
+                <div className="pt-2">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold mb-3 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                    <span>CURATED DEEP-DIVE & PROFESSIONAL CERTIFICATION</span>
+                  </div>
+                  <ContextualAffiliateCard recommendation={affiliateRec} />
                 </div>
               )}
             </div>
           )}
-
-          {/* State 2: Generating Loader */}
-          {isGeneratingCheatSheet && (
-            <div className="p-12 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] text-center max-w-md mx-auto my-auto shadow-xl">
-              <RefreshCw className="w-8 h-8 text-amber-400 mx-auto animate-spin mb-4" />
-              <h4 className="text-base font-bold text-white mb-1.5">Synthesizing 1-Page Technical Cheat Sheet...</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Extracting core principles, resolving audience questions, and distilling code recipes.
-              </p>
-            </div>
-          )}
-
-          {/* State 3: Formatted Cheat Sheet View */}
-          {cheatSheetMarkdown && parsedCheatSheet && (
-            <div className="space-y-6 pb-12">
-              {/* Executive Hero Banner */}
-              <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-950/30 via-[#101015] to-[#0E0E12] border border-amber-500/20 shadow-md">
-                <div className="flex items-center space-x-2 text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono mb-2">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>1-PAGE SESSION TECHNICAL CHEAT SHEET & FAQ</span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  {parsedCheatSheet.heroTitle || `${roomTitle} — Technical Cheat Sheet`}
-                </h1>
-                <p className="text-xs text-zinc-400 mt-2">
-                  Curated Architectural Principles, Audience FAQ & Actionable Code Recipes • Room {roomCode}
-                </p>
-              </div>
-
-              {/* Rendered Section Cards */}
-              <div className="grid grid-cols-1 gap-5">
-                {parsedCheatSheet.sections.map((sec, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: idx * 0.05 }}
-                    className="p-5 sm:p-6 rounded-2xl bg-[#0E0E12]/90 border border-white/[0.08] shadow-md transition-all hover:border-white/[0.12]"
-                  >
-                    <div className="flex items-center space-x-3 pb-3 mb-4 border-b border-white/[0.06]">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
-                        <Zap className="w-4 h-4" />
-                      </div>
-                      <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                        {sec.title}
-                      </h3>
-                    </div>
-                    <FormattedSectionBody lines={sec.lines} />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 };

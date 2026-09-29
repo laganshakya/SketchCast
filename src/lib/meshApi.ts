@@ -1830,17 +1830,17 @@ export async function generateSessionSummaryReport(params: {
     ? params.leaderboardTop3.map((l, i) => `#${i + 1} ${l.name} (${l.score} pts)`).join(', ')
     : 'Session attendees';
 
-  const systemPrompt = `You are a Principal Software Architect synthesizing an authoritative, high-density Masterclass Session Report & Technical Cheat Sheet for attendees of "${params.roomTitle}" (Room ${params.roomCode}, ${params.totalAttendees} attendees).
+  const systemPrompt = `You are a Principal Software Architect synthesizing an authoritative, high-density Masterclass Session Report for attendees of "${params.roomTitle}" (Room ${params.roomCode}, ${params.totalAttendees} attendees).
 The document must be crisp, high-density, beautifully structured in clean Markdown, and immediately actionable for senior engineers.
 
 STRUCTURE REQUIREMENTS (Markdown):
-# ⚡ ${params.roomTitle} — Masterclass Session Report & Technical Cheat Sheet
-*Executive Architectural Takeaways, Technical FAQ, Voting Consensus & Code Reference*
+# ⚡ ${params.roomTitle} — Masterclass Session Report
+*Executive Architectural Takeaways, Audience Inquiries, Voting Consensus & Code Reference*
 
 ## 🏛️ Core Architectural Principles
 (3 to 5 key bullet points with bold keywords and concise engineering rationales)
 
-## 💬 Audience Technical FAQ
+## 💬 Key Audience Inquiries & Discussions
 (Top 3-4 questions from the session with authoritative, 1-2 sentence engineering answers)
 
 ## 📊 Community Poll Insights & Consensus Trends
@@ -2774,64 +2774,5 @@ export async function gradeShortAnswerWithJev(params: {
       feedback: isSub ? 'Partial match via local heuristic.' : 'Incorrect.',
     };
   }
-}
-
-// -------------------------------------------------------------
-// FEATURE: 1-Page Session Technical Cheat Sheet & FAQ Synthesizer
-// -------------------------------------------------------------
-export async function generateTechnicalCheatSheet(params: {
-  roomTitle: string;
-  quizzes: Array<{ question: string; explanation?: string; expectedAnswer?: string }>;
-  questions: Array<{ content: string; upvotes?: number; aiTalkingPoints?: string[] }>;
-  polls: Array<{ question: string; aiConsensusNote?: string | null }>;
-}): Promise<string> {
-  const targetModel = resolveModelForTask('session_report');
-
-  const quizSummaries = (params.quizzes || [])
-    .map((q, i) => `[Quiz ${i + 1}] ${q.question}${q.expectedAnswer ? `\nExpected: ${q.expectedAnswer}` : ''}\nTakeaway: ${q.explanation || 'Key engineering principle.'}`)
-    .join('\n\n');
-  const questionSummaries = (params.questions || []).slice(0, 10).map((q, i) => `[Q&A ${i + 1}] (${q.upvotes || 0} upvotes) ${q.content}`).join('\n');
-  const pollSummaries = (params.polls || []).map((p, i) => `[Poll ${i + 1}] ${p.question}${p.aiConsensusNote ? ` (Consensus: ${p.aiConsensusNote})` : ''}`).join('\n');
-
-  const systemPrompt = `You are a Principal Software Architect synthesizing an executive 1-Page Technical Cheat Sheet & Session FAQ for attendees of the masterclass: "${params.roomTitle}".
-The cheat sheet must be crisp, high-density, and immediately actionable for senior engineers.
-
-STRUCTURE REQUIREMENTS (Markdown):
-# ⚡ ${params.roomTitle} — Technical Cheat Sheet & FAQ
-*Curated Takeaways, Architectural Principles & Session Q&A Reference*
-
-## 🏛️ Core Architectural Principles
-(3 to 5 key bullet points with bold keywords and concise engineering rationales)
-
-## 💬 Audience Technical FAQ
-(Top 3-4 questions from the session with authoritative, 1-2 sentence engineering answers)
-
-## 📊 Consensus Decisions & Trade-Offs
-(Bullet points summarizing poll outcomes and architecture tradeoffs)
-
-## 🛠️ Quick Reference & Code Recipes
-(2-3 practical code snippets, terminal commands, or rule-of-thumb formulas)
-
-Keep it dense, elegant, and strictly high signal.`;
-
-  const userContent = `Session Data:
-QUIZZES COVERED:
-${quizSummaries || 'None'}
-
-TOP AUDIENCE QUESTIONS:
-${questionSummaries || 'None'}
-
-LIVE POLLS & CONSENSUS:
-${pollSummaries || 'None'}`;
-
-  const raw = await callMeshChatCompletion(
-    [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent },
-    ],
-    { temperature: 0.4, maxTokens: 1800, model: targetModel }
-  );
-
-  return raw.trim();
 }
 

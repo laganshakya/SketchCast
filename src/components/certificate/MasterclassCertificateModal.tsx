@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
+import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
+import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
+import type { SponsorCTA } from '../../types';
 
 interface MasterclassCertificateModalProps {
   isOpen: boolean;
@@ -22,6 +25,7 @@ interface MasterclassCertificateModalProps {
   score?: number;
   correctQuizzes?: number;
   hostName?: string;
+  sponsorCTA?: SponsorCTA | null;
 }
 
 export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalProps> = ({
@@ -35,8 +39,17 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   score = 0,
   correctQuizzes = 0,
   hostName = 'Arena Host',
+  sponsorCTA,
 }) => {
   const [downloading, setDownloading] = useState(false);
+
+  const affiliateRec = useAffiliateRecommendation({
+    placement: 'certificate',
+    contextKeywords: [roomTitle, 'certification', 'masterclass', 'course'],
+    accuracyRate: totalAttendees > 0 ? Math.min(100, Math.round((correctQuizzes / Math.max(1, totalAttendees)) * 100)) : undefined,
+    roomCode,
+    sponsorCTA,
+  });
 
   const certCardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -478,6 +491,16 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
                   </div>
                 </div>
               </div>
+
+              {/* Contextual Career & Certification Acceleration */}
+              {affiliateRec && (
+                <div className="mt-4 pt-4 border-t border-white/[0.08] text-left">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold mb-2">
+                    RECOMMENDED NEXT STEP CERTIFICATION
+                  </div>
+                  <ContextualAffiliateCard recommendation={affiliateRec} variant="compact" />
+                </div>
+              )}
             </div>
 
             {/* Modal Bottom Action Bar - Single Prominent Download Pass Button */}

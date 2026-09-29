@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
-import type { QuizRoundState, QuizQuestion, QuizOption } from '../../types';
+import type { QuizRoundState, QuizQuestion, QuizOption, SponsorCTA } from '../../types';
 import { gradeShortAnswerWithJev } from '../../lib/meshApi';
 import {
   playPopSound,
@@ -29,6 +29,8 @@ import {
   playCountdownTick,
 } from '../../lib/soundFx';
 import { RollingCounter } from '../common/RollingCounter';
+import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
+import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
 
 interface QuizArenaProps {
   quizState: QuizRoundState;
@@ -52,6 +54,10 @@ interface QuizArenaProps {
     mostPickedWrong?: QuizOption;
     votesDistribution: Record<string, number>;
   }) => Promise<void> | void;
+  onClearActiveQuiz?: () => void;
+  roomCode?: string;
+  roomTitle?: string;
+  sponsorCTA?: SponsorCTA | null;
 }
 
 /**
@@ -97,6 +103,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   onResumeAutoAdvance,
   onExtendTime,
   onLaunchRemediationPoll,
+  onClearActiveQuiz,
+  roomCode,
+  roomTitle,
+  sponsorCTA,
 }) => {
   const {
     question,
@@ -196,6 +206,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     ? [...wrongOptions].sort((a, b) => (votesDistribution[b.id] || 0) - (votesDistribution[a.id] || 0))[0]
     : undefined;
 
+  const affiliateRec = useAffiliateRecommendation({
+    placement: 'quiz_takeaway',
+    question,
+    accuracyPct: totalVotes > 0 ? Math.round((correctCount / totalVotes) * 100) : undefined,
+    roomTitle,
+    roomCode,
+    sponsorCTA,
+  });
+
   const lastRemainingRef = useRef<number>(timeRemaining);
   const hasPlayedRevealRef = useRef<boolean>(false);
 
@@ -235,7 +254,54 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
   }, [isRevealed, isCorrect, userSelectedOption, question]);
 
-  if (!question) {
+  if (!question || !quizState.isActive || quizState.isQuizFinished) {
+    if (quizState.isQuizFinished) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-950/30 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(16,185,129,0.15)]">
+            <Trophy className="w-7 h-7 text-emerald-400" />
+          </div>
+          <div className="text-[11px] font-mono tracking-widest text-emerald-400 uppercase font-bold mb-1">
+            ROUND CONCLUDED
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white uppercase tracking-tight mb-3">
+            QUIZ SESSION COMPLETED
+          </h3>
+          <p className="text-xs font-sans text-zinc-400 max-w-md bg-[#121215] p-4 rounded-xl border border-white/[0.08] leading-relaxed mb-6">
+            All questions for this session have been completed! Check the leaderboard to see final standings, scores, and celebratory certificates.
+          </p>
+          <div className="flex items-center gap-3">
+            {onViewScores && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  onViewScores();
+                }}
+                className="px-6 py-2.5 btn-cobalt font-mono text-xs font-bold uppercase rounded-xl flex items-center space-x-2 cursor-pointer shadow-lg"
+              >
+                <Trophy className="w-4 h-4" />
+                <span>VIEW LEADERBOARD</span>
+              </motion.button>
+            )}
+            {isHost && onClearActiveQuiz && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  playClickSound();
+                  onClearActiveQuiz();
+                }}
+                className="px-4 py-2.5 bg-[#18181D] hover:bg-[#22222A] text-zinc-300 hover:text-white border border-white/[0.08] font-mono text-xs font-bold uppercase rounded-xl flex items-center space-x-2 cursor-pointer transition-colors"
+              >
+                <RefreshCw className="w-4 h-4 text-zinc-400" />
+                <span>NEW SESSION</span>
+              </motion.button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <div className="w-14 h-14 rounded-2xl bg-[#121215] text-blue-400 border border-white/[0.08] flex items-center justify-center mb-4 shadow-sm">
@@ -775,6 +841,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             )}
           </div>
 
+          {/* Contextual Affiliate & Partner Learning Recommendation */}
+          {isRevealed && affiliateRec && (
+            <ContextualAffiliateCard recommendation={affiliateRec} />
+          )}
+
           {/* Smart Remediation Poll Trigger for Host */}
           {isHighMisconception && onLaunchRemediationPoll && (
             <motion.div
@@ -996,6 +1067,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                       <CheckCircle className="w-4 h-4 text-emerald-400 stroke-[2]" />
                       <span>QUIZ COMPLETED</span>
                     </span>
+                    {onClearActiveQuiz && (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          playClickSound();
+                          onClearActiveQuiz();
+                          onViewScores?.();
+                        }}
+                        className="px-4 py-2.5 min-h-[44px] rounded-xl bg-red-950/20 hover:bg-red-950/40 text-red-300 border border-red-500/30 text-xs font-mono font-bold uppercase flex items-center justify-center space-x-1.5 cursor-pointer transition-colors"
+                        title="Clear this completed round and return arena to standby"
+                      >
+                        <XCircle className="w-4 h-4 text-red-400" />
+                        <span>CLEAR ROUND</span>
+                      </motion.button>
+                    )}
                     {onViewScores && (
                       <motion.button
                         whileTap={{ scale: 0.98 }}

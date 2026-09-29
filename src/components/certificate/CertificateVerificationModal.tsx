@@ -4,6 +4,8 @@ import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
+import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
+import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
 
 export interface VerifiedCertPayload {
   certId: string;
@@ -48,6 +50,13 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
       year: 'numeric',
     }),
   } = certData;
+
+  const affiliateRec = useAffiliateRecommendation({
+    placement: 'certificate',
+    contextKeywords: [roomTitle, 'certification', 'masterclass', 'course'],
+    accuracyRate: totalAttendees > 0 ? Math.min(100, Math.round((correctQuizzes / Math.max(1, totalAttendees)) * 100)) : undefined,
+    roomCode,
+  });
 
   const verificationUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/?verify_cert=${certId}&room=${roomCode}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`
@@ -258,6 +267,16 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
               </div>
             </div>
           </div>
+
+          {/* Continue Learning / Advanced Recommended Credentials */}
+          {affiliateRec && (
+            <div className="mt-4 pt-4 border-t border-white/[0.08] text-left">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 font-bold mb-2">
+                CONTINUE LEARNING & ADVANCED CERTIFICATION
+              </div>
+              <ContextualAffiliateCard recommendation={affiliateRec} variant="compact" />
+            </div>
+          )}
         </div>
 
         {/* Action Controls Footer */}
