@@ -35,6 +35,7 @@ interface AppHeaderProps {
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
   onOpenMobileSidebar?: () => void;
+  onExploreLanding?: () => void;
   onSignOut?: () => void;
   currentUser?: SupabaseUser | null;
 }
@@ -46,6 +47,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenChangeRoom,
   onOpenActiveAttendees,
   onOpenMobileSidebar,
+  onExploreLanding,
 }) => {
   const [copied, setCopied] = useState(false);
   const { isDark, toggleTheme } = useTheme();
@@ -88,7 +90,20 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </motion.button>
 
           {/* Minimalist Studio Noma Brand Logo */}
-          <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={true} />
+          {onExploreLanding ? (
+            <button
+              onClick={() => {
+                playPopSound();
+                onExploreLanding();
+              }}
+              className="cursor-pointer text-left focus:outline-none rounded-xl"
+              title="View SketchCast Overview & Landing Showcase"
+            >
+              <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={true} />
+            </button>
+          ) : (
+            <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={true} />
+          )}
 
           <div className="h-4 w-px bg-hairline-strong hidden sm:block shrink-0" />
 
@@ -142,6 +157,35 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* ================= RIGHT: Telemetry, Theme, Presence ================= */}
         <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 min-w-0">
+          {/* Mobile Room Code & Copy (< sm) */}
+          <button
+            onClick={handleCopyCode}
+            className="sm:hidden flex items-center space-x-1 px-2.5 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[11px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
+            title="Click to copy Room Code"
+            aria-label={`Copy Room Code ${room.code}`}
+          >
+            <span className="text-orange">{room.code}</span>
+            {copied ? (
+              <Check className="w-3 h-3 text-emerald-600" />
+            ) : (
+              <Copy className="w-3 h-3 text-muted" />
+            )}
+          </button>
+
+          {/* Mobile Online Attendees Chip (< sm) */}
+          <button
+            onClick={() => {
+              playClickSound();
+              onOpenActiveAttendees?.();
+            }}
+            className="sm:hidden flex items-center space-x-1 px-2 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[11px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
+            title="View participants"
+            aria-label={`${Math.max(1, activeViewerCount)} online participants`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span>{Math.max(1, activeViewerCount)}</span>
+          </button>
+
           {/* Theme Mode Switcher */}
           <motion.button
             whileTap={{ scale: 0.92 }}
@@ -160,7 +204,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )}
           </motion.button>
 
-          {/* Live Online Presence Indicator */}
+          {/* Live Online Presence Indicator (Desktop >= sm) */}
           <button
             onClick={() => {
               playClickSound();

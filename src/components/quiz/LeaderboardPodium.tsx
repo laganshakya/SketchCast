@@ -296,8 +296,8 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                       <span className="font-display text-sm sm:text-base font-extrabold text-ink truncate w-full" title={top3[0].name}>
                         {top3[0].name}
                       </span>
-                      <span className="font-mono text-[10px] sm:text-xs font-bold text-ink">
-                        {top3[0].correct_quizzes * 100} PTS ({top3[0].correct_quizzes} SOLVED)
+                      <span className="font-mono text-[9px] sm:text-xs font-bold text-ink truncate w-full block">
+                        {top3[0].correct_quizzes * 100} PTS <span className="hidden sm:inline font-normal">({top3[0].correct_quizzes} SOLVED)</span>
                       </span>
                     </div>
                     <div className="w-full h-32 sm:h-44 bg-ink text-paper border border-ink rounded-t-3xl flex flex-col items-center justify-center relative shadow-xl">

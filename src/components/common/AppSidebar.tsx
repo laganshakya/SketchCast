@@ -44,6 +44,7 @@ export interface AppSidebarProps {
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
   onOpenCertificate?: () => void;
+  onExploreLanding?: () => void;
   onSignOut: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -64,6 +65,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenAISettings,
   onOpenAISummary,
   onOpenCertificate,
+  onExploreLanding,
   onSignOut,
   isOpenMobile,
   onCloseMobile,
@@ -255,6 +257,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       requiresHost: false,
       action: () => handleAction(onOpenCertificate),
     },
+    {
+      id: 'platform-showcase',
+      type: 'action',
+      label: 'Platform Showcase',
+      icon: Sparkles,
+      badge: 'NEW',
+      desc: 'Animated landing & telemetry',
+      requiresHost: false,
+      action: () => handleAction(onExploreLanding),
+    },
   ];
 
   const visibleHostToolItems = hostToolItems.filter((item) => {
@@ -285,21 +297,26 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Mobile Header with Logo and Close Button */}
+        {/* Mobile Header with Logo, Room Code, and Close Button */}
         {mobile && (
           <div className="p-3.5 border-b border-hairline bg-paper flex items-center justify-between shrink-0">
             <SketchCastLogo size="sm" showWordmark={true} />
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              onClick={() => {
-                playPopSound();
-                onCloseMobile();
-              }}
-              className="p-1.5 rounded-xl bg-paper-elevated hover:bg-black/[0.05] text-ink border border-hairline cursor-pointer transition-colors"
-              title="Close Menu"
-            >
-              <X className="w-4 h-4" />
-            </motion.button>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-0.5 rounded-full bg-paper-card border border-hairline font-mono text-[10px] font-bold text-orange">
+                {room.code}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={() => {
+                  playPopSound();
+                  onCloseMobile();
+                }}
+                className="p-1.5 rounded-xl bg-paper-elevated hover:bg-black/[0.05] text-ink border border-hairline cursor-pointer transition-colors"
+                title="Close Menu"
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            </div>
           </div>
         )}
 
@@ -714,7 +731,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       {/* DESKTOP SIDEBAR */}
       <aside
         className={`hidden md:flex flex-col bg-paper border-r border-hairline shrink-0 relative transition-all duration-200 z-30 ${
-          isCollapsed ? 'w-16' : 'w-60'
+          isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         {renderSidebarContent(false)}

@@ -95,7 +95,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto font-sans">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/70 backdrop-blur-sm overflow-y-auto font-sans">
       <motion.div
         initial={{ scale: 0.96, y: 10, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}

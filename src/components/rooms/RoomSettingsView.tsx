@@ -616,7 +616,7 @@ export const RoomSettingsView: React.FC<RoomSettingsViewProps> = ({
           </div>
 
           {/* Sponsor Actions */}
-          <div className="pt-2 flex items-center justify-between gap-2">
+          <div className="pt-2 flex items-center justify-between gap-2 flex-wrap">
             {room.sponsor_cta?.enabled ? (
               <button
                 type="button"

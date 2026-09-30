@@ -4,7 +4,7 @@ import { useRoomSession } from './hooks/useRoomSession';
 import { useQuizEngine } from './hooks/useQuizEngine';
 import { usePollsEngine } from './hooks/usePollsEngine';
 import { useQAFeed } from './hooks/useQAFeed';
-import { LandingAuthPage } from './components/auth/LandingAuthPage';
+import { ModernLandingPage } from './components/landing/ModernLandingPage';
 import { AppHeader } from './components/common/AppHeader';
 import { AppSidebar } from './components/common/AppSidebar';
 import { QuizArena } from './components/quiz/QuizArena';
@@ -91,6 +91,13 @@ export function App() {
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const [qaClusters, setQaClusters] = useState<QuestionCluster[]>([]);
   const [verifiedCertData, setVerifiedCertData] = useState<VerifiedCertPayload | null>(parseVerificationUrl);
+  const [isExploringLanding, setIsExploringLanding] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('view') === 'landing';
+    }
+    return false;
+  });
 
   // 1. Dynamic Room Session, Presence & Supabase Auth User
   const {
@@ -620,8 +627,25 @@ export function App() {
     setIsSocialCardModalOpen(true);
   };
 
-  // If user is not authenticated, show the Landing / Auth Page (with Verification Modal on top if verifying)
-  if (!isAuthenticated) {
+  const handleCertLookup = useCallback((certId: string) => {
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const currentRoomCode = (params.get('room') || room.code || 'ARENA').toUpperCase().trim();
+    setVerifiedCertData({
+      certId: certId.trim().toUpperCase(),
+      roomCode: currentRoomCode,
+      correctQuizzes: 4,
+      recipientName: userName || 'Masterclass Attendee',
+      roomTitle: room.title || `Masterclass Interactive Session (${currentRoomCode})`,
+      rank: 1,
+      totalAttendees: Math.max(attendees.length, 12),
+      issueDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      score: 400,
+      hostName: resolvedHostName || 'Arena Host',
+    });
+  }, [attendees.length, resolvedHostName, room.code, room.title, userName]);
+
+  // If user is not authenticated or explicitly exploring landing page, render ModernLandingPage
+  if (!isAuthenticated || isExploringLanding) {
     return (
       <>
         {verifiedCertData && (
@@ -631,9 +655,15 @@ export function App() {
             onEnterArena={handleEnterArenaFromCert}
           />
         )}
-        <LandingAuthPage
-          onAuthenticated={handleAuthenticated}
+        <ModernLandingPage
+          onAuthenticated={(name, role, targetRoom) => {
+            setIsExploringLanding(false);
+            handleAuthenticated(name, role, targetRoom);
+          }}
           roomCode={room.code}
+          isAuthenticated={isAuthenticated}
+          onReturnToArena={() => setIsExploringLanding(false)}
+          onVerifyCertLookup={handleCertLookup}
         />
       </>
     );
@@ -663,6 +693,7 @@ export function App() {
         onOpenAISettings={() => setActiveTab('ai-settings')}
         onOpenAISummary={() => setActiveTab('session-report')}
         onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        onExploreLanding={() => setIsExploringLanding(true)}
         onSignOut={handleSignOut}
         currentUser={currentUser}
       />
@@ -858,6 +889,7 @@ export function App() {
           onOpenAISettings={() => setActiveTab('ai-settings')}
           onOpenAISummary={() => setActiveTab('session-report')}
           onOpenCertificate={() => setIsCertificateModalOpen(true)}
+          onExploreLanding={() => setIsExploringLanding(true)}
           onSignOut={handleSignOut}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
