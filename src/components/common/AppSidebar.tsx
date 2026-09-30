@@ -44,7 +44,6 @@ export interface AppSidebarProps {
   onOpenAISettings?: () => void;
   onOpenAISummary?: () => void;
   onOpenCertificate?: () => void;
-  onExploreLanding?: () => void;
   onSignOut: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -65,7 +64,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenAISettings,
   onOpenAISummary,
   onOpenCertificate,
-  onExploreLanding,
   onSignOut,
   isOpenMobile,
   onCloseMobile,
@@ -256,16 +254,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       desc: 'Verifiable credential & pass',
       requiresHost: false,
       action: () => handleAction(onOpenCertificate),
-    },
-    {
-      id: 'platform-showcase',
-      type: 'action',
-      label: 'Platform Showcase',
-      icon: Sparkles,
-      badge: 'NEW',
-      desc: 'Animated landing & telemetry',
-      requiresHost: false,
-      action: () => handleAction(onExploreLanding),
     },
   ];
 

@@ -49,10 +49,10 @@ export const LandingArchitecture: React.FC = () => {
           <div className="pt-2">
             <button
               onClick={simulatePacket}
-              className="px-4 py-2 rounded-full bg-paper hover:bg-paper-elevated border border-hairline text-ink font-mono text-xs font-bold uppercase flex items-center space-x-2 mx-auto cursor-pointer shadow-subtle hover:border-orange transition-all"
+              className="px-3.5 sm:px-4 py-2 rounded-full bg-paper hover:bg-paper-elevated border border-hairline text-ink font-mono text-[11px] sm:text-xs font-bold uppercase flex items-center space-x-2 mx-auto cursor-pointer shadow-subtle hover:border-orange transition-all max-w-full text-center"
             >
-              <Play className="w-3.5 h-3.5 text-orange" />
-              <span>TEST SIMULATED BROADCAST PACKET</span>
+              <Play className="w-3.5 h-3.5 text-orange shrink-0" />
+              <span className="hidden sm:inline">TEST SIMULATED </span><span>BROADCAST PACKET</span>
             </button>
           </div>
         </div>

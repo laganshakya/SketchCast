@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Sun,
-  Moon,
   Volume2,
   VolumeX,
   Menu,
@@ -14,7 +12,6 @@ import {
 } from 'lucide-react';
 import { SketchCastLogo } from '../common/SketchCastLogo';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
-import { useTheme } from '../../lib/theme';
 
 interface LandingNavbarProps {
   onJoinClick: (mode?: 'guest' | 'signin' | 'signup') => void;
@@ -33,7 +30,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   isAuthenticated = false,
   onReturnToArena,
 }) => {
-  const { isDark, toggleTheme } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -64,7 +60,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
     <header className="sticky top-0 z-50 w-full bg-paper/85 dark:bg-paper/80 backdrop-blur-xl border-b border-hairline transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
         {/* Left: Brand Logo & Live Signal */}
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
+        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
           <a
             href="#"
             onClick={(e) => {
@@ -74,7 +70,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             className="flex items-center space-x-2 shrink-0 group cursor-pointer"
             title="SketchCast Studio"
           >
-            <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={true} />
+            <SketchCastLogo size="sm" showWordmark={true} collapsedOnMobile={false} />
           </a>
 
           <div className="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-paper-card border border-hairline font-mono text-[10px] text-muted shrink-0">
@@ -114,23 +110,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             )}
           </button>
 
-          {/* Theme Mode Switcher */}
-          <button
-            onClick={() => {
-              playPopSound();
-              toggleTheme();
-            }}
-            className="p-2 sm:p-2.5 rounded-full bg-paper-card hover:bg-paper-elevated text-ink border border-hairline transition-all cursor-pointer shadow-subtle"
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label="Toggle Theme"
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange" />
-            )}
-          </button>
-
           {/* QR Code Quick View */}
           <button
             onClick={() => {
@@ -153,10 +132,10 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 playPopSound();
                 onReturnToArena();
               }}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-lime text-ink font-mono text-[11px] sm:text-xs font-bold uppercase border border-lime flex items-center space-x-1 sm:space-x-1.5 shadow-sm cursor-pointer"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-full bg-lime text-ink font-mono text-[11px] sm:text-xs font-bold uppercase border border-lime flex items-center space-x-1 sm:space-x-1.5 shadow-sm cursor-pointer shrink-0"
             >
               <Radio className="w-3.5 h-3.5 animate-pulse text-ink" />
-              <span>RETURN TO ARENA</span>
+              <span className="hidden sm:inline">RETURN TO </span><span>ARENA</span>
             </motion.button>
           ) : (
             <motion.button
@@ -166,10 +145,10 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 playPopSound();
                 onJoinClick('guest');
               }}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-full btn-noma-orange font-mono text-[11px] sm:text-xs font-bold uppercase flex items-center space-x-1 sm:space-x-1.5 shadow-sm cursor-pointer"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-full btn-noma-orange font-mono text-[11px] sm:text-xs font-bold uppercase flex items-center space-x-1 sm:space-x-1.5 shadow-sm cursor-pointer shrink-0"
             >
               <Zap className="w-3.5 h-3.5 shrink-0" />
-              <span>ENTER ARENA</span>
+              <span className="hidden sm:inline">ENTER </span><span>ARENA</span>
             </motion.button>
           )}
 

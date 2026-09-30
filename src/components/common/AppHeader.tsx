@@ -5,8 +5,6 @@ import {
   Copy,
   Check,
   ArrowRightLeft,
-  Sun,
-  Moon,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { Room, ActiveTabType } from '../../types';
@@ -16,7 +14,6 @@ import {
   playClickSound,
   playPopSound,
 } from '../../lib/soundFx';
-import { useTheme } from '../../lib/theme';
 
 interface AppHeaderProps {
   room: Room;
@@ -50,7 +47,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onExploreLanding,
 }) => {
   const [copied, setCopied] = useState(false);
-  const { isDark, toggleTheme } = useTheme();
 
   const handleCopyCode = () => {
     playPopSound();
@@ -185,24 +181,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span>{Math.max(1, activeViewerCount)}</span>
           </button>
-
-          {/* Theme Mode Switcher */}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={() => {
-              playPopSound();
-              toggleTheme();
-            }}
-            className="h-8 w-8 flex items-center justify-center rounded-full bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong transition-colors cursor-pointer shrink-0 shadow-subtle"
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-lime" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 text-orange" />
-            )}
-          </motion.button>
 
           {/* Live Online Presence Indicator (Desktop >= sm) */}
           <button

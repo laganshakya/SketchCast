@@ -104,7 +104,7 @@ export const LandingPlayground: React.FC = () => {
   }, [soundEnabled]);
 
   return (
-    <div className="w-full bg-paper-card text-ink rounded-3xl border border-hairline-strong p-5 sm:p-7 shadow-elevated relative overflow-hidden font-sans">
+    <div className="w-full bg-paper-card text-ink rounded-3xl border border-hairline-strong p-4 sm:p-7 shadow-elevated relative overflow-hidden font-sans">
       {/* Background Glow */}
       <div className="absolute -top-24 -right-24 w-60 h-60 bg-lime/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-orange/15 rounded-full blur-3xl pointer-events-none" />
@@ -128,33 +128,34 @@ export const LandingPlayground: React.FC = () => {
       </div>
 
       {/* Header bar of simulated card */}
-      <div className="flex items-center justify-between gap-2 pb-4 mb-4 border-b border-hairline relative z-10 font-mono text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 sm:pb-4 mb-4 border-b border-hairline relative z-10 font-mono text-xs">
         <div className="flex items-center space-x-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-orange animate-pulse" />
-          <span className="font-bold text-orange uppercase tracking-wider text-[11px]">
+          <span className="w-2.5 h-2.5 rounded-full bg-orange animate-pulse shrink-0" />
+          <span className="font-bold text-orange uppercase tracking-wider text-[10px] sm:text-[11px]">
             SIMULATED ARENA
           </span>
           <span className="text-muted/40">•</span>
           <span className="text-muted text-[10px] hidden sm:inline">QUESTION 03/05</span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
           {/* Active Attendees badge */}
-          <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-paper border border-hairline text-[11px] font-bold text-ink">
-            <Users className="w-3 h-3 text-muted" />
-            <span>{voterCount} voting</span>
+          <div className="inline-flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-full bg-paper border border-hairline text-[10px] sm:text-[11px] font-bold text-ink">
+            <Users className="w-3 h-3 text-muted shrink-0" />
+            <span className="hidden min-[380px]:inline">{voterCount} voting</span>
+            <span className="min-[380px]:hidden">{voterCount}</span>
           </div>
 
           {/* Timer Ring Badge */}
-          <div className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-orange/15 text-orange border border-orange/30 text-[11px] font-bold">
-            <Timer className="w-3 h-3" />
+          <div className="inline-flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-full bg-orange/15 text-orange border border-orange/30 text-[10px] sm:text-[11px] font-bold">
+            <Timer className="w-3 h-3 shrink-0" />
             <span>{timerSeconds}s</span>
           </div>
 
           {/* Sound FX Toggle button */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-1.5 rounded-full bg-paper hover:bg-paper-elevated text-muted hover:text-ink border border-hairline transition-colors cursor-pointer"
+            className="p-1.5 rounded-full bg-paper hover:bg-paper-elevated text-muted hover:text-ink border border-hairline transition-colors cursor-pointer shrink-0"
             title={soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
             aria-label="Toggle Sound Effects"
           >
@@ -168,7 +169,7 @@ export const LandingPlayground: React.FC = () => {
           {/* Reset Demo button */}
           <button
             onClick={handleReset}
-            className="p-1.5 rounded-full bg-paper hover:bg-paper-elevated text-muted hover:text-ink border border-hairline transition-colors cursor-pointer"
+            className="p-1.5 rounded-full bg-paper hover:bg-paper-elevated text-muted hover:text-ink border border-hairline transition-colors cursor-pointer shrink-0"
             title="Reset interactive preview"
           >
             <RotateCcw className="w-3.5 h-3.5" />

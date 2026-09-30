@@ -82,20 +82,21 @@ export const LandingDualCockpit: React.FC = () => {
         </p>
 
         {/* Persona Switcher Toggle */}
-        <div className="inline-flex p-1.5 bg-paper-card border border-hairline rounded-2xl sm:rounded-full mt-4 font-mono text-xs">
+        <div className="inline-flex flex-wrap sm:flex-nowrap justify-center gap-1.5 p-1.5 bg-paper-card border border-hairline rounded-2xl sm:rounded-full mt-4 font-mono text-xs max-w-full">
           <button
             onClick={() => {
               playClickSound();
               setActivePersona('attendee');
             }}
-            className={`px-5 py-2.5 rounded-xl sm:rounded-full font-bold uppercase transition-all cursor-pointer flex items-center space-x-2 ${
+            className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full font-bold uppercase transition-all cursor-pointer flex items-center space-x-1.5 sm:space-x-2 shrink-0 ${
               activePersona === 'attendee'
                 ? 'bg-ink text-paper shadow-xs'
                 : 'text-muted hover:text-ink'
             }`}
           >
-            <Smartphone className="w-4 h-4 text-orange" />
-            <span>ATTENDEE EXPERIENCE</span>
+            <Smartphone className="w-4 h-4 text-orange shrink-0" />
+            <span className="sm:hidden">ATTENDEE</span>
+            <span className="hidden sm:inline">ATTENDEE EXPERIENCE</span>
           </button>
 
           <button
@@ -103,14 +104,15 @@ export const LandingDualCockpit: React.FC = () => {
               playClickSound();
               setActivePersona('host');
             }}
-            className={`px-5 py-2.5 rounded-xl sm:rounded-full font-bold uppercase transition-all cursor-pointer flex items-center space-x-2 ${
+            className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-full font-bold uppercase transition-all cursor-pointer flex items-center space-x-1.5 sm:space-x-2 shrink-0 ${
               activePersona === 'host'
                 ? 'bg-ink text-paper shadow-xs'
                 : 'text-muted hover:text-ink'
             }`}
           >
-            <Crown className="w-4 h-4 text-lime" />
-            <span>PRESENTER COCKPIT</span>
+            <Crown className="w-4 h-4 text-lime shrink-0" />
+            <span className="sm:hidden">PRESENTER</span>
+            <span className="hidden sm:inline">PRESENTER COCKPIT</span>
           </button>
         </div>
       </div>

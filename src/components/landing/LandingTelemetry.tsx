@@ -27,9 +27,9 @@ export const LandingTelemetry: React.FC = () => {
     },
     {
       icon: <Trophy className="w-5 h-5 text-orange" />,
-      value: 'Cryptographic',
-      label: 'VERIFIED PASSES',
-      description: 'Instant tamper-proof Masterclass certificates with QR validation.',
+      value: 'AI Summaries',
+      label: 'INSTANT RECAPS',
+      description: 'Automated executive recap reports in Markdown immediately following each keynote.',
       accent: 'border-orange/30 bg-orange/5',
     },
   ];

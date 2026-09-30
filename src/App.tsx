@@ -889,7 +889,6 @@ export function App() {
           onOpenAISettings={() => setActiveTab('ai-settings')}
           onOpenAISummary={() => setActiveTab('session-report')}
           onOpenCertificate={() => setIsCertificateModalOpen(true)}
-          onExploreLanding={() => setIsExploringLanding(true)}
           onSignOut={handleSignOut}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}

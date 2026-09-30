@@ -79,10 +79,10 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-xs font-bold shadow-2xs"
+              className="inline-flex items-center space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-[10px] sm:text-xs font-bold shadow-2xs max-w-full"
             >
-              <span className="w-2 h-2 rounded-full bg-orange animate-pulse" />
-              <span className="uppercase tracking-wider">LIVE INTERACTIVE AUDIENCE OPERATING SYSTEM</span>
+              <span className="w-2 h-2 rounded-full bg-orange animate-pulse shrink-0" />
+              <span className="uppercase tracking-normal sm:tracking-wider break-words text-left">LIVE INTERACTIVE AUDIENCE OPERATING SYSTEM</span>
             </motion.div>
 
             <motion.div
@@ -91,7 +91,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
               transition={{ duration: 0.5, delay: 0.1 }}
               className="space-y-4"
             >
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-ink leading-[1.06]">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-ink leading-[1.08] break-words">
                 Turn passive crowds into an{' '}
                 <em className="italic font-serif text-orange underline decoration-orange/30 decoration-wavy decoration-2">
                   electrified
@@ -117,11 +117,11 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   playPopSound();
                   scrollToGateway('guest');
                 }}
-                className="px-6 py-3.5 rounded-2xl btn-noma-orange flex items-center justify-center space-x-2 cursor-pointer shadow-sm active:scale-95 transition-transform"
+                className="w-full sm:w-auto px-5 sm:px-6 py-3.5 rounded-2xl btn-noma-orange flex items-center justify-center space-x-2 cursor-pointer shadow-sm active:scale-95 transition-transform"
               >
-                <Zap className="w-4 h-4" />
+                <Zap className="w-4 h-4 shrink-0" />
                 <span>ENTER ARENA [1-TAP GUEST]</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
 
               <button
@@ -130,9 +130,9 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   playClickSound();
                   setShowQRPreview(true);
                 }}
-                className="px-5 py-3.5 rounded-2xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline hover:border-ink flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-subtle active:scale-95"
+                className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline hover:border-ink flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-subtle active:scale-95"
               >
-                <QrCode className="w-4 h-4 text-orange" />
+                <QrCode className="w-4 h-4 text-orange shrink-0" />
                 <span>ROOM QR CODE</span>
               </button>
             </motion.div>
