@@ -105,12 +105,12 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
         </div>
 
         {onViewResults && (
-          <div className="pt-2">
+          <div className="pt-3 pb-3">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onViewResults}
-              className="px-6 py-3 rounded-xl btn-noma-orange font-bold text-xs sm:text-sm cursor-pointer transition-all inline-flex items-center space-x-2 shadow-sm"
+              className="px-6 py-3.5 min-h-[48px] rounded-xl btn-noma-orange font-bold text-xs sm:text-sm cursor-pointer transition-all inline-flex items-center space-x-2 shadow-sm"
             >
               <Sparkles className="w-4 h-4" />
               <span>View Survey Results ({survey.responses_count})</span>

@@ -369,6 +369,9 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
           isSummarizing={isSummarizing === viewingResultsSurvey.id}
         />
       )}
+
+      {/* Mobile Bottom Clearance Spacer */}
+      <div className="h-10 sm:h-12 md:hidden w-full shrink-0 pointer-events-none" aria-hidden="true" />
     </div>
   );
 };

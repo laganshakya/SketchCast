@@ -864,7 +864,7 @@ export function App() {
         />
 
         {/* Main Content Area with Framer Motion Spring Transitions */}
-        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden relative p-3 sm:p-4 md:p-6 pb-56 sm:pb-60 md:pb-16 overscroll-y-contain">
+        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden relative p-3 sm:p-4 md:p-6 pb-28 sm:pb-32 md:pb-12 overscroll-y-contain">
         <AnimatePresence mode="wait">
           {/* TAB 1: Live Quiz Arena */}
           {activeTab === 'quiz' && (
@@ -914,7 +914,7 @@ export function App() {
 
               {/* Main Arena View */}
               <div
-                className={`flex-1 flex flex-col h-full min-w-0 ${
+                className={`flex-1 flex flex-col min-w-0 ${
                   userRole === 'host' && mobileHostQuizView === 'controls' ? 'hidden lg:flex' : 'flex'
                 }`}
               >
@@ -959,7 +959,7 @@ export function App() {
               {/* Host Quiz Launcher & Pack Selector (Shown if Host) */}
               {userRole === 'host' && (
                 <div
-                  className={`w-full lg:w-96 shrink-0 flex flex-col h-full ${
+                  className={`w-full lg:w-96 shrink-0 flex flex-col ${
                     mobileHostQuizView === 'arena' ? 'hidden lg:flex' : 'flex'
                   }`}
                 >
@@ -1218,6 +1218,12 @@ export function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Physical Mobile Bottom Clearance Spacer:
+            In Blink/WebKit on Android & iOS, padding-bottom on flex scroll containers is not factored into scrollable overflow height.
+            This in-flow physical spacer guarantees all views (Quiz options, Polls, Surveys, Scores, Q&A, Settings)
+            scroll completely clear of the fixed bottom navigation bar (min-h-16 + safe-area) and the floating reaction pill. */}
+        <div className="h-36 sm:h-40 md:h-8 w-full shrink-0 pointer-events-none" aria-hidden="true" />
       </main>
       </div>
 

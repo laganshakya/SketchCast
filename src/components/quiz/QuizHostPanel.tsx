@@ -691,6 +691,8 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
             );
           })
         )}
+        {/* Mobile Bottom Clearance Spacer */}
+        <div className="h-16 sm:h-20 md:hidden w-full shrink-0 pointer-events-none" aria-hidden="true" />
       </div>
 
       {/* Multi-Question Quiz Modal */}

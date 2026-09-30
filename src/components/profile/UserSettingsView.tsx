@@ -498,7 +498,7 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
   const userInitial = (userName.trim()[0] || 'U').toUpperCase();
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto no-scrollbar bg-paper font-sans text-ink select-none">
+    <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full bg-paper font-sans text-ink select-none">
       {/* Top Banner: User Profile Header */}
       <div className="border-b border-hairline bg-paper-surface/80 backdrop-blur-md px-4 sm:px-8 py-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1675,6 +1675,9 @@ export const UserSettingsView: React.FC<UserSettingsViewProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Bottom Clearance Spacer */}
+      <div className="h-10 sm:h-12 md:hidden w-full shrink-0 pointer-events-none" aria-hidden="true" />
     </div>
   );
 };

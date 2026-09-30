@@ -1105,6 +1105,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Clearance Spacer */}
+      <div className="h-10 sm:h-12 md:hidden w-full shrink-0 pointer-events-none" aria-hidden="true" />
     </motion.div>
   );
 };
