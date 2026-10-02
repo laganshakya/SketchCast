@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Room, AttendeePresence, ActiveTabType } from '../types';
 import { RealtimeChannelManager } from '../lib/realtime/channelManager';
-import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists, isRoomCreatedByMe } from '../lib/supabase';
+import { onAuthChange, getCurrentUser, signOutUser, dbFetchRooms, dbUpdateRoomAdmins, isEmailVerified, isUserRoomAdmin, dbEnsureRoomExists, isRoomCreatedByMe, dbCheckRoomExists } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { playPopSound } from '../lib/soundFx';
 
@@ -107,9 +107,6 @@ export function getStoredRoomCode(fallback: string = 'SKT-789'): string {
       if (cachedRooms.length === 0 || cachedRooms.some((r) => (r.code || '').toUpperCase() === lCode) || isRoomCreatedByMe(lCode)) {
         return lCode;
       }
-    }
-    if (cachedRooms.length > 0 && cachedRooms[0].code) {
-      return cachedRooms[0].code.toUpperCase();
     }
   }
   return fallback;
@@ -332,8 +329,9 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
 
       let current = rooms.find((r) => r.code.toUpperCase() === activeRoomCode.toUpperCase());
 
-      // If requested active room does NOT exist in database and authoritative rooms exist:
-      if (!current && rooms.length > 0) {
+      // If requested active room does NOT exist in database and authoritative rooms exist,
+      // and the user is authenticated, fall back to a valid room
+      if (!current && rooms.length > 0 && isAuthenticated) {
         // Fall back to a valid room: prioritize user's owned/co-administered room, else latest room
         const myOwned = rooms.find((r) => isUserRoomAdmin(r, currentUser, userName));
         const fallbackRoom = myOwned || rooms[0];
@@ -345,7 +343,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           sessionStorage.setItem(ROOM_CODE_KEY, targetCode);
           localStorage.setItem(ROOM_CODE_KEY, targetCode);
 
-          if (typeof window !== 'undefined' && isAuthenticated) {
+          if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             if (url.searchParams.has('room')) {
               url.searchParams.set('room', targetCode);
@@ -827,16 +825,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         effectiveRole = 'host';
         setRoom(currentRoom);
       } else {
+        const { exists, room: foundRoom } = await dbCheckRoomExists(targetRoomCode);
+        if (!exists || !foundRoom) {
+          throw new Error(`Room "${targetRoomCode}" does not exist. Please check the room key and try again.`);
+        }
         effectiveRole = 'attendee';
-        const existingRoom = allRooms.find((r) => r.code.toUpperCase() === targetRoomCode.toUpperCase());
-        setRoom(existingRoom || {
-          id: `room-${targetRoomCode}`,
-          code: targetRoomCode,
-          title: customRoomTitle || `Tech Arena // ${targetRoomCode}`,
-          host_id: 'host-external',
-          host_name: '',
-          created_at: new Date().toISOString(),
-        });
+        setRoom(foundRoom);
       }
     }
 

@@ -221,6 +221,61 @@ export async function dbEnsureRoomExists(roomCode: string, user?: User | null, u
   return newRoom;
 }
 
+export async function dbCheckRoomExists(
+  roomCode: string
+): Promise<{ exists: boolean; room?: Room }> {
+  const cleanCode = (roomCode || '').toUpperCase().trim();
+  if (!cleanCode) return { exists: false };
+
+  // 1. Check authoritative Supabase database
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .or(`code.ilike.${cleanCode},id.eq.room-${cleanCode}`)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        return { exists: true, room: data[0] as Room };
+      }
+    } catch (err) {
+      console.warn('Error checking room existence in Supabase:', err);
+    }
+  }
+
+  // 2. Check local storage cache and locally created rooms
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('sketchcast_local_rooms');
+      if (stored) {
+        const localRooms: Room[] = JSON.parse(stored);
+        const found = localRooms.find((r) => (r.code || '').toUpperCase().trim() === cleanCode);
+        if (found) {
+          return { exists: true, room: found };
+        }
+      }
+      if (isRoomCreatedByMe(cleanCode)) {
+        return {
+          exists: true,
+          room: {
+            id: `room-${cleanCode}`,
+            code: cleanCode,
+            title: `Tech Arena // ${cleanCode}`,
+            host_id: 'host-me',
+            host_name: '',
+            created_at: new Date().toISOString(),
+          },
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return { exists: false };
+}
+
 export async function dbFetchRooms(): Promise<Room[]> {
   let localRooms: Room[] = [];
   try {
