@@ -322,7 +322,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
           {/* Header */}
           <div className="p-4 sm:p-5 bg-paper-surface/80 border-b border-hairline flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center shrink-0 shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -330,7 +330,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                   <h2 className="text-base sm:text-lg font-serif text-ink tracking-tight">
                     Audience Survey Studio
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange text-[10px] font-mono font-medium border border-orange/20">
+                  <span className="px-2.5 py-0.5 rounded-full bg-orange/15 dark:bg-orange/20 text-orange text-[10px] font-mono font-bold border border-orange/40 dark:border-orange/30">
                     Step {step} of 2: {step === 1 ? 'Presets' : 'Questions'}
                   </span>
                 </div>
@@ -439,7 +439,7 @@ export const CreateSurveyModal: React.FC<CreateSurveyModalProps> = ({
                           onKeyDown={(e) => e.key === 'Enter' && handleGenerateWithAI()}
                         />
                         {isGitHubRepoInput(aiTopicPrompt) ? (
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-orange/10 border border-orange/20 text-orange text-[9px] font-mono font-semibold rounded uppercase flex items-center gap-1">
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-orange/15 dark:bg-orange/20 border border-orange/40 dark:border-orange/30 text-orange text-[9px] font-mono font-bold rounded uppercase flex items-center gap-1">
                             <FolderGit2 className="w-2.5 h-2.5" />
                             <span>GitHub</span>
                           </span>

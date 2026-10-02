@@ -240,7 +240,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
         const url = new URL(window.location.href);
         url.hash = tab;
         const currentCode = activeRoomCodeRef.current;
-        if (currentCode) {
+        if (currentCode && (isAuthenticated || url.searchParams.has('room'))) {
           url.searchParams.set('room', currentCode);
         }
         window.history.replaceState(null, '', url.toString());
@@ -248,7 +248,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     } catch {
       // ignore
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Listen to hash change for browser back/forward navigation
   useEffect(() => {
@@ -345,10 +345,12 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
           sessionStorage.setItem(ROOM_CODE_KEY, targetCode);
           localStorage.setItem(ROOM_CODE_KEY, targetCode);
 
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && isAuthenticated) {
             const url = new URL(window.location.href);
-            url.searchParams.set('room', targetCode);
-            window.history.replaceState(null, '', url.toString());
+            if (url.searchParams.has('room')) {
+              url.searchParams.set('room', targetCode);
+              window.history.replaceState(null, '', url.toString());
+            }
           }
         }
       }
@@ -379,7 +381,7 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
     return () => {
       isCancelled = true;
     };
-  }, [activeRoomCode, userName, currentUser, setActiveRoomCode]);
+  }, [activeRoomCode, userName, currentUser, setActiveRoomCode, isAuthenticated]);
 
   const userNameRef = useRef(userName);
   useEffect(() => {
@@ -780,9 +782,31 @@ export function useRoomSession(initialRoomCode: string = 'SKT-789') {
   ) => {
     const targetRoomCode = (customRoomCode || activeRoomCode || 'SKT-789').toUpperCase().trim();
     
+    // 1. Immediately synchronously set canonical room code, user state, and storage
     setUserName(name);
+    setUserRole(requestedRole);
+    setActiveRoomCode(targetRoomCode);
+    sessionStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
+    localStorage.setItem(ROOM_CODE_KEY, targetRoomCode);
 
-    // Fetch rooms to determine real permissions for this specific room
+    // 2. Immediately replace any stale room parameter in the URL with canonical room key
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', targetRoomCode);
+      window.history.replaceState(null, '', url.toString());
+    }
+
+    // 3. Immediately set room state to canonical target room to prevent any stale room flicker
+    setRoom((prev) => ({
+      ...prev,
+      id: `room-${targetRoomCode}`,
+      code: targetRoomCode,
+      title: customRoomTitle || (prev.code === targetRoomCode ? prev.title : `NextGen Arena // ${targetRoomCode}`),
+      host_id: requestedRole === 'host' ? 'host-me' : 'host-external',
+      host_name: requestedRole === 'host' ? name : prev.host_name,
+    }));
+
+    // 4. Fetch rooms from authoritative database to reconcile exact permissions and existing metadata
     const allRooms = await dbFetchRooms();
     let currentRoom = allRooms.find((r) => r.code.toUpperCase() === targetRoomCode);
     let effectiveRole: 'host' | 'attendee' = requestedRole;

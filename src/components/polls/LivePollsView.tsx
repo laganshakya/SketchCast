@@ -95,10 +95,10 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
       <div className="bg-paper p-4 sm:p-5 border border-hairline rounded-3xl card-noma flex items-center justify-between flex-wrap gap-2.5">
         <div>
           <div className="flex items-center space-x-2 text-xs mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-orange/10 text-orange font-semibold border border-orange/20">
+            <span className="px-2.5 py-0.5 rounded-full bg-orange/15 dark:bg-orange/20 text-orange font-bold border border-orange/40 dark:border-orange/30">
               Live Consensus
             </span>
-            <span className="text-muted font-medium">Audience Feedback</span>
+            <span className="text-muted font-semibold">Audience Feedback</span>
           </div>
           <h2 className="text-base sm:text-xl font-serif font-bold text-ink tracking-tight">
             Community Architecture Polls
@@ -129,16 +129,23 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
       {/* Polls List */}
       <div className="space-y-4">
         {polls.length === 0 ? (
-          <div className="bg-paper p-8 border border-hairline rounded-3xl card-noma text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-orange mx-auto" />
-            <h3 className="text-base font-serif font-bold text-ink">
-              No Active Community Polls
-            </h3>
-            <p className="text-xs text-muted max-w-md mx-auto">
-              {isHost
-                ? 'Launch a poll using the action above to poll the audience on technical architecture choices.'
-                : 'Standing by. The Keynote Host will broadcast community architecture polls during this session.'}
-            </p>
+          <div className="bg-paper p-8 sm:p-12 border border-hairline rounded-3xl card-noma text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center mx-auto shadow-xs">
+              <Sparkles className="w-7 h-7" />
+            </div>
+            <div className="space-y-1.5">
+              <span className="px-2.5 py-0.5 bg-paper-surface text-ink border border-hairline-strong text-xs font-mono font-bold rounded-full uppercase tracking-wider">
+                Consensus Queue Empty
+              </span>
+              <h3 className="text-lg sm:text-xl font-serif font-bold text-ink mt-2">
+                No Active Community Polls
+              </h3>
+              <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
+                {isHost
+                  ? 'Launch a poll using the action above to poll the audience on technical architecture choices.'
+                  : 'Standing by. The Keynote Host will broadcast community architecture polls during this session.'}
+              </p>
+            </div>
             {isHost && (
               <motion.button
                 whileTap={{ y: 1 }}
@@ -146,7 +153,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                   playClickSound();
                   onOpenCreatePoll();
                 }}
-                className="mt-2 px-4 py-2 btn-noma-orange text-xs font-semibold rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
+                className="mt-2 px-5 py-2.5 btn-noma-orange text-xs font-semibold rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create First Poll</span>

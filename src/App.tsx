@@ -656,9 +656,9 @@ export function App() {
           />
         )}
         <ModernLandingPage
-          onAuthenticated={(name, role, targetRoom) => {
+          onAuthenticated={async (name, role, targetRoom) => {
+            await handleAuthenticated(name, role, targetRoom);
             setIsExploringLanding(false);
-            handleAuthenticated(name, role, targetRoom);
           }}
           roomCode={room.code}
           isAuthenticated={isAuthenticated}

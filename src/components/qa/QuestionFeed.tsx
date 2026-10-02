@@ -245,12 +245,29 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
       {/* Feed List */}
       <div className="flex-1 p-3.5 space-y-2.5">
         {filtered.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-muted">
-            <Sparkles className="w-8 h-8 text-muted/60 mb-2" />
-            <p className="text-xs font-bold text-ink font-serif">No questions in queue</p>
-            <p className="text-[11px] text-muted mt-1">
-              Submit an architecture question to challenge the keynote speaker.
-            </p>
+          <div className="py-10 px-4 text-center space-y-3 bg-paper-card border border-hairline rounded-2xl my-2">
+            <div className="w-12 h-12 bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-ink font-display">
+                No Questions in Queue
+              </h4>
+              <p className="text-xs text-muted max-w-xs mx-auto leading-relaxed">
+                Submit an architecture question to challenge the keynote speaker.
+              </p>
+            </div>
+            <motion.button
+              whileTap={{ y: 1 }}
+              onClick={() => {
+                playClickSound();
+                onOpenAskModal();
+              }}
+              className="mt-1 px-4 py-2 btn-noma-orange text-xs font-semibold rounded-xl inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Ask First Question</span>
+            </motion.button>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">

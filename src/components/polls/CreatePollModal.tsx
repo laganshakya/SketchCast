@@ -215,7 +215,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
             </motion.button>
 
             <div className="flex items-start space-x-3 mb-5 pr-10">
-              <div className="w-10 h-10 bg-orange/10 text-orange border border-orange/20 rounded-2xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 rounded-2xl flex items-center justify-center shrink-0 shadow-xs">
                 <Vote className="w-5 h-5" />
               </div>
               <div>
@@ -404,13 +404,13 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="text-xs font-semibold block mb-1 text-muted">Poll Question</label>
+                <label className="text-xs font-bold block mb-1 text-ink">Poll Question</label>
                 <input
                   type="text"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="e.g. Which API architecture do you deploy in 2026?"
-                  className="w-full px-3.5 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink placeholder:text-muted/60 transition-colors"
+                  className="w-full px-3.5 py-2 text-xs bg-paper border border-hairline rounded-xl text-ink font-medium focus:outline-none focus:border-ink placeholder:text-muted/70 transition-colors"
                   required
                   autoFocus
                 />
@@ -418,7 +418,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-muted">Options (2 to 6)</label>
+                  <label className="text-xs font-bold text-ink">Options (2 to 6)</label>
                   {options.length < 6 && (
                     <motion.button
                       type="button"

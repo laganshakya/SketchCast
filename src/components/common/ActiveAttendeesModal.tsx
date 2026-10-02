@@ -343,7 +343,7 @@ export const ActiveAttendeesModal: React.FC<ActiveAttendeesModalProps> = ({
             {/* Modal Header */}
             <div className="flex items-start justify-between mb-4 pr-10">
               <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center shrink-0 shadow-xs">
                   <Radio className="w-5 h-5 text-orange" />
                 </div>
                 <div className="min-w-0">

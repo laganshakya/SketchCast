@@ -182,12 +182,12 @@ export const SurveyTab: React.FC<SurveyTabProps> = ({
       ) : (
         /* Empty State */
         <div className="bg-paper border border-hairline rounded-3xl p-8 sm:p-12 text-center space-y-4 card-noma relative overflow-hidden">
-          <div className="w-14 h-14 bg-orange/10 text-orange border border-orange/20 rounded-2xl mx-auto flex items-center justify-center">
+          <div className="w-14 h-14 bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 rounded-2xl mx-auto flex items-center justify-center shadow-xs">
             <ClipboardList className="w-7 h-7" />
           </div>
 
           <div className="space-y-1.5">
-            <span className="px-2.5 py-0.5 bg-paper-surface text-muted border border-hairline text-xs font-mono font-bold rounded-full uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 bg-paper-surface text-ink border border-hairline-strong text-xs font-mono font-bold rounded-full uppercase tracking-wider">
               Standing By
             </span>
             <h3 className="text-lg sm:text-xl font-serif font-bold text-ink mt-2">

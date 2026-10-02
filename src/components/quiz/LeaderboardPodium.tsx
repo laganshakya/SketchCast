@@ -167,7 +167,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
       {/* Header */}
       <div className="p-3.5 sm:p-5 border-b border-hairline bg-paper-surface flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2.5 sm:space-x-3">
-          <div className="w-9 h-9 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-2xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center shrink-0 shadow-xs">
             <Trophy className="w-5 h-5" />
           </div>
           <div>
@@ -410,8 +410,21 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
         {/* Scalable Leaderboard List */}
         <div className="space-y-2">
           {leaderboard.length === 0 ? (
-            <div className="text-center py-8 text-muted font-mono text-xs">
-              NO RANKED PLAYERS YET. LAUNCH A ROUND TO ENTER THE PODIUM.
+            <div className="py-10 px-4 text-center space-y-3 bg-paper-card border border-hairline rounded-2xl my-2">
+              <div className="w-12 h-12 bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <span className="px-2.5 py-0.5 bg-paper-surface text-ink border border-hairline-strong text-[11px] font-mono font-bold rounded-full uppercase tracking-wider">
+                  Podium Standing By
+                </span>
+                <h4 className="text-base font-serif font-bold text-ink mt-2">
+                  No Ranked Players Yet
+                </h4>
+                <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed">
+                  Live standings will populate dynamically as attendees submit answers during active quiz challenges.
+                </p>
+              </div>
             </div>
           ) : filteredLeaderboard.length === 0 ? (
             <div className="text-center py-6 text-muted font-mono text-xs">

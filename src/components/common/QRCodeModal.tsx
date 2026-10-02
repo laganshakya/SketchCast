@@ -62,7 +62,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </motion.button>
 
             <div className="flex flex-col items-center mb-4">
-              <div className="w-11 h-11 rounded-2xl bg-orange/10 text-orange border border-orange/20 flex items-center justify-center mb-2.5 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center mb-2.5 shadow-xs">
                 <QrCode className="w-5 h-5" />
               </div>
               <h3 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-ink">
@@ -71,7 +71,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <p className="text-xs text-muted truncate max-w-56 sm:max-w-64 mt-0.5">
                 {roomTitle}
               </p>
-              <p className="text-[11px] text-muted/80 mt-1 font-mono tracking-wide">
+              <p className="text-[11px] text-muted mt-1 font-mono tracking-wide font-medium">
                 Instant mobile access • Zero login required
               </p>
             </div>

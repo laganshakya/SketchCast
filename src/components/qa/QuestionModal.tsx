@@ -206,7 +206,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
 
             {/* Header */}
             <div className="flex items-start space-x-3 mb-5 pr-10">
-              <div className="w-10 h-10 bg-orange/10 text-orange border border-orange/20 rounded-2xl flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 rounded-2xl flex items-center justify-center shrink-0 shadow-xs">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>

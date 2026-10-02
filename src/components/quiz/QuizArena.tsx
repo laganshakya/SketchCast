@@ -297,8 +297,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-paper text-ink font-sans">
-        <div className="w-16 h-16 rounded-3xl bg-paper-elevated text-orange border border-hairline flex items-center justify-center mb-4 shadow-xs">
-          <Sparkles className="w-7 h-7 text-orange" />
+        <div className="w-16 h-16 rounded-3xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center mb-4 shadow-xs">
+          <Sparkles className="w-7 h-7" />
         </div>
         <div className="text-xs font-mono tracking-widest text-orange uppercase font-bold mb-1">
           ARENA STANDBY
@@ -306,7 +306,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <h3 className="text-3xl sm:text-4xl font-serif font-bold text-ink uppercase tracking-tight mb-3">
           NO ACTIVE QUIZ ROUND
         </h3>
-        <p className="text-sm font-sans text-muted max-w-md bg-paper-elevated p-5 rounded-2xl border border-hairline leading-relaxed">
+        <p className="text-sm font-sans text-muted max-w-md bg-paper-elevated p-5 rounded-2xl border border-hairline-strong leading-relaxed">
           {isHost
             ? 'Launch a challenge from the host control console to begin the live round.'
             : 'Standing by. The keynote host is queuing the next architecture challenge...'}
