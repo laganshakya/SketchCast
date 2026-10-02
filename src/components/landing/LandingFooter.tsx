@@ -26,10 +26,8 @@ export const LandingFooter: React.FC = () => {
             © 2026 SKETCHCAST • STUDIO NOMA EDITION. ALL RIGHTS RESERVED.
           </div>
           <div className="flex items-center space-x-4">
-            <a href="#features" className="hover:text-ink transition-colors">FEATURES</a>
-            <a href="#demo" className="hover:text-ink transition-colors">LIVE DEMO</a>
-            <a href="#cockpit" className="hover:text-ink transition-colors">PRESENTER</a>
-            <a href="#architecture" className="hover:text-ink transition-colors">ARCHITECTURE</a>
+            <a href="#gateway" className="hover:text-ink transition-colors">ENTER ARENA</a>
+            <a href="#capabilities" className="hover:text-ink transition-colors">CAPABILITIES</a>
             <a href="#faq" className="hover:text-ink transition-colors">FAQ</a>
           </div>
         </div>

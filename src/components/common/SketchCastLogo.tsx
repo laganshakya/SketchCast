@@ -91,18 +91,12 @@ export const SketchCastLogo: React.FC<SketchCastLogoProps> = ({
 
       {/* Wordmark */}
       {showWordmark && (
-        <div className="flex items-center tracking-tight min-w-0 font-sans">
+        <div className={`items-center tracking-tight min-w-0 font-sans ${collapsedOnMobile ? 'hidden min-[380px]:flex' : 'flex'}`}>
           <span className={`${config.text} font-extrabold tracking-tight text-ink uppercase shrink-0 leading-none whitespace-nowrap`}>
             SKETCH
-            {collapsedOnMobile ? (
-              <span className="text-orange hidden min-[360px]:inline ml-0.5">
-                CAST
-              </span>
-            ) : (
-              <span className="text-orange ml-0.5">
-                CAST
-              </span>
-            )}
+            <span className="text-orange ml-0.5">
+              CAST
+            </span>
             <span className="font-mono text-[9px] text-muted ml-1 font-semibold lowercase align-top tracking-normal">
               ®
             </span>

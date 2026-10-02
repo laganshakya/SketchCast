@@ -2,23 +2,18 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Zap,
-  Crown,
   QrCode,
   ArrowRight,
-  Shield,
   CheckCircle2,
+  BarChart3,
+  MessageSquareQuote,
+  Flame,
+  Award,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { LandingNavbar } from './LandingNavbar';
-import { LandingTicker } from './LandingTicker';
-import { LandingPlayground } from './LandingPlayground';
 import { LandingGatewayCard } from './LandingGatewayCard';
-import { LandingTelemetry } from './LandingTelemetry';
-import { LandingFeatures } from './LandingFeatures';
-import { LandingDualCockpit } from './LandingDualCockpit';
-import { LandingArchitecture } from './LandingArchitecture';
 import { LandingFAQ } from './LandingFAQ';
-import { LandingCTA } from './LandingCTA';
 import { LandingFooter } from './LandingFooter';
 import { playClickSound, playPopSound } from '../../lib/soundFx';
 
@@ -53,10 +48,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
     : `https://sketchcast.live/?room=${roomCode.trim().toUpperCase() || 'SKT-789'}`;
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-paper text-ink font-sans selection:bg-lime selection:text-ink overflow-x-hidden relative">
-      {/* Top Marquee Ticker */}
-      <LandingTicker />
-
+    <div className="h-dvh max-h-dvh overflow-y-auto overflow-x-hidden w-full flex flex-col bg-paper text-ink font-sans selection:bg-lime selection:text-ink relative scroll-smooth">
       {/* Sticky Header Navbar */}
       <LandingNavbar
         onJoinClick={(mode) => scrollToGateway(mode || 'guest')}
@@ -66,23 +58,23 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
         onReturnToArena={onReturnToArena}
       />
 
-      {/* Hero Section */}
-      <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-12 sm:pb-20">
-        {/* Background Ambient Accents */}
-        <div className="absolute top-10 left-1/3 w-80 h-80 bg-lime/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-40 right-10 w-96 h-96 bg-orange/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Section with Embedded 1-Tap Gateway */}
+      <section id="gateway" className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-12 sm:pb-20">
+        {/* Ambient Glow Accents */}
+        <div className="absolute top-10 left-1/4 w-72 h-72 bg-lime/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-24 right-10 w-80 h-80 bg-orange/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Kinetic Editorial Copy */}
-          <div className="lg:col-span-6 space-y-6 text-left">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* Left Column: Kinetic Editorial Headline & Value Prop */}
+          <div className="lg:col-span-6 space-y-6 text-left lg:pt-4">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="inline-flex items-center space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-[10px] sm:text-xs font-bold shadow-2xs max-w-full"
+              className="inline-flex items-center space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-lime/25 border border-lime text-ink font-mono text-[10px] sm:text-xs font-bold shadow-2xs max-w-full"
             >
               <span className="w-2 h-2 rounded-full bg-orange animate-pulse shrink-0" />
-              <span className="uppercase tracking-normal sm:tracking-wider break-words text-left">LIVE INTERACTIVE AUDIENCE OPERATING SYSTEM</span>
+              <span className="uppercase tracking-wider">REAL-TIME AUDIENCE OPERATING SYSTEM</span>
             </motion.div>
 
             <motion.div
@@ -100,7 +92,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
               </h1>
 
               <p className="text-sm sm:text-base font-sans text-muted leading-relaxed max-w-xl">
-                High-velocity interactive engagement for tech meetups, masterclasses, and conferences. Real-time competitive quizzes, instant audience consensus, and crowdsourced technical Q&A with sub-40ms synchronization.
+                High-velocity interactive engagement for tech meetups, masterclasses, and keynotes. Sub-40ms mesh synchronization across competitive live quizzes, instant consensus polling, and crowdsourced technical Q&A.
               </p>
             </motion.div>
 
@@ -109,140 +101,171 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 font-mono text-xs font-bold uppercase"
+              className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs font-bold uppercase"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  playPopSound();
-                  scrollToGateway('guest');
-                }}
-                className="w-full sm:w-auto px-5 sm:px-6 py-3.5 rounded-2xl btn-noma-orange flex items-center justify-center space-x-2 cursor-pointer shadow-sm active:scale-95 transition-transform"
-              >
-                <Zap className="w-4 h-4 shrink-0" />
-                <span>ENTER ARENA [1-TAP GUEST]</span>
-                <ArrowRight className="w-4 h-4 shrink-0" />
-              </button>
-
               <button
                 type="button"
                 onClick={() => {
                   playClickSound();
                   setShowQRPreview(true);
                 }}
-                className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline hover:border-ink flex items-center justify-center space-x-2 cursor-pointer transition-all shadow-subtle active:scale-95"
+                className="px-4 py-3 rounded-2xl bg-paper-card hover:bg-paper-elevated text-ink border border-hairline hover:border-ink flex items-center space-x-2 cursor-pointer transition-all shadow-subtle active:scale-95"
               >
                 <QrCode className="w-4 h-4 text-orange shrink-0" />
                 <span>ROOM QR CODE</span>
               </button>
+
+              <a
+                href="#capabilities"
+                onClick={() => playClickSound()}
+                className="px-4 py-3 rounded-2xl text-muted hover:text-ink flex items-center space-x-1.5 transition-colors text-xs font-mono"
+              >
+                <span>EXPLORE CAPABILITIES</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
             </motion.div>
 
             {/* Live Trust & Telemetry Indicators */}
-            <div className="pt-3 border-t border-hairline flex flex-wrap items-center gap-4 text-xs font-mono text-muted">
+            <div className="pt-4 border-t border-hairline flex flex-wrap items-center gap-4 text-xs font-mono text-muted">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-lime" />
-                <span>Zero Installs Required</span>
+                <span>Zero Installs (Browser Native)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-lime" />
-                <span>Sub-40ms WebSockets</span>
+                <span>Sub-40ms WebSockets Mesh</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-lime" />
-                <span>Instant Session Reports</span>
+                <span>Automated AI Session Recaps</span>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Simulated Mini-Arena Playground */}
-          <div id="demo" className="lg:col-span-6 w-full">
+          {/* Right Column: Embedded 1-Tap Entry & Host Gateway */}
+          <div className="lg:col-span-6 w-full">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.45, delay: 0.15 }}
             >
-              <LandingPlayground />
+              <LandingGatewayCard
+                onAuthenticated={onAuthenticated}
+                initialRoomCode={roomCode}
+                onOpenQR={() => setShowQRPreview(true)}
+                onVerifyCertLookup={onVerifyCertLookup}
+                activeMode={gatewayMode}
+              />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Gateway Entry Portal Section */}
-      <section id="gateway" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Gateway Explanation & Features */}
-          <div className="lg:col-span-6 space-y-6 text-left">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-xs font-bold">
-              <Shield className="w-3.5 h-3.5 text-orange" />
-              <span className="uppercase tracking-wider">ONE-TAP ACCESS HUB</span>
+      {/* Core Capabilities Triad (Compact 3-Card Grid) */}
+      <section id="capabilities" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 border-t border-hairline">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-orange/10 border border-orange/20 text-orange font-mono text-xs font-bold">
+            <Zap className="w-3.5 h-3.5" />
+            <span className="uppercase tracking-wider">CORE CAPABILITIES</span>
+          </div>
+
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink">
+            Engineered for high-density live rooms.
+          </h2>
+
+          <p className="text-sm sm:text-base font-sans text-muted leading-relaxed">
+            Three low-friction interaction primitives designed to keep audiences leaning forward from first slide to final recap.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Sub-40ms Live Quizzing */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-paper-card border border-hairline hover:border-ink/20 transition-all shadow-subtle flex flex-col justify-between space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange/15 border border-orange/30 text-orange flex items-center justify-center">
+                <Flame className="w-6 h-6" />
+              </div>
+
+              <div>
+                <div className="text-[10px] font-mono font-bold uppercase text-orange tracking-widest">
+                  COMPETITIVE ENGINE
+                </div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink mt-1">
+                  Sub-40ms Live Quizzes
+                </h3>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted leading-relaxed font-sans">
+                Time-weighted score multipliers, instant answer reveals, and dynamic podium surges that spark friendly rivalry across the room.
+              </p>
             </div>
 
-            <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink leading-tight">
-              Ready to jump into the action?
-            </h2>
-
-            <p className="text-sm sm:text-base font-sans text-muted leading-relaxed">
-              Join an existing session with a room key or sign in as a host to orchestrate your own interactive masterclass. Frictionless, secure, and ready in seconds.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="p-4 rounded-2xl bg-paper-card border border-hairline flex items-start space-x-3 shadow-xs">
-                <div className="p-2 rounded-xl bg-lime/25 text-ink border border-lime shrink-0">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-mono text-xs font-bold uppercase text-ink">1-Click Guest</div>
-                  <div className="text-xs text-muted mt-0.5">Instant alias & anonymous mesh token</div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-paper-card border border-hairline flex items-start space-x-3 shadow-xs">
-                <div className="p-2 rounded-xl bg-orange/15 text-orange border border-orange/30 shrink-0">
-                  <Crown className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-mono text-xs font-bold uppercase text-ink">Presenter Tools</div>
-                  <div className="text-xs text-muted mt-0.5">Live telemetry, AI polls & reports</div>
-                </div>
-              </div>
+            <div className="pt-3 border-t border-hairline flex items-center gap-2 text-[11px] font-mono text-muted">
+              <Award className="w-3.5 h-3.5 text-orange shrink-0" />
+              <span>Instant celebratory podiums</span>
             </div>
           </div>
 
-          {/* Right Gateway Form Card */}
-          <div className="lg:col-span-6 w-full">
-            <LandingGatewayCard
-              onAuthenticated={onAuthenticated}
-              initialRoomCode={roomCode}
-              onOpenQR={() => setShowQRPreview(true)}
-              onVerifyCertLookup={onVerifyCertLookup}
-              activeMode={gatewayMode}
-            />
+          {/* Card 2: Instant Consensus & Polls */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-paper-card border border-hairline hover:border-ink/20 transition-all shadow-subtle flex flex-col justify-between space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-lime/20 border border-lime text-ink flex items-center justify-center">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+
+              <div>
+                <div className="text-[10px] font-mono font-bold uppercase text-ink tracking-widest">
+                  AUDIENCE SENTIMENT
+                </div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink mt-1">
+                  Instant Consensus Polls
+                </h3>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted leading-relaxed font-sans">
+                Collect real-time votes on architectural choices and debate points with animated vote distributions and AI sentiment synthesis.
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-hairline flex items-center gap-2 text-[11px] font-mono text-muted">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-lime shrink-0" />
+              <span>Zero-lag distribution curves</span>
+            </div>
+          </div>
+
+          {/* Card 3: Moderated Q&A & AI Recaps */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-paper-card border border-hairline hover:border-ink/20 transition-all shadow-subtle flex flex-col justify-between space-y-5">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-paper border border-hairline-strong text-ink flex items-center justify-center">
+                <MessageSquareQuote className="w-6 h-6" />
+              </div>
+
+              <div>
+                <div className="text-[10px] font-mono font-bold uppercase text-muted tracking-widest">
+                  SPEAKER SAFEGUARDS
+                </div>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink mt-1">
+                  Moderated Q&A & AI Recaps
+                </h3>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted leading-relaxed font-sans">
+                Crowdsourced question upvoting with automated 3-strike troll safeguards, host triage pins, and 1-click Markdown session summary exports.
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-hairline flex items-center gap-2 text-[11px] font-mono text-muted">
+              <Zap className="w-3.5 h-3.5 text-orange shrink-0" />
+              <span>Exportable executive summaries</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Telemetry Metrics Bar */}
-      <LandingTelemetry />
-
-      {/* Feature Deep Dive Studio */}
-      <LandingFeatures />
-
-      {/* Dual Persona: Attendee vs Presenter */}
-      <LandingDualCockpit />
-
-      {/* Architecture & Sub-40ms Mesh Visualizer */}
-      <LandingArchitecture />
-
-      {/* FAQ Accordion */}
+      {/* Practical FAQ */}
       <LandingFAQ />
 
-      {/* Bottom Conversion Banner */}
-      <LandingCTA
-        onJoinClick={(mode) => scrollToGateway(mode || 'guest')}
-        roomCode={roomCode}
-      />
-
-      {/* Editorial Footer */}
+      {/* Minimalist Footer */}
       <LandingFooter />
 
       {/* QR Code Quick Modal */}
@@ -255,7 +278,10 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
             className="bg-paper text-ink w-full max-w-sm p-6 sm:p-7 rounded-3xl border border-hairline shadow-2xl relative text-center max-h-[90dvh] overflow-y-auto"
           >
             <button
-              onClick={() => setShowQRPreview(false)}
+              onClick={() => {
+                playPopSound();
+                setShowQRPreview(false);
+              }}
               className="absolute top-5 right-5 p-1.5 rounded-xl bg-paper-card text-muted hover:text-ink transition-colors cursor-pointer border border-hairline"
               aria-label="Close QR Modal"
             >

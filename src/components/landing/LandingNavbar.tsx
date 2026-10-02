@@ -40,10 +40,8 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   };
 
   const navLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'Live Demo', href: '#demo' },
-    { label: 'Presenter Cockpit', href: '#cockpit' },
-    { label: 'Architecture', href: '#architecture' },
+    { label: 'Enter Arena', href: '#gateway' },
+    { label: 'Capabilities', href: '#capabilities' },
     { label: 'FAQ', href: '#faq' },
   ];
 

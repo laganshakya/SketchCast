@@ -68,9 +68,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       </div>
 
-      <div className="h-14 sm:h-16 px-3 sm:px-6 md:px-8 flex items-center justify-between gap-2 w-full max-w-full overflow-hidden relative">
+      <div className="h-14 sm:h-16 px-2.5 sm:px-6 md:px-8 flex items-center justify-between gap-1.5 sm:gap-2 w-full max-w-full relative">
         {/* ================= LEFT: Brand & Navigation ================= */}
-        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0 min-w-0">
+        <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0">
           {/* Mobile Drawer Toggle (< md) */}
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -152,11 +152,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
 
         {/* ================= RIGHT: Telemetry, Theme, Presence ================= */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 min-w-0">
+        <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           {/* Mobile Room Code & Copy (< sm) */}
           <button
             onClick={handleCopyCode}
-            className="sm:hidden flex items-center space-x-1 px-2.5 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[11px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
+            className="sm:hidden flex items-center space-x-1 px-2 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[10px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
             title="Click to copy Room Code"
             aria-label={`Copy Room Code ${room.code}`}
           >
@@ -174,7 +174,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               playClickSound();
               onOpenActiveAttendees?.();
             }}
-            className="sm:hidden flex items-center space-x-1 px-2 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[11px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
+            className="sm:hidden flex items-center space-x-1 px-1.5 h-8 bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong rounded-full text-[10px] font-mono font-bold shadow-subtle shrink-0 cursor-pointer active:scale-95 transition-all"
             title="View participants"
             aria-label={`${Math.max(1, activeViewerCount)} online participants`}
           >
@@ -203,7 +203,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               playClickSound();
               onOpenQRCode();
             }}
-            className="sm:hidden h-8 w-8 flex items-center justify-center rounded-full bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong transition-colors cursor-pointer shrink-0 active:scale-95 shadow-subtle"
+            className="sm:hidden h-8 w-8 min-w-[32px] flex items-center justify-center rounded-full bg-paper-card hover:bg-paper-elevated text-ink border border-hairline-strong transition-colors cursor-pointer shrink-0 active:scale-95 shadow-subtle"
             title="Open Room QR Code"
             aria-label="Open Room QR Code"
           >

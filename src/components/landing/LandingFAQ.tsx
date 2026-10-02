@@ -9,7 +9,7 @@ interface FAQItem {
 }
 
 export const LandingFAQ: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const faqs: FAQItem[] = [
     {
@@ -25,16 +25,8 @@ export const LandingFAQ: React.FC = () => {
       a: 'When an audience struggles with a specific quiz question, our built-in Mesh AI engine automatically drafts a follow-up remediation poll or targeted takeaway. At the end of your masterclass, you can generate a complete executive recap report in Markdown with 1 click.',
     },
     {
-      q: 'Can presenters export session analytics and audience reports?',
-      a: 'Absolutely. Presenters can download complete session analytics, quiz score distributions, consensus breakdowns, and AI-generated executive summaries as Markdown, CSV, or JSON immediately following any keynote or workshop.',
-    },
-    {
       q: 'How does Q&A safeguard moderation protect the stage?',
       a: 'SketchCast incorporates automated AI content moderation. Submissions are screened in real time against configurable safeguard rules. Attendees with repeated violations receive automated warnings and strikes (up to 3 strikes), giving moderators full peace of mind.',
-    },
-    {
-      q: 'Can presenters sponsor keynotes or embed affiliate tools?',
-      a: 'Yes. Presenters can configure custom sponsor banners, call-to-actions, and recommended tools in the Room Settings and User Profile hub, making it easy to monetize workshops and direct attendees to technical resources.',
     },
   ];
 
