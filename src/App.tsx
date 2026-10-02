@@ -19,6 +19,7 @@ import { AuthModal } from './components/common/AuthModal';
 import { SurveyTab } from './components/survey/SurveyTab';
 import { FloatingReactionsOverlay } from './components/common/FloatingReactionsOverlay';
 import type { VerifiedCertPayload } from './components/certificate/CertificateVerificationModal';
+import { dbLookupCertificate } from './lib/certificateLedger';
 
 // Dynamic lazy-loaded modals and admin views for minimal initial bundle
 const RoomSettingsView = lazy(() => import('./components/rooms/RoomSettingsView').then((m) => ({ default: m.RoomSettingsView })));
@@ -48,7 +49,7 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
   }
   if (verifyCert && verifyCert.trim()) {
     const roomCode = (params.get('room') || 'ARENA').toUpperCase().trim();
-    const correctQuizzes = Number(params.get('correct') || params.get('score') || 0);
+    const correctQuizzes = params.get('correct') !== null ? Number(params.get('correct')) : 0;
     const recipientName = params.get('name') || 'Masterclass Attendee';
     const rawTitle = params.get('title');
     const rank = Number(params.get('rank') || 1);
@@ -60,6 +61,7 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
     });
     const score = Number(params.get('score') || 0);
     const hostName = params.get('host') || 'Arena Host';
+    const signature = params.get('sig') || undefined;
     return {
       certId: verifyCert.trim(),
       roomCode,
@@ -71,6 +73,7 @@ function parseVerificationUrl(): VerifiedCertPayload | null {
       issueDate,
       score,
       hostName,
+      signature,
     };
   }
   return null;
@@ -293,7 +296,10 @@ export function App() {
       url.searchParams.delete('title');
       url.searchParams.delete('rank');
       url.searchParams.delete('total');
+      url.searchParams.delete('correct');
       url.searchParams.delete('date');
+      url.searchParams.delete('host');
+      url.searchParams.delete('sig');
       const cleanPath = url.pathname.startsWith('/verify/') ? '/' : url.pathname;
       window.history.replaceState({}, '', `${cleanPath}${url.search}`);
     }
@@ -627,22 +633,43 @@ export function App() {
     setIsSocialCardModalOpen(true);
   };
 
-  const handleCertLookup = useCallback((certId: string) => {
-    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-    const currentRoomCode = (params.get('room') || room.code || 'ARENA').toUpperCase().trim();
-    setVerifiedCertData({
-      certId: certId.trim().toUpperCase(),
-      roomCode: currentRoomCode,
-      correctQuizzes: 4,
-      recipientName: userName || 'Masterclass Attendee',
-      roomTitle: room.title || `Masterclass Interactive Session (${currentRoomCode})`,
-      rank: 1,
-      totalAttendees: Math.max(attendees.length, 12),
-      issueDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      score: 400,
-      hostName: resolvedHostName || 'Arena Host',
-    });
-  }, [attendees.length, resolvedHostName, room.code, room.title, userName]);
+  const handleCertLookup = useCallback(async (certId: string) => {
+    const cleanId = certId.trim().toUpperCase();
+    if (!cleanId) return;
+
+    // Look up certificate in the ledger (Supabase database with localStorage cache fallback)
+    const foundRecord = await dbLookupCertificate(cleanId);
+    if (foundRecord) {
+      setVerifiedCertData({
+        certId: foundRecord.certId,
+        roomCode: foundRecord.roomCode,
+        correctQuizzes: foundRecord.correctQuizzes || 0,
+        recipientName: foundRecord.recipientName,
+        roomTitle: foundRecord.roomTitle || `Masterclass Session (${foundRecord.roomCode})`,
+        rank: foundRecord.rank || 1,
+        totalAttendees: foundRecord.totalAttendees || 1,
+        issueDate: foundRecord.issueDate || (foundRecord.issuedAt ? new Date(foundRecord.issuedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined),
+        score: foundRecord.score || 0,
+        hostName: foundRecord.hostName || resolvedHostName || 'Arena Host',
+        signature: foundRecord.signature,
+      });
+    } else {
+      // Unregistered or unknown certificate: will cleanly show as unverified/tampered in modal
+      setVerifiedCertData({
+        certId: cleanId,
+        roomCode: room.code || 'ARENA',
+        correctQuizzes: 0,
+        recipientName: 'Unknown Recipient',
+        roomTitle: `Unregistered Credential (${cleanId})`,
+        rank: 0,
+        totalAttendees: 0,
+        issueDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        score: 0,
+        hostName: resolvedHostName || 'Arena Host',
+        signature: undefined, // Missing signature triggers instant tamper/forgery warning
+      });
+    }
+  }, [resolvedHostName, room.code]);
 
   // If user is not authenticated or explicitly exploring landing page, render ModernLandingPage
   if (!isAuthenticated || isExploringLanding) {

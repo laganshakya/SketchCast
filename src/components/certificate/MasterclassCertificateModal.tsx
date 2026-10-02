@@ -11,6 +11,7 @@ import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { playCertificateFanfare, playClickSound, playPopSound } from '../../lib/soundFx';
 import { ContextualAffiliateCard } from '../affiliate/ContextualAffiliateCard';
 import { useAffiliateRecommendation } from '../../hooks/useAffiliateRecommendation';
+import { signCertificate, dbRegisterCertificate } from '../../lib/certificateLedger';
 import type { SponsorCTA } from '../../types';
 
 interface MasterclassCertificateModalProps {
@@ -41,6 +42,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
   sponsorCTA,
 }) => {
   const [downloading, setDownloading] = useState(false);
+  const [signature, setSignature] = useState<string>('');
 
   const affiliateRec = useAffiliateRecommendation({
     placement: 'certificate',
@@ -65,9 +67,37 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     year: 'numeric',
   });
 
+  // Cryptographically sign the certificate and register in the merit ledger
+  useEffect(() => {
+    let isMounted = true;
+    const certPayload = {
+      certId,
+      roomCode,
+      recipientName,
+      roomTitle,
+      rank,
+      totalAttendees,
+      score,
+      correctQuizzes,
+      hostName,
+      issueDate,
+    };
+
+    signCertificate(certPayload).then((sig) => {
+      if (!isMounted) return;
+      setSignature(sig);
+      dbRegisterCertificate({ ...certPayload, signature: sig }, sig).catch(() => {});
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [certId, correctQuizzes, hostName, issueDate, rank, recipientName, roomCode, roomTitle, score, totalAttendees]);
+
+  const sigParam = signature ? `&sig=${encodeURIComponent(signature)}` : '';
   const verificationUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`
-    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&host=${encodeURIComponent(hostName)}`;
+    ? `${window.location.origin}/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&date=${encodeURIComponent(issueDate)}&host=${encodeURIComponent(hostName)}${sigParam}`
+    : `https://sketchcast.live/?verify_cert=${certId}&room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(recipientName)}&title=${encodeURIComponent(roomTitle)}&rank=${rank}&total=${totalAttendees}&score=${score}&correct=${correctQuizzes}&date=${encodeURIComponent(issueDate)}&host=${encodeURIComponent(hostName)}${sigParam}`;
 
   // Draw high-resolution 1200x700 Certificate Card on Canvas (Studio Noma Editorial Aesthetic)
   const drawCertificate = useCallback(() => {
@@ -232,10 +262,11 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     ctx.font = 'bold 14px "Manrope", sans-serif';
     ctx.fillText(hostName, 340, footerY + 103);
 
-    // Metadata line (Issued on & Certificate ID)
+    // Metadata line (Issued on, Certificate ID, and Cryptographic Seal)
     ctx.fillStyle = '#65655F';
     ctx.font = '11px "DM Mono", monospace';
-    ctx.fillText(`ISSUED: ${issueDate.toUpperCase()}  •  CREDENTIAL: ${certId}`, 70, footerY + 142);
+    const sealSnippet = signature ? `  •  SEAL: ${signature.slice(0, 10).toUpperCase()}` : '';
+    ctx.fillText(`ISSUED: ${issueDate.toUpperCase()}  •  CREDENTIAL: ${certId}${sealSnippet}`, 70, footerY + 142);
 
     // Right QR Code Box
     const qrCanvas = qrContainerRef.current?.querySelector('canvas');
@@ -265,7 +296,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
     ctx.font = '11px "DM Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('Verified Realtime Keynote Credential • Powered by Studio Noma & SketchCast', width / 2, height - 16);
-  }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate, score, correctQuizzes, hostName]);
+  }, [certId, recipientName, roomCode, roomTitle, rank, totalAttendees, issueDate, score, correctQuizzes, hostName, signature]);
 
   // Launch celebration fanfare EXACTLY ONCE per modal opening
   const celebrationFiredRef = useRef(false);

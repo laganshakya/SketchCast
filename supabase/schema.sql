@@ -908,3 +908,31 @@ on conflict (id) do update set
   min_difficulty = excluded.min_difficulty,
   is_active = excluded.is_active,
   priority = excluded.priority;
+
+-- ====================================================================
+-- CERTIFICATES TABLE (Cryptographic Merit Ledger)
+-- ====================================================================
+create table if not exists public.certificates (
+  id text primary key,
+  room_code text not null,
+  recipient_name text not null,
+  room_title text not null,
+  rank integer not null default 1,
+  total_attendees integer not null default 1,
+  score integer not null default 0,
+  correct_quizzes integer not null default 0,
+  host_name text not null,
+  signature text not null,
+  issued_at timestamptz default now()
+);
+
+create index if not exists idx_certificates_room on public.certificates (room_code);
+create index if not exists idx_certificates_signature on public.certificates (signature);
+
+alter table public.certificates enable row level security;
+
+create policy "Allow public read of certificates" on public.certificates
+  for select using (true);
+
+create policy "Allow insert of certificates" on public.certificates
+  for insert with check (true);
