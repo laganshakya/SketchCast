@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
     <filter id="subtle-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#101313" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#101313" flood-opacity="0.12"/>
     </filter>
   </defs>
-  <!-- Studio Noma 90-Degree Drop Brand Mark -->
-  <g transform="translate(28.06, 32) rotate(-45)">
+  <!-- Studio Noma 90-Degree Drop Brand Mark - Mathematically Centered -->
+  <g transform="translate(32, 28.893) rotate(45)">
     <path d="M 0 -19 A 19 19 0 0 1 19 0 L 19 15 A 4 4 0 0 1 15 19 L 0 19 A 19 19 0 0 1 -19 0 A 19 19 0 0 1 0 -19 Z" fill="#FF6337" filter="url(#subtle-shadow)"/>
   </g>
 </svg>
