@@ -76,7 +76,7 @@ const renderFormattedText = (text: string) => {
         return (
           <code
             key={seg.key}
-            className="px-2 py-0.5 mx-0.5 rounded-lg bg-[#101313] dark:bg-[#141818] text-lime dark:text-[#d7ff2f] font-mono text-[0.88em] font-semibold border border-black/30 dark:border-white/10 shadow-2xs"
+            className="px-2 py-0.5 mx-0.5 rounded-lg bg-ink text-paper dark:bg-paper-card dark:text-lime font-mono text-[0.88em] font-semibold border border-hairline shadow-2xs"
           >
             {seg.raw.slice(1, -1)}
           </code>
@@ -251,17 +251,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     if (quizState.isQuizFinished) {
       return (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-paper text-ink font-sans">
-          <div className="w-16 h-16 rounded-3xl bg-lime/30 text-ink border border-lime flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-lime/25 text-ink border border-lime flex items-center justify-center mb-4 shadow-sm">
             <Trophy className="w-8 h-8 text-ink" />
           </div>
-          <div className="text-xs font-mono tracking-widest text-orange uppercase font-bold mb-1">
-            ROUND CONCLUDED
+          <div className="text-xs font-mono tracking-wider text-orange uppercase font-bold mb-1">
+            Session Concluded
           </div>
-          <h3 className="text-3xl sm:text-4xl font-serif font-bold text-ink uppercase tracking-tight mb-3">
-            QUIZ SESSION COMPLETED
+          <h3 className="text-3xl sm:text-4xl font-serif font-bold text-ink tracking-tight mb-3">
+            All Questions Resolved
           </h3>
           <p className="text-sm font-sans text-muted max-w-md bg-paper-elevated p-5 rounded-2xl border border-hairline leading-relaxed mb-6">
-            All questions for this session have been resolved! Check the leaderboard to see final standings, scores, and celebratory certificates.
+            All architectural challenges for this session have been completed. Check the live leaderboard to view final podium standings, points, and verified certificates.
           </p>
           <div className="flex items-center gap-3">
             {onViewScores && (
@@ -274,7 +274,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 className="px-6 py-3 btn-noma-orange font-mono text-xs font-bold uppercase rounded-xl flex items-center space-x-2 cursor-pointer shadow-sm"
               >
                 <Trophy className="w-4 h-4" />
-                <span>VIEW LEADERBOARD</span>
+                <span>View Leaderboard</span>
               </motion.button>
             )}
             {isHost && onClearActiveQuiz && (
@@ -284,10 +284,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   playClickSound();
                   onClearActiveQuiz();
                 }}
-                className="px-5 py-3 bg-paper-card hover:bg-black/[0.04] text-ink border border-hairline font-mono text-xs font-bold uppercase rounded-xl flex items-center space-x-2 cursor-pointer transition-colors"
+                className="px-5 py-3 bg-paper-card hover:bg-paper-surface text-ink border border-hairline font-mono text-xs font-bold uppercase rounded-xl flex items-center space-x-2 cursor-pointer transition-colors"
               >
                 <RefreshCw className="w-4 h-4 text-muted" />
-                <span>NEW SESSION</span>
+                <span>New Session</span>
               </motion.button>
             )}
           </div>
@@ -297,19 +297,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-paper text-ink font-sans">
-        <div className="w-16 h-16 rounded-3xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/40 dark:border-orange/30 flex items-center justify-center mb-4 shadow-xs">
+        <div className="w-16 h-16 rounded-3xl bg-orange/15 dark:bg-orange/20 text-orange border border-orange/30 flex items-center justify-center mb-4 shadow-xs">
           <Sparkles className="w-7 h-7" />
         </div>
-        <div className="text-xs font-mono tracking-widest text-orange uppercase font-bold mb-1">
-          ARENA STANDBY
+        <div className="text-xs font-mono tracking-wider text-orange uppercase font-bold mb-1">
+          Arena Standby
         </div>
-        <h3 className="text-3xl sm:text-4xl font-serif font-bold text-ink uppercase tracking-tight mb-3">
-          NO ACTIVE QUIZ ROUND
+        <h3 className="text-3xl sm:text-4xl font-serif font-bold text-ink tracking-tight mb-3">
+          Ready for Challenge
         </h3>
-        <p className="text-sm font-sans text-muted max-w-md bg-paper-elevated p-5 rounded-2xl border border-hairline-strong leading-relaxed">
+        <p className="text-sm font-sans text-muted max-w-md bg-paper-elevated p-5 rounded-2xl border border-hairline leading-relaxed">
           {isHost
-            ? 'Launch a challenge from the host control console to begin the live round.'
-            : 'Standing by. The keynote host is queuing the next architecture challenge...'}
+            ? 'Launch a question from the host console to begin the live round.'
+            : 'Standing by. The presenter is queuing the next architecture challenge...'}
         </p>
       </div>
     );
@@ -545,7 +545,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   — Re-anchoring core mental models & essentials
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-lg bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 font-mono text-[10px] font-bold tracking-wider uppercase shrink-0">
+              <span className="px-2.5 py-0.5 rounded-lg bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline font-mono text-[10px] font-bold tracking-wider uppercase shrink-0">
                 {question.difficultyTier || 'Junior'} TIER
               </span>
             </motion.div>

@@ -146,7 +146,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
                 : 'text-muted hover:text-ink'
             }`}
           >
-            <Clock className="w-3.5 h-3.5 text-paper shrink-0" />
+            <Clock className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'recent' ? 'text-lime' : 'text-muted'}`} />
             <span>Recent</span>
           </motion.button>
 
@@ -162,7 +162,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
                 : 'text-muted hover:text-ink'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-lime shrink-0" />
+            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'answered' ? 'text-lime' : 'text-emerald-600 dark:text-lime'}`} />
             <span>Answered</span>
           </motion.button>
 
@@ -178,7 +178,7 @@ export const QuestionFeed: React.FC<QuestionFeedProps> = ({
                 : 'text-muted hover:text-ink'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-orange shrink-0" />
+            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'spotlight' ? 'text-lime' : 'text-orange'}`} />
             <span>Stage</span>
           </motion.button>
         </div>

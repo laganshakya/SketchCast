@@ -104,10 +104,9 @@ export const LandingPlayground: React.FC = () => {
   }, [soundEnabled]);
 
   return (
-    <div className="w-full bg-paper-card text-ink rounded-3xl border border-hairline-strong p-4 sm:p-7 shadow-elevated relative overflow-hidden font-sans">
-      {/* Background Glow */}
-      <div className="absolute -top-24 -right-24 w-60 h-60 bg-lime/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-orange/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="w-full bg-paper-card text-ink rounded-3xl border border-hairline-strong p-4 sm:p-7 shadow-card relative overflow-hidden font-sans">
+      {/* Precision Geometric Dot Background */}
+      <div className="absolute inset-0 bg-dot-grid opacity-25 pointer-events-none" />
 
       {/* Floating Reactions Canvas Overlay */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">

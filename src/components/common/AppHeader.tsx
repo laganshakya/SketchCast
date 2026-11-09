@@ -57,8 +57,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="flex flex-col bg-paper/95 backdrop-blur-md border-b border-hairline z-40 select-none shrink-0 font-sans relative w-full">
-      {/* Studio Noma Top Marquee Ribbon */}
-      <div className="marquee">
+      {/* Studio Noma Top Marquee Ribbon (Desktop / Tablet) */}
+      <div className="marquee hidden sm:flex h-7">
         <div className="marquee-track">
           <span className="inline-flex items-center"><b>✦</b>Studio Noma × SketchCast / Live Technical Architecture Masterclass</span>
           <span className="inline-flex items-center"><b>✦</b>Room {room.code} • {room.title || 'Interactive Arena'}</span>

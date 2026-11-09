@@ -27,10 +27,9 @@ export const LandingArchitecture: React.FC = () => {
 
   return (
     <section id="architecture" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-      <div className="bg-paper-card text-ink rounded-3xl border border-hairline-strong p-6 sm:p-10 lg:p-12 shadow-elevated relative overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-lime/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-orange/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-paper-card text-ink rounded-3xl border border-hairline-strong p-6 sm:p-10 lg:p-12 shadow-card relative overflow-hidden">
+        {/* Technical Architectural Background Grid */}
+        <div className="absolute inset-0 bg-dot-grid opacity-25 pointer-events-none" />
 
         <div className="relative z-10 text-center max-w-3xl mx-auto mb-10 sm:mb-12 space-y-4">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-lime/30 border border-lime text-ink font-mono text-xs font-bold">

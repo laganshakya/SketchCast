@@ -308,11 +308,11 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
             <Shield className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
-            <div className="text-[10px] font-mono tracking-widest text-orange uppercase font-bold">
-              GATEWAY ACCESS
+            <div className="text-[10px] font-mono tracking-wider text-orange uppercase font-bold">
+              ARENA ACCESS
             </div>
-            <h2 className="text-xl font-serif font-bold uppercase tracking-tight text-ink mt-0.5">
-              {verificationSentEmail ? 'EMAIL VERIFICATION' : 'ENTER ARENA'}
+            <h2 className="text-xl font-serif font-bold tracking-tight text-ink mt-0.5">
+              {verificationSentEmail ? 'Verify Your Email' : 'Join or Host a Session'}
             </h2>
           </div>
         </div>
@@ -409,7 +409,7 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
               }`}
             >
               <Zap className={`w-3.5 h-3.5 shrink-0 ${tab === 'guest' ? 'text-lime' : 'text-muted'}`} />
-              <span className="truncate">GUEST</span>
+              <span className="truncate">GUEST PASS</span>
             </button>
 
             <button
@@ -426,7 +426,7 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
               }`}
             >
               <Lock className={`w-3.5 h-3.5 shrink-0 ${tab === 'signin' ? 'text-orange' : 'text-muted'}`} />
-              <span className="truncate">HOST IN</span>
+              <span className="truncate">PRESENTER</span>
             </button>
 
             <button
@@ -470,8 +470,8 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
                     <Key className="w-3.5 h-3.5 text-orange" />
                     <span>
                       {tab !== 'guest' && role === 'host'
-                        ? 'HOST ROOM KEY (ASSIGNED):'
-                        : 'ROOM KEY / PASSCODE:'}
+                        ? 'Assigned Host Passcode:'
+                        : 'Room Passcode:'}
                     </span>
                   </label>
                   {tab !== 'guest' && role === 'host' ? (
@@ -484,7 +484,7 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
                       }}
                       className="text-[10px] bg-paper text-orange hover:bg-black/[0.04] px-2 py-0.5 rounded-lg font-bold uppercase flex items-center gap-1 border border-hairline transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <RefreshCw className={`w-3 h-3 ${isGeneratingHostKey ? 'animate-spin' : ''}`} /> SHUFFLE
+                      <RefreshCw className={`w-3 h-3 ${isGeneratingHostKey ? 'animate-spin' : ''}`} /> NEW CODE
                     </button>
                   ) : (
                     <div>
@@ -557,7 +557,7 @@ export const LandingGatewayCard: React.FC<LandingGatewayCardProps> = ({
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-bold uppercase flex items-center gap-1.5 text-ink">
                         <UserIcon className="w-3.5 h-3.5 text-orange" />
-                        <span>YOUR SCREEN ALIAS:</span>
+                        <span>Attendee Screen Alias:</span>
                       </label>
                       <button
                         type="button"

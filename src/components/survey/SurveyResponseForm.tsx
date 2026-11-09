@@ -12,11 +12,11 @@ interface SurveyResponseFormProps {
 }
 
 const RATING_TIERS = [
-  { value: 1, label: 'POOR', color: 'bg-[#18181B]' },
-  { value: 2, label: 'FAIR', color: 'bg-[#27272A]' },
-  { value: 3, label: 'GOOD', color: 'bg-[#3F3F46]' },
-  { value: 4, label: 'VERY GOOD', color: 'bg-[#1E3A8A]' },
-  { value: 5, label: 'EXCEPTIONAL', color: 'bg-[#1D4ED8]' },
+  { value: 1, label: 'Poor' },
+  { value: 2, label: 'Fair' },
+  { value: 3, label: 'Good' },
+  { value: 4, label: 'Very Good' },
+  { value: 5, label: 'Exceptional' },
 ];
 
 export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
@@ -219,7 +219,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                           onClick={() => handleRatingSelect(q.id, tier.value)}
                           className={`p-2.5 sm:p-3.5 rounded-2xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime font-bold shadow-md scale-102'
+                              ? 'bg-ink text-paper dark:bg-lime dark:text-ink border-hairline font-bold shadow-sm scale-102'
                               : isHovered
                               ? 'bg-paper text-ink border-ink/40'
                               : 'bg-paper text-muted border-hairline hover:bg-paper-surface'
@@ -276,7 +276,7 @@ export const SurveyResponseForm: React.FC<SurveyResponseFormProps> = ({
                       >
                         <span
                           className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-mono font-bold shrink-0 ${
-                            isSelected ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime' : 'bg-paper-surface text-muted border-hairline'
+                            isSelected ? 'bg-ink text-paper dark:bg-lime dark:text-ink border-hairline' : 'bg-paper-surface text-muted border-hairline'
                           }`}
                         >
                           {isSelected ? '✓' : optionLetter}

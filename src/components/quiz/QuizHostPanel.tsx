@@ -708,7 +708,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
 
             {/* Modal Title */}
             <div className="flex items-start space-x-3.5 mb-6 pr-8">
-              <div className="w-11 h-11 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-ink text-lime border border-hairline flex items-center justify-center shrink-0 shadow-xs">
                 <Sparkles className="w-5 h-5 text-lime" />
               </div>
               <div>
@@ -896,7 +896,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                         }}
                         className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
                           aiFormat === 'short_answer'
-                            ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink shadow-xs'
+                            ? 'bg-ink text-paper dark:bg-lime dark:text-ink shadow-xs'
                             : 'text-muted hover:text-ink'
                         }`}
                         title="Generate short answer questions auto-graded by TypeSafe Jev-1.13"
@@ -955,7 +955,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                       <div
                         className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
                           isAdaptiveLiveMode
-                            ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime'
+                            ? 'bg-ink text-paper dark:bg-lime dark:text-ink border-hairline'
                             : 'bg-paper border-hairline text-muted'
                         }`}
                       >
@@ -967,7 +967,7 @@ export const QuizHostPanel: React.FC<QuizHostPanelProps> = ({
                           <span
                             className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded ${
                               isAdaptiveLiveMode
-                                ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink'
+                                ? 'bg-ink text-paper dark:bg-lime dark:text-ink'
                                 : 'bg-paper text-muted border border-hairline'
                             }`}
                           >

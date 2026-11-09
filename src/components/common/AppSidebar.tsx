@@ -633,7 +633,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="bg-paper-elevated border border-hairline rounded-2xl p-2.5 space-y-2">
               <div className="flex items-center space-x-2.5 min-w-0">
                 <div
-                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/20 dark:border-lime/30"
+                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline"
                 >
                   {userInitial}
                 </div>

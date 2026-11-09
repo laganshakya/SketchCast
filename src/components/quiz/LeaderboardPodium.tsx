@@ -21,7 +21,7 @@ interface LeaderboardPodiumProps {
 const getRankBadge = (rank: number) => {
   if (rank === 0) {
     return (
-      <span className="w-7 h-7 rounded-xl bg-[#101313] dark:bg-lime text-lime dark:text-ink flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-sm border border-black/20 dark:border-lime">
+      <span className="w-7 h-7 rounded-xl bg-ink text-paper dark:bg-lime dark:text-ink flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-sm border border-hairline">
         01
       </span>
     );
@@ -359,7 +359,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
                   <span className="text-[10px] font-mono text-ink font-bold uppercase tracking-wider">
                     YOUR CURRENT STANDING
                   </span>
-                  <span className="px-1.5 py-0.2 bg-[#101313] dark:bg-lime text-lime dark:text-ink text-[8px] font-mono font-bold rounded">
+                  <span className="px-1.5 py-0.2 bg-ink text-paper dark:bg-lime dark:text-ink text-[8px] font-mono font-bold rounded">
                     YOU
                   </span>
                 </div>

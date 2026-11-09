@@ -770,7 +770,7 @@ export function App() {
                     )}
                   </div>
                   <p className="text-xs text-ink/80 font-medium mt-1">
-                    Attendee <span className="bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime px-1.5 py-0.5 rounded font-mono font-bold border border-black/20 dark:border-lime/30">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
+                    Attendee <span className="bg-ink text-paper dark:bg-lime/20 dark:text-lime px-1.5 py-0.5 rounded font-mono font-bold border border-hairline">{violationAlert.attendeeName}</span> repeatedly violated Q&A safety guidelines.
                   </p>
                   <div className="text-[11px] text-muted font-sans mt-1.5 bg-paper-card p-2.5 rounded-xl border border-hairline leading-snug">
                     <span className="font-bold text-ink">Reason:</span> {violationAlert.reason}
@@ -785,7 +785,7 @@ export function App() {
 
               <button
                 onClick={() => setViolationAlert(null)}
-                className="p-1 bg-paper-card hover:bg-black/[0.05] text-muted hover:text-ink border border-hairline rounded-lg cursor-pointer shrink-0 transition-colors"
+                className="p-1 bg-paper-card hover:bg-paper text-muted hover:text-ink border border-hairline rounded-lg cursor-pointer shrink-0 transition-colors"
                 title="Dismiss alert"
               >
                 <X className="w-3.5 h-3.5" />
@@ -793,13 +793,13 @@ export function App() {
             </div>
 
             {/* Quick Action Buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-2 border-t border-[#27272A]">
+            <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-2 border-t border-hairline">
               <button
                 onClick={() => {
                   playPopSound();
                   sendAttendeeWarning(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                 }}
-                className="px-3 py-1.5 bg-[#F59E0B]/20 hover:bg-[#F59E0B]/30 text-[#F59E0B] font-mono text-xs font-bold uppercase border border-[#F59E0B]/50 flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 font-mono text-xs font-bold uppercase border border-amber-500/30 rounded-xl flex items-center space-x-1.5 cursor-pointer transition-colors"
                 title="Send official safeguard warning to attendee"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
@@ -811,10 +811,10 @@ export function App() {
                   resetAttendeeStrikes(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                   setViolationAlert(null);
                 }}
-                className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-[#FAFAFA] font-mono text-xs font-bold uppercase border border-[#27272A] flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-paper-card hover:bg-paper text-ink font-mono text-xs font-bold uppercase border border-hairline rounded-xl flex items-center space-x-1.5 cursor-pointer transition-colors"
                 title="Reset strikes"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 text-muted" />
                 <span>RESET STRIKES</span>
               </button>
               <button
@@ -823,9 +823,9 @@ export function App() {
                   muteAttendee(violationAlert.attendeeSessionId, violationAlert.attendeeName);
                   setViolationAlert(null);
                 }}
-                className="px-3 py-1.5 bg-[#18181D] hover:bg-[#22222A] text-[#FAFAFA] font-mono text-xs font-bold uppercase border border-[#27272A] flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-paper-card hover:bg-paper text-ink font-mono text-xs font-bold uppercase border border-hairline rounded-xl flex items-center space-x-1.5 cursor-pointer transition-colors"
               >
-                <MicOff className="w-3.5 h-3.5 text-[#3B82F6]" />
+                <MicOff className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 <span>MUTE ATTENDEE</span>
               </button>
               <button
@@ -836,14 +836,14 @@ export function App() {
                     setViolationAlert(null);
                   }
                 }}
-                className="px-3 py-1.5 bg-[#EF4444] hover:bg-[#DC2626] text-white font-mono text-xs font-bold uppercase border border-[#EF4444] flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-bold uppercase border border-red-600 rounded-xl flex items-center space-x-1.5 cursor-pointer transition-colors shadow-xs"
               >
                 <UserX className="w-3.5 h-3.5" />
                 <span>BAN & KICK</span>
               </button>
               <button
                 onClick={() => setViolationAlert(null)}
-                className="px-2.5 py-1.5 bg-[#121215] hover:bg-[#18181D] text-[#A1A1AA] font-mono text-xs uppercase border border-[#27272A] cursor-pointer"
+                className="px-2.5 py-1.5 bg-paper-card hover:bg-paper text-muted hover:text-ink font-mono text-xs uppercase border border-hairline rounded-xl cursor-pointer transition-colors"
               >
                 DISMISS
               </button>
@@ -1286,20 +1286,20 @@ export function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 min-h-[64px] bg-paper/95 backdrop-blur-md border-t border-hairline px-1 sm:px-2 flex items-center justify-around z-40 pb-safe shadow-lg">
+      <nav aria-label="Mobile Bottom Navigation" className="md:hidden fixed bottom-0 inset-x-0 min-h-[64px] bg-paper/95 backdrop-blur-md border-t border-hairline px-1.5 flex items-center justify-around z-40 pb-safe shadow-lg">
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => {
             playWhoosh();
             setActiveTab('quiz');
           }}
-          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 min-h-[48px] py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'quiz'
               ? 'bg-ink text-paper shadow-xs'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink hover:bg-paper-surface'
           }`}
         >
-          <Zap className="w-4 h-4 mb-0.5" />
+          <Zap className={`w-4 h-4 mb-0.5 ${activeTab === 'quiz' ? 'text-lime' : ''}`} />
           <span>QUIZ</span>
         </motion.button>
 
@@ -1309,13 +1309,13 @@ export function App() {
             playWhoosh();
             setActiveTab('polls');
           }}
-          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 min-h-[48px] py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'polls'
               ? 'bg-ink text-paper shadow-xs'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink hover:bg-paper-surface'
           }`}
         >
-          <Vote className="w-4 h-4 mb-0.5" />
+          <Vote className={`w-4 h-4 mb-0.5 ${activeTab === 'polls' ? 'text-orange' : ''}`} />
           <span>POLLS</span>
         </motion.button>
 
@@ -1325,14 +1325,14 @@ export function App() {
             playWhoosh();
             setActiveTab('qa');
           }}
-          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 min-h-[48px] py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'qa'
               ? 'bg-ink text-paper shadow-xs'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink hover:bg-paper-surface'
           }`}
         >
           <div className="relative mb-0.5">
-            <HelpCircle className="w-4 h-4" />
+            <HelpCircle className={`w-4 h-4 ${activeTab === 'qa' ? 'text-lime' : ''}`} />
             {filteredQuestions.length > 0 && (
               <span className="absolute -top-1 -right-1.5 w-2 h-2 bg-orange rounded-full ring-1.5 ring-paper animate-pulse" />
             )}
@@ -1346,14 +1346,14 @@ export function App() {
             playWhoosh();
             setActiveTab('surveys');
           }}
-          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
+          className={`flex-1 min-h-[48px] py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer relative ${
             activeTab === 'surveys'
               ? 'bg-ink text-paper shadow-xs'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink hover:bg-paper-surface'
           }`}
         >
           <div className="relative mb-0.5">
-            <ClipboardList className="w-4 h-4" />
+            <ClipboardList className={`w-4 h-4 ${activeTab === 'surveys' ? 'text-orange' : ''}`} />
             {activeSurvey && !userSubmittedIds.has(activeSurvey.id) && (
               <span className="absolute -top-1 -right-1.5 w-2 h-2 bg-orange rounded-full ring-1.5 ring-paper animate-pulse" />
             )}
@@ -1367,16 +1367,16 @@ export function App() {
             playWhoosh();
             setActiveTab('leaderboard');
           }}
-          className={`flex-1 py-2 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
+          className={`flex-1 min-h-[48px] py-1.5 mx-0.5 rounded-xl flex flex-col items-center justify-center font-mono text-[9px] xs:text-[10px] font-bold uppercase transition-all cursor-pointer ${
             activeTab === 'leaderboard'
               ? 'bg-ink text-paper shadow-xs'
-              : 'text-muted hover:text-ink'
+              : 'text-muted hover:text-ink hover:bg-paper-surface'
           }`}
         >
-          <Trophy className="w-4 h-4 mb-0.5" />
+          <Trophy className={`w-4 h-4 mb-0.5 ${activeTab === 'leaderboard' ? 'text-lime' : ''}`} />
           <span>SCORES</span>
         </motion.button>
-      </div>
+      </nav>
 
       {/* Modals */}
       <QRCodeModal

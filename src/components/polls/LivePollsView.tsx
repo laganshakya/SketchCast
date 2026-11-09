@@ -242,7 +242,7 @@ export const LivePollsView: React.FC<LivePollsViewProps> = ({
                           <div
                             className={`w-6 h-6 rounded-lg border flex items-center justify-center font-mono text-xs shrink-0 font-bold ${
                               isVoted
-                                ? 'bg-[#101313] dark:bg-lime text-lime dark:text-ink border-black/20 dark:border-lime'
+                                ? 'bg-ink text-paper dark:bg-lime dark:text-ink border-hairline'
                                 : 'bg-paper text-muted border-hairline'
                             }`}
                           >

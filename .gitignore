@@ -41,3 +41,5 @@ Thumbs.db
 scratch/
 supabase/.temp/
 *.md
+!README.md
+!DESIGN.md

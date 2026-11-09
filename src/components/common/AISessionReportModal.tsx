@@ -522,7 +522,7 @@ export const AISessionReportModal: React.FC<AISessionReportModalProps> = ({
 
             {/* Modal Header */}
             <div className="flex items-start space-x-3.5 mb-5 pr-10">
-              <div className="w-11 h-11 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline flex items-center justify-center shrink-0 shadow-xs">
                 <FileText className="w-5 h-5" />
               </div>
               <div>

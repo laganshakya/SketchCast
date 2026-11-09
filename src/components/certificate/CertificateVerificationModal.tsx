@@ -249,7 +249,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
         ) : (
           <div className="p-4 sm:p-5 bg-paper-surface text-ink border-b border-hairline flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-2xl bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <ShieldCheck className="w-5 h-5 text-lime" />
               </div>
               <div>
@@ -345,7 +345,7 @@ export const CertificateVerificationModal: React.FC<CertificateVerificationModal
               <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl ${
                 isTampered
                   ? 'bg-red-100 dark:bg-red-950/50 text-red-600 border border-red-300 dark:border-red-900'
-                  : 'bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30'
+                  : 'bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline'
               } shadow-xs`}>
                 {isTampered ? <AlertTriangle className="w-7 h-7" /> : <Trophy className="w-7 h-7" />}
               </div>

@@ -179,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {/* Modal Header */}
             <div className="flex items-start space-x-3 mb-6 pr-8">
-              <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-black/20 dark:border-lime/30 flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-2xl bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline flex items-center justify-center shrink-0 shadow-xs">
                 <Shield className="w-5 h-5 stroke-[2]" />
               </div>
               <div>

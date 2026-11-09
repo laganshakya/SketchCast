@@ -372,7 +372,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
             {/* Modal Header Bar */}
             <div className="p-4 sm:p-5 bg-paper-surface text-ink border-b border-hairline flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 flex items-center justify-center font-bold shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline flex items-center justify-center font-bold shadow-xs">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
@@ -418,7 +418,7 @@ export const MasterclassCertificateModal: React.FC<MasterclassCertificateModalPr
 
                 {/* Issuer Seal */}
                 <div className="pt-1">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#101313] dark:bg-lime/20 text-lime dark:text-lime border border-ink/10 dark:border-lime/30 shadow-xs">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-ink text-paper dark:bg-lime/20 dark:text-lime border border-hairline shadow-xs">
                     <Trophy className="w-7 h-7" />
                   </div>
                 </div>

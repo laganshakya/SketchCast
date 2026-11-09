@@ -4,40 +4,40 @@
 
 :root {
   /* Studio Noma Core Palette (Light Mode: Paper & Ink Studio) */
-  --ink: #101313;
-  --paper: #f5f0e9;
-  --paper-card: #fcf9f4;
-  --paper-surface: #ffffff;
+  --ink: #111414;
+  --paper: #f7f4ee;
+  --paper-card: #ffffff;
+  --paper-surface: #fbf9f5;
   --paper-elevated: #ffffff;
-  --lime: #d7ff2f;
-  --orange: #d84315;
-  --sky: #0369a1;
-  --muted: #4a4a44;
-  --hairline: rgba(16, 19, 19, 0.12);
-  --hairline-strong: rgba(16, 19, 19, 0.22);
+  --lime: #d4f728;
+  --orange: #e04a1e;
+  --sky: #0284c7;
+  --muted: #5a6060;
+  --hairline: rgba(17, 20, 20, 0.08);
+  --hairline-strong: rgba(17, 20, 20, 0.16);
 
   /* Marquee, Ribbons & Accents */
-  --marquee-bg: #101313;
-  --marquee-text: #f5f0e9;
-  --marquee-border: rgba(16, 19, 19, 0.12);
+  --marquee-bg: #111414;
+  --marquee-text: #f7f4ee;
+  --marquee-border: rgba(17, 20, 20, 0.12);
 
   /* Buttons */
-  --btn-ink-bg: #101313;
-  --btn-ink-color: #f5f0e9;
-  --btn-ink-border: #101313;
-  --ghost-hover-bg: rgba(16, 19, 19, 0.05);
+  --btn-ink-bg: #111414;
+  --btn-ink-color: #f7f4ee;
+  --btn-ink-border: #111414;
+  --ghost-hover-bg: rgba(17, 20, 20, 0.05);
 
   /* Cards & Shadows */
-  --card-ink-bg: #101313;
-  --card-ink-color: #f5f0e9;
-  --shadow-subtle: 0 1px 3px 0 rgba(16, 19, 19, 0.06);
-  --shadow-card: 0 2px 14px -3px rgba(16, 19, 19, 0.05);
-  --shadow-elevated: 0 10px 30px -4px rgba(16, 19, 19, 0.08);
+  --card-ink-bg: #111414;
+  --card-ink-color: #f7f4ee;
+  --shadow-subtle: 0 1px 2px 0 rgba(17, 20, 20, 0.05);
+  --shadow-card: 0 2px 12px -2px rgba(17, 20, 20, 0.06);
+  --shadow-elevated: 0 12px 32px -4px rgba(17, 20, 20, 0.1);
 
   /* Grain Texture & Scrollbar */
-  --grain-opacity: 0.11;
+  --grain-opacity: 0.09;
   --grain-blend: multiply;
-  --scrollbar-thumb: rgba(16, 19, 19, 0.2);
+  --scrollbar-thumb: rgba(17, 20, 20, 0.2);
 
   /* Semantic Status Tokens */
   --status-correct: #10b981;
@@ -56,38 +56,38 @@
 [data-theme="dark"],
 :root.dark {
   /* Studio Noma Core Palette (Dark Mode: Obsidian Monolith Studio) */
-  --ink: #f5f0e9;
-  --paper: #0c0f0f;
+  --ink: #f5f3ee;
+  --paper: #0d1010;
   --paper-card: #141818;
-  --paper-surface: #181c1c;
-  --paper-elevated: #202626;
+  --paper-surface: #1a2020;
+  --paper-elevated: #222929;
   --lime: #d7ff2f;
-  --orange: #ff6337;
+  --orange: #ff6639;
   --sky: #38bdf8;
-  --muted: #a3a8a8;
-  --hairline: rgba(255, 255, 255, 0.12);
-  --hairline-strong: rgba(255, 255, 255, 0.22);
+  --muted: #9ca3a3;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
 
   /* Marquee, Ribbons & Accents */
-  --marquee-bg: #070909;
-  --marquee-text: #f5f0e9;
+  --marquee-bg: #080a0a;
+  --marquee-text: #f5f3ee;
   --marquee-border: rgba(255, 255, 255, 0.08);
 
   /* Buttons */
-  --btn-ink-bg: #f5f0e9;
-  --btn-ink-color: #101313;
-  --btn-ink-border: #f5f0e9;
+  --btn-ink-bg: #f5f3ee;
+  --btn-ink-color: #111414;
+  --btn-ink-border: #f5f3ee;
   --ghost-hover-bg: rgba(255, 255, 255, 0.08);
 
   /* Cards & Shadows */
-  --card-ink-bg: #1c2222;
-  --card-ink-color: #f5f0e9;
-  --shadow-subtle: 0 1px 4px 0 rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 4px 20px -3px rgba(0, 0, 0, 0.5);
-  --shadow-elevated: 0 12px 36px -4px rgba(0, 0, 0, 0.65);
+  --card-ink-bg: #1a2020;
+  --card-ink-color: #f5f3ee;
+  --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 18px -3px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 14px 36px -4px rgba(0, 0, 0, 0.65);
 
   /* Grain Texture & Scrollbar */
-  --grain-opacity: 0.04;
+  --grain-opacity: 0.03;
   --grain-blend: screen;
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
 
@@ -280,23 +280,10 @@ input, textarea, select {
 
 @keyframes pulse {
   70% {
-    box-shadow: 0 0 0 8px rgba(255, 99, 55, 0);
+    box-shadow: 0 0 0 6px rgba(224, 74, 30, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 99, 55, 0);
-  }
-}
-
-@keyframes morph {
-  100% {
-    border-radius: 61% 39% 31% 69% / 37% 56% 44% 63%;
-    transform: rotate(28deg);
-  }
-}
-
-@keyframes float {
-  50% {
-    translate: 0 16px;
+    box-shadow: 0 0 0 0 rgba(224, 74, 30, 0);
   }
 }
 
@@ -306,142 +293,61 @@ input, textarea, select {
   }
 }
 
-/* ================= STUDIO NOMA RIBBONS & TICKERS ================= */
+/* ================= ARCHITECTURAL GRID & PATTERN UTILITIES ================= */
+.bg-dot-grid {
+  background-image: radial-gradient(var(--hairline-strong) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-fine-lines {
+  background-image: linear-gradient(to right, var(--hairline) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--hairline) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ================= STUDIO NOMA RIBBONS & AMBIENT TICKERS ================= */
 .marquee {
   background: var(--marquee-bg);
   color: var(--marquee-text);
   border-bottom: 1px solid var(--marquee-border);
   overflow: hidden;
-  height: 36px;
+  height: 32px;
   display: flex;
   align-items: center;
   white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .marquee-track {
   display: inline-flex;
-  gap: 42px;
+  gap: 36px;
   min-width: max-content;
-  animation: slide 22s linear infinite;
+  animation: slide 26s linear infinite;
 }
 
 .marquee b {
   color: var(--lime);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  margin-right: 10px;
+  margin-right: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  vertical-align: middle;
 }
 
-.ticker {
-  border-block: 1px solid var(--hairline-strong);
-  overflow: hidden;
-  display: flex;
-  white-space: nowrap;
-  padding: 14px 0;
-  background: var(--paper-card);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.ticker-inner {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: clamp(2rem, 4.5vw, 4.2rem);
-  letter-spacing: -0.04em;
-  min-width: max-content;
-  animation: slide 25s linear infinite reverse;
-}
-
-.ticker strong {
-  font-family: var(--font-sans);
-  font-style: normal;
-  color: var(--orange);
-  margin: 0 24px;
-}
-
-/* Pulse availability dot */
+/* Live presence pulse dot */
 .pulse {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--orange);
-  box-shadow: 0 0 0 0 rgba(255, 99, 55, 0.6);
+  box-shadow: 0 0 0 0 rgba(224, 74, 30, 0.6);
   animation: pulse 1.8s infinite;
-}
-
-/* Magnetic circular link */
-.circle-link {
-  width: 130px;
-  height: 130px;
-  border: 1px solid var(--hairline-strong);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  text-align: center;
-  line-height: 1.4;
-  background: transparent;
-  color: var(--ink);
-  transition: 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  cursor: pointer;
-}
-
-.circle-link:hover {
-  background: var(--lime);
-  color: #101313;
-  transform: rotate(-10deg) scale(1.06);
-  border-color: var(--lime);
-}
-
-.magnet {
-  transition: transform 0.16s ease-out;
-}
-
-/* Organic Mascot Spark */
-.spark {
-  width: 220px;
-  aspect-ratio: 1;
-  border-radius: 44% 56% 60% 40% / 49% 35% 65% 51%;
-  background: var(--lime);
-  position: relative;
-  animation: morph 9s ease-in-out infinite alternate, float 5s ease-in-out infinite;
-}
-
-.spark::before,
-.spark::after {
-  content: "";
-  position: absolute;
-  background: #101313;
-  border-radius: 50%;
-}
-
-.spark::before {
-  width: 16px;
-  height: 16px;
-  left: 31%;
-  top: 31%;
-}
-
-.spark::after {
-  width: 32px;
-  height: 10px;
-  border-radius: 0 0 20px 20px;
-  left: 44%;
-  top: 54%;
-  transform: rotate(-18deg);
 }
 
 /* ================= MODERN STUDIO NOMA CONTAINERS (DE-CLUSTERED) ================= */
@@ -451,7 +357,7 @@ input, textarea, select {
 .brutal-card {
   background-color: var(--paper-card);
   border: 1px solid var(--hairline-strong);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   box-shadow: var(--shadow-card);
   color: var(--ink);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
